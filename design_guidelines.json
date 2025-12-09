@@ -1,0 +1,146 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "The Financial Architect",
+      "description": "A precision-engineered interface for project management. Minimalist, data-dense, and strictly professional. It avoids decoration in favor of clarity.",
+      "archetype": "Swiss & High-Contrast",
+      "emotional_tone": "Control, Clarity, Trust, Efficiency"
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Manrope, sans-serif",
+        "body": "Inter, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "scale": {
+        "h1": "text-4xl font-bold tracking-tight lg:text-5xl",
+        "h2": "text-3xl font-semibold tracking-tight",
+        "h3": "text-2xl font-semibold tracking-tight",
+        "p": "leading-7 [&:not(:first-child)]:mt-6",
+        "small": "text-sm font-medium leading-none"
+      },
+      "usage_rules": [
+        "Use Manrope for all headings (h1-h4).",
+        "Use Inter for all body text, inputs, and labels.",
+        "Use JetBrains Mono for all currency values, dates, and IDs.",
+        "Headings must have tight tracking (tracking-tight).",
+        "Never center text unless it is a standalone hero statement."
+      ]
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "name": "International Klein Blue",
+          "hex": "#2563EB",
+          "tailwind": "bg-blue-600 text-white hover:bg-blue-700"
+        },
+        "secondary": {
+          "name": "Slate Grey",
+          "hex": "#64748B",
+          "tailwind": "bg-slate-500 text-white hover:bg-slate-600"
+        },
+        "background": {
+          "light": "#FFFFFF",
+          "dark": "#0F172A"
+        },
+        "surface": {
+          "light": "#F8FAFC",
+          "dark": "#1E293B"
+        },
+        "accent": {
+          "success": "#10B981",
+          "warning": "#F97316",
+          "error": "#EF4444"
+        }
+      },
+      "usage_rules": [
+        "Primary color is ONLY for the main Call-to-Action (CTA) on a page.",
+        "Use Slate/Grey for secondary actions to reduce visual noise.",
+        "Backgrounds should be stark white (light mode) or deep slate (dark mode).",
+        "Borders should be subtle: border-slate-200 (light) or border-slate-800 (dark).",
+        "Do not use gradients for backgrounds. Use solid colors."
+      ]
+    },
+    "layout": {
+      "grid_system": "The Control Room Grid",
+      "spacing": {
+        "container_padding": "p-6 md:p-8 lg:p-12",
+        "element_gap": "gap-4 md:gap-6",
+        "section_spacing": "py-12"
+      },
+      "rules": [
+        "Dashboard widgets must fill their grid cells completely (h-full).",
+        "Use a sidebar navigation for desktop, drawer for mobile.",
+        "Forms should be single-column for focus, max-width-md.",
+        "Tables should use full width with sticky headers."
+      ]
+    },
+    "components": {
+      "cards": {
+        "style": "Sharp or minimal radius",
+        "classes": "rounded-md border border-border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-200"
+      },
+      "buttons": {
+        "primary": "rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 font-medium transition-all",
+        "secondary": "rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 px-6 py-2 font-medium transition-all",
+        "ghost": "rounded-full hover:bg-accent hover:text-accent-foreground px-4 py-2"
+      },
+      "inputs": {
+        "style": "Clean and accessible",
+        "classes": "rounded-md border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      }
+    },
+    "visual_enhancers": {
+      "shadows": "shadow-sm for cards, shadow-lg for dropdowns/modals.",
+      "borders": "1px solid borders are preferred over shadows for separation.",
+      "glassmorphism": "Use sparingly. Only for sticky headers: bg-white/80 backdrop-blur-md border-b border-slate-200/50."
+    },
+    "motion": {
+      "type": "Professional & Snappy",
+      "duration": "duration-200",
+      "easing": "ease-out",
+      "rules": [
+        "Hover effects should be subtle (slight color shift or shadow increase).",
+        "Page transitions should be a quick fade-in (opacity-0 to opacity-100).",
+        "No bouncing or elastic animations."
+      ]
+    },
+    "assets": {
+      "images": {
+        "team_avatars": [
+          "https://images.unsplash.com/photo-1758518730523-c9f6336ebdae?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1650784854945-264d5b0b6b07?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1763550662603-78aa2f2033bf?crop=entropy&cs=srgb&fm=jpg&q=85"
+        ],
+        "project_covers": [
+          "https://images.unsplash.com/photo-1761870065047-f2da9429db23?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1765029758425-89e0c9914654?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1759830374424-bc3a516d987c?crop=entropy&cs=srgb&fm=jpg&q=85"
+        ],
+        "empty_states": [
+          "https://images.unsplash.com/photo-1743778812446-89def1e784cf?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1565300667535-9b6094e1a2a7?crop=entropy&cs=srgb&fm=jpg&q=85"
+        ]
+      },
+      "icons": "Lucide React (default). Use thin strokes (stroke-width={1.5}) for elegance."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Implement the 'Control Room' grid for the main dashboard.",
+    "Use the specified color palette strictly. Do not introduce new colors.",
+    "Ensure all text has sufficient contrast (WCAG AA).",
+    "Use 'Manrope' font for all headings. Import it from Google Fonts.",
+    "Use 'JetBrains Mono' for all financial data (budgets, expenses).",
+    "Customize Shadcn components to match the 'Sharp/Minimal' aesthetic defined in components section.",
+    "Use the provided image URLs for mock data and placeholders.",
+    "Ensure the app is fully responsive (mobile-first approach).",
+    "Add data-testid attributes to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Avoid generic centered layouts.",
+    "Create depth through z-index and subtle borders.",
+    "Do not use 'transition: all'. Animate specific properties.",
+    "Use 2-3x more spacing than typical designs.",
+    "Every interaction needs a micro-state (hover, focus, active)."
+  ]
+}
