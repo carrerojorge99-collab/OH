@@ -431,7 +431,7 @@ async def get_project(project_id: str, request: Request, session_token: Optional
     return Project(**project_doc)
 
 @api_router.put("/projects/{project_id}", response_model=Project)
-async def update_project(project_id: str, project_data: ProjectCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+async def update_project(project_id: str, project_data: ProjectUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
     project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
@@ -441,12 +441,20 @@ async def update_project(project_id: str, project_data: ProjectCreate, request: 
     if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para editar este proyecto")
     
-    update_data = project_data.model_dump()
+    update_data = project_data.model_dump(exclude_unset=True)
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    # Recalcular ganancia si se actualiza project_value
+    if 'project_value' in update_data or 'budget_spent' in update_data:
+        new_value = update_data.get('project_value', project_doc.get('project_value', 0))
+        current_spent = project_doc.get('budget_spent', 0)
+        update_data['profit'] = new_value - current_spent
     
     await db.projects.update_one({"project_id": project_id}, {"$set": update_data})
     
     updated_project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    # Recalcular profit con datos actuales
+    updated_project['profit'] = updated_project.get('project_value', 0) - updated_project.get('budget_spent', 0)
     return Project(**updated_project)
 
 @api_router.delete("/projects/{project_id}")
