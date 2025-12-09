@@ -1028,6 +1028,110 @@ const ProjectDetail = () => {
             )}
           </TabsContent>
 
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-6">
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold tracking-tight">Documentos del Proyecto</CardTitle>
+                  <div>
+                    <input
+                      type="file"
+                      id="file-upload"
+                      data-testid="file-upload-input"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                      disabled={uploadingFile}
+                    />
+                    <Button
+                      data-testid="upload-document-button"
+                      onClick={() => document.getElementById('file-upload').click()}
+                      disabled={uploadingFile}
+                      className="rounded-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingFile ? 'Subiendo...' : 'Subir Documento'}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {documents.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {documents.map((doc) => {
+                      const getFileIcon = (fileType) => {
+                        if (fileType.startsWith('image/')) return <ImageIcon className="w-8 h-8 text-blue-600" />;
+                        if (fileType.includes('pdf')) return <FileText className="w-8 h-8 text-red-600" />;
+                        if (fileType.includes('word') || fileType.includes('document')) return <FileText className="w-8 h-8 text-blue-600" />;
+                        if (fileType.includes('excel') || fileType.includes('spreadsheet')) return <FileText className="w-8 h-8 text-green-600" />;
+                        return <File className="w-8 h-8 text-slate-600" />;
+                      };
+
+                      const formatFileSize = (bytes) => {
+                        if (bytes < 1024) return bytes + ' B';
+                        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                      };
+
+                      return (
+                        <Card
+                          key={doc.document_id}
+                          data-testid={`document-card-${doc.document_id}`}
+                          className="border-slate-200 hover:border-blue-300 transition-colors"
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0">
+                                {getFileIcon(doc.file_type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-[#0F172A] truncate mb-1" title={doc.original_filename}>
+                                  {doc.original_filename}
+                                </h3>
+                                <p className="text-xs text-slate-500 mb-2">{formatFileSize(doc.file_size)}</p>
+                                <p className="text-xs text-slate-600 mb-3">
+                                  Subido por <span className="font-medium">{doc.uploaded_by_name}</span>
+                                </p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDownloadDocument(doc.document_id, doc.original_filename)}
+                                    data-testid={`download-document-${doc.document_id}`}
+                                    className="text-xs"
+                                  >
+                                    <Download className="w-3 h-3 mr-1" />
+                                    Descargar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeleteDocument(doc.document_id)}
+                                    data-testid={`delete-document-${doc.document_id}`}
+                                    className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="w-3 h-3 mr-1" />
+                                    Eliminar
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <File className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="mb-2">No hay documentos subidos aún</p>
+                    <p className="text-sm">Sube contratos, diseños, especificaciones y otros archivos del proyecto</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Comments Tab */}
           <TabsContent value="comments" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
