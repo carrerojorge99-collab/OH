@@ -68,6 +68,17 @@ const ProjectDetail = () => {
     date: new Date().toISOString().split('T')[0]
   });
 
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    start_date: '',
+    end_date: '',
+    status: 'planning',
+    priority: 'medium',
+    budget_total: 0,
+    project_value: 0
+  });
+
   useEffect(() => {
     loadProjectData();
   }, [projectId]);
