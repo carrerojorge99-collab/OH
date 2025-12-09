@@ -671,6 +671,8 @@ async def get_dashboard_stats(request: Request, session_token: Optional[str] = C
     projects = await db.projects.find(projects_query, {"_id": 0}).to_list(1000)
     total_budget = sum(p.get('budget_total', 0) for p in projects)
     total_spent = sum(p.get('budget_spent', 0) for p in projects)
+    total_value = sum(p.get('project_value', 0) for p in projects)
+    total_profit = total_value - total_spent
     
     return {
         "total_projects": total_projects,
@@ -678,7 +680,9 @@ async def get_dashboard_stats(request: Request, session_token: Optional[str] = C
         "completed_projects": completed_projects,
         "total_budget": total_budget,
         "total_spent": total_spent,
-        "budget_remaining": total_budget - total_spent
+        "budget_remaining": total_budget - total_spent,
+        "total_value": total_value,
+        "total_profit": total_profit
     }
 
 @api_router.get("/projects/{project_id}/stats")
