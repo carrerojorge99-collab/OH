@@ -246,7 +246,7 @@ const Projects = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="budget_total">Presupuesto Total *</Label>
+                    <Label htmlFor="budget_total">Presupuesto (Costos) *</Label>
                     <Input
                       id="budget_total"
                       data-testid="project-budget-input"
@@ -257,6 +257,23 @@ const Projects = () => {
                       onChange={(e) => setFormData({ ...formData, budget_total: parseFloat(e.target.value) || 0 })}
                       required
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="project_value">Valor del Proyecto (Ingreso) *</Label>
+                    <Input
+                      id="project_value"
+                      data-testid="project-value-input"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.project_value}
+                      onChange={(e) => setFormData({ ...formData, project_value: parseFloat(e.target.value) || 0 })}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Ganancia estimada: ${((formData.project_value || 0) - (formData.budget_total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </p>
                   </div>
                 </div>
                 <DialogFooter>
