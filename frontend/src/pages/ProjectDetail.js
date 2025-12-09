@@ -240,6 +240,18 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleDeleteProject = async () => {
+    if (!window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción eliminará también todas las tareas, presupuestos, gastos y comentarios asociados.')) return;
+    
+    try {
+      await axios.delete(`${API}/projects/${projectId}`, { withCredentials: true });
+      toast.success('Proyecto eliminado exitosamente');
+      navigate('/projects');
+    } catch (error) {
+      toast.error('Error al eliminar proyecto');
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
