@@ -331,7 +331,7 @@ const ProjectDetail = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card className="border-slate-200 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -360,12 +360,12 @@ const ProjectDetail = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 mb-1">Presupuesto</p>
-                  <p className="text-2xl font-bold font-mono">
-                    ${(stats?.budget_total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  <p className="text-sm font-medium text-slate-600 mb-1">Valor Proyecto</p>
+                  <p className="text-xl font-bold font-mono">
+                    ${(stats?.project_value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <DollarSign className="w-8 h-8 text-purple-600" />
+                <DollarSign className="w-8 h-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -375,11 +375,29 @@ const ProjectDetail = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600 mb-1">Gastado</p>
-                  <p className="text-2xl font-bold font-mono">
+                  <p className="text-xl font-bold font-mono">
                     ${(stats?.budget_spent || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 <DollarSign className="w-8 h-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className={`border-slate-200 shadow-sm ${(stats?.profit || 0) >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 mb-1">Ganancia</p>
+                  <p className={`text-xl font-bold font-mono ${(stats?.profit || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    ${(stats?.profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                {(stats?.profit || 0) >= 0 ? (
+                  <TrendingUp className="w-8 h-8 text-green-600" />
+                ) : (
+                  <TrendingDown className="w-8 h-8 text-red-600" />
+                )}
               </div>
             </CardContent>
           </Card>
