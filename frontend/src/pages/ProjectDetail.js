@@ -339,6 +339,140 @@ const ProjectDetail = () => {
           </div>
         </div>
 
+        {/* Edit Project Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-semibold tracking-tight">Editar Proyecto</DialogTitle>
+              <DialogDescription>Actualiza la información del proyecto</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateProject}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Nombre del Proyecto *</Label>
+                  <Input
+                    id="edit-name"
+                    data-testid="edit-project-name-input"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Descripción *</Label>
+                  <Textarea
+                    id="edit-description"
+                    data-testid="edit-project-description-input"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    required
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-start-date">Fecha de Inicio *</Label>
+                    <Input
+                      id="edit-start-date"
+                      data-testid="edit-project-start-date-input"
+                      type="date"
+                      value={editForm.start_date}
+                      onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-end-date">Fecha de Fin *</Label>
+                    <Input
+                      id="edit-end-date"
+                      data-testid="edit-project-end-date-input"
+                      type="date"
+                      value={editForm.end_date}
+                      onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-status">Estado</Label>
+                    <Select value={editForm.status} onValueChange={(value) => setEditForm({ ...editForm, status: value })}>
+                      <SelectTrigger data-testid="edit-project-status-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="planning">Planificación</SelectItem>
+                        <SelectItem value="in_progress">En Progreso</SelectItem>
+                        <SelectItem value="on_hold">En Espera</SelectItem>
+                        <SelectItem value="completed">Completado</SelectItem>
+                        <SelectItem value="cancelled">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-priority">Prioridad</Label>
+                    <Select value={editForm.priority} onValueChange={(value) => setEditForm({ ...editForm, priority: value })}>
+                      <SelectTrigger data-testid="edit-project-priority-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Baja</SelectItem>
+                        <SelectItem value="medium">Media</SelectItem>
+                        <SelectItem value="high">Alta</SelectItem>
+                        <SelectItem value="urgent">Urgente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-budget">Presupuesto (Costos) *</Label>
+                  <Input
+                    id="edit-budget"
+                    data-testid="edit-project-budget-input"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.budget_total}
+                    onChange={(e) => setEditForm({ ...editForm, budget_total: parseFloat(e.target.value) || 0 })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-value">Valor del Proyecto (Ingreso) *</Label>
+                  <Input
+                    id="edit-value"
+                    data-testid="edit-project-value-input"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.project_value}
+                    onChange={(e) => setEditForm({ ...editForm, project_value: parseFloat(e.target.value) || 0 })}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Ganancia estimada: ${((editForm.project_value || 0) - (stats?.budget_spent || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button data-testid="submit-edit-project-button" type="submit" className="bg-blue-600 hover:bg-blue-700">
+                  Guardar Cambios
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card className="border-slate-200 shadow-sm">
