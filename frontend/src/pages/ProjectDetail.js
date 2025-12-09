@@ -83,6 +83,21 @@ const ProjectDetail = () => {
     loadProjectData();
   }, [projectId]);
 
+  useEffect(() => {
+    if (project) {
+      setEditForm({
+        name: project.name,
+        description: project.description,
+        start_date: project.start_date,
+        end_date: project.end_date,
+        status: project.status,
+        priority: project.priority,
+        budget_total: project.budget_total,
+        project_value: project.project_value || 0
+      });
+    }
+  }, [project]);
+
   const loadProjectData = async () => {
     try {
       const [projectRes, tasksRes, categoriesRes, expensesRes, commentsRes, statsRes] = await Promise.all([
