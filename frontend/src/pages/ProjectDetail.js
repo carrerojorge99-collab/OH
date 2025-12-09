@@ -310,6 +310,15 @@ const ProjectDetail = () => {
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                onClick={() => setEditDialogOpen(true)}
+                data-testid="edit-project-button"
+                className="rounded-full"
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                Editar
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => handleExport('pdf')}
                 data-testid="export-pdf-button"
                 className="rounded-full"
