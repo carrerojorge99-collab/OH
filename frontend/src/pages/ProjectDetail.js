@@ -44,6 +44,7 @@ const ProjectDetail = () => {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
 
   const [taskForm, setTaskForm] = useState({
