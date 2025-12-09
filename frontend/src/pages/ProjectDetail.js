@@ -42,8 +42,10 @@ const ProjectDetail = () => {
   const [comments, setComments] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'kanban'
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
