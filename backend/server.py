@@ -415,6 +415,12 @@ async def get_projects(request: Request, session_token: Optional[str] = Cookie(N
             {"_id": 0}
         ).to_list(1000)
     
+    # Calcular profit para cada proyecto
+    for p in projects:
+        p['project_value'] = p.get('project_value', 0)
+        p['budget_spent'] = p.get('budget_spent', 0)
+        p['profit'] = p['project_value'] - p['budget_spent']
+    
     return [Project(**p) for p in projects]
 
 @api_router.get("/projects/{project_id}", response_model=Project)
