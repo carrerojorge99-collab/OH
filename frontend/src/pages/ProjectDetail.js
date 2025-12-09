@@ -872,7 +872,8 @@ const ProjectDetail = () => {
                   <p>No hay tareas creadas aún</p>
                 </div>
               )}
-            </div>
+              </div>
+            )}
           </TabsContent>
 
           {/* Budget Tab */}
