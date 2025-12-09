@@ -228,6 +228,18 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleUpdateProject = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/projects/${projectId}`, editForm, { withCredentials: true });
+      toast.success('Proyecto actualizado exitosamente');
+      setEditDialogOpen(false);
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al actualizar proyecto');
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
