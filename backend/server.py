@@ -494,11 +494,18 @@ async def delete_project(project_id: str, request: Request, session_token: Optio
     if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este proyecto")
     
+    documents = await db.documents.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    for doc in documents:
+        file_path = UPLOAD_DIR / doc['filename']
+        if file_path.exists():
+            file_path.unlink()
+    
     await db.projects.delete_one({"project_id": project_id})
     await db.tasks.delete_many({"project_id": project_id})
     await db.budget_categories.delete_many({"project_id": project_id})
     await db.expenses.delete_many({"project_id": project_id})
     await db.comments.delete_many({"project_id": project_id})
+    await db.documents.delete_many({"project_id": project_id})
     
     return {"message": "Proyecto eliminado exitosamente"}
 
