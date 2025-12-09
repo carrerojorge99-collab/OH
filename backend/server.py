@@ -571,9 +571,38 @@ async def update_task(task_id: str, task_data: TaskCreate, request: Request, ses
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     
     update_data = task_data.model_dump()
-    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
+    update_data['updated_at'] = now
     
     await db.tasks.update_one({"task_id": task_id}, {"$set": update_data})
+    
+    # Create notification if status changed to done
+    if task_data.status == TaskStatus.DONE and task_doc.get('status') != TaskStatus.DONE:
+        project_doc = await db.projects.find_one({"project_id": task_doc['project_id']}, {"_id": 0})
+        if project_doc and project_doc.get('created_by'):
+            notification_doc = {
+                "notification_id": f"notif_{uuid.uuid4().hex[:12]}",
+                "user_id": project_doc['created_by'],
+                "type": "task_completed",
+                "message": f"{user.name} completó la tarea: {task_data.title}",
+                "read": False,
+                "timestamp": now,
+                "related_id": task_id
+            }
+            await db.notifications.insert_one(notification_doc)
+    
+    # Create notification if assigned user changed
+    if task_data.assigned_to and task_data.assigned_to != task_doc.get('assigned_to'):
+        notification_doc = {
+            "notification_id": f"notif_{uuid.uuid4().hex[:12]}",
+            "user_id": task_data.assigned_to,
+            "type": "task_assigned",
+            "message": f"{user.name} te asignó la tarea: {task_data.title}",
+            "read": False,
+            "timestamp": now,
+            "related_id": task_id
+        }
+        await db.notifications.insert_one(notification_doc)
     
     updated_task = await db.tasks.find_one({"task_id": task_id}, {"_id": 0})
     return Task(**updated_task)
