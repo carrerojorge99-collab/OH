@@ -22,7 +22,7 @@ import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
 import { 
   ArrowLeft, Plus, FileDown, CheckCircle2, Circle, Clock,
-  DollarSign, Calendar, Tag, MessageSquare, Trash2
+  DollarSign, Calendar, Tag, MessageSquare, Trash2, Pencil, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
