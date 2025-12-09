@@ -688,6 +688,7 @@ async def create_comment(comment_data: CommentCreate, request: Request, session_
     user = await get_current_user(request, session_token)
     
     comment_id = f"comm_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
     
     comment_doc = {
         "comment_id": comment_id,
@@ -695,10 +696,29 @@ async def create_comment(comment_data: CommentCreate, request: Request, session_
         "user_id": user.user_id,
         "user_name": user.name,
         "content": comment_data.content,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": now
     }
     
     await db.comments.insert_one(comment_doc)
+    
+    # Notify project owner and team members
+    project_doc = await db.projects.find_one({"project_id": comment_data.project_id}, {"_id": 0})
+    if project_doc:
+        notify_users = [project_doc.get('created_by')] + project_doc.get('team_members', [])
+        notify_users = [u for u in notify_users if u != user.user_id]  # Don't notify self
+        
+        for notify_user in notify_users:
+            notification_doc = {
+                "notification_id": f"notif_{uuid.uuid4().hex[:12]}",
+                "user_id": notify_user,
+                "type": "new_comment",
+                "message": f"{user.name} comentó en {project_doc['name']}",
+                "read": False,
+                "timestamp": now,
+                "related_id": comment_data.project_id
+            }
+            await db.notifications.insert_one(notification_doc)
+    
     return Comment(**comment_doc)
 
 @api_router.get("/comments", response_model=List[Comment])
