@@ -1,72 +1,862 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Cookie
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
-
+from datetime import datetime, timezone, timedelta
+import bcrypt
+import jwt
+import io
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+import requests
+from enum import Enum
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
 app = FastAPI()
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-this')
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_DAYS = 7
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+class ProjectStatus(str, Enum):
+    PLANNING = "planning"
+    IN_PROGRESS = "in_progress"
+    ON_HOLD = "on_hold"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class TaskStatus(str, Enum):
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    REVIEW = "review"
+    DONE = "done"
+
+class Priority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    GESTOR = "gestor"
+    COLABORADOR = "colaborador"
+
+class UserRegister(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    role: UserRole = UserRole.COLABORADOR
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: str
+    name: str
+    email: str
+    role: UserRole
+    picture: Optional[str] = None
+    created_at: str
+
+class ProjectCreate(BaseModel):
+    name: str
+    description: str
+    start_date: str
+    end_date: str
+    status: ProjectStatus = ProjectStatus.PLANNING
+    priority: Priority = Priority.MEDIUM
+    budget_total: float = 0
+    team_members: List[str] = []
+
+class Project(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    project_id: str
+    name: str
+    description: str
+    start_date: str
+    end_date: str
+    status: ProjectStatus
+    priority: Priority
+    budget_total: float
+    budget_spent: float = 0
+    cover_image: Optional[str] = None
+    created_by: str
+    team_members: List[str]
+    created_at: str
+    updated_at: str
+
+class TaskCreate(BaseModel):
+    project_id: str
+    title: str
+    description: str
+    assigned_to: Optional[str] = None
+    status: TaskStatus = TaskStatus.TODO
+    priority: Priority = Priority.MEDIUM
+    due_date: Optional[str] = None
+    progress: int = 0
+
+class Task(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    task_id: str
+    project_id: str
+    title: str
+    description: str
+    assigned_to: Optional[str] = None
+    status: TaskStatus
+    priority: Priority
+    due_date: Optional[str] = None
+    progress: int
+    created_at: str
+    updated_at: str
+
+class BudgetCategoryCreate(BaseModel):
+    project_id: str
+    name: str
+    allocated_amount: float
+
+class BudgetCategory(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    category_id: str
+    project_id: str
+    name: str
+    allocated_amount: float
+    spent_amount: float = 0
+    created_at: str
+
+class ExpenseCreate(BaseModel):
+    project_id: str
+    category_id: str
+    description: str
+    amount: float
+    date: str
+
+class Expense(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    expense_id: str
+    project_id: str
+    category_id: str
+    description: str
+    amount: float
+    date: str
+    created_by: str
+    created_at: str
+
+class CommentCreate(BaseModel):
+    project_id: str
+    content: str
+
+class Comment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    comment_id: str
+    project_id: str
+    user_id: str
+    user_name: str
+    content: str
+    timestamp: str
+
+class Notification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    notification_id: str
+    user_id: str
+    type: str
+    message: str
+    read: bool = False
+    timestamp: str
+
+async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)) -> User:
+    token = session_token
+    if not token:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
+    session_doc = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
+    if not session_doc:
+        raise HTTPException(status_code=401, detail="Sesión inválida")
     
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+    expires_at = session_doc["expires_at"]
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Sesión expirada")
+    
+    user_doc = await db.users.find_one({"user_id": session_doc["user_id"]}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    return User(**user_doc)
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
+@api_router.post("/auth/register", response_model=User)
+async def register(user_data: UserRegister):
+    existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email ya registrado")
     
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
+    hashed_password = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
     
-    return status_checks
+    user_doc = {
+        "user_id": user_id,
+        "name": user_data.name,
+        "email": user_data.email,
+        "password": hashed_password,
+        "role": user_data.role,
+        "picture": None,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.users.insert_one(user_doc)
+    user_doc_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
+    return User(**user_doc_without_password)
 
-# Include the router in the main app
+@api_router.post("/auth/login")
+async def login(credentials: UserLogin, response: Response):
+    user_doc = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    
+    if not bcrypt.checkpw(credentials.password.encode('utf-8'), user_doc['password'].encode('utf-8')):
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    
+    session_token = f"session_{uuid.uuid4().hex}"
+    expires_at = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    
+    session_doc = {
+        "user_id": user_doc["user_id"],
+        "session_token": session_token,
+        "expires_at": expires_at,
+        "created_at": datetime.now(timezone.utc)
+    }
+    await db.user_sessions.insert_one(session_doc)
+    
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+    
+    user_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
+    return {"user": User(**user_without_password), "token": session_token}
+
+@api_router.post("/auth/session")
+async def create_session_from_emergent(request: Request, response: Response):
+    session_id = request.headers.get('X-Session-ID')
+    if not session_id:
+        raise HTTPException(status_code=400, detail="No session ID provided")
+    
+    try:
+        emergent_response = requests.get(
+            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+            headers={"X-Session-ID": session_id},
+            timeout=10
+        )
+        
+        if emergent_response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        
+        data = emergent_response.json()
+        email = data.get('email')
+        name = data.get('name')
+        picture = data.get('picture')
+        emergent_session_token = data.get('session_token')
+        
+        user_doc = await db.users.find_one({"email": email}, {"_id": 0})
+        
+        if not user_doc:
+            user_id = f"user_{uuid.uuid4().hex[:12]}"
+            user_doc = {
+                "user_id": user_id,
+                "name": name,
+                "email": email,
+                "role": UserRole.COLABORADOR,
+                "picture": picture,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(user_doc)
+        else:
+            if user_doc.get('name') != name or user_doc.get('picture') != picture:
+                await db.users.update_one(
+                    {"user_id": user_doc['user_id']},
+                    {"$set": {"name": name, "picture": picture}}
+                )
+                user_doc['name'] = name
+                user_doc['picture'] = picture
+        
+        session_token = emergent_session_token
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        
+        session_doc = {
+            "user_id": user_doc["user_id"],
+            "session_token": session_token,
+            "expires_at": expires_at,
+            "created_at": datetime.now(timezone.utc)
+        }
+        await db.user_sessions.insert_one(session_doc)
+        
+        response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/",
+            max_age=7 * 24 * 60 * 60
+        )
+        
+        user_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
+        return {"user": User(**user_without_password), "token": session_token}
+    
+    except Exception as e:
+        logging.error(f"Error creating session: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al crear sesión")
+
+@api_router.get("/auth/me", response_model=User)
+async def get_me(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    return user
+
+@api_router.post("/auth/logout")
+async def logout(request: Request, response: Response, session_token: Optional[str] = Cookie(None)):
+    token = session_token
+    if not token:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+    
+    if token:
+        await db.user_sessions.delete_one({"session_token": token})
+    
+    response.delete_cookie(key="session_token", path="/")
+    return {"message": "Sesión cerrada exitosamente"}
+
+@api_router.post("/projects", response_model=Project)
+async def create_project(project_data: ProjectCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_id = f"proj_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    project_doc = {
+        "project_id": project_id,
+        "name": project_data.name,
+        "description": project_data.description,
+        "start_date": project_data.start_date,
+        "end_date": project_data.end_date,
+        "status": project_data.status,
+        "priority": project_data.priority,
+        "budget_total": project_data.budget_total,
+        "budget_spent": 0,
+        "cover_image": None,
+        "created_by": user.user_id,
+        "team_members": project_data.team_members,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.projects.insert_one(project_doc)
+    return Project(**project_doc)
+
+@api_router.get("/projects", response_model=List[Project])
+async def get_projects(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.ADMIN:
+        projects = await db.projects.find({}, {"_id": 0}).to_list(1000)
+    else:
+        projects = await db.projects.find(
+            {"$or": [{"created_by": user.user_id}, {"team_members": user.user_id}]},
+            {"_id": 0}
+        ).to_list(1000)
+    
+    return [Project(**p) for p in projects]
+
+@api_router.get("/projects/{project_id}", response_model=Project)
+async def get_project(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
+    
+    return Project(**project_doc)
+
+@api_router.put("/projects/{project_id}", response_model=Project)
+async def update_project(project_id: str, project_data: ProjectCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para editar este proyecto")
+    
+    update_data = project_data.model_dump()
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.projects.update_one({"project_id": project_id}, {"$set": update_data})
+    
+    updated_project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    return Project(**updated_project)
+
+@api_router.delete("/projects/{project_id}")
+async def delete_project(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este proyecto")
+    
+    await db.projects.delete_one({"project_id": project_id})
+    await db.tasks.delete_many({"project_id": project_id})
+    await db.budget_categories.delete_many({"project_id": project_id})
+    await db.expenses.delete_many({"project_id": project_id})
+    await db.comments.delete_many({"project_id": project_id})
+    
+    return {"message": "Proyecto eliminado exitosamente"}
+
+@api_router.post("/tasks", response_model=Task)
+async def create_task(task_data: TaskCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": task_data.project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    task_id = f"task_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    task_doc = {
+        "task_id": task_id,
+        "project_id": task_data.project_id,
+        "title": task_data.title,
+        "description": task_data.description,
+        "assigned_to": task_data.assigned_to,
+        "status": task_data.status,
+        "priority": task_data.priority,
+        "due_date": task_data.due_date,
+        "progress": task_data.progress,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.tasks.insert_one(task_doc)
+    return Task(**task_doc)
+
+@api_router.get("/tasks", response_model=List[Task])
+async def get_tasks(project_id: Optional[str] = None, request: Request = None, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    tasks = await db.tasks.find(query, {"_id": 0}).to_list(1000)
+    return [Task(**t) for t in tasks]
+
+@api_router.put("/tasks/{task_id}", response_model=Task)
+async def update_task(task_id: str, task_data: TaskCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    task_doc = await db.tasks.find_one({"task_id": task_id}, {"_id": 0})
+    if not task_doc:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    
+    update_data = task_data.model_dump()
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.tasks.update_one({"task_id": task_id}, {"$set": update_data})
+    
+    updated_task = await db.tasks.find_one({"task_id": task_id}, {"_id": 0})
+    return Task(**updated_task)
+
+@api_router.delete("/tasks/{task_id}")
+async def delete_task(task_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    await db.tasks.delete_one({"task_id": task_id})
+    return {"message": "Tarea eliminada exitosamente"}
+
+@api_router.post("/budget/categories", response_model=BudgetCategory)
+async def create_budget_category(category_data: BudgetCategoryCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    category_id = f"cat_{uuid.uuid4().hex[:12]}"
+    
+    category_doc = {
+        "category_id": category_id,
+        "project_id": category_data.project_id,
+        "name": category_data.name,
+        "allocated_amount": category_data.allocated_amount,
+        "spent_amount": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.budget_categories.insert_one(category_doc)
+    return BudgetCategory(**category_doc)
+
+@api_router.get("/budget/categories", response_model=List[BudgetCategory])
+async def get_budget_categories(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    categories = await db.budget_categories.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    return [BudgetCategory(**c) for c in categories]
+
+@api_router.post("/expenses", response_model=Expense)
+async def create_expense(expense_data: ExpenseCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    expense_id = f"exp_{uuid.uuid4().hex[:12]}"
+    
+    expense_doc = {
+        "expense_id": expense_id,
+        "project_id": expense_data.project_id,
+        "category_id": expense_data.category_id,
+        "description": expense_data.description,
+        "amount": expense_data.amount,
+        "date": expense_data.date,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.expenses.insert_one(expense_doc)
+    
+    await db.budget_categories.update_one(
+        {"category_id": expense_data.category_id},
+        {"$inc": {"spent_amount": expense_data.amount}}
+    )
+    
+    await db.projects.update_one(
+        {"project_id": expense_data.project_id},
+        {"$inc": {"budget_spent": expense_data.amount}}
+    )
+    
+    return Expense(**expense_doc)
+
+@api_router.get("/expenses", response_model=List[Expense])
+async def get_expenses(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    expenses = await db.expenses.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    return [Expense(**e) for e in expenses]
+
+@api_router.post("/comments", response_model=Comment)
+async def create_comment(comment_data: CommentCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    comment_id = f"comm_{uuid.uuid4().hex[:12]}"
+    
+    comment_doc = {
+        "comment_id": comment_id,
+        "project_id": comment_data.project_id,
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "content": comment_data.content,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.comments.insert_one(comment_doc)
+    return Comment(**comment_doc)
+
+@api_router.get("/comments", response_model=List[Comment])
+async def get_comments(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    comments = await db.comments.find({"project_id": project_id}, {"_id": 0}).sort("timestamp", -1).to_list(1000)
+    return [Comment(**c) for c in comments]
+
+@api_router.get("/notifications", response_model=List[Notification])
+async def get_notifications(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    notifications = await db.notifications.find({"user_id": user.user_id}, {"_id": 0}).sort("timestamp", -1).to_list(100)
+    return [Notification(**n) for n in notifications]
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    await db.notifications.update_one(
+        {"notification_id": notification_id, "user_id": user.user_id},
+        {"$set": {"read": True}}
+    )
+    
+    return {"message": "Notificación marcada como leída"}
+
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.ADMIN:
+        projects_query = {}
+    else:
+        projects_query = {"$or": [{"created_by": user.user_id}, {"team_members": user.user_id}]}
+    
+    total_projects = await db.projects.count_documents(projects_query)
+    active_projects = await db.projects.count_documents({**projects_query, "status": ProjectStatus.IN_PROGRESS})
+    completed_projects = await db.projects.count_documents({**projects_query, "status": ProjectStatus.COMPLETED})
+    
+    projects = await db.projects.find(projects_query, {"_id": 0}).to_list(1000)
+    total_budget = sum(p.get('budget_total', 0) for p in projects)
+    total_spent = sum(p.get('budget_spent', 0) for p in projects)
+    
+    return {
+        "total_projects": total_projects,
+        "active_projects": active_projects,
+        "completed_projects": completed_projects,
+        "total_budget": total_budget,
+        "total_spent": total_spent,
+        "budget_remaining": total_budget - total_spent
+    }
+
+@api_router.get("/projects/{project_id}/stats")
+async def get_project_stats(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    tasks = await db.tasks.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    total_tasks = len(tasks)
+    completed_tasks = len([t for t in tasks if t.get('status') == TaskStatus.DONE])
+    in_progress_tasks = len([t for t in tasks if t.get('status') == TaskStatus.IN_PROGRESS])
+    
+    categories = await db.budget_categories.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    expenses = await db.expenses.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    
+    return {
+        "total_tasks": total_tasks,
+        "completed_tasks": completed_tasks,
+        "in_progress_tasks": in_progress_tasks,
+        "budget_total": project_doc.get('budget_total', 0),
+        "budget_spent": project_doc.get('budget_spent', 0),
+        "budget_remaining": project_doc.get('budget_total', 0) - project_doc.get('budget_spent', 0),
+        "categories": categories,
+        "recent_expenses": expenses[-10:] if expenses else []
+    }
+
+@api_router.get("/reports/project/{project_id}/export")
+async def export_project_report(project_id: str, format: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    tasks = await db.tasks.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    expenses = await db.expenses.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    categories = await db.budget_categories.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    
+    if format == "excel":
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Resumen del Proyecto"
+        
+        title_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+        title_font = Font(bold=True, color="FFFFFF", size=14)
+        header_fill = PatternFill(start_color="E2E8F0", end_color="E2E8F0", fill_type="solid")
+        header_font = Font(bold=True)
+        
+        ws['A1'] = f"Reporte del Proyecto: {project_doc['name']}"
+        ws['A1'].fill = title_fill
+        ws['A1'].font = title_font
+        ws.merge_cells('A1:E1')
+        
+        ws['A3'] = "Información del Proyecto"
+        ws['A3'].font = header_font
+        ws['A4'] = "Descripción:"
+        ws['B4'] = project_doc['description']
+        ws['A5'] = "Estado:"
+        ws['B5'] = project_doc['status']
+        ws['A6'] = "Presupuesto Total:"
+        ws['B6'] = f"${project_doc['budget_total']:,.2f}"
+        ws['A7'] = "Presupuesto Gastado:"
+        ws['B7'] = f"${project_doc.get('budget_spent', 0):,.2f}"
+        
+        ws['A9'] = "Tareas"
+        ws['A9'].font = header_font
+        ws['A10'] = "Título"
+        ws['B10'] = "Estado"
+        ws['C10'] = "Prioridad"
+        ws['D10'] = "Progreso"
+        for col in ['A10', 'B10', 'C10', 'D10']:
+            ws[col].fill = header_fill
+            ws[col].font = header_font
+        
+        row = 11
+        for task in tasks:
+            ws[f'A{row}'] = task['title']
+            ws[f'B{row}'] = task['status']
+            ws[f'C{row}'] = task['priority']
+            ws[f'D{row}'] = f"{task['progress']}%"
+            row += 1
+        
+        ws[f'A{row+1}'] = "Gastos"
+        ws[f'A{row+1}'].font = header_font
+        ws[f'A{row+2}'] = "Descripción"
+        ws[f'B{row+2}'] = "Monto"
+        ws[f'C{row+2}'] = "Fecha"
+        for col in [f'A{row+2}', f'B{row+2}', f'C{row+2}']:
+            ws[col].fill = header_fill
+            ws[col].font = header_font
+        
+        exp_row = row + 3
+        for expense in expenses:
+            ws[f'A{exp_row}'] = expense['description']
+            ws[f'B{exp_row}'] = f"${expense['amount']:,.2f}"
+            ws[f'C{exp_row}'] = expense['date']
+            exp_row += 1
+        
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=proyecto_{project_id}.xlsx"}
+        )
+    
+    elif format == "pdf":
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#2563EB'),
+            spaceAfter=12
+        )
+        
+        elements.append(Paragraph(f"Reporte del Proyecto: {project_doc['name']}", title_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        info_data = [
+            ['Descripción:', project_doc['description']],
+            ['Estado:', project_doc['status']],
+            ['Presupuesto Total:', f"${project_doc['budget_total']:,.2f}"],
+            ['Presupuesto Gastado:', f"${project_doc.get('budget_spent', 0):,.2f}"]
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#E2E8F0')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        elements.append(Paragraph("Tareas", styles['Heading2']))
+        if tasks:
+            task_data = [['Título', 'Estado', 'Prioridad', 'Progreso']]
+            for task in tasks:
+                task_data.append([
+                    task['title'][:30],
+                    task['status'],
+                    task['priority'],
+                    f"{task['progress']}%"
+                ])
+            
+            task_table = Table(task_data, colWidths=[2.5*inch, 1.2*inch, 1*inch, 0.8*inch])
+            task_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+            ]))
+            elements.append(task_table)
+        
+        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Paragraph("Gastos", styles['Heading2']))
+        if expenses:
+            expense_data = [['Descripción', 'Monto', 'Fecha']]
+            for expense in expenses:
+                expense_data.append([
+                    expense['description'][:40],
+                    f"${expense['amount']:,.2f}",
+                    expense['date']
+                ])
+            
+            expense_table = Table(expense_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+            expense_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+            ]))
+            elements.append(expense_table)
+        
+        doc.build(elements)
+        buffer.seek(0)
+        
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=proyecto_{project_id}.pdf"}
+        )
+    
+    else:
+        raise HTTPException(status_code=400, detail="Formato no soportado")
+
+@api_router.get("/users", response_model=List[User])
+async def get_users(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    return [User(**u) for u in users]
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -77,7 +867,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
