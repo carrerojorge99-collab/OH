@@ -598,9 +598,15 @@ async def create_expense(expense_data: ExpenseCreate, request: Request, session_
         {"$inc": {"spent_amount": expense_data.amount}}
     )
     
+    # Actualizar budget_spent y recalcular profit
+    project = await db.projects.find_one({"project_id": expense_data.project_id}, {"_id": 0})
+    new_spent = project.get('budget_spent', 0) + expense_data.amount
+    project_value = project.get('project_value', 0)
+    new_profit = project_value - new_spent
+    
     await db.projects.update_one(
         {"project_id": expense_data.project_id},
-        {"$inc": {"budget_spent": expense_data.amount}}
+        {"$set": {"budget_spent": new_spent, "profit": new_profit}}
     )
     
     return Expense(**expense_doc)
