@@ -86,7 +86,17 @@ const ProjectDetail = () => {
 
   useEffect(() => {
     loadProjectData();
+    loadUsers();
   }, [projectId]);
+
+  const loadUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/users`, { withCredentials: true });
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
 
   useEffect(() => {
     if (project) {
