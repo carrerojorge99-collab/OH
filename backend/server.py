@@ -428,6 +428,11 @@ async def get_project(project_id: str, request: Request, session_token: Optional
     if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
+    # Asegurar que existan los campos y calcular profit
+    project_doc['project_value'] = project_doc.get('project_value', 0)
+    project_doc['budget_spent'] = project_doc.get('budget_spent', 0)
+    project_doc['profit'] = project_doc['project_value'] - project_doc['budget_spent']
+    
     return Project(**project_doc)
 
 @api_router.put("/projects/{project_id}", response_model=Project)
