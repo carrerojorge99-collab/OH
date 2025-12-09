@@ -245,7 +245,7 @@ const ProjectDetail = () => {
   };
 
   const handleDeleteProject = async () => {
-    if (!window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción eliminará también todas las tareas, presupuestos, gastos y comentarios asociados.')) return;
+    if (!window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción eliminará también todas las tareas, presupuestos, gastos, comentarios y documentos asociados.')) return;
     
     try {
       await axios.delete(`${API}/projects/${projectId}`, { withCredentials: true });
@@ -253,6 +253,68 @@ const ProjectDetail = () => {
       navigate('/projects');
     } catch (error) {
       toast.error('Error al eliminar proyecto');
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('El archivo es demasiado grande (máximo 10MB)');
+      return;
+    }
+
+    setUploadingFile(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      await axios.post(`${API}/documents/upload?project_id=${projectId}`, formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      toast.success('Documento subido exitosamente');
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al subir documento');
+      console.error(error);
+    } finally {
+      setUploadingFile(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDownloadDocument = async (documentId, filename) => {
+    try {
+      const response = await axios.get(`${API}/documents/${documentId}/download`, {
+        withCredentials: true,
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      toast.error('Error al descargar documento');
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!window.confirm('¿Estás seguro de eliminar este documento?')) return;
+    
+    try {
+      await axios.delete(`${API}/documents/${documentId}`, { withCredentials: true });
+      toast.success('Documento eliminado exitosamente');
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al eliminar documento');
     }
   };
 
