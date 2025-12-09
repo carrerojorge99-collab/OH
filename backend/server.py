@@ -199,6 +199,18 @@ class Notification(BaseModel):
     read: bool = False
     timestamp: str
 
+class Document(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    document_id: str
+    project_id: str
+    filename: str
+    original_filename: str
+    file_size: int
+    file_type: str
+    uploaded_by: str
+    uploaded_by_name: str
+    uploaded_at: str
+
 async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)) -> User:
     token = session_token
     if not token:
