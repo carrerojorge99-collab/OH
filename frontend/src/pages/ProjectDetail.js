@@ -752,6 +752,22 @@ const ProjectDetail = () => {
                         />
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <Label>Asignar a</Label>
+                      <Select value={taskForm.assigned_to || ''} onValueChange={(value) => setTaskForm({ ...taskForm, assigned_to: value })}>
+                        <SelectTrigger data-testid="task-assigned-select">
+                          <SelectValue placeholder="Seleccionar usuario" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sin asignar</SelectItem>
+                          {users.map((user) => (
+                            <SelectItem key={user.user_id} value={user.user_id}>
+                              {user.name} ({user.role})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <DialogFooter>
                       <Button type="button" variant="outline" onClick={() => setTaskDialogOpen(false)}>
                         Cancelar
