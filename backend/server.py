@@ -923,6 +923,116 @@ async def get_users(request: Request, session_token: Optional[str] = Cookie(None
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
     return [User(**u) for u in users]
 
+UPLOAD_DIR = Path("/app/backend/uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@api_router.post("/documents/upload", response_model=Document)
+async def upload_document(
+    project_id: str,
+    file: UploadFile = File(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
+    
+    max_size = 10 * 1024 * 1024
+    file_content = await file.read()
+    if len(file_content) > max_size:
+        raise HTTPException(status_code=400, detail="El archivo es demasiado grande (máximo 10MB)")
+    
+    document_id = f"doc_{uuid.uuid4().hex[:12]}"
+    file_extension = Path(file.filename).suffix
+    filename = f"{document_id}{file_extension}"
+    file_path = UPLOAD_DIR / filename
+    
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+    
+    mime_type = mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
+    
+    document_doc = {
+        "document_id": document_id,
+        "project_id": project_id,
+        "filename": filename,
+        "original_filename": file.filename,
+        "file_size": len(file_content),
+        "file_type": mime_type,
+        "uploaded_by": user.user_id,
+        "uploaded_by_name": user.name,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.documents.insert_one(document_doc)
+    return Document(**document_doc)
+
+@api_router.get("/documents", response_model=List[Document])
+async def get_documents(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
+    
+    documents = await db.documents.find({"project_id": project_id}, {"_id": 0}).sort("uploaded_at", -1).to_list(1000)
+    return [Document(**d) for d in documents]
+
+@api_router.get("/documents/{document_id}/download")
+async def download_document(document_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    document_doc = await db.documents.find_one({"document_id": document_id}, {"_id": 0})
+    if not document_doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    project_doc = await db.projects.find_one({"project_id": document_doc['project_id']}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este documento")
+    
+    file_path = UPLOAD_DIR / document_doc['filename']
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado en el servidor")
+    
+    return FileResponse(
+        path=file_path,
+        filename=document_doc['original_filename'],
+        media_type=document_doc['file_type']
+    )
+
+@api_router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    document_doc = await db.documents.find_one({"document_id": document_id}, {"_id": 0})
+    if not document_doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    project_doc = await db.projects.find_one({"project_id": document_doc['project_id']}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role != UserRole.ADMIN and project_doc['created_by'] != user.user_id and document_doc['uploaded_by'] != user.user_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este documento")
+    
+    file_path = UPLOAD_DIR / document_doc['filename']
+    if file_path.exists():
+        file_path.unlink()
+    
+    await db.documents.delete_one({"document_id": document_id})
+    return {"message": "Documento eliminado exitosamente"}
+
 app.include_router(api_router)
 
 app.add_middleware(
