@@ -535,6 +535,20 @@ async def create_task(task_data: TaskCreate, request: Request, session_token: Op
     }
     
     await db.tasks.insert_one(task_doc)
+    
+    # Create notification if task is assigned
+    if task_data.assigned_to:
+        notification_doc = {
+            "notification_id": f"notif_{uuid.uuid4().hex[:12]}",
+            "user_id": task_data.assigned_to,
+            "type": "task_assigned",
+            "message": f"{user.name} te asignó la tarea: {task_data.title}",
+            "read": False,
+            "timestamp": now,
+            "related_id": task_id
+        }
+        await db.notifications.insert_one(notification_doc)
+    
     return Task(**task_doc)
 
 @api_router.get("/tasks", response_model=List[Task])
