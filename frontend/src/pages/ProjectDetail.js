@@ -23,8 +23,9 @@ import { Progress } from '../components/ui/progress';
 import { 
   ArrowLeft, Plus, FileDown, CheckCircle2, Circle, Clock,
   DollarSign, Calendar, Tag, MessageSquare, Trash2, Pencil, TrendingUp, TrendingDown,
-  Upload, Download, File, FileText, Image as ImageIcon
+  Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List
 } from 'lucide-react';
+import KanbanBoard from '../components/KanbanBoard';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
