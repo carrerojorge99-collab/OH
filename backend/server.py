@@ -88,7 +88,19 @@ class ProjectCreate(BaseModel):
     status: ProjectStatus = ProjectStatus.PLANNING
     priority: Priority = Priority.MEDIUM
     budget_total: float = 0
+    project_value: float = 0
     team_members: List[str] = []
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    status: Optional[ProjectStatus] = None
+    priority: Optional[Priority] = None
+    budget_total: Optional[float] = None
+    project_value: Optional[float] = None
+    team_members: Optional[List[str]] = None
 
 class Project(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -101,6 +113,8 @@ class Project(BaseModel):
     priority: Priority
     budget_total: float
     budget_spent: float = 0
+    project_value: float = 0
+    profit: float = 0
     cover_image: Optional[str] = None
     created_by: str
     team_members: List[str]
