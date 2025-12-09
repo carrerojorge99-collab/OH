@@ -155,7 +155,12 @@ const Layout = ({ children }) => {
             </div>
             <span className="text-lg font-bold tracking-tight text-[#0F172A]">ProyectHub</span>
           </div>
-          <div className="w-10" />
+          <NotificationCenter />
+        </div>
+
+        {/* Top bar for desktop */}
+        <div className="hidden lg:flex sticky top-0 z-30 items-center justify-end h-16 px-8 bg-white border-b border-slate-200">
+          <NotificationCenter />
         </div>
 
         {/* Page content */}
