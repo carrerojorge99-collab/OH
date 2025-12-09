@@ -347,6 +347,15 @@ const ProjectDetail = () => {
                 <FileDown className="w-4 h-4 mr-2" />
                 Excel
               </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteProject}
+                data-testid="delete-project-button"
+                className="rounded-full bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar
+              </Button>
             </div>
           </div>
         </div>
