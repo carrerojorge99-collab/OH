@@ -246,6 +246,24 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleTaskUpdate = async (taskId, updatedTask) => {
+    try {
+      await axios.put(`${API}/tasks/${taskId}`, {
+        project_id: updatedTask.project_id,
+        title: updatedTask.title,
+        description: updatedTask.description,
+        assigned_to: updatedTask.assigned_to,
+        status: updatedTask.status,
+        priority: updatedTask.priority,
+        due_date: updatedTask.due_date,
+        progress: updatedTask.progress
+      }, { withCredentials: true });
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al actualizar tarea');
+    }
+  };
+
   const handleUpdateProject = async (e) => {
     e.preventDefault();
     try {
