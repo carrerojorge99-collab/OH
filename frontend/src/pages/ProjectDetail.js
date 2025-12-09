@@ -677,7 +677,31 @@ const ProjectDetail = () => {
           {/* Tasks Tab */}
           <TabsContent value="tasks" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold tracking-tight">Tareas</h2>
+              <div className="flex items-center gap-4">
+                <h2 className="text-2xl font-semibold tracking-tight">Tareas</h2>
+                <div className="flex items-center gap-2 bg-slate-100 rounded-full p-1">
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    data-testid="view-list-button"
+                    className={`rounded-full ${viewMode === 'list' ? 'bg-white shadow-sm' : ''}`}
+                  >
+                    <List className="w-4 h-4 mr-1" />
+                    Lista
+                  </Button>
+                  <Button
+                    variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('kanban')}
+                    data-testid="view-kanban-button"
+                    className={`rounded-full ${viewMode === 'kanban' ? 'bg-white shadow-sm' : ''}`}
+                  >
+                    <LayoutGrid className="w-4 h-4 mr-1" />
+                    Kanban
+                  </Button>
+                </div>
+              </div>
               <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
                 <DialogTrigger asChild>
                   <Button data-testid="add-task-button" className="rounded-full bg-blue-600 hover:bg-blue-700">
