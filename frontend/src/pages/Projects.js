@@ -95,6 +95,7 @@ const Projects = () => {
         status: 'planning',
         priority: 'medium',
         budget_total: 0,
+        project_value: 0,
         team_members: []
       });
       loadProjects();
