@@ -102,12 +102,13 @@ const ProjectDetail = () => {
 
   const loadProjectData = async () => {
     try {
-      const [projectRes, tasksRes, categoriesRes, expensesRes, commentsRes, statsRes] = await Promise.all([
+      const [projectRes, tasksRes, categoriesRes, expensesRes, commentsRes, documentsRes, statsRes] = await Promise.all([
         axios.get(`${API}/projects/${projectId}`, { withCredentials: true }),
         axios.get(`${API}/tasks?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/budget/categories?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/expenses?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/comments?project_id=${projectId}`, { withCredentials: true }),
+        axios.get(`${API}/documents?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/projects/${projectId}/stats`, { withCredentials: true })
       ]);
       
@@ -116,6 +117,7 @@ const ProjectDetail = () => {
       setCategories(categoriesRes.data);
       setExpenses(expensesRes.data);
       setComments(commentsRes.data);
+      setDocuments(documentsRes.data);
       setStats(statsRes.data);
     } catch (error) {
       toast.error('Error al cargar datos del proyecto');
