@@ -805,8 +805,16 @@ const ProjectDetail = () => {
               </Dialog>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {tasks.length > 0 ? tasks.map((task) => (
+            {viewMode === 'kanban' ? (
+              <KanbanBoard 
+                tasks={tasks} 
+                onTaskUpdate={handleTaskUpdate}
+                onTaskDelete={handleDeleteTask}
+                users={users}
+              />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {tasks.length > 0 ? tasks.map((task) => (
                 <Card key={task.task_id} data-testid={`task-card-${task.task_id}`} className="border-slate-200 shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-3">
