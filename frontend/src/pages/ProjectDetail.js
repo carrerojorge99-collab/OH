@@ -39,8 +39,10 @@ const ProjectDetail = () => {
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [comments, setComments] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
