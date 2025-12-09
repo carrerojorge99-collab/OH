@@ -701,13 +701,19 @@ async def get_project_stats(project_id: str, request: Request, session_token: Op
     categories = await db.budget_categories.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
     expenses = await db.expenses.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
     
+    project_value = project_doc.get('project_value', 0)
+    budget_spent = project_doc.get('budget_spent', 0)
+    profit = project_value - budget_spent
+    
     return {
         "total_tasks": total_tasks,
         "completed_tasks": completed_tasks,
         "in_progress_tasks": in_progress_tasks,
         "budget_total": project_doc.get('budget_total', 0),
-        "budget_spent": project_doc.get('budget_spent', 0),
-        "budget_remaining": project_doc.get('budget_total', 0) - project_doc.get('budget_spent', 0),
+        "budget_spent": budget_spent,
+        "budget_remaining": project_doc.get('budget_total', 0) - budget_spent,
+        "project_value": project_value,
+        "profit": profit,
         "categories": categories,
         "recent_expenses": expenses[-10:] if expenses else []
     }
