@@ -74,12 +74,12 @@ const Dashboard = () => {
       testId: 'stat-completed-projects'
     },
     {
-      title: 'Presupuesto Total',
-      value: `$${(stats?.total_budget || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-      icon: DollarSign,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      testId: 'stat-total-budget',
+      title: 'Ganancia Total',
+      value: `$${(stats?.total_profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+      icon: TrendingUp,
+      color: stats?.total_profit >= 0 ? 'text-green-600' : 'text-red-600',
+      bgColor: stats?.total_profit >= 0 ? 'bg-green-50' : 'bg-red-50',
+      testId: 'stat-total-profit',
       isCurrency: true
     }
   ];
