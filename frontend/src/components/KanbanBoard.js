@@ -53,15 +53,41 @@ const KanbanBoard = ({ tasks, onTaskUpdate, onTaskDelete, users }) => {
     const activeTask = tasks.find(t => t.task_id === active.id);
     if (!activeTask) return;
 
-    // Si se suelta sobre una columna
+    // Verificar si se suelta sobre una columna
     const column = columns.find(c => c.id === over.id);
     if (column && activeTask.status !== column.status) {
-      onTaskUpdate(activeTask.task_id, { ...activeTask, status: column.status });
+      return;
+    }
+
+    // Verificar si se suelta sobre otra tarea
+    const overTask = tasks.find(t => t.task_id === over.id);
+    if (overTask && activeTask.status !== overTask.status) {
+      return;
     }
   };
 
   const handleDragEnd = (event) => {
+    const { active, over } = event;
+    
     setActiveId(null);
+    
+    if (!over) return;
+
+    const activeTask = tasks.find(t => t.task_id === active.id);
+    if (!activeTask) return;
+
+    // Verificar si se suelta sobre una columna
+    const column = columns.find(c => c.id === over.id);
+    if (column && activeTask.status !== column.status) {
+      onTaskUpdate(activeTask.task_id, { ...activeTask, status: column.status });
+      return;
+    }
+
+    // Verificar si se suelta sobre otra tarea
+    const overTask = tasks.find(t => t.task_id === over.id);
+    if (overTask && activeTask.status !== overTask.status) {
+      onTaskUpdate(activeTask.task_id, { ...activeTask, status: overTask.status });
+    }
   };
 
   const activeTask = activeId ? tasks.find(t => t.task_id === activeId) : null;
