@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Users from './pages/Users';
+import Reports from './pages/Reports';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
