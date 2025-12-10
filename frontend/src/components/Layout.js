@@ -18,7 +18,8 @@ import {
   LogOut,
   Menu,
   X,
-  Briefcase
+  Briefcase,
+  Users
 } from 'lucide-react';
 import { toast } from 'sonner';
 
