@@ -257,9 +257,22 @@ const Users = () => {
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-[#0F172A] mb-1 truncate">
-                        {user.name}
-                      </h3>
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="text-lg font-semibold text-[#0F172A] truncate flex-1">
+                          {user.name}
+                        </h3>
+                        {currentUser?.role === 'admin' && currentUser?.user_id !== user.user_id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteUser(user.user_id, user.name)}
+                            data-testid={`delete-user-${user.user_id}`}
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 ml-2 flex-shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                       <div className="flex items-center text-sm text-slate-600 mb-2">
                         <Mail className="w-3 h-3 mr-1 flex-shrink-0" />
                         <span className="truncate">{user.email}</span>
