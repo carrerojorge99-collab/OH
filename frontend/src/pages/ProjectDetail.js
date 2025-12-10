@@ -831,7 +831,7 @@ const ProjectDetail = () => {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <Badge className={
                           task.status === 'done' ? 'bg-green-100 text-green-700' :
@@ -850,16 +850,37 @@ const ProjectDetail = () => {
                           {task.priority}
                         </span>
                       </div>
+                      {task.assigned_to && (
+                        <div className="flex items-center text-xs text-slate-600">
+                          <User className="w-3 h-3 mr-1" />
+                          {users.find(u => u.user_id === task.assigned_to)?.name || 'Usuario'}
+                        </div>
+                      )}
                       {task.due_date && (
                         <div className="flex items-center text-xs text-slate-600">
                           <Calendar className="w-3 h-3 mr-1" />
                           {task.due_date}
                         </div>
                       )}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-600">Progreso</span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <Label htmlFor={`progress-${task.task_id}`} className="text-slate-600">Progreso</Label>
                           <span className="font-medium">{task.progress}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id={`progress-${task.task_id}`}
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="5"
+                            value={task.progress}
+                            onChange={(e) => {
+                              const newProgress = parseInt(e.target.value);
+                              handleTaskUpdate(task.task_id, { ...task, progress: newProgress });
+                            }}
+                            className="flex-1 h-2"
+                          />
                         </div>
                         <Progress value={task.progress} className="h-2" />
                       </div>
