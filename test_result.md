@@ -160,16 +160,16 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Settings Page Admin Access Control"
-    - "Settings Page Navigation"
-    - "Settings Page UI Elements"
-    - "SMTP Configuration Form Functionality"
-    - "Form State Management After Save"
-    - "Gmail Instructions Section"
+    - "Task Assignment SelectItem Fix - Modal Opening"
+    - "Task Assignment SelectItem Fix - Dropdown Functionality"
+    - "Task Assignment SelectItem Fix - Task Creation with Unassigned"
+    - "Task Assignment SelectItem Fix - Task Creation with Specific User"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
 
 agent_communication:
+    - agent: "main"
+      message: "Fixed SelectItem crash in ProjectDetail.js by changing empty value to 'unassigned' at line 786. Need testing agent to verify the fix works correctly with admin user credentials: carrerojorge99@gmail.com / Axel52418!"
     - agent: "testing"
-      message: "Comprehensive testing of Settings page completed successfully. All functionality working as expected including admin access control, navigation, UI elements, SMTP configuration, form state management, and Gmail instructions. No critical issues found. The page displays professionally with proper layout and all form elements are correctly aligned and functional."
+      message: "Starting comprehensive test of Task Assignment SelectItem fix. Will test modal opening, dropdown functionality, and task creation with both unassigned and specific user assignments while monitoring console for errors."
