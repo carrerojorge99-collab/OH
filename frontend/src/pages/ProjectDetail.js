@@ -1012,34 +1012,43 @@ const ProjectDetail = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {categories.map((category) => (
-                    <Card key={category.category_id} data-testid={`category-card-${category.category_id}`} className="border-slate-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-[#0F172A]">{category.name}</h3>
-                          <Tag className="w-4 h-4 text-slate-400" />
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-600">Gastado</span>
-                            <span className="font-mono font-semibold">
-                              ${category.spent_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </span>
+                  {categories.map((category) => {
+                    const disponible = category.allocated_amount - category.spent_amount;
+                    return (
+                      <Card key={category.category_id} data-testid={`category-card-${category.category_id}`} className="border-slate-200">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-semibold text-[#0F172A]">{category.name}</h3>
+                            <Tag className="w-4 h-4 text-slate-400" />
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-600">Asignado</span>
-                            <span className="font-mono font-semibold">
-                              ${category.allocated_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </span>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">Gastado</span>
+                              <span className="font-mono font-semibold text-red-600">
+                                ${category.spent_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">Asignado</span>
+                              <span className="font-mono font-semibold">
+                                ${category.allocated_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600 font-medium">Disponible</span>
+                              <span className={`font-mono font-bold ${disponible >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ${disponible.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <Progress 
+                              value={(category.spent_amount / category.allocated_amount) * 100} 
+                              className="h-2"
+                            />
                           </div>
-                          <Progress 
-                            value={(category.spent_amount / category.allocated_amount) * 100} 
-                            className="h-2"
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
 
