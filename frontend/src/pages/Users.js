@@ -109,6 +109,21 @@ const Users = () => {
       .substring(0, 2);
   };
 
+  const handleDeleteUser = async (userId, userName) => {
+    if (!window.confirm(`¿Estás seguro de eliminar al usuario "${userName}"?\n\nEsta acción:\n- Eliminará todas sus sesiones\n- Desasignará sus tareas\n- Lo removerá de todos los proyectos\n- Es irreversible`)) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/users/${userId}`, { withCredentials: true });
+      toast.success(`Usuario ${userName} eliminado exitosamente`);
+      loadUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al eliminar usuario');
+      console.error(error);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
