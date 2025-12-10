@@ -31,6 +31,7 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+    { name: 'Usuarios', href: '/users', icon: Users },
   ];
 
   const handleLogout = async () => {
