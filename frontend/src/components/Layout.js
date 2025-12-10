@@ -20,7 +20,8 @@ import {
   X,
   Briefcase,
   Users,
-  BarChart3
+  BarChart3,
+  Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
 
