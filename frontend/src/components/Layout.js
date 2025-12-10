@@ -35,6 +35,7 @@ const Layout = ({ children }) => {
     { name: 'Proyectos', href: '/projects', icon: FolderKanban },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
     { name: 'Usuarios', href: '/users', icon: Users },
+    { name: 'Configuración', href: '/settings', icon: Settings },
   ];
 
   const handleLogout = async () => {
