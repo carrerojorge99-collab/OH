@@ -1082,6 +1082,66 @@ async def delete_user(user_id: str, request: Request, session_token: Optional[st
     
     return {"message": f"Usuario {user_to_delete['name']} eliminado exitosamente"}
 
+@api_router.get("/settings")
+async def get_settings(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    # Only admins can view settings
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permisos para ver la configuración")
+    
+    return {
+        "smtp_host": os.environ.get('SMTP_HOST', 'smtp.gmail.com'),
+        "smtp_port": int(os.environ.get('SMTP_PORT', 587)),
+        "smtp_user": os.environ.get('SMTP_USER', ''),
+        "smtp_from_email": os.environ.get('SMTP_FROM_EMAIL', 'noreply@proyecthub.com'),
+        "smtp_from_name": os.environ.get('SMTP_FROM_NAME', 'ProyectHub'),
+        "email_notifications_enabled": os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
+    }
+
+@api_router.put("/settings")
+async def update_settings(settings: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    # Only admins can update settings
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permisos para actualizar la configuración")
+    
+    # Update .env file
+    env_path = Path("/app/backend/.env")
+    env_content = env_path.read_text()
+    
+    if 'smtp_user' in settings:
+        env_content = update_env_var(env_content, 'SMTP_USER', settings['smtp_user'])
+    if 'smtp_password' in settings:
+        env_content = update_env_var(env_content, 'SMTP_PASSWORD', settings['smtp_password'])
+    if 'email_notifications_enabled' in settings:
+        env_content = update_env_var(env_content, 'EMAIL_NOTIFICATIONS_ENABLED', str(settings['email_notifications_enabled']).lower())
+    
+    env_path.write_text(env_content)
+    
+    # Reload environment variables
+    from dotenv import load_dotenv
+    load_dotenv(env_path, override=True)
+    
+    return {"message": "Configuración actualizada exitosamente. Reinicia el backend para aplicar cambios."}
+
+def update_env_var(content: str, key: str, value: str) -> str:
+    """Update or add an environment variable in .env content"""
+    lines = content.split('\n')
+    updated = False
+    
+    for i, line in enumerate(lines):
+        if line.startswith(f"{key}="):
+            lines[i] = f'{key}="{value}"'
+            updated = True
+            break
+    
+    if not updated:
+        lines.append(f'{key}="{value}"')
+    
+    return '\n'.join(lines)
+
 UPLOAD_DIR = Path("/app/backend/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
