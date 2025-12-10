@@ -1002,6 +1002,12 @@ async def get_users(request: Request, session_token: Optional[str] = Cookie(None
     user = await get_current_user(request, session_token)
     
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    
+    # Convert datetime to string
+    for u in users:
+        if 'created_at' in u and not isinstance(u['created_at'], str):
+            u['created_at'] = u['created_at'].isoformat() if hasattr(u['created_at'], 'isoformat') else str(u['created_at'])
+    
     return [User(**u) for u in users]
 
 UPLOAD_DIR = Path("/app/backend/uploads")
