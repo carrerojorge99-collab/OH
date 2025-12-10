@@ -549,6 +549,22 @@ async def create_task(task_data: TaskCreate, request: Request, session_token: Op
             "related_id": task_id
         }
         await db.notifications.insert_one(notification_doc)
+        
+        # Send email notification
+        assigned_user = await db.users.find_one({"user_id": task_data.assigned_to}, {"_id": 0})
+        if assigned_user:
+            html, text = get_task_assigned_email(
+                assigned_user['name'],
+                task_data.title,
+                project_doc['name'],
+                user.name
+            )
+            await send_email(
+                assigned_user['email'],
+                f"Nueva tarea asignada: {task_data.title}",
+                html,
+                text
+            )
     
     return Task(**task_doc)
 
