@@ -42,6 +42,12 @@ function AppRouter() {
           <ProjectDetail />
         </ProtectedRoute>
       } />
+      
+      <Route path="/users" element={
+        <ProtectedRoute>
+          <Users />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
