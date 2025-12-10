@@ -899,6 +899,63 @@ const ProjectDetail = () => {
 
           {/* Budget Tab */}
           <TabsContent value="budget" className="space-y-6">
+            {/* Budget Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-1">Presupuesto Total</p>
+                      <p className="text-lg font-bold font-mono">
+                        ${(project?.budget_total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <DollarSign className="w-6 h-6 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-200 shadow-sm bg-orange-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-1">Asignado en Categorías</p>
+                      <p className="text-lg font-bold font-mono text-orange-700">
+                        ${categories.reduce((sum, cat) => sum + cat.allocated_amount, 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <Tag className="w-6 h-6 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className={`border-slate-200 shadow-sm ${
+                (project?.budget_total || 0) - categories.reduce((sum, cat) => sum + cat.allocated_amount, 0) >= 0 
+                  ? 'bg-green-50' 
+                  : 'bg-red-50'
+              }`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-1">Disponible</p>
+                      <p className={`text-lg font-bold font-mono ${
+                        (project?.budget_total || 0) - categories.reduce((sum, cat) => sum + cat.allocated_amount, 0) >= 0
+                          ? 'text-green-700'
+                          : 'text-red-700'
+                      }`}>
+                        ${((project?.budget_total || 0) - categories.reduce((sum, cat) => sum + cat.allocated_amount, 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    {(project?.budget_total || 0) - categories.reduce((sum, cat) => sum + cat.allocated_amount, 0) >= 0 ? (
+                      <TrendingUp className="w-6 h-6 text-green-600" />
+                    ) : (
+                      <TrendingDown className="w-6 h-6 text-red-600" />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Categories */}
               <div className="space-y-4">
