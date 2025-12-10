@@ -607,6 +607,22 @@ async def update_task(task_id: str, task_data: TaskCreate, request: Request, ses
                 "related_id": task_id
             }
             await db.notifications.insert_one(notification_doc)
+            
+            # Send email notification
+            owner_user = await db.users.find_one({"user_id": project_doc['created_by']}, {"_id": 0})
+            if owner_user:
+                html, text = get_task_completed_email(
+                    owner_user['name'],
+                    task_data.title,
+                    project_doc['name'],
+                    user.name
+                )
+                await send_email(
+                    owner_user['email'],
+                    f"Tarea completada: {task_data.title}",
+                    html,
+                    text
+                )
     
     # Create notification if assigned user changed
     if task_data.assigned_to and task_data.assigned_to != task_doc.get('assigned_to'):
