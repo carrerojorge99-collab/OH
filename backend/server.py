@@ -1010,6 +1010,45 @@ async def get_users(request: Request, session_token: Optional[str] = Cookie(None
     
     return [User(**u) for u in users]
 
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    current_user = await get_current_user(request, session_token)
+    
+    # Only admins can delete users
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permisos para eliminar usuarios")
+    
+    # Cannot delete yourself
+    if current_user.user_id == user_id:
+        raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
+    
+    user_to_delete = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user_to_delete:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Delete user sessions
+    await db.user_sessions.delete_many({"user_id": user_id})
+    
+    # Delete user notifications
+    await db.notifications.delete_many({"user_id": user_id})
+    
+    # Unassign user from all tasks
+    await db.tasks.update_many(
+        {"assigned_to": user_id},
+        {"$set": {"assigned_to": None}}
+    )
+    
+    # Remove user from project teams
+    await db.projects.update_many(
+        {"team_members": user_id},
+        {"$pull": {"team_members": user_id}}
+    )
+    
+    # Delete the user
+    await db.users.delete_one({"user_id": user_id})
+    
+    return {"message": f"Usuario {user_to_delete['name']} eliminado exitosamente"}
+
 UPLOAD_DIR = Path("/app/backend/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
