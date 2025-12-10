@@ -102,80 +102,56 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the Settings page (/settings) functionality in ProyectHub application for admin users"
+user_problem_statement: "Test the Task Assignment SelectItem fix in ProjectDetail page - verify that the 'Sin asignar' option works correctly without console errors"
 
 frontend:
-  - task: "Settings Page Admin Access Control"
+  - task: "Task Assignment SelectItem Fix - Modal Opening"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/Settings.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/ProjectDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ Admin access control working correctly. Page properly restricts access to admin users only and shows appropriate error message for non-admin users."
+        - working: "NA"
+          agent: "main"
+          comment: "Fixed SelectItem crash by changing empty value to 'unassigned' at line 786. Need to verify modal opens without console errors."
 
-  - task: "Settings Page Navigation"
+  - task: "Task Assignment SelectItem Fix - Dropdown Functionality"
     implemented: true
-    working: true
-    file: "/app/frontend/src/components/Layout.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/ProjectDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ Navigation to Settings page via 'Configuración' sidebar link works correctly. Page loads successfully with proper title 'Configuración del Sistema'."
+        - working: "NA"
+          agent: "main"
+          comment: "Fixed SelectItem with value='unassigned' for 'Sin asignar' option. Need to verify dropdown works correctly and shows all options."
 
-  - task: "Settings Page UI Elements"
+  - task: "Task Assignment SelectItem Fix - Task Creation with Unassigned"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/Settings.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/ProjectDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ All required UI elements present and functional: Page title, Email notifications toggle switch, SMTP user input, SMTP password input, disabled Email remitente field, disabled Nombre remitente field, Save button, and Gmail instructions card with 6 detailed steps."
+        - working: "NA"
+          agent: "main"
+          comment: "Need to verify that tasks can be created successfully with 'Sin asignar' selection without crashes."
 
-  - task: "SMTP Configuration Form Functionality"
+  - task: "Task Assignment SelectItem Fix - Task Creation with Specific User"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/Settings.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/ProjectDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ SMTP configuration form works correctly. Successfully tested filling SMTP user (testuser@gmail.com), SMTP password (test-app-password), enabling email notifications toggle, and saving configuration. Success toast notification appears after save."
-
-  - task: "Form State Management After Save"
-    implemented: true
-    working: true
-    file: "/app/frontend/src/pages/Settings.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ Form state management working correctly after save. Password field is properly cleared after saving while other fields (SMTP user, email notifications toggle) retain their values as expected."
-
-  - task: "Gmail Instructions Section"
-    implemented: true
-    working: true
-    file: "/app/frontend/src/pages/Settings.js"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ Gmail instructions section fully implemented with 'Cómo configurar Gmail' title and 6 detailed steps: 1) Go to Google Account, 2) Navigate to Security → Two-step verification, 3) Go to App passwords, 4) Select Mail and Other, 5) Generate password and copy, 6) Paste in SMTP password field."
+        - working: "NA"
+          agent: "main"
+          comment: "Need to verify that tasks can be created successfully with specific user assignment."
 
 metadata:
   created_by: "testing_agent"
