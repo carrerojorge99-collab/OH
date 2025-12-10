@@ -9,6 +9,7 @@ import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import Users from './pages/Users';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
