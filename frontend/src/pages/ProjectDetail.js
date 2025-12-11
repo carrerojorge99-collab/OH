@@ -712,6 +712,112 @@ const ProjectDetail = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Sección de información adicional */}
+                <div className="col-span-2 pt-4 border-t border-slate-200">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-4">Información Adicional de Orden de Compra</h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-client">Cliente</Label>
+                      <Input
+                        id="edit-client"
+                        placeholder="Nombre del cliente"
+                        value={editForm.client}
+                        onChange={(e) => setEditForm({ ...editForm, client: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-sponsor">Patrocinador</Label>
+                      <Input
+                        id="edit-sponsor"
+                        placeholder="Nombre del patrocinador"
+                        value={editForm.sponsor}
+                        onChange={(e) => setEditForm({ ...editForm, sponsor: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-project-number">Número de Proyecto</Label>
+                      <Input
+                        id="edit-project-number"
+                        placeholder="Ej: PROJ-2025-001"
+                        value={editForm.project_number}
+                        onChange={(e) => setEditForm({ ...editForm, project_number: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-po-number">No. de PO</Label>
+                      <Input
+                        id="edit-po-number"
+                        placeholder="Ej: PO-12345"
+                        value={editForm.po_number}
+                        onChange={(e) => setEditForm({ ...editForm, po_number: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-proposal-number">No. Propuesta</Label>
+                      <Input
+                        id="edit-proposal-number"
+                        placeholder="Ej: PROP-2025-001"
+                        value={editForm.proposal_number}
+                        onChange={(e) => setEditForm({ ...editForm, proposal_number: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-resource">Recurso</Label>
+                      <Input
+                        id="edit-resource"
+                        placeholder="Nombre del recurso asignado"
+                        value={editForm.resource}
+                        onChange={(e) => setEditForm({ ...editForm, resource: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-initials">Iniciales</Label>
+                      <Input
+                        id="edit-initials"
+                        placeholder="Ej: JD"
+                        value={editForm.initials}
+                        onChange={(e) => setEditForm({ ...editForm, initials: e.target.value })}
+                        maxLength={5}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-po-quantity">Cantidad del PO</Label>
+                      <Input
+                        id="edit-po-quantity"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={editForm.po_quantity}
+                        onChange={(e) => setEditForm({ ...editForm, po_quantity: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="edit-po-summary">Resumen de PO</Label>
+                    <Textarea
+                      id="edit-po-summary"
+                      placeholder="Descripción breve de la orden de compra..."
+                      value={editForm.po_summary}
+                      onChange={(e) => setEditForm({ ...editForm, po_summary: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
