@@ -188,6 +188,7 @@ const Projects = () => {
                     <Input
                       id="name"
                       data-testid="project-name-input"
+                      placeholder="Ej: Desarrollo Web para Cliente XYZ"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
@@ -199,6 +200,7 @@ const Projects = () => {
                     <Textarea
                       id="description"
                       data-testid="project-description-input"
+                      placeholder="Describe el alcance, objetivos y entregables del proyecto..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       required
