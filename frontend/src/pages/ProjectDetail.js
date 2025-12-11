@@ -124,7 +124,16 @@ const ProjectDetail = () => {
         priority: project.priority,
         budget_total: project.budget_total,
         project_value: project.project_value || 0,
-        payment_status: project.payment_status || 'pending'
+        payment_status: project.payment_status || 'pending',
+        po_summary: project.po_summary || '',
+        resource: project.resource || '',
+        initials: project.initials || '',
+        project_number: project.project_number || '',
+        client: project.client || '',
+        sponsor: project.sponsor || '',
+        po_number: project.po_number || '',
+        po_quantity: project.po_quantity || 0,
+        proposal_number: project.proposal_number || ''
       });
     }
   }, [project]);
