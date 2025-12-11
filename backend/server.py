@@ -145,6 +145,15 @@ class Project(BaseModel):
     project_value: float = 0
     profit: float = 0
     payment_status: PaymentStatus = PaymentStatus.PENDING
+    po_summary: Optional[str] = None
+    resource: Optional[str] = None
+    initials: Optional[str] = None
+    project_number: Optional[str] = None
+    client: Optional[str] = None
+    sponsor: Optional[str] = None
+    po_number: Optional[str] = None
+    po_quantity: Optional[float] = None
+    proposal_number: Optional[str] = None
     cover_image: Optional[str] = None
     created_by: str
     team_members: List[str]
