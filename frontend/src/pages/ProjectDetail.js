@@ -2104,11 +2104,17 @@ const ProjectDetail = () => {
                           <td className="px-4 py-3 text-right font-mono text-sm">{item.hours_per_week}</td>
                           <td className="px-4 py-3 text-right font-mono text-sm">${item.hourly_rate.toFixed(2)}</td>
                           <td className="px-4 py-3 text-right font-mono text-sm">{item.estimated_total_hours}</td>
+                          <td className="px-4 py-3 text-right font-mono text-sm font-semibold bg-blue-50 text-blue-700">
+                            {item.consumed_hours || 0}
+                          </td>
                           <td className="px-4 py-3 text-right font-mono text-sm">{item.overtime_hours}</td>
                           <td className="px-4 py-3 text-right font-mono text-sm">${item.overtime_rate.toFixed(2)}</td>
                           <td className="px-4 py-3 text-right font-mono text-sm">${item.expenses.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right font-mono text-sm font-semibold text-green-700">
+                          <td className="px-4 py-3 text-right font-mono text-sm font-semibold text-slate-700">
                             ${item.total_cost.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-sm font-bold bg-blue-50 text-green-700">
+                            ${(item.consumed_cost || 0).toFixed(2)}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center gap-1">
