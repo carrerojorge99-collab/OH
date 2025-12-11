@@ -98,6 +98,7 @@ class ProjectCreate(BaseModel):
     priority: Priority = Priority.MEDIUM
     budget_total: float = 0
     project_value: float = 0
+    payment_status: PaymentStatus = PaymentStatus.PENDING
     team_members: List[str] = []
 
 class ProjectUpdate(BaseModel):
@@ -109,6 +110,7 @@ class ProjectUpdate(BaseModel):
     priority: Optional[Priority] = None
     budget_total: Optional[float] = None
     project_value: Optional[float] = None
+    payment_status: Optional[PaymentStatus] = None
     team_members: Optional[List[str]] = None
 
 class Project(BaseModel):
@@ -124,6 +126,7 @@ class Project(BaseModel):
     budget_spent: float = 0
     project_value: float = 0
     profit: float = 0
+    payment_status: PaymentStatus = PaymentStatus.PENDING
     cover_image: Optional[str] = None
     created_by: str
     team_members: List[str]
