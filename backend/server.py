@@ -1043,6 +1043,72 @@ async def delete_labor(labor_id: str, request: Request, session_token: Optional[
     await db.labor.delete_one({"labor_id": labor_id})
     return {"message": "Registro de labor eliminado exitosamente"}
 
+@api_router.post("/timesheet", response_model=Timesheet)
+async def create_timesheet(timesheet_data: TimesheetCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    timesheet_id = f"timesheet_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    timesheet_doc = {
+        "timesheet_id": timesheet_id,
+        "project_id": timesheet_data.project_id,
+        "user_id": timesheet_data.user_id,
+        "user_name": timesheet_data.user_name,
+        "date": timesheet_data.date,
+        "hours_worked": timesheet_data.hours_worked,
+        "description": timesheet_data.description,
+        "task_id": timesheet_data.task_id,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.timesheet.insert_one(timesheet_doc)
+    return Timesheet(**timesheet_doc)
+
+@api_router.get("/timesheet", response_model=List[Timesheet])
+async def get_timesheets(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    timesheets = await db.timesheet.find({"project_id": project_id}, {"_id": 0}).sort("date", -1).to_list(1000)
+    return [Timesheet(**t) for t in timesheets]
+
+@api_router.put("/timesheet/{timesheet_id}", response_model=Timesheet)
+async def update_timesheet(timesheet_id: str, timesheet_data: TimesheetCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    timesheet = await db.timesheet.find_one({"timesheet_id": timesheet_id}, {"_id": 0})
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Registro de timesheet no encontrado")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    update_data = {
+        "user_id": timesheet_data.user_id,
+        "user_name": timesheet_data.user_name,
+        "date": timesheet_data.date,
+        "hours_worked": timesheet_data.hours_worked,
+        "description": timesheet_data.description,
+        "task_id": timesheet_data.task_id,
+        "updated_at": now
+    }
+    
+    await db.timesheet.update_one({"timesheet_id": timesheet_id}, {"$set": update_data})
+    
+    updated_timesheet = await db.timesheet.find_one({"timesheet_id": timesheet_id}, {"_id": 0})
+    return Timesheet(**updated_timesheet)
+
+@api_router.delete("/timesheet/{timesheet_id}")
+async def delete_timesheet(timesheet_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    timesheet = await db.timesheet.find_one({"timesheet_id": timesheet_id}, {"_id": 0})
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Registro de timesheet no encontrado")
+    
+    await db.timesheet.delete_one({"timesheet_id": timesheet_id})
+    return {"message": "Registro de timesheet eliminado exitosamente"}
+
 @api_router.post("/comments", response_model=Comment)
 async def create_comment(comment_data: CommentCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
