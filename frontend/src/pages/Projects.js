@@ -338,6 +338,15 @@ const Projects = () => {
                       </h3>
                       <p className="text-sm text-slate-600 line-clamp-2">{project.description}</p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 -mt-1"
+                      onClick={(e) => handleDeleteProject(e, project.project_id, project.name)}
+                      title="Eliminar proyecto"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
 
                   <div className="space-y-3 mb-4">
