@@ -974,16 +974,21 @@ async def update_labor(labor_id: str, labor_data: LaborCreate, request: Request,
     
     now = datetime.now(timezone.utc).isoformat()
     
-    # Calcular total_cost
+    # Calcular total_cost (costo estimado)
     regular_cost = labor_data.estimated_total_hours * labor_data.hourly_rate
     overtime_cost = labor_data.overtime_hours * labor_data.overtime_rate
     total_cost = regular_cost + overtime_cost + labor_data.expenses
+    
+    # Calcular consumed_cost (costo real basado en horas consumidas)
+    consumed_cost = labor_data.consumed_hours * labor_data.hourly_rate
     
     update_data = {
         "labor_category": labor_data.labor_category,
         "hours_per_week": labor_data.hours_per_week,
         "hourly_rate": labor_data.hourly_rate,
         "estimated_total_hours": labor_data.estimated_total_hours,
+        "consumed_hours": labor_data.consumed_hours,
+        "consumed_cost": consumed_cost,
         "overtime_hours": labor_data.overtime_hours,
         "overtime_rate": labor_data.overtime_rate,
         "expenses": labor_data.expenses,
