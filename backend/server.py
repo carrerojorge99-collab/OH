@@ -65,6 +65,11 @@ class UserRole(str, Enum):
     GESTOR = "gestor"
     COLABORADOR = "colaborador"
 
+class PaymentStatus(str, Enum):
+    PENDING = "pending"
+    PARTIAL = "partial"
+    PAID = "paid"
+
 class UserRegister(BaseModel):
     name: str
     email: EmailStr
