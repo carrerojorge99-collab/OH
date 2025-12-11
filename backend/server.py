@@ -464,6 +464,7 @@ async def get_project(project_id: str, request: Request, session_token: Optional
     project_doc['project_value'] = project_doc.get('project_value', 0)
     project_doc['budget_spent'] = project_doc.get('budget_spent', 0)
     project_doc['profit'] = project_doc['project_value'] - project_doc['budget_spent']
+    project_doc['payment_status'] = project_doc.get('payment_status', 'pending')
     
     return Project(**project_doc)
 
