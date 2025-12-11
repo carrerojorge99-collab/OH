@@ -1039,6 +1039,7 @@ const ProjectDetail = () => {
           <TabsList className="bg-white border border-slate-200">
             <TabsTrigger value="tasks" data-testid="tasks-tab">Tareas</TabsTrigger>
             <TabsTrigger value="budget" data-testid="budget-tab">Presupuesto</TabsTrigger>
+            <TabsTrigger value="labor" data-testid="labor-tab">Salarios</TabsTrigger>
             <TabsTrigger value="documents" data-testid="documents-tab">Documentos</TabsTrigger>
             <TabsTrigger value="comments" data-testid="comments-tab">Comentarios</TabsTrigger>
           </TabsList>
