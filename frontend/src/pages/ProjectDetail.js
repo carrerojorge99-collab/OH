@@ -98,6 +98,15 @@ const ProjectDetail = () => {
     comments: ''
   });
 
+  const [timesheetForm, setTimesheetForm] = useState({
+    user_id: '',
+    user_name: '',
+    date: new Date().toISOString().split('T')[0],
+    hours_worked: 0,
+    description: '',
+    task_id: ''
+  });
+
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
