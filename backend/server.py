@@ -672,6 +672,40 @@ async def get_budget_categories(project_id: str, request: Request, session_token
     categories = await db.budget_categories.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
     return [BudgetCategory(**c) for c in categories]
 
+@api_router.put("/budget/categories/{category_id}", response_model=BudgetCategory)
+async def update_budget_category(category_id: str, category_data: BudgetCategoryCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    category = await db.budget_categories.find_one({"category_id": category_id}, {"_id": 0})
+    if not category:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    
+    update_data = {
+        "name": category_data.name,
+        "allocated_amount": category_data.allocated_amount
+    }
+    
+    await db.budget_categories.update_one({"category_id": category_id}, {"$set": update_data})
+    
+    updated_category = await db.budget_categories.find_one({"category_id": category_id}, {"_id": 0})
+    return BudgetCategory(**updated_category)
+
+@api_router.delete("/budget/categories/{category_id}")
+async def delete_budget_category(category_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    category = await db.budget_categories.find_one({"category_id": category_id}, {"_id": 0})
+    if not category:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    
+    # Check if category has expenses
+    expenses = await db.expenses.find({"category_id": category_id}, {"_id": 0}).to_list(1)
+    if expenses:
+        raise HTTPException(status_code=400, detail="No se puede eliminar una categoría con gastos registrados")
+    
+    await db.budget_categories.delete_one({"category_id": category_id})
+    return {"message": "Categoría eliminada exitosamente"}
+
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(expense_data: ExpenseCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
