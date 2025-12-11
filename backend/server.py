@@ -417,6 +417,7 @@ async def create_project(project_data: ProjectCreate, request: Request, session_
         "budget_spent": 0,
         "project_value": project_data.project_value,
         "profit": project_data.project_value - 0,
+        "payment_status": project_data.payment_status,
         "cover_image": None,
         "created_by": user.user_id,
         "team_members": project_data.team_members,
