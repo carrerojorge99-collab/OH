@@ -154,8 +154,8 @@ const ProjectDetail = () => {
   }, [project]);
 
   const loadProjectData = async () => {
-    try {
-      const [projectRes, tasksRes, categoriesRes, expensesRes, commentsRes, documentsRes, statsRes] = await Promise.all([
+    try:
+      const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, commentsRes, documentsRes, statsRes] = await Promise.all([
         axios.get(`${API}/projects/${projectId}`, { withCredentials: true }),
         axios.get(`${API}/tasks?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/budget/categories?project_id=${projectId}`, { withCredentials: true }),
