@@ -673,6 +673,20 @@ const ProjectDetail = () => {
                     Ganancia estimada: ${((editForm.project_value || 0) - (stats?.budget_spent || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-payment-status">Estado de Pago</Label>
+                  <Select value={editForm.payment_status} onValueChange={(value) => setEditForm({ ...editForm, payment_status: value })}>
+                    <SelectTrigger data-testid="edit-project-payment-status-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendiente de Pago</SelectItem>
+                      <SelectItem value="partial">Pago Parcial</SelectItem>
+                      <SelectItem value="paid">Pagado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
