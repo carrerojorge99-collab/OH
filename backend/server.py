@@ -314,22 +314,30 @@ async def get_current_user(request: Request, session_token: Optional[str] = Cook
 
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserRegister):
-    existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email ya registrado")
+    # Si se proporciona email, verificar que no exista
+    if user_data.email:
+        existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email ya registrado")
     
-    hashed_password = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     user_id = f"user_{uuid.uuid4().hex[:12]}"
     
+    # Crear documento de usuario
     user_doc = {
         "user_id": user_id,
         "name": user_data.name,
-        "email": user_data.email,
-        "password": hashed_password,
+        "email": user_data.email or "",
         "role": user_data.role,
         "picture": None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
+    
+    # Solo hashear password si se proporciona
+    if user_data.password:
+        hashed_password = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        user_doc["password"] = hashed_password
+    else:
+        user_doc["password"] = ""
     
     await db.users.insert_one(user_doc)
     user_doc_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
