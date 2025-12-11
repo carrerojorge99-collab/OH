@@ -1297,7 +1297,7 @@ const ProjectDetail = () => {
                   {expenses.length > 0 ? expenses.map((expense) => (
                     <Card key={expense.expense_id} data-testid={`expense-card-${expense.expense_id}`} className="border-slate-200">
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
                             <h3 className="font-semibold text-[#0F172A]">{expense.description}</h3>
                             <div className="flex items-center gap-4 mt-2 text-sm">
@@ -1307,10 +1307,32 @@ const ProjectDetail = () => {
                               </Badge>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold font-mono text-[#0F172A]">
-                              ${expense.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right mr-2">
+                              <p className="text-lg font-bold font-mono text-[#0F172A]">
+                                ${expense.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleEditExpense(expense)}
+                                title="Editar gasto"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteExpense(expense.expense_id, expense.description)}
+                                title="Eliminar gasto"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
