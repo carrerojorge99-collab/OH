@@ -49,9 +49,11 @@ const ProjectDetail = () => {
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'kanban'
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
 
   const [taskForm, setTaskForm] = useState({
     title: '',
