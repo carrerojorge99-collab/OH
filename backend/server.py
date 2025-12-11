@@ -928,10 +928,13 @@ async def create_labor(labor_data: LaborCreate, request: Request, session_token:
     labor_id = f"labor_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc).isoformat()
     
-    # Calcular total_cost
+    # Calcular total_cost (costo estimado)
     regular_cost = labor_data.estimated_total_hours * labor_data.hourly_rate
     overtime_cost = labor_data.overtime_hours * labor_data.overtime_rate
     total_cost = regular_cost + overtime_cost + labor_data.expenses
+    
+    # Calcular consumed_cost (costo real basado en horas consumidas)
+    consumed_cost = labor_data.consumed_hours * labor_data.hourly_rate
     
     labor_doc = {
         "labor_id": labor_id,
@@ -940,6 +943,8 @@ async def create_labor(labor_data: LaborCreate, request: Request, session_token:
         "hours_per_week": labor_data.hours_per_week,
         "hourly_rate": labor_data.hourly_rate,
         "estimated_total_hours": labor_data.estimated_total_hours,
+        "consumed_hours": labor_data.consumed_hours,
+        "consumed_cost": consumed_cost,
         "overtime_hours": labor_data.overtime_hours,
         "overtime_rate": labor_data.overtime_rate,
         "expenses": labor_data.expenses,
