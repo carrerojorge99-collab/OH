@@ -42,6 +42,7 @@ const Projects = () => {
     priority: 'medium',
     budget_total: 0,
     project_value: 0,
+    payment_status: 'pending',
     team_members: []
   });
 
