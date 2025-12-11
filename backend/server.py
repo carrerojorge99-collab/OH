@@ -440,11 +440,12 @@ async def get_projects(request: Request, session_token: Optional[str] = Cookie(N
             {"_id": 0}
         ).to_list(1000)
     
-    # Calcular profit para cada proyecto
+    # Calcular profit para cada proyecto y asegurar payment_status
     for p in projects:
         p['project_value'] = p.get('project_value', 0)
         p['budget_spent'] = p.get('budget_spent', 0)
         p['profit'] = p['project_value'] - p['budget_spent']
+        p['payment_status'] = p.get('payment_status', 'pending')
     
     return [Project(**p) for p in projects]
 
