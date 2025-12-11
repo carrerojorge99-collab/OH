@@ -105,6 +105,24 @@ const Projects = () => {
     }
   };
 
+  const handleDeleteProject = async (e, projectId, projectName) => {
+    e.stopPropagation(); // Evitar que se abra el proyecto al hacer clic en eliminar
+    
+    if (!window.confirm(`¿Estás seguro de eliminar el proyecto "${projectName}"? Esta acción eliminará todos los datos asociados (tareas, gastos, documentos, etc.) y no se puede deshacer.`)) return;
+    
+    try {
+      await axios.delete(`${API}/projects/${projectId}`, { withCredentials: true });
+      toast.success('Proyecto eliminado exitosamente');
+      loadProjects();
+    } catch (error) {
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Error al eliminar proyecto');
+      }
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-700 border-green-200';
