@@ -177,6 +177,49 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleEditCategory = (category) => {
+    setEditingCategoryId(category.category_id);
+    setCategoryForm({
+      name: category.name,
+      allocated_amount: category.allocated_amount
+    });
+    setEditCategoryDialogOpen(true);
+  };
+
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/budget/categories/${editingCategoryId}`, {
+        project_id: projectId,
+        ...categoryForm
+      }, { withCredentials: true });
+      
+      toast.success('Categoría actualizada exitosamente');
+      setEditCategoryDialogOpen(false);
+      setCategoryForm({ name: '', allocated_amount: 0 });
+      setEditingCategoryId(null);
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al actualizar categoría');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId, categoryName) => {
+    if (!window.confirm(`¿Estás seguro de eliminar la categoría "${categoryName}"? Esta acción no se puede deshacer.`)) return;
+    
+    try {
+      await axios.delete(`${API}/budget/categories/${categoryId}`, { withCredentials: true });
+      toast.success('Categoría eliminada exitosamente');
+      loadProjectData();
+    } catch (error) {
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Error al eliminar categoría');
+      }
+    }
+  };
+
   const handleCreateExpense = async (e) => {
     e.preventDefault();
     try {
