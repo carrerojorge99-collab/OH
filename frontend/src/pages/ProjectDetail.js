@@ -86,7 +86,8 @@ const ProjectDetail = () => {
     status: 'planning',
     priority: 'medium',
     budget_total: 0,
-    project_value: 0
+    project_value: 0,
+    payment_status: 'pending'
   });
 
   useEffect(() => {
