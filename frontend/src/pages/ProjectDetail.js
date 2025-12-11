@@ -1062,9 +1062,28 @@ const ProjectDetail = () => {
                     return (
                       <Card key={category.category_id} data-testid={`category-card-${category.category_id}`} className="border-slate-200">
                         <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between mb-3">
                             <h3 className="font-semibold text-[#0F172A]">{category.name}</h3>
-                            <Tag className="w-4 h-4 text-slate-400" />
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleEditCategory(category)}
+                                title="Editar categoría"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteCategory(category.category_id, category.name)}
+                                title="Eliminar categoría"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
