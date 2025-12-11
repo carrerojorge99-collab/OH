@@ -653,10 +653,12 @@ const ProjectDetail = () => {
                     type="number"
                     step="0.01"
                     min="0"
+                    placeholder="0.00"
                     value={editForm.budget_total}
                     onChange={(e) => setEditForm({ ...editForm, budget_total: parseFloat(e.target.value) || 0 })}
                     required
                   />
+                  <p className="text-xs text-slate-500">Total de gastos estimados del proyecto</p>
                 </div>
 
                 <div className="space-y-2">
@@ -667,13 +669,16 @@ const ProjectDetail = () => {
                     type="number"
                     step="0.01"
                     min="0"
+                    placeholder="0.00"
                     value={editForm.project_value}
                     onChange={(e) => setEditForm({ ...editForm, project_value: parseFloat(e.target.value) || 0 })}
                     required
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Ganancia estimada: ${((editForm.project_value || 0) - (stats?.budget_spent || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                  </p>
+                  <p className="text-xs text-slate-500">Valor total que se cobrará al cliente</p>
+                </div>
+
+                <div className="col-span-2 text-xs text-muted-foreground bg-slate-50 p-3 rounded-md border border-slate-200">
+                  💡 Ganancia estimada: ${((editForm.project_value || 0) - (stats?.budget_spent || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
 
                 <div className="space-y-2">
