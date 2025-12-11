@@ -336,6 +336,112 @@ const Projects = () => {
                   <div className="text-xs text-muted-foreground bg-slate-50 p-3 rounded-md border border-slate-200">
                     💡 Ganancia estimada: ${((formData.project_value || 0) - (formData.budget_total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </div>
+
+                  {/* Sección de información adicional */}
+                  <div className="pt-4 border-t border-slate-200">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-4">Información Adicional de Orden de Compra</h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="client">Cliente</Label>
+                        <Input
+                          id="client"
+                          placeholder="Nombre del cliente"
+                          value={formData.client}
+                          onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="sponsor">Patrocinador</Label>
+                        <Input
+                          id="sponsor"
+                          placeholder="Nombre del patrocinador"
+                          value={formData.sponsor}
+                          onChange={(e) => setFormData({ ...formData, sponsor: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="project_number">Número de Proyecto</Label>
+                        <Input
+                          id="project_number"
+                          placeholder="Ej: PROJ-2025-001"
+                          value={formData.project_number}
+                          onChange={(e) => setFormData({ ...formData, project_number: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="po_number">No. de PO</Label>
+                        <Input
+                          id="po_number"
+                          placeholder="Ej: PO-12345"
+                          value={formData.po_number}
+                          onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="proposal_number">No. Propuesta</Label>
+                        <Input
+                          id="proposal_number"
+                          placeholder="Ej: PROP-2025-001"
+                          value={formData.proposal_number}
+                          onChange={(e) => setFormData({ ...formData, proposal_number: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="resource">Recurso</Label>
+                        <Input
+                          id="resource"
+                          placeholder="Nombre del recurso asignado"
+                          value={formData.resource}
+                          onChange={(e) => setFormData({ ...formData, resource: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="initials">Iniciales</Label>
+                        <Input
+                          id="initials"
+                          placeholder="Ej: JD"
+                          value={formData.initials}
+                          onChange={(e) => setFormData({ ...formData, initials: e.target.value })}
+                          maxLength={5}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="po_quantity">Cantidad del PO</Label>
+                        <Input
+                          id="po_quantity"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={formData.po_quantity}
+                          onChange={(e) => setFormData({ ...formData, po_quantity: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mt-4">
+                      <Label htmlFor="po_summary">Resumen de PO</Label>
+                      <Textarea
+                        id="po_summary"
+                        placeholder="Descripción breve de la orden de compra..."
+                        value={formData.po_summary}
+                        onChange={(e) => setFormData({ ...formData, po_summary: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
