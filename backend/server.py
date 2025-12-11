@@ -1366,6 +1366,46 @@ async def delete_user(user_id: str, request: Request, session_token: Optional[st
     
     return {"message": f"Usuario {user_to_delete['name']} eliminado exitosamente"}
 
+@api_router.put("/users/{user_id}", response_model=User)
+async def update_user(user_id: str, user_data: UserUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
+    current_user = await get_current_user(request, session_token)
+    
+    # Only admins can update users
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permisos para actualizar usuarios")
+    
+    user_to_update = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user_to_update:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    update_data = {}
+    
+    if user_data.name is not None:
+        update_data["name"] = user_data.name
+    
+    if user_data.email is not None:
+        # Verificar que el email no esté en uso por otro usuario
+        if user_data.email:
+            existing = await db.users.find_one({"email": user_data.email, "user_id": {"$ne": user_id}}, {"_id": 0})
+            if existing:
+                raise HTTPException(status_code=400, detail="Email ya está en uso por otro usuario")
+        update_data["email"] = user_data.email
+    
+    if user_data.password is not None:
+        if user_data.password:
+            hashed_password = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            update_data["password"] = hashed_password
+    
+    if user_data.role is not None:
+        update_data["role"] = user_data.role
+    
+    if update_data:
+        await db.users.update_one({"user_id": user_id}, {"$set": update_data})
+    
+    updated_user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user_without_password = {k: v for k, v in updated_user.items() if k != 'password'}
+    return User(**user_without_password)
+
 @api_router.get("/settings")
 async def get_settings(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
