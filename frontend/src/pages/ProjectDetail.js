@@ -2150,11 +2150,14 @@ const ProjectDetail = () => {
                     {labor.length > 0 && (
                       <tfoot className="bg-slate-50 border-t-2 border-slate-300">
                         <tr>
-                          <td colSpan="7" className="px-4 py-3 text-right font-semibold text-slate-700">
-                            Total General:
+                          <td colSpan="8" className="px-4 py-3 text-right font-semibold text-slate-700">
+                            Totales:
                           </td>
-                          <td className="px-4 py-3 text-right font-bold font-mono text-lg text-green-700">
+                          <td className="px-4 py-3 text-right font-bold font-mono text-lg text-slate-700">
                             ${labor.reduce((sum, item) => sum + item.total_cost, 0).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold font-mono text-lg bg-blue-100 text-green-700">
+                            ${labor.reduce((sum, item) => sum + (item.consumed_cost || 0), 0).toFixed(2)}
                           </td>
                           <td></td>
                         </tr>
