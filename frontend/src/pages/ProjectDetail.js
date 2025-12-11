@@ -114,7 +114,8 @@ const ProjectDetail = () => {
         status: project.status,
         priority: project.priority,
         budget_total: project.budget_total,
-        project_value: project.project_value || 0
+        project_value: project.project_value || 0,
+        payment_status: project.payment_status || 'pending'
       });
     }
   }, [project]);
