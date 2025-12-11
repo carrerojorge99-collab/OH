@@ -219,9 +219,13 @@ const Users = () => {
                           <SelectItem value="admin">Administrador</SelectItem>
                           <SelectItem value="gestor">Gestor</SelectItem>
                           <SelectItem value="colaborador">Colaborador</SelectItem>
+                          <SelectItem value="empleado">Empleado (Solo Visualización)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+                    <p className="text-xs text-slate-500">
+                      Empleado solo puede ver información, sin permisos de edición
+                    </p>
                   </div>
                 </div>
                 <DialogFooter>
