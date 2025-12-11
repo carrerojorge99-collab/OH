@@ -53,10 +53,13 @@ const ProjectDetail = () => {
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [editExpenseDialogOpen, setEditExpenseDialogOpen] = useState(false);
+  const [laborDialogOpen, setLaborDialogOpen] = useState(false);
+  const [editLaborDialogOpen, setEditLaborDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [editingLaborId, setEditingLaborId] = useState(null);
 
   const [taskForm, setTaskForm] = useState({
     title: '',
