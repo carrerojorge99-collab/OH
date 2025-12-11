@@ -356,6 +356,7 @@ const ProjectDetail = () => {
       hours_per_week: labor.hours_per_week,
       hourly_rate: labor.hourly_rate,
       estimated_total_hours: labor.estimated_total_hours,
+      consumed_hours: labor.consumed_hours || 0,
       overtime_hours: labor.overtime_hours,
       overtime_rate: labor.overtime_rate,
       expenses: labor.expenses,
