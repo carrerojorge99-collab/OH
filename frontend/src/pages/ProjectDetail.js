@@ -87,7 +87,16 @@ const ProjectDetail = () => {
     priority: 'medium',
     budget_total: 0,
     project_value: 0,
-    payment_status: 'pending'
+    payment_status: 'pending',
+    po_summary: '',
+    resource: '',
+    initials: '',
+    project_number: '',
+    client: '',
+    sponsor: '',
+    po_number: '',
+    po_quantity: 0,
+    proposal_number: ''
   });
 
   useEffect(() => {
