@@ -2026,6 +2026,7 @@ const ProjectDetail = () => {
                             hours_per_week: 0,
                             hourly_rate: 0,
                             estimated_total_hours: 0,
+                            consumed_hours: 0,
                             overtime_hours: 0,
                             overtime_rate: 0,
                             expenses: 0,
