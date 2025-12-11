@@ -2141,7 +2141,7 @@ const ProjectDetail = () => {
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan="9" className="px-4 py-8 text-center text-slate-500">
+                          <td colSpan="11" className="px-4 py-8 text-center text-slate-500">
                             No hay registros de salarios. Añade el primero haciendo clic en "Nuevo Registro".
                           </td>
                         </tr>
