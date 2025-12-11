@@ -82,6 +82,17 @@ const ProjectDetail = () => {
     date: new Date().toISOString().split('T')[0]
   });
 
+  const [laborForm, setLaborForm] = useState({
+    labor_category: '',
+    hours_per_week: 0,
+    hourly_rate: 0,
+    estimated_total_hours: 0,
+    overtime_hours: 0,
+    overtime_rate: 0,
+    expenses: 0,
+    comments: ''
+  });
+
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
