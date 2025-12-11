@@ -239,6 +239,51 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleEditExpense = (expense) => {
+    setEditingExpenseId(expense.expense_id);
+    setExpenseForm({
+      category_id: expense.category_id,
+      description: expense.description,
+      amount: expense.amount,
+      date: expense.date
+    });
+    setEditExpenseDialogOpen(true);
+  };
+
+  const handleUpdateExpense = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/expenses/${editingExpenseId}`, {
+        project_id: projectId,
+        ...expenseForm
+      }, { withCredentials: true });
+      
+      toast.success('Gasto actualizado exitosamente');
+      setEditExpenseDialogOpen(false);
+      setExpenseForm({ category_id: '', description: '', amount: 0, date: new Date().toISOString().split('T')[0] });
+      setEditingExpenseId(null);
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al actualizar gasto');
+    }
+  };
+
+  const handleDeleteExpense = async (expenseId, expenseDescription) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el gasto "${expenseDescription}"? Esta acción no se puede deshacer.`)) return;
+    
+    try {
+      await axios.delete(`${API}/expenses/${expenseId}`, { withCredentials: true });
+      toast.success('Gasto eliminado exitosamente');
+      loadProjectData();
+    } catch (error) {
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Error al eliminar gasto');
+      }
+    }
+  };
+
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
