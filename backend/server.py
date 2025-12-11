@@ -903,6 +903,88 @@ async def delete_expense(expense_id: str, request: Request, session_token: Optio
     await db.expenses.delete_one({"expense_id": expense_id})
     return {"message": "Gasto eliminado exitosamente"}
 
+@api_router.post("/labor", response_model=Labor)
+async def create_labor(labor_data: LaborCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    labor_id = f"labor_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Calcular total_cost
+    regular_cost = labor_data.estimated_total_hours * labor_data.hourly_rate
+    overtime_cost = labor_data.overtime_hours * labor_data.overtime_rate
+    total_cost = regular_cost + overtime_cost + labor_data.expenses
+    
+    labor_doc = {
+        "labor_id": labor_id,
+        "project_id": labor_data.project_id,
+        "labor_category": labor_data.labor_category,
+        "hours_per_week": labor_data.hours_per_week,
+        "hourly_rate": labor_data.hourly_rate,
+        "estimated_total_hours": labor_data.estimated_total_hours,
+        "overtime_hours": labor_data.overtime_hours,
+        "overtime_rate": labor_data.overtime_rate,
+        "expenses": labor_data.expenses,
+        "total_cost": total_cost,
+        "comments": labor_data.comments,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.labor.insert_one(labor_doc)
+    return Labor(**labor_doc)
+
+@api_router.get("/labor", response_model=List[Labor])
+async def get_labor(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    labor_records = await db.labor.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    return [Labor(**l) for l in labor_records]
+
+@api_router.put("/labor/{labor_id}", response_model=Labor)
+async def update_labor(labor_id: str, labor_data: LaborCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    labor = await db.labor.find_one({"labor_id": labor_id}, {"_id": 0})
+    if not labor:
+        raise HTTPException(status_code=404, detail="Registro de labor no encontrado")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Calcular total_cost
+    regular_cost = labor_data.estimated_total_hours * labor_data.hourly_rate
+    overtime_cost = labor_data.overtime_hours * labor_data.overtime_rate
+    total_cost = regular_cost + overtime_cost + labor_data.expenses
+    
+    update_data = {
+        "labor_category": labor_data.labor_category,
+        "hours_per_week": labor_data.hours_per_week,
+        "hourly_rate": labor_data.hourly_rate,
+        "estimated_total_hours": labor_data.estimated_total_hours,
+        "overtime_hours": labor_data.overtime_hours,
+        "overtime_rate": labor_data.overtime_rate,
+        "expenses": labor_data.expenses,
+        "total_cost": total_cost,
+        "comments": labor_data.comments,
+        "updated_at": now
+    }
+    
+    await db.labor.update_one({"labor_id": labor_id}, {"$set": update_data})
+    
+    updated_labor = await db.labor.find_one({"labor_id": labor_id}, {"_id": 0})
+    return Labor(**updated_labor)
+
+@api_router.delete("/labor/{labor_id}")
+async def delete_labor(labor_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    labor = await db.labor.find_one({"labor_id": labor_id}, {"_id": 0})
+    if not labor:
+        raise HTTPException(status_code=404, detail="Registro de labor no encontrado")
+    
+    await db.labor.delete_one({"labor_id": labor_id})
+    return {"message": "Registro de labor eliminado exitosamente"}
+
 @api_router.post("/comments", response_model=Comment)
 async def create_comment(comment_data: CommentCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
