@@ -566,6 +566,7 @@ const ProjectDetail = () => {
                   <Input
                     id="edit-name"
                     data-testid="edit-project-name-input"
+                    placeholder="Ej: Desarrollo Web para Cliente XYZ"
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                     required
@@ -577,6 +578,7 @@ const ProjectDetail = () => {
                   <Textarea
                     id="edit-description"
                     data-testid="edit-project-description-input"
+                    placeholder="Describe el alcance, objetivos y entregables del proyecto..."
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     required
