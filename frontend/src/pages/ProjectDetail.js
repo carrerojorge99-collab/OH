@@ -2082,11 +2082,13 @@ const ProjectDetail = () => {
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Categoría</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Hrs/Semana</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Tarifa/Hr</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Total Hrs</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Hrs Estimadas</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase bg-blue-50">Hrs Consumidas</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Hrs Extra</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Tarifa Extra</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Gastos</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Costo Total</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Costo Estimado</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase bg-blue-50">Salario Consumido</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Acciones</th>
                       </tr>
                     </thead>
