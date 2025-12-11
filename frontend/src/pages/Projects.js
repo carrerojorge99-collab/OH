@@ -383,9 +383,21 @@ const Projects = () => {
                   </div>
                   
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                    <Badge className={`${getStatusColor(project.status)} border`}>
-                      {project.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${getStatusColor(project.status)} border`}>
+                        {project.status}
+                      </Badge>
+                      <Badge className={`border ${
+                        project.payment_status === 'paid' ? 'bg-green-100 text-green-700 border-green-300' :
+                        project.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                        'bg-red-100 text-red-700 border-red-300'
+                      }`}>
+                        {project.payment_status === 'paid' && '✓ Pagado'}
+                        {project.payment_status === 'partial' && '◐ Parcial'}
+                        {project.payment_status === 'pending' && '⊗ Pendiente'}
+                        {!project.payment_status && '⊗ Pendiente'}
+                      </Badge>
+                    </div>
                     <span className={`text-xs font-medium uppercase ${getPriorityColor(project.priority)}`}>
                       {project.priority}
                     </span>
