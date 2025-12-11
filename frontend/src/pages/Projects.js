@@ -482,16 +482,16 @@ const Projects = () => {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xl font-semibold tracking-tight text-[#0F172A] line-clamp-1">
-                          {project.name}
-                        </h3>
-                        {project.project_number && (
-                          <span className="text-xs font-mono bg-blue-100 text-blue-700 px-2 py-1 rounded border border-blue-200">
-                            {project.project_number}
+                      {project.project_number && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center text-xs font-semibold font-mono bg-slate-100 text-slate-700 px-3 py-1 rounded-md border border-slate-300">
+                            📋 {project.project_number}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
+                      <h3 className="text-xl font-semibold tracking-tight text-[#0F172A] mb-1 line-clamp-1">
+                        {project.name}
+                      </h3>
                       <p className="text-sm text-slate-600 line-clamp-2">{project.description}</p>
                     </div>
                     <Button
