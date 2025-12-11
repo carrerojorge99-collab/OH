@@ -1291,6 +1291,81 @@ const ProjectDetail = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
+
+                  {/* Edit Expense Dialog */}
+                  <Dialog open={editExpenseDialogOpen} onOpenChange={setEditExpenseDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Editar Gasto</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleUpdateExpense}>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label>Categoría *</Label>
+                            <Select value={expenseForm.category_id} onValueChange={(value) => setExpenseForm({ ...expenseForm, category_id: value })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona categoría" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categories.map((cat) => (
+                                  <SelectItem key={cat.category_id} value={cat.category_id}>
+                                    {cat.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-expense-description">Descripción *</Label>
+                            <Input
+                              id="edit-expense-description"
+                              value={expenseForm.description}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-expense-amount">Monto *</Label>
+                            <Input
+                              id="edit-expense-amount"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={expenseForm.amount}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, amount: parseFloat(e.target.value) || 0 })}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-expense-date">Fecha *</Label>
+                            <Input
+                              id="edit-expense-date"
+                              type="date"
+                              value={expenseForm.date}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, date: e.target.value })}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setEditExpenseDialogOpen(false);
+                              setExpenseForm({ category_id: '', description: '', amount: 0, date: new Date().toISOString().split('T')[0] });
+                              setEditingExpenseId(null);
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                            Actualizar
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
