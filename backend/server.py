@@ -962,6 +962,14 @@ async def get_labor(project_id: str, request: Request, session_token: Optional[s
     user = await get_current_user(request, session_token)
     
     labor_records = await db.labor.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    
+    # Asegurar que los registros antiguos tengan los nuevos campos
+    for record in labor_records:
+        if 'consumed_hours' not in record:
+            record['consumed_hours'] = 0
+        if 'consumed_cost' not in record:
+            record['consumed_cost'] = 0
+    
     return [Labor(**l) for l in labor_records]
 
 @api_router.put("/labor/{labor_id}", response_model=Labor)
