@@ -96,6 +96,8 @@ const Users = () => {
         return 'Gestor';
       case 'colaborador':
         return 'Colaborador';
+      case 'empleado':
+        return 'Empleado';
       default:
         return role;
     }
