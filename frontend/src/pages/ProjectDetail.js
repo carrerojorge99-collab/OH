@@ -1054,6 +1054,56 @@ const ProjectDetail = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
+
+                  {/* Edit Category Dialog */}
+                  <Dialog open={editCategoryDialogOpen} onOpenChange={setEditCategoryDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Editar Categoría de Presupuesto</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleUpdateCategory}>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-category-name">Nombre *</Label>
+                            <Input
+                              id="edit-category-name"
+                              value={categoryForm.name}
+                              onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-category-amount">Monto Asignado *</Label>
+                            <Input
+                              id="edit-category-amount"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={categoryForm.allocated_amount}
+                              onChange={(e) => setCategoryForm({ ...categoryForm, allocated_amount: parseFloat(e.target.value) || 0 })}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setEditCategoryDialogOpen(false);
+                              setCategoryForm({ name: '', allocated_amount: 0 });
+                              setEditingCategoryId(null);
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                            Actualizar
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div className="space-y-3">
