@@ -2263,6 +2263,301 @@ const ProjectDetail = () => {
             </Card>
           </TabsContent>
 
+          {/* Timesheet Tab */}
+          <TabsContent value="timesheet" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold tracking-tight">Timesheet - Registro de Horas</h2>
+              <Dialog open={timesheetDialogOpen} onOpenChange={setTimesheetDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nuevo Registro
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Registrar Horas de Trabajo</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateTimesheet}>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="timesheet_user">Persona *</Label>
+                        <Select 
+                          value={timesheetForm.user_id} 
+                          onValueChange={(value) => {
+                            const selectedUser = users.find(u => u.user_id === value);
+                            setTimesheetForm({ 
+                              ...timesheetForm, 
+                              user_id: value,
+                              user_name: selectedUser?.name || ''
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una persona" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users.map((user) => (
+                              <SelectItem key={user.user_id} value={user.user_id}>
+                                {user.name} ({user.role})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="timesheet_date">Fecha *</Label>
+                          <Input
+                            id="timesheet_date"
+                            type="date"
+                            value={timesheetForm.date}
+                            onChange={(e) => setTimesheetForm({ ...timesheetForm, date: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="timesheet_hours">Horas Trabajadas *</Label>
+                          <Input
+                            id="timesheet_hours"
+                            type="number"
+                            step="0.25"
+                            min="0"
+                            max="24"
+                            placeholder="8"
+                            value={timesheetForm.hours_worked}
+                            onChange={(e) => setTimesheetForm({ ...timesheetForm, hours_worked: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="timesheet_task">Tarea (Opcional)</Label>
+                        <Select value={timesheetForm.task_id} onValueChange={(value) => setTimesheetForm({ ...timesheetForm, task_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una tarea" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Sin tarea específica</SelectItem>
+                            {tasks.map((task) => (
+                              <SelectItem key={task.task_id} value={task.task_id}>
+                                {task.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="timesheet_description">Descripción del Trabajo *</Label>
+                        <Textarea
+                          id="timesheet_description"
+                          placeholder="Describe qué se trabajó en este periodo..."
+                          value={timesheetForm.description}
+                          onChange={(e) => setTimesheetForm({ ...timesheetForm, description: e.target.value })}
+                          required
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setTimesheetDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                        Guardar
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={editTimesheetDialogOpen} onOpenChange={setEditTimesheetDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Editar Registro de Tiempo</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleUpdateTimesheet}>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_timesheet_user">Persona *</Label>
+                        <Select 
+                          value={timesheetForm.user_id} 
+                          onValueChange={(value) => {
+                            const selectedUser = users.find(u => u.user_id === value);
+                            setTimesheetForm({ 
+                              ...timesheetForm, 
+                              user_id: value,
+                              user_name: selectedUser?.name || ''
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una persona" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users.map((user) => (
+                              <SelectItem key={user.user_id} value={user.user_id}>
+                                {user.name} ({user.role})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_timesheet_date">Fecha *</Label>
+                          <Input
+                            id="edit_timesheet_date"
+                            type="date"
+                            value={timesheetForm.date}
+                            onChange={(e) => setTimesheetForm({ ...timesheetForm, date: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_timesheet_hours">Horas Trabajadas *</Label>
+                          <Input
+                            id="edit_timesheet_hours"
+                            type="number"
+                            step="0.25"
+                            min="0"
+                            max="24"
+                            value={timesheetForm.hours_worked}
+                            onChange={(e) => setTimesheetForm({ ...timesheetForm, hours_worked: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_timesheet_task">Tarea (Opcional)</Label>
+                        <Select value={timesheetForm.task_id} onValueChange={(value) => setTimesheetForm({ ...timesheetForm, task_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona una tarea" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Sin tarea específica</SelectItem>
+                            {tasks.map((task) => (
+                              <SelectItem key={task.task_id} value={task.task_id}>
+                                {task.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_timesheet_description">Descripción del Trabajo *</Label>
+                        <Textarea
+                          id="edit_timesheet_description"
+                          placeholder="Describe qué se trabajó en este periodo..."
+                          value={timesheetForm.description}
+                          onChange={(e) => setTimesheetForm({ ...timesheetForm, description: e.target.value })}
+                          required
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditTimesheetDialogOpen(false);
+                          setTimesheetForm({
+                            user_id: '',
+                            user_name: '',
+                            date: new Date().toISOString().split('T')[0],
+                            hours_worked: 0,
+                            description: '',
+                            task_id: ''
+                          });
+                          setEditingTimesheetId(null);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                        Actualizar
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Fecha</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Persona</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Horas</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Tarea</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Descripción</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {timesheet.length > 0 ? timesheet.map((entry) => (
+                        <tr key={entry.timesheet_id} className="hover:bg-slate-50">
+                          <td className="px-4 py-3 font-medium text-slate-900">{entry.date}</td>
+                          <td className="px-4 py-3 text-slate-700">{entry.user_name}</td>
+                          <td className="px-4 py-3 text-right font-mono font-semibold text-blue-700">{entry.hours_worked}h</td>
+                          <td className="px-4 py-3 text-slate-600 text-sm">
+                            {entry.task_id ? tasks.find(t => t.task_id === entry.task_id)?.title || 'N/A' : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 text-sm">{entry.description}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleEditTimesheet(entry)}
+                                title="Editar"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteTimesheet(entry.timesheet_id, entry.date)}
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                            No hay registros de tiempo. Añade el primero haciendo clic en "Nuevo Registro".
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    {timesheet.length > 0 && (
+                      <tfoot className="bg-slate-50 border-t-2 border-slate-300">
+                        <tr>
+                          <td colSpan="2" className="px-4 py-3 text-right font-semibold text-slate-700">
+                            Total Horas:
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold font-mono text-lg text-blue-700">
+                            {timesheet.reduce((sum, entry) => sum + entry.hours_worked, 0).toFixed(2)}h
+                          </td>
+                          <td colSpan="3"></td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
