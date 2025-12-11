@@ -73,9 +73,9 @@ class PaymentStatus(str, Enum):
 
 class UserRegister(BaseModel):
     name: str
-    email: EmailStr
-    password: str
-    role: UserRole = UserRole.COLABORADOR
+    email: Optional[str] = None
+    password: Optional[str] = None
+    role: UserRole = UserRole.EMPLEADO
 
 class UserLogin(BaseModel):
     email: EmailStr
