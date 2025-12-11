@@ -424,6 +424,84 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleCreateTimesheet = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/timesheet`, {
+        project_id: projectId,
+        ...timesheetForm
+      }, { withCredentials: true });
+      
+      toast.success('Registro de tiempo creado exitosamente');
+      setTimesheetDialogOpen(false);
+      setTimesheetForm({
+        user_id: '',
+        user_name: '',
+        date: new Date().toISOString().split('T')[0],
+        hours_worked: 0,
+        description: '',
+        task_id: ''
+      });
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al crear registro de tiempo');
+    }
+  };
+
+  const handleEditTimesheet = (timesheet) => {
+    setEditingTimesheetId(timesheet.timesheet_id);
+    setTimesheetForm({
+      user_id: timesheet.user_id,
+      user_name: timesheet.user_name,
+      date: timesheet.date,
+      hours_worked: timesheet.hours_worked,
+      description: timesheet.description,
+      task_id: timesheet.task_id || ''
+    });
+    setEditTimesheetDialogOpen(true);
+  };
+
+  const handleUpdateTimesheet = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/timesheet/${editingTimesheetId}`, {
+        project_id: projectId,
+        ...timesheetForm
+      }, { withCredentials: true });
+      
+      toast.success('Registro de tiempo actualizado exitosamente');
+      setEditTimesheetDialogOpen(false);
+      setTimesheetForm({
+        user_id: '',
+        user_name: '',
+        date: new Date().toISOString().split('T')[0],
+        hours_worked: 0,
+        description: '',
+        task_id: ''
+      });
+      setEditingTimesheetId(null);
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al actualizar registro de tiempo');
+    }
+  };
+
+  const handleDeleteTimesheet = async (timesheetId, date) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el registro del ${date}? Esta acción no se puede deshacer.`)) return;
+    
+    try {
+      await axios.delete(`${API}/timesheet/${timesheetId}`, { withCredentials: true });
+      toast.success('Registro de tiempo eliminado exitosamente');
+      loadProjectData();
+    } catch (error) {
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Error al eliminar registro de tiempo');
+      }
+    }
+  };
+
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
