@@ -1750,14 +1750,37 @@ const ProjectDetail = () => {
                     <div className="space-y-4 py-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="labor_category">Categoría de Labor *</Label>
-                          <Input
-                            id="labor_category"
-                            placeholder="Ej: Developer Senior"
-                            value={laborForm.labor_category}
-                            onChange={(e) => setLaborForm({ ...laborForm, labor_category: e.target.value })}
-                            required
-                          />
+                          <Label htmlFor="labor_category">Persona / Categoría *</Label>
+                          <Select 
+                            value={laborForm.labor_category} 
+                            onValueChange={(value) => {
+                              if (value === 'custom') {
+                                setLaborForm({ ...laborForm, labor_category: '' });
+                              } else {
+                                setLaborForm({ ...laborForm, labor_category: value });
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona una persona o añade personalizado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="custom">✏️ Escribir categoría personalizada</SelectItem>
+                              {users.map((user) => (
+                                <SelectItem key={user.user_id} value={user.name}>
+                                  {user.name} ({user.role})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {(!laborForm.labor_category || laborForm.labor_category === '') && (
+                            <Input
+                              placeholder="Ej: Consultor Externo, Developer Senior..."
+                              value={laborForm.labor_category}
+                              onChange={(e) => setLaborForm({ ...laborForm, labor_category: e.target.value })}
+                              required
+                            />
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="hours_per_week">Horas por Semana *</Label>
