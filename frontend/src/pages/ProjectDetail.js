@@ -41,6 +41,7 @@ const ProjectDetail = () => {
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [labor, setLabor] = useState([]);
+  const [timesheet, setTimesheet] = useState([]);
   const [comments, setComments] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
