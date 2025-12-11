@@ -232,7 +232,7 @@ const Projects = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="status">Estado</Label>
                       <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
@@ -263,51 +263,54 @@ const Projects = () => {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="payment_status">Estado de Pago</Label>
+                      <Select value={formData.payment_status} onValueChange={(value) => setFormData({ ...formData, payment_status: value })}>
+                        <SelectTrigger data-testid="project-payment-status-select">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pendiente de Pago</SelectItem>
+                          <SelectItem value="partial">Pago Parcial</SelectItem>
+                          <SelectItem value="paid">Pagado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="budget_total">Presupuesto (Costos) *</Label>
-                    <Input
-                      id="budget_total"
-                      data-testid="project-budget-input"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.budget_total}
-                      onChange={(e) => setFormData({ ...formData, budget_total: parseFloat(e.target.value) || 0 })}
-                      required
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="budget_total">Presupuesto (Costos) *</Label>
+                      <Input
+                        id="budget_total"
+                        data-testid="project-budget-input"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.budget_total}
+                        onChange={(e) => setFormData({ ...formData, budget_total: parseFloat(e.target.value) || 0 })}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="project_value">Valor del Proyecto (Ingreso) *</Label>
+                      <Input
+                        id="project_value"
+                        data-testid="project-value-input"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.project_value}
+                        onChange={(e) => setFormData({ ...formData, project_value: parseFloat(e.target.value) || 0 })}
+                        required
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="project_value">Valor del Proyecto (Ingreso) *</Label>
-                    <Input
-                      id="project_value"
-                      data-testid="project-value-input"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.project_value}
-                      onChange={(e) => setFormData({ ...formData, project_value: parseFloat(e.target.value) || 0 })}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Ganancia estimada: ${((formData.project_value || 0) - (formData.budget_total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="payment_status">Estado de Pago</Label>
-                    <Select value={formData.payment_status} onValueChange={(value) => setFormData({ ...formData, payment_status: value })}>
-                      <SelectTrigger data-testid="project-payment-status-select">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pendiente de Pago</SelectItem>
-                        <SelectItem value="partial">Pago Parcial</SelectItem>
-                        <SelectItem value="paid">Pagado</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="text-xs text-muted-foreground bg-slate-50 p-3 rounded-md border border-slate-200">
+                    💡 Ganancia estimada: ${((formData.project_value || 0) - (formData.budget_total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
                 <DialogFooter>
