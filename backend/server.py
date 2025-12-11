@@ -287,6 +287,28 @@ class Labor(BaseModel):
     created_at: str
     updated_at: str
 
+class TimesheetCreate(BaseModel):
+    project_id: str
+    user_id: str
+    user_name: str
+    date: str
+    hours_worked: float
+    description: str
+    task_id: Optional[str] = None
+
+class Timesheet(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    timesheet_id: str
+    project_id: str
+    user_id: str
+    user_name: str
+    date: str
+    hours_worked: float
+    description: str
+    task_id: Optional[str]
+    created_at: str
+    updated_at: str
+
 async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)) -> User:
     token = session_token
     if not token:
