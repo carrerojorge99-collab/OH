@@ -1731,6 +1731,357 @@ const ProjectDetail = () => {
             )}
           </TabsContent>
 
+          {/* Labor/Salarios Tab */}
+          <TabsContent value="labor" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold tracking-tight">Salarios del Proyecto</h2>
+              <Dialog open={laborDialogOpen} onOpenChange={setLaborDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nuevo Registro
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Crear Registro de Salario</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateLabor}>
+                    <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="labor_category">Categoría de Labor *</Label>
+                          <Input
+                            id="labor_category"
+                            placeholder="Ej: Developer Senior"
+                            value={laborForm.labor_category}
+                            onChange={(e) => setLaborForm({ ...laborForm, labor_category: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="hours_per_week">Horas por Semana *</Label>
+                          <Input
+                            id="hours_per_week"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="40"
+                            value={laborForm.hours_per_week}
+                            onChange={(e) => setLaborForm({ ...laborForm, hours_per_week: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="hourly_rate">Tarifa por Hora *</Label>
+                          <Input
+                            id="hourly_rate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="25.00"
+                            value={laborForm.hourly_rate}
+                            onChange={(e) => setLaborForm({ ...laborForm, hourly_rate: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="estimated_total_hours">Total de Horas Estimadas *</Label>
+                          <Input
+                            id="estimated_total_hours"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="160"
+                            value={laborForm.estimated_total_hours}
+                            onChange={(e) => setLaborForm({ ...laborForm, estimated_total_hours: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="overtime_hours">Horas Extras</Label>
+                          <Input
+                            id="overtime_hours"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0"
+                            value={laborForm.overtime_hours}
+                            onChange={(e) => setLaborForm({ ...laborForm, overtime_hours: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="overtime_rate">Tarifa Horas Extras</Label>
+                          <Input
+                            id="overtime_rate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="37.50"
+                            value={laborForm.overtime_rate}
+                            onChange={(e) => setLaborForm({ ...laborForm, overtime_rate: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="expenses">Gastos Adicionales</Label>
+                        <Input
+                          id="expenses"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={laborForm.expenses}
+                          onChange={(e) => setLaborForm({ ...laborForm, expenses: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="comments">Comentarios</Label>
+                        <Textarea
+                          id="comments"
+                          placeholder="Notas adicionales..."
+                          value={laborForm.comments}
+                          onChange={(e) => setLaborForm({ ...laborForm, comments: e.target.value })}
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setLaborDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                        Crear
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              {/* Edit Labor Dialog */}
+              <Dialog open={editLaborDialogOpen} onOpenChange={setEditLaborDialogOpen}>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Editar Registro de Salario</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleUpdateLabor}>
+                    <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_labor_category">Categoría de Labor *</Label>
+                          <Input
+                            id="edit_labor_category"
+                            placeholder="Ej: Developer Senior"
+                            value={laborForm.labor_category}
+                            onChange={(e) => setLaborForm({ ...laborForm, labor_category: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_hours_per_week">Horas por Semana *</Label>
+                          <Input
+                            id="edit_hours_per_week"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={laborForm.hours_per_week}
+                            onChange={(e) => setLaborForm({ ...laborForm, hours_per_week: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_hourly_rate">Tarifa por Hora *</Label>
+                          <Input
+                            id="edit_hourly_rate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={laborForm.hourly_rate}
+                            onChange={(e) => setLaborForm({ ...laborForm, hourly_rate: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_estimated_total_hours">Total de Horas Estimadas *</Label>
+                          <Input
+                            id="edit_estimated_total_hours"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={laborForm.estimated_total_hours}
+                            onChange={(e) => setLaborForm({ ...laborForm, estimated_total_hours: parseFloat(e.target.value) || 0 })}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_overtime_hours">Horas Extras</Label>
+                          <Input
+                            id="edit_overtime_hours"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={laborForm.overtime_hours}
+                            onChange={(e) => setLaborForm({ ...laborForm, overtime_hours: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_overtime_rate">Tarifa Horas Extras</Label>
+                          <Input
+                            id="edit_overtime_rate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={laborForm.overtime_rate}
+                            onChange={(e) => setLaborForm({ ...laborForm, overtime_rate: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_expenses">Gastos Adicionales</Label>
+                        <Input
+                          id="edit_expenses"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={laborForm.expenses}
+                          onChange={(e) => setLaborForm({ ...laborForm, expenses: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_comments">Comentarios</Label>
+                        <Textarea
+                          id="edit_comments"
+                          placeholder="Notas adicionales..."
+                          value={laborForm.comments}
+                          onChange={(e) => setLaborForm({ ...laborForm, comments: e.target.value })}
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditLaborDialogOpen(false);
+                          setLaborForm({
+                            labor_category: '',
+                            hours_per_week: 0,
+                            hourly_rate: 0,
+                            estimated_total_hours: 0,
+                            overtime_hours: 0,
+                            overtime_rate: 0,
+                            expenses: 0,
+                            comments: ''
+                          });
+                          setEditingLaborId(null);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                        Actualizar
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Labor Table */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Categoría</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Hrs/Semana</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Tarifa/Hr</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Total Hrs</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Hrs Extra</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Tarifa Extra</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Gastos</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Costo Total</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {labor.length > 0 ? labor.map((item) => (
+                        <tr key={item.labor_id} className="hover:bg-slate-50">
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-slate-900">{item.labor_category}</div>
+                            {item.comments && (
+                              <div className="text-xs text-slate-500 mt-1">{item.comments}</div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-sm">{item.hours_per_week}</td>
+                          <td className="px-4 py-3 text-right font-mono text-sm">${item.hourly_rate.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono text-sm">{item.estimated_total_hours}</td>
+                          <td className="px-4 py-3 text-right font-mono text-sm">{item.overtime_hours}</td>
+                          <td className="px-4 py-3 text-right font-mono text-sm">${item.overtime_rate.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono text-sm">${item.expenses.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono text-sm font-semibold text-green-700">
+                            ${item.total_cost.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => handleEditLabor(item)}
+                                title="Editar"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteLabor(item.labor_id, item.labor_category)}
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan="9" className="px-4 py-8 text-center text-slate-500">
+                            No hay registros de salarios. Añade el primero haciendo clic en "Nuevo Registro".
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    {labor.length > 0 && (
+                      <tfoot className="bg-slate-50 border-t-2 border-slate-300">
+                        <tr>
+                          <td colSpan="7" className="px-4 py-3 text-right font-semibold text-slate-700">
+                            Total General:
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold font-mono text-lg text-green-700">
+                            ${labor.reduce((sum, item) => sum + item.total_cost, 0).toFixed(2)}
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
