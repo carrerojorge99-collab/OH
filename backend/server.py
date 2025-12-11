@@ -64,6 +64,7 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     GESTOR = "gestor"
     COLABORADOR = "colaborador"
+    EMPLEADO = "empleado"
 
 class PaymentStatus(str, Enum):
     PENDING = "pending"
