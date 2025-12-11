@@ -178,7 +178,7 @@ const Users = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="email">Correo Electrónico *</Label>
+                    <Label htmlFor="email">Correo Electrónico (Opcional)</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -187,24 +187,23 @@ const Users = () => {
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
                         className="pl-10"
-                        placeholder="usuario@ejemplo.com"
+                        placeholder="usuario@ejemplo.com (se puede asignar después)"
                       />
                     </div>
+                    <p className="text-xs text-slate-500">Puedes crear el empleado sin credenciales y asignarlas después</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">Contraseña *</Label>
+                    <Label htmlFor="password">Contraseña (Opcional)</Label>
                     <Input
                       id="password"
                       data-testid="user-password-input"
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      required
                       minLength={6}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 6 caracteres (se puede asignar después)"
                     />
                   </div>
 
