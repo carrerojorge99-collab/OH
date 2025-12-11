@@ -321,6 +321,90 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleCreateLabor = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/labor`, {
+        project_id: projectId,
+        ...laborForm
+      }, { withCredentials: true });
+      
+      toast.success('Registro de labor creado exitosamente');
+      setLaborDialogOpen(false);
+      setLaborForm({
+        labor_category: '',
+        hours_per_week: 0,
+        hourly_rate: 0,
+        estimated_total_hours: 0,
+        overtime_hours: 0,
+        overtime_rate: 0,
+        expenses: 0,
+        comments: ''
+      });
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al crear registro de labor');
+    }
+  };
+
+  const handleEditLabor = (labor) => {
+    setEditingLaborId(labor.labor_id);
+    setLaborForm({
+      labor_category: labor.labor_category,
+      hours_per_week: labor.hours_per_week,
+      hourly_rate: labor.hourly_rate,
+      estimated_total_hours: labor.estimated_total_hours,
+      overtime_hours: labor.overtime_hours,
+      overtime_rate: labor.overtime_rate,
+      expenses: labor.expenses,
+      comments: labor.comments || ''
+    });
+    setEditLaborDialogOpen(true);
+  };
+
+  const handleUpdateLabor = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/labor/${editingLaborId}`, {
+        project_id: projectId,
+        ...laborForm
+      }, { withCredentials: true });
+      
+      toast.success('Registro de labor actualizado exitosamente');
+      setEditLaborDialogOpen(false);
+      setLaborForm({
+        labor_category: '',
+        hours_per_week: 0,
+        hourly_rate: 0,
+        estimated_total_hours: 0,
+        overtime_hours: 0,
+        overtime_rate: 0,
+        expenses: 0,
+        comments: ''
+      });
+      setEditingLaborId(null);
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al actualizar registro de labor');
+    }
+  };
+
+  const handleDeleteLabor = async (laborId, laborCategory) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el registro de "${laborCategory}"? Esta acción no se puede deshacer.`)) return;
+    
+    try {
+      await axios.delete(`${API}/labor/${laborId}`, { withCredentials: true });
+      toast.success('Registro de labor eliminado exitosamente');
+      loadProjectData();
+    } catch (error) {
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Error al eliminar registro de labor');
+      }
+    }
+  };
+
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
