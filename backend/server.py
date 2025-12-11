@@ -263,6 +263,7 @@ class LaborCreate(BaseModel):
     hours_per_week: float
     hourly_rate: float
     estimated_total_hours: float
+    consumed_hours: float = 0
     overtime_hours: float = 0
     overtime_rate: float = 0
     expenses: float = 0
@@ -276,6 +277,8 @@ class Labor(BaseModel):
     hours_per_week: float
     hourly_rate: float
     estimated_total_hours: float
+    consumed_hours: float
+    consumed_cost: float
     overtime_hours: float
     overtime_rate: float
     expenses: float
