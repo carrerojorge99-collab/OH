@@ -250,6 +250,33 @@ class Document(BaseModel):
     uploaded_by_name: str
     uploaded_at: str
 
+class LaborCreate(BaseModel):
+    project_id: str
+    labor_category: str
+    hours_per_week: float
+    hourly_rate: float
+    estimated_total_hours: float
+    overtime_hours: float = 0
+    overtime_rate: float = 0
+    expenses: float = 0
+    comments: Optional[str] = None
+
+class Labor(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    labor_id: str
+    project_id: str
+    labor_category: str
+    hours_per_week: float
+    hourly_rate: float
+    estimated_total_hours: float
+    overtime_hours: float
+    overtime_rate: float
+    expenses: float
+    total_cost: float
+    comments: Optional[str]
+    created_at: str
+    updated_at: str
+
 async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)) -> User:
     token = session_token
     if not token:
