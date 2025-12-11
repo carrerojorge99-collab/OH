@@ -771,6 +771,35 @@ const ProjectDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card className={`border-slate-200 shadow-sm ${
+            project?.payment_status === 'paid' ? 'bg-green-50' : 
+            project?.payment_status === 'partial' ? 'bg-yellow-50' : 
+            'bg-red-50'
+          }`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 mb-1">Estado de Pago</p>
+                  <p className={`text-lg font-semibold ${
+                    project?.payment_status === 'paid' ? 'text-green-700' : 
+                    project?.payment_status === 'partial' ? 'text-yellow-700' : 
+                    'text-red-700'
+                  }`}>
+                    {project?.payment_status === 'paid' && '✓ Pagado'}
+                    {project?.payment_status === 'partial' && '◐ Pago Parcial'}
+                    {project?.payment_status === 'pending' && '⊗ Pendiente'}
+                    {!project?.payment_status && '⊗ Pendiente'}
+                  </p>
+                </div>
+                <DollarSign className={`w-8 h-8 ${
+                  project?.payment_status === 'paid' ? 'text-green-600' : 
+                  project?.payment_status === 'partial' ? 'text-yellow-600' : 
+                  'text-red-600'
+                }`} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Tabs */}
