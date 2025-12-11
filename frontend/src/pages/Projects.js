@@ -290,10 +290,12 @@ const Projects = () => {
                         type="number"
                         step="0.01"
                         min="0"
+                        placeholder="0.00"
                         value={formData.budget_total}
                         onChange={(e) => setFormData({ ...formData, budget_total: parseFloat(e.target.value) || 0 })}
                         required
                       />
+                      <p className="text-xs text-slate-500">Total de gastos estimados del proyecto</p>
                     </div>
 
                     <div className="space-y-2">
@@ -304,10 +306,12 @@ const Projects = () => {
                         type="number"
                         step="0.01"
                         min="0"
+                        placeholder="0.00"
                         value={formData.project_value}
                         onChange={(e) => setFormData({ ...formData, project_value: parseFloat(e.target.value) || 0 })}
                         required
                       />
+                      <p className="text-xs text-slate-500">Valor total que se cobrará al cliente</p>
                     </div>
                   </div>
 
