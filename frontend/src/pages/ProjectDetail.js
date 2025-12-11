@@ -2333,12 +2333,12 @@ const ProjectDetail = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="timesheet_task">Tarea (Opcional)</Label>
-                        <Select value={timesheetForm.task_id} onValueChange={(value) => setTimesheetForm({ ...timesheetForm, task_id: value })}>
+                        <Select value={timesheetForm.task_id || "none"} onValueChange={(value) => setTimesheetForm({ ...timesheetForm, task_id: value === "none" ? "" : value })}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona una tarea" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Sin tarea específica</SelectItem>
+                            <SelectItem value="none">Sin tarea específica</SelectItem>
                             {tasks.map((task) => (
                               <SelectItem key={task.task_id} value={task.task_id}>
                                 {task.title}
