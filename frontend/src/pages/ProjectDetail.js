@@ -160,6 +160,7 @@ const ProjectDetail = () => {
         axios.get(`${API}/tasks?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/budget/categories?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/expenses?project_id=${projectId}`, { withCredentials: true }),
+        axios.get(`${API}/labor?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/comments?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/documents?project_id=${projectId}`, { withCredentials: true }),
         axios.get(`${API}/projects/${projectId}/stats`, { withCredentials: true })
@@ -169,6 +170,7 @@ const ProjectDetail = () => {
       setTasks(tasksRes.data);
       setCategories(categoriesRes.data);
       setExpenses(expensesRes.data);
+      setLabor(laborRes.data);
       setComments(commentsRes.data);
       setDocuments(documentsRes.data);
       setStats(statsRes.data);
