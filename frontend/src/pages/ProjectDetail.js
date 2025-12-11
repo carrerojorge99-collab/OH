@@ -1957,7 +1957,7 @@ const ProjectDetail = () => {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="edit_hourly_rate">Tarifa por Hora *</Label>
                           <Input
@@ -1971,7 +1971,7 @@ const ProjectDetail = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="edit_estimated_total_hours">Total de Horas Estimadas *</Label>
+                          <Label htmlFor="edit_estimated_total_hours">Total Horas Estimadas *</Label>
                           <Input
                             id="edit_estimated_total_hours"
                             type="number"
@@ -1981,6 +1981,18 @@ const ProjectDetail = () => {
                             onChange={(e) => setLaborForm({ ...laborForm, estimated_total_hours: parseFloat(e.target.value) || 0 })}
                             required
                           />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_consumed_hours">Horas Consumidas</Label>
+                          <Input
+                            id="edit_consumed_hours"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={laborForm.consumed_hours}
+                            onChange={(e) => setLaborForm({ ...laborForm, consumed_hours: parseFloat(e.target.value) || 0 })}
+                          />
+                          <p className="text-xs text-slate-500">Horas reales trabajadas</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
