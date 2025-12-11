@@ -81,6 +81,12 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[UserRole] = None
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     user_id: str
