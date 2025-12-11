@@ -295,6 +295,20 @@ const Projects = () => {
                       Ganancia estimada: ${((formData.project_value || 0) - (formData.budget_total || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_status">Estado de Pago</Label>
+                    <Select value={formData.payment_status} onValueChange={(value) => setFormData({ ...formData, payment_status: value })}>
+                      <SelectTrigger data-testid="project-payment-status-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pendiente de Pago</SelectItem>
+                        <SelectItem value="partial">Pago Parcial</SelectItem>
+                        <SelectItem value="paid">Pagado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
