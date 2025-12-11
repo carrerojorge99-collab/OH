@@ -64,7 +64,7 @@ const Users = () => {
         name: '',
         email: '',
         password: '',
-        role: 'colaborador'
+        role: 'empleado'
       });
       loadUsers();
     } catch (error) {
