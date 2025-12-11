@@ -750,6 +750,85 @@ async def get_expenses(project_id: str, request: Request, session_token: Optiona
     expenses = await db.expenses.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
     return [Expense(**e) for e in expenses]
 
+@api_router.put("/expenses/{expense_id}", response_model=Expense)
+async def update_expense(expense_id: str, expense_data: ExpenseCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    expense = await db.expenses.find_one({"expense_id": expense_id}, {"_id": 0})
+    if not expense:
+        raise HTTPException(status_code=404, detail="Gasto no encontrado")
+    
+    # Revertir el gasto anterior
+    old_amount = expense['amount']
+    old_category_id = expense['category_id']
+    
+    await db.budget_categories.update_one(
+        {"category_id": old_category_id},
+        {"$inc": {"spent_amount": -old_amount}}
+    )
+    
+    project = await db.projects.find_one({"project_id": expense['project_id']}, {"_id": 0})
+    old_spent = project.get('budget_spent', 0) - old_amount
+    old_profit = project.get('project_value', 0) - old_spent
+    
+    await db.projects.update_one(
+        {"project_id": expense['project_id']},
+        {"$set": {"budget_spent": old_spent, "profit": old_profit}}
+    )
+    
+    # Aplicar el nuevo gasto
+    update_data = {
+        "category_id": expense_data.category_id,
+        "description": expense_data.description,
+        "amount": expense_data.amount,
+        "date": expense_data.date
+    }
+    
+    await db.expenses.update_one({"expense_id": expense_id}, {"$set": update_data})
+    
+    await db.budget_categories.update_one(
+        {"category_id": expense_data.category_id},
+        {"$inc": {"spent_amount": expense_data.amount}}
+    )
+    
+    new_spent = old_spent + expense_data.amount
+    new_profit = project.get('project_value', 0) - new_spent
+    
+    await db.projects.update_one(
+        {"project_id": expense['project_id']},
+        {"$set": {"budget_spent": new_spent, "profit": new_profit}}
+    )
+    
+    updated_expense = await db.expenses.find_one({"expense_id": expense_id}, {"_id": 0})
+    return Expense(**updated_expense)
+
+@api_router.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    expense = await db.expenses.find_one({"expense_id": expense_id}, {"_id": 0})
+    if not expense:
+        raise HTTPException(status_code=404, detail="Gasto no encontrado")
+    
+    # Revertir el gasto de la categoría
+    await db.budget_categories.update_one(
+        {"category_id": expense['category_id']},
+        {"$inc": {"spent_amount": -expense['amount']}}
+    )
+    
+    # Revertir el gasto del proyecto
+    project = await db.projects.find_one({"project_id": expense['project_id']}, {"_id": 0})
+    new_spent = project.get('budget_spent', 0) - expense['amount']
+    new_profit = project.get('project_value', 0) - new_spent
+    
+    await db.projects.update_one(
+        {"project_id": expense['project_id']},
+        {"$set": {"budget_spent": new_spent, "profit": new_profit}}
+    )
+    
+    await db.expenses.delete_one({"expense_id": expense_id})
+    return {"message": "Gasto eliminado exitosamente"}
+
 @api_router.post("/comments", response_model=Comment)
 async def create_comment(comment_data: CommentCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
