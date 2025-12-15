@@ -1712,6 +1712,26 @@ async def delete_document(document_id: str, request: Request, session_token: Opt
     await db.documents.delete_one({"document_id": document_id})
     return {"message": "Documento eliminado exitosamente"}
 
+@api_router.get("/audit-logs", response_model=List[AuditLog])
+async def get_audit_logs(
+    limit: int = 100,
+    entity_type: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Only admins can view audit logs
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permisos para ver el historial")
+    
+    query = {}
+    if entity_type:
+        query["entity_type"] = entity_type
+    
+    logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return [AuditLog(**log) for log in logs]
+
 app.include_router(api_router)
 
 app.add_middleware(
