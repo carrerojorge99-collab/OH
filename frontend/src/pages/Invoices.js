@@ -227,7 +227,7 @@ const Invoices = () => {
       `$${item.amount.toFixed(2)}`
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [['Descripción', 'Horas', 'Tarifa', 'Total']],
       body: tableData,
       startY: 80,
@@ -235,7 +235,7 @@ const Invoices = () => {
       headStyles: { fillColor: [37, 99, 235] }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 10;
+    const finalY = doc.previousAutoTable.finalY + 10;
 
     // Totals
     doc.setFontSize(10);
