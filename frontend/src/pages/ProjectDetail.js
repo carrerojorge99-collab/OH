@@ -1839,13 +1839,32 @@ const ProjectDetail = () => {
           <TabsContent value="labor" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold tracking-tight">Salarios del Proyecto</h2>
-              <Dialog open={laborDialogOpen} onOpenChange={setLaborDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Registro
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => exportLaborToExcel(labor, project?.name || 'Proyecto')}
+                  disabled={labor.length === 0}
+                  title="Exportar a Excel"
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Excel
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => exportLaborToPDF(labor, project?.name || 'Proyecto')}
+                  disabled={labor.length === 0}
+                  title="Exportar a PDF"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDF
+                </Button>
+                <Dialog open={laborDialogOpen} onOpenChange={setLaborDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuevo Registro
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Crear Registro de Salario</DialogTitle>
