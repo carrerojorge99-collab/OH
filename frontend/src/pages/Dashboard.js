@@ -100,6 +100,68 @@ const Dashboard = () => {
     return acc;
   }, []);
 
+  // Payment Status Data
+  const projectsByPaymentStatus = projects.reduce((acc, project) => {
+    const status = project.payment_status || 'pending';
+    const statusLabels = {
+      'pending': 'Pendiente',
+      'partial': 'Parcial',
+      'paid': 'Pagado'
+    };
+    const statusName = statusLabels[status] || status;
+    const existing = acc.find(item => item.name === statusName);
+    if (existing) {
+      existing.value += 1;
+    } else {
+      acc.push({ name: statusName, value: 1 });
+    }
+    return acc;
+  }, []);
+
+  // ROI Data (Top 5 projects by profit margin)
+  const projectsWithROI = projects
+    .map(p => ({
+      name: p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name,
+      roi: p.project_value > 0 ? ((p.profit / p.project_value) * 100) : 0,
+      profit: p.profit
+    }))
+    .sort((a, b) => b.roi - a.roi)
+    .slice(0, 5);
+
+  // Budget Progress Data (Top 5 projects by budget usage)
+  const projectsBudgetProgress = projects
+    .filter(p => p.budget_total > 0)
+    .map(p => ({
+      name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name,
+      gastado: p.budget_spent || 0,
+      asignado: p.budget_total
+    }))
+    .slice(0, 5);
+
+  // On-Time Projects Analysis
+  const today = new Date();
+  const onTimeAnalysis = projects.reduce((acc, project) => {
+    if (project.status === 'completed') {
+      acc.completed += 1;
+    } else if (project.end_date) {
+      const endDate = new Date(project.end_date);
+      if (endDate < today) {
+        acc.overdue += 1;
+      } else {
+        acc.onTrack += 1;
+      }
+    } else {
+      acc.noDate += 1;
+    }
+    return acc;
+  }, { onTrack: 0, overdue: 0, completed: 0, noDate: 0 });
+
+  const onTimeData = [
+    { name: 'En Progreso', value: onTimeAnalysis.onTrack, color: '#10B981' },
+    { name: 'Retrasados', value: onTimeAnalysis.overdue, color: '#EF4444' },
+    { name: 'Completados', value: onTimeAnalysis.completed, color: '#2563EB' }
+  ].filter(item => item.value > 0);
+
   const COLORS = ['#2563EB', '#F97316', '#10B981', '#8B5CF6', '#EF4444'];
 
   return (
