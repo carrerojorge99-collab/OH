@@ -2112,6 +2112,13 @@ async def add_payment_to_invoice(
         {"invoice": invoice.get('invoice_number'), "amount": payment_data.amount}
     )
     
+    # Send Slack notification
+    event_type = "invoice_paid" if new_status == 'paid' else "payment_received"
+    await notify_slack_event(event_type, {
+        "invoice": invoice.get('invoice_number'),
+        "amount": payment_data.amount
+    })
+    
     return Payment(**payment_doc)
 
 @api_router.get("/invoices/{invoice_id}/payments", response_model=List[Payment])
