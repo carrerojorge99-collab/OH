@@ -168,11 +168,18 @@ const Dashboard = () => {
 
   return (
     <Layout>
+      <PWAInstallBanner />
+      
       <div className="space-y-8 fade-in">
         {/* Header */}
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">Dashboard</h1>
           <p className="text-muted-foreground mt-2">Resumen general de tus proyectos y presupuestos</p>
+        </div>
+
+        {/* Quick Timesheet for Mobile */}
+        <div className="lg:hidden">
+          <QuickTimesheet />
         </div>
 
         {/* Stats Grid */}
