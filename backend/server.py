@@ -1757,6 +1757,199 @@ async def delete_document(document_id: str, request: Request, session_token: Opt
     await db.documents.delete_one({"document_id": document_id})
     return {"message": "Documento eliminado exitosamente"}
 
+@api_router.post("/invoices/generate", response_model=Invoice)
+async def generate_invoice_from_timesheet(
+    invoice_data: InvoiceCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Get project
+    project = await db.projects.find_one({"project_id": invoice_data.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Get timesheet entries for this project
+    timesheet_entries = await db.timesheet.find(
+        {"project_id": invoice_data.project_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get labor/salary data to get rates
+    labor_entries = await db.labor.find(
+        {"project_id": invoice_data.project_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Create invoice items from timesheet
+    items = []
+    total_hours = 0
+    
+    # Group timesheet by user
+    user_hours = {}
+    for entry in timesheet_entries:
+        user_name = entry.get('user_name', 'Unknown')
+        hours = entry.get('hours_worked', 0)
+        if user_name not in user_hours:
+            user_hours[user_name] = 0
+        user_hours[user_name] += hours
+        total_hours += hours
+    
+    # Default rate if no labor data
+    default_rate = 50.0
+    
+    # Create items
+    for user_name, hours in user_hours.items():
+        # Try to find rate from labor data
+        rate = default_rate
+        for labor in labor_entries:
+            if labor.get('labor_category') == user_name:
+                rate = labor.get('hourly_rate', default_rate)
+                break
+        
+        items.append(InvoiceItem(
+            description=f"Horas trabajadas - {user_name}",
+            hours=round(hours, 2),
+            rate=rate,
+            amount=round(hours * rate, 2)
+        ))
+    
+    # Calculate totals
+    subtotal = sum(item.amount for item in items)
+    tax_amount = round(subtotal * (invoice_data.tax_rate / 100), 2)
+    total = subtotal + tax_amount
+    
+    # Generate invoice number
+    invoice_count = await db.invoices.count_documents({})
+    invoice_number = f"INV-{datetime.now().year}-{str(invoice_count + 1).zfill(4)}"
+    
+    # Create invoice
+    invoice_id = f"inv_{uuid4().hex[:16]}"
+    due_date = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    
+    invoice_doc = {
+        "invoice_id": invoice_id,
+        "invoice_number": invoice_number,
+        "project_id": invoice_data.project_id,
+        "project_name": project.get('name', ''),
+        "client_name": invoice_data.client_name,
+        "client_email": invoice_data.client_email,
+        "items": [item.model_dump() for item in items],
+        "subtotal": subtotal,
+        "tax_rate": invoice_data.tax_rate,
+        "tax_amount": tax_amount,
+        "total": total,
+        "status": "draft",
+        "notes": invoice_data.notes,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "due_date": due_date
+    }
+    
+    await db.invoices.insert_one(invoice_doc)
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "create",
+        "invoice",
+        invoice_id,
+        invoice_number,
+        {"project": project.get('name'), "total": total}
+    )
+    
+    return Invoice(**invoice_doc)
+
+@api_router.get("/invoices", response_model=List[Invoice])
+async def get_invoices(
+    project_id: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [Invoice(**inv) for inv in invoices]
+
+@api_router.get("/invoices/{invoice_id}", response_model=Invoice)
+async def get_invoice(
+    invoice_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    return Invoice(**invoice)
+
+@api_router.put("/invoices/{invoice_id}/status", response_model=Invoice)
+async def update_invoice_status(
+    invoice_id: str,
+    status: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if status not in ["draft", "sent", "paid"]:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    
+    await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": {"status": status}}
+    )
+    
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "update",
+        "invoice",
+        invoice_id,
+        invoice.get('invoice_number', ''),
+        {"status": status}
+    )
+    
+    return Invoice(**invoice)
+
+@api_router.delete("/invoices/{invoice_id}")
+async def delete_invoice(
+    invoice_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    await db.invoices.delete_one({"invoice_id": invoice_id})
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "delete",
+        "invoice",
+        invoice_id,
+        invoice.get('invoice_number', ''),
+        {}
+    )
+    
+    return {"message": "Factura eliminada exitosamente"}
+
 @api_router.get("/audit-logs", response_model=List[AuditLog])
 async def get_audit_logs(
     limit: int = 100,
