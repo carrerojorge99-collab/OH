@@ -23,7 +23,8 @@ import {
   BarChart3,
   Settings,
   Calendar,
-  FileText
+  FileText,
+  DollarSign
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,6 +39,7 @@ const Layout = ({ children }) => {
     { name: 'Proyectos', href: '/projects', icon: FolderKanban },
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
+    { name: 'Facturas', href: '/invoices', icon: DollarSign },
     { name: 'Historial', href: '/audit-log', icon: FileText },
     { name: 'Usuarios', href: '/users', icon: Users },
     { name: 'Configuración', href: '/settings', icon: Settings },
