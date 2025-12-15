@@ -309,6 +309,20 @@ class Timesheet(BaseModel):
     created_at: str
     updated_at: str
 
+class ClockEntry(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    clock_id: str
+    user_id: str
+    user_name: str
+    project_id: str
+    project_name: str
+    clock_in: str
+    clock_out: Optional[str] = None
+    hours_worked: Optional[float] = None
+    status: str  # active, completed
+    date: str
+    notes: Optional[str] = None
+
 class AuditLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
     log_id: str
