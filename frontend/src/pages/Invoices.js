@@ -448,26 +448,35 @@ const Invoices = () => {
                         PDF
                       </Button>
 
-                      {invoice.status === 'draft' && (
+                      {invoice.status === 'draft' && invoice.client_email && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleUpdateStatus(invoice.invoice_id, 'sent')}
+                          onClick={() => handleSendInvoice(invoice.invoice_id, invoice.client_email)}
                           className="text-blue-600"
                         >
-                          Marcar Enviada
+                          📧 Enviar por Email
                         </Button>
                       )}
 
-                      {invoice.status === 'sent' && (
+                      {(invoice.status === 'sent' || invoice.status === 'partial') && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleUpdateStatus(invoice.invoice_id, 'paid')}
+                          onClick={() => handleOpenPaymentDialog(invoice)}
                           className="text-green-600"
                         >
-                          Marcar Pagada
+                          💵 Registrar Pago
                         </Button>
+                      )}
+
+                      {invoice.balance_due > 0 && invoice.status !== 'draft' && (
+                        <div className="text-xs text-center py-1">
+                          <p className="text-slate-600">Pendiente:</p>
+                          <p className="font-bold text-red-600">
+                            ${invoice.balance_due.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
                       )}
 
                       <Button
