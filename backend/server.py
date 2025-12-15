@@ -1283,6 +1283,183 @@ async def delete_timesheet(timesheet_id: str, request: Request, session_token: O
     await db.timesheet.delete_one({"timesheet_id": timesheet_id})
     return {"message": "Registro de timesheet eliminado exitosamente"}
 
+@api_router.post("/clock/in", response_model=ClockEntry)
+async def clock_in(
+    project_id: str,
+    notes: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Check if user is already clocked in
+    active_clock = await db.clock_entries.find_one({
+        "user_id": user.user_id,
+        "status": "active"
+    }, {"_id": 0})
+    
+    if active_clock:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Ya tienes un ponche activo en el proyecto {active_clock.get('project_name')}. Debes ponchar salida primero."
+        )
+    
+    # Get project info
+    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Check if user is assigned to project
+    if user.user_id not in project.get('team_members', []) and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No estás asignado a este proyecto")
+    
+    # Create clock entry
+    clock_id = f"clk_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc)
+    
+    clock_doc = {
+        "clock_id": clock_id,
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "project_id": project_id,
+        "project_name": project.get('name'),
+        "clock_in": now.isoformat(),
+        "clock_out": None,
+        "hours_worked": None,
+        "status": "active",
+        "date": now.date().isoformat(),
+        "notes": notes
+    }
+    
+    await db.clock_entries.insert_one(clock_doc)
+    
+    # Send Slack notification
+    await notify_slack_event("clock_in", {
+        "user": user.name,
+        "project": project.get('name'),
+        "time": now.strftime("%H:%M")
+    })
+    
+    return ClockEntry(**clock_doc)
+
+@api_router.post("/clock/out", response_model=ClockEntry)
+async def clock_out(
+    notes: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Find active clock entry
+    active_clock = await db.clock_entries.find_one({
+        "user_id": user.user_id,
+        "status": "active"
+    }, {"_id": 0})
+    
+    if not active_clock:
+        raise HTTPException(status_code=400, detail="No tienes un ponche activo")
+    
+    # Calculate hours worked
+    clock_in_time = datetime.fromisoformat(active_clock['clock_in'])
+    clock_out_time = datetime.now(timezone.utc)
+    hours_worked = (clock_out_time - clock_in_time).total_seconds() / 3600
+    
+    # Update clock entry
+    await db.clock_entries.update_one(
+        {"clock_id": active_clock['clock_id']},
+        {"$set": {
+            "clock_out": clock_out_time.isoformat(),
+            "hours_worked": round(hours_worked, 2),
+            "status": "completed",
+            "notes": notes or active_clock.get('notes')
+        }}
+    )
+    
+    # Create timesheet entry automatically
+    timesheet_id = f"ts_{uuid4().hex[:16]}"
+    timesheet_doc = {
+        "timesheet_id": timesheet_id,
+        "project_id": active_clock['project_id'],
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "date": active_clock['date'],
+        "hours_worked": round(hours_worked, 2),
+        "description": notes or f"Trabajo registrado mediante ponche ({clock_in_time.strftime('%H:%M')} - {clock_out_time.strftime('%H:%M')})",
+        "task_id": None,
+        "created_at": clock_out_time.isoformat(),
+        "updated_at": clock_out_time.isoformat()
+    }
+    
+    await db.timesheet.insert_one(timesheet_doc)
+    
+    # Get updated clock entry
+    updated_clock = await db.clock_entries.find_one({"clock_id": active_clock['clock_id']}, {"_id": 0})
+    
+    return ClockEntry(**updated_clock)
+
+@api_router.get("/clock/active", response_model=Optional[ClockEntry])
+async def get_active_clock(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    active_clock = await db.clock_entries.find_one({
+        "user_id": user.user_id,
+        "status": "active"
+    }, {"_id": 0})
+    
+    if not active_clock:
+        return None
+    
+    return ClockEntry(**active_clock)
+
+@api_router.get("/clock/history", response_model=List[ClockEntry])
+async def get_clock_history(
+    date: Optional[str] = None,
+    limit: int = 50,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {"user_id": user.user_id}
+    if date:
+        query["date"] = date
+    
+    clock_entries = await db.clock_entries.find(
+        query, 
+        {"_id": 0}
+    ).sort("clock_in", -1).limit(limit).to_list(limit)
+    
+    return [ClockEntry(**entry) for entry in clock_entries]
+
+@api_router.get("/clock/projects", response_model=List[dict])
+async def get_assigned_projects(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get projects where user is assigned (for clock-in)"""
+    user = await get_current_user(request, session_token)
+    
+    # Admins can see all active projects
+    if user.role == UserRole.ADMIN:
+        projects = await db.projects.find(
+            {"status": {"$ne": "completed"}},
+            {"_id": 0, "project_id": 1, "name": 1, "status": 1}
+        ).to_list(1000)
+    else:
+        # Regular users see only assigned projects
+        projects = await db.projects.find(
+            {
+                "team_members": user.user_id,
+                "status": {"$ne": "completed"}
+            },
+            {"_id": 0, "project_id": 1, "name": 1, "status": 1}
+        ).to_list(1000)
+    
+    return projects
+
 @api_router.post("/comments", response_model=Comment)
 async def create_comment(comment_data: CommentCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
