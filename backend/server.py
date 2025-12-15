@@ -2179,6 +2179,136 @@ async def get_audit_logs(
     logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return [AuditLog(**log) for log in logs]
 
+@api_router.get("/integrations", response_model=List[IntegrationConfig])
+async def get_integrations(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver integraciones")
+    
+    integrations = await db.integrations.find({}, {"_id": 0}).to_list(100)
+    return [IntegrationConfig(**i) for i in integrations]
+
+@api_router.post("/integrations", response_model=IntegrationConfig)
+async def create_or_update_integration(
+    integration_type: str,
+    enabled: bool,
+    config: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden configurar integraciones")
+    
+    # Check if integration already exists
+    existing = await db.integrations.find_one({"integration_type": integration_type}, {"_id": 0})
+    
+    if existing:
+        # Update
+        await db.integrations.update_one(
+            {"integration_type": integration_type},
+            {"$set": {
+                "enabled": enabled,
+                "config": config,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        integration_id = existing['integration_id']
+    else:
+        # Create
+        integration_id = f"int_{uuid4().hex[:16]}"
+        integration_doc = {
+            "integration_id": integration_id,
+            "integration_type": integration_type,
+            "enabled": enabled,
+            "config": config,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.integrations.insert_one(integration_doc)
+    
+    # Test Slack webhook if it's a Slack integration
+    if integration_type == "slack" and enabled:
+        webhook_url = config.get('webhook_url')
+        if webhook_url:
+            await send_slack_notification(
+                webhook_url,
+                "✅ Integración de Slack configurada exitosamente!",
+                "Prueba de Conexión",
+                "good"
+            )
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "update" if existing else "create",
+        "integration",
+        integration_id,
+        f"{integration_type} integration",
+        {"enabled": enabled}
+    )
+    
+    integration = await db.integrations.find_one({"integration_id": integration_id}, {"_id": 0})
+    return IntegrationConfig(**integration)
+
+@api_router.delete("/integrations/{integration_id}")
+async def delete_integration(
+    integration_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar integraciones")
+    
+    integration = await db.integrations.find_one({"integration_id": integration_id}, {"_id": 0})
+    if not integration:
+        raise HTTPException(status_code=404, detail="Integración no encontrada")
+    
+    await db.integrations.delete_one({"integration_id": integration_id})
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "delete",
+        "integration",
+        integration_id,
+        f"{integration.get('integration_type')} integration",
+        {}
+    )
+    
+    return {"message": "Integración eliminada exitosamente"}
+
+@api_router.post("/integrations/test-slack")
+async def test_slack_integration(
+    webhook_url: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden probar integraciones")
+    
+    try:
+        await send_slack_notification(
+            webhook_url,
+            "🎉 La conexión con Slack funciona correctamente!",
+            "Prueba de Integración",
+            "good"
+        )
+        return {"message": "Notificación de prueba enviada exitosamente"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error al enviar notificación: {str(e)}")
+
 app.include_router(api_router)
 
 app.add_middleware(
