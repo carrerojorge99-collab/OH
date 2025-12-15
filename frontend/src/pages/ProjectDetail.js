@@ -2414,8 +2414,9 @@ const ProjectDetail = () => {
                   </form>
                 </DialogContent>
               </Dialog>
+            </div>
 
-              <Dialog open={editTimesheetDialogOpen} onOpenChange={setEditTimesheetDialogOpen}>
+            <Dialog open={editTimesheetDialogOpen} onOpenChange={setEditTimesheetDialogOpen}>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Editar Registro de Tiempo</DialogTitle>
