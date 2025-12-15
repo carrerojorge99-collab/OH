@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 
 // Export Timesheet to Excel
 export const exportTimesheetToExcel = (timesheetData, projectName) => {
