@@ -2318,7 +2318,7 @@ const ProjectDetail = () => {
                       Nuevo Registro
                     </Button>
                   </DialogTrigger>
-                <DialogContent>
+                  <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Registrar Horas de Trabajo</DialogTitle>
                   </DialogHeader>
