@@ -299,6 +299,92 @@ const Users = () => {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Edit User Dialog */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-semibold tracking-tight">Editar Usuario</DialogTitle>
+                <DialogDescription>Actualiza los datos del usuario</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleUpdateUser}>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Nombre Completo *</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="edit-name"
+                        data-testid="edit-user-name-input"
+                        value={editFormData.name}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        required
+                        className="pl-10"
+                        placeholder="Juan Pérez"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Correo Electrónico</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="edit-email"
+                        data-testid="edit-user-email-input"
+                        type="email"
+                        value={editFormData.email}
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                        className="pl-10"
+                        placeholder="usuario@ejemplo.com"
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500">Deja vacío para no cambiar el email actual</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-password">Nueva Contraseña</Label>
+                    <Input
+                      id="edit-password"
+                      data-testid="edit-user-password-input"
+                      type="password"
+                      value={editFormData.password}
+                      onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                      minLength={6}
+                      placeholder="Deja vacío para mantener la contraseña actual"
+                    />
+                    <p className="text-xs text-slate-500">Solo cambia si necesitas actualizar las credenciales</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-role">Rol *</Label>
+                    <div className="relative">
+                      <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                      <Select value={editFormData.role} onValueChange={(value) => setEditFormData({ ...editFormData, role: value })}>
+                        <SelectTrigger data-testid="edit-user-role-select" className="pl-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="gestor">Gestor</SelectItem>
+                          <SelectItem value="colaborador">Colaborador</SelectItem>
+                          <SelectItem value="empleado">Empleado (Solo Visualización)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button data-testid="update-user-button" type="submit" className="bg-blue-600 hover:bg-blue-700">
+                    Actualizar Usuario
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Users Grid */}
