@@ -324,16 +324,31 @@ const Users = () => {
                         <h3 className="text-lg font-semibold text-[#0F172A] truncate flex-1">
                           {user.name}
                         </h3>
-                        {currentUser?.role === 'admin' && currentUser?.user_id !== user.user_id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteUser(user.user_id, user.name)}
-                            data-testid={`delete-user-${user.user_id}`}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 ml-2 flex-shrink-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        {currentUser?.role === 'admin' && (
+                          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditUser(user)}
+                              data-testid={`edit-user-${user.user_id}`}
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Editar usuario"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            {currentUser?.user_id !== user.user_id && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteUser(user.user_id, user.name)}
+                                data-testid={`delete-user-${user.user_id}`}
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Eliminar usuario"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center text-sm text-slate-600 mb-2">
