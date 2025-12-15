@@ -32,7 +32,10 @@ const Invoices = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
+  const [payments, setPayments] = useState([]);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -40,6 +43,13 @@ const Invoices = () => {
     client_name: '',
     client_email: '',
     tax_rate: 16,
+    notes: ''
+  });
+
+  const [paymentForm, setPaymentForm] = useState({
+    amount: 0,
+    payment_method: 'transfer',
+    reference: '',
     notes: ''
   });
 
