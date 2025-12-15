@@ -9,6 +9,7 @@ import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import Calendar from './pages/Calendar';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -42,6 +43,12 @@ function AppRouter() {
       <Route path="/projects/:projectId" element={
         <ProtectedRoute>
           <ProjectDetail />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/calendar" element={
+        <ProtectedRoute>
+          <Calendar />
         </ProtectedRoute>
       } />
       
