@@ -309,6 +309,33 @@ class Timesheet(BaseModel):
     created_at: str
     updated_at: str
 
+class AuditLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    log_id: str
+    user_id: str
+    user_name: str
+    action: str  # create, update, delete
+    entity_type: str  # project, task, expense, user, etc.
+    entity_id: str
+    entity_name: str
+    details: Optional[dict] = None
+    timestamp: str
+
+async def log_audit(user_id: str, user_name: str, action: str, entity_type: str, entity_id: str, entity_name: str, details: dict = None):
+    """Helper function to create audit log entries"""
+    log_entry = {
+        "log_id": f"log_{uuid4().hex[:16]}",
+        "user_id": user_id,
+        "user_name": user_name,
+        "action": action,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "entity_name": entity_name,
+        "details": details or {},
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await db.audit_logs.insert_one(log_entry)
+
 async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)) -> User:
     token = session_token
     if not token:
