@@ -1860,11 +1860,15 @@ async def generate_invoice_from_timesheet(
         "tax_rate": invoice_data.tax_rate,
         "tax_amount": tax_amount,
         "total": total,
+        "amount_paid": 0.0,
+        "balance_due": total,
         "status": "draft",
         "notes": invoice_data.notes,
         "created_by": user.user_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "due_date": due_date
+        "due_date": due_date,
+        "sent_date": None,
+        "paid_date": None
     }
     
     await db.invoices.insert_one(invoice_doc)
