@@ -28,6 +28,9 @@ const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [users, setUsers] = useState([]);
@@ -61,12 +64,17 @@ const Projects = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = projects.filter(project =>
-      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let filtered = projects.filter(project => {
+      const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           project.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || project.priority === priorityFilter;
+      const matchesPayment = paymentFilter === 'all' || (project.payment_status || 'pending') === paymentFilter;
+      
+      return matchesSearch && matchesStatus && matchesPriority && matchesPayment;
+    });
     setFilteredProjects(filtered);
-  }, [searchTerm, projects]);
+  }, [searchTerm, statusFilter, priorityFilter, paymentFilter, projects]);
 
   const loadProjects = async () => {
     try {
