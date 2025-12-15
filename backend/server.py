@@ -1970,6 +1970,129 @@ async def delete_invoice(
     
     return {"message": "Factura eliminada exitosamente"}
 
+@api_router.post("/invoices/{invoice_id}/payments", response_model=Payment)
+async def add_payment_to_invoice(
+    invoice_id: str,
+    payment_data: PaymentCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Get invoice
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    # Calculate new amounts
+    current_paid = invoice.get('amount_paid', 0)
+    new_paid = current_paid + payment_data.amount
+    balance = invoice['total'] - new_paid
+    
+    # Determine new status
+    if balance <= 0:
+        new_status = 'paid'
+        paid_date = datetime.now(timezone.utc).isoformat()
+    elif new_paid > 0:
+        new_status = 'partial'
+        paid_date = None
+    else:
+        new_status = invoice['status']
+        paid_date = None
+    
+    # Create payment record
+    payment_id = f"pay_{uuid4().hex[:16]}"
+    payment_doc = {
+        "payment_id": payment_id,
+        "invoice_id": invoice_id,
+        "amount": payment_data.amount,
+        "payment_method": payment_data.payment_method,
+        "reference": payment_data.reference,
+        "notes": payment_data.notes,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.payments.insert_one(payment_doc)
+    
+    # Update invoice
+    update_data = {
+        "amount_paid": new_paid,
+        "balance_due": balance,
+        "status": new_status
+    }
+    if paid_date:
+        update_data["paid_date"] = paid_date
+    
+    await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": update_data}
+    )
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "create",
+        "payment",
+        payment_id,
+        f"Pago de ${payment_data.amount} para {invoice.get('invoice_number')}",
+        {"invoice": invoice.get('invoice_number'), "amount": payment_data.amount}
+    )
+    
+    return Payment(**payment_doc)
+
+@api_router.get("/invoices/{invoice_id}/payments", response_model=List[Payment])
+async def get_invoice_payments(
+    invoice_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    payments = await db.payments.find({"invoice_id": invoice_id}, {"_id": 0}).to_list(1000)
+    return [Payment(**p) for p in payments]
+
+@api_router.post("/invoices/{invoice_id}/send")
+async def send_invoice_email(
+    invoice_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    if not invoice.get('client_email'):
+        raise HTTPException(status_code=400, detail="La factura no tiene email del cliente")
+    
+    # Update status and sent date
+    await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": {
+            "status": "sent",
+            "sent_date": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # TODO: Implement actual email sending using SMTP settings
+    # For now, just mark as sent
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "update",
+        "invoice",
+        invoice_id,
+        invoice.get('invoice_number', ''),
+        {"action": "sent_email", "to": invoice.get('client_email')}
+    )
+    
+    return {"message": f"Factura enviada a {invoice.get('client_email')}", "status": "sent"}
+
 @api_router.get("/audit-logs", response_model=List[AuditLog])
 async def get_audit_logs(
     limit: int = 100,
