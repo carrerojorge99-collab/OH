@@ -24,7 +24,8 @@ import {
   Settings,
   Calendar,
   FileText,
-  DollarSign
+  DollarSign,
+  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +41,7 @@ const Layout = ({ children }) => {
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
     { name: 'Facturas', href: '/invoices', icon: DollarSign },
+    { name: 'Integraciones', href: '/integrations', icon: Zap },
     { name: 'Historial', href: '/audit-log', icon: FileText },
     { name: 'Usuarios', href: '/users', icon: Users },
     { name: 'Configuración', href: '/settings', icon: Settings },
