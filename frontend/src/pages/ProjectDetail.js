@@ -2020,9 +2020,10 @@ const ProjectDetail = () => {
                   </form>
                 </DialogContent>
               </Dialog>
+            </div>
 
-              {/* Edit Labor Dialog */}
-              <Dialog open={editLaborDialogOpen} onOpenChange={setEditLaborDialogOpen}>
+            {/* Edit Labor Dialog */}
+            <Dialog open={editLaborDialogOpen} onOpenChange={setEditLaborDialogOpen}>
                 <DialogContent className="max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Editar Registro de Salario</DialogTitle>
