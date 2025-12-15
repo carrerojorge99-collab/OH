@@ -174,7 +174,7 @@ export const exportLaborToPDF = (laborData, projectName) => {
            labor.expenses;
   }, 0);
 
-  doc.autoTable({
+  autoTable(doc, {
     head: [['Categoría', 'Hrs/Sem', 'Tarifa/Hr', 'Hrs Est.', 'Hrs Cons.', 'Hrs Extra', 'Tarifa Extra', 'Gastos', 'Total']],
     body: tableData,
     foot: [['COSTO TOTAL', '', '', '', '', '', '', '', `$${totalCost.toFixed(2)}`]],
