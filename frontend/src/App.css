@@ -78,3 +78,50 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
 }
+
+/* React Big Calendar Custom Styles */
+.rbc-calendar {
+  font-family: inherit;
+}
+
+.rbc-header {
+  padding: 12px 3px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0F172A;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.rbc-today {
+  background-color: #EFF6FF;
+}
+
+.rbc-event {
+  padding: 2px 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rbc-toolbar button {
+  color: #475569;
+  font-weight: 500;
+  border: 1px solid #E2E8F0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.rbc-toolbar button:hover {
+  background-color: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #2563EB;
+  color: white;
+  border-color: #2563EB;
+}
+
+.rbc-toolbar button.rbc-active:hover {
+  background-color: #1D4ED8;
+}
