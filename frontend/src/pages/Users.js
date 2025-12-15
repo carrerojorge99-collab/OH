@@ -17,7 +17,7 @@ import {
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Plus, Mail, Shield, User, Trash2 } from 'lucide-react';
+import { Plus, Mail, Shield, User, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -29,8 +29,17 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState(null);
 
   const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'empleado'
+  });
+
+  const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
     password: '',
@@ -111,6 +120,53 @@ const Users = () => {
       .join('')
       .toUpperCase()
       .substring(0, 2);
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUserId(user.user_id);
+    setEditFormData({
+      name: user.name,
+      email: user.email || '',
+      password: '',
+      role: user.role
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const updateData = {
+        name: editFormData.name,
+        role: editFormData.role
+      };
+      
+      // Solo incluir email si no está vacío
+      if (editFormData.email && editFormData.email.trim() !== '') {
+        updateData.email = editFormData.email;
+      }
+      
+      // Solo incluir password si no está vacío
+      if (editFormData.password && editFormData.password.trim() !== '') {
+        updateData.password = editFormData.password;
+      }
+      
+      await axios.put(`${API}/users/${editingUserId}`, updateData, { withCredentials: true });
+      toast.success('Usuario actualizado exitosamente');
+      setEditDialogOpen(false);
+      setEditFormData({
+        name: '',
+        email: '',
+        password: '',
+        role: 'empleado'
+      });
+      setEditingUserId(null);
+      loadUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al actualizar usuario');
+      console.error(error);
+    }
   };
 
   const handleDeleteUser = async (userId, userName) => {
