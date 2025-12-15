@@ -389,6 +389,68 @@ async def log_audit(user_id: str, user_name: str, action: str, entity_type: str,
     }
     await db.audit_logs.insert_one(log_entry)
 
+class IntegrationConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    integration_id: str
+    integration_type: str  # slack, google_calendar, github, gitlab
+    enabled: bool
+    config: dict  # Contains webhook_url, api_key, etc.
+    created_at: str
+    updated_at: str
+
+async def send_slack_notification(webhook_url: str, message: str, title: str = None, color: str = "good"):
+    """Send notification to Slack webhook"""
+    if not webhook_url:
+        return
+    
+    import requests
+    
+    payload = {
+        "attachments": [{
+            "color": color,
+            "title": title or "Notificación de Proyectos",
+            "text": message,
+            "footer": "Sistema de Gestión de Proyectos",
+            "ts": int(datetime.now(timezone.utc).timestamp())
+        }]
+    }
+    
+    try:
+        requests.post(webhook_url, json=payload, timeout=5)
+    except Exception as e:
+        print(f"Error sending Slack notification: {e}")
+
+async def notify_slack_event(event_type: str, details: dict):
+    """Send notification to Slack if integration is enabled"""
+    try:
+        integration = await db.integrations.find_one(
+            {"integration_type": "slack", "enabled": True},
+            {"_id": 0}
+        )
+        
+        if not integration:
+            return
+        
+        webhook_url = integration.get('config', {}).get('webhook_url')
+        if not webhook_url:
+            return
+        
+        # Format message based on event type
+        messages = {
+            "project_created": f"🎉 Nuevo proyecto creado: **{details.get('name')}**",
+            "task_completed": f"✅ Tarea completada: **{details.get('title')}** en proyecto **{details.get('project')}**",
+            "invoice_paid": f"💰 Factura pagada: **{details.get('invoice_number')}** - ${details.get('amount')}",
+            "project_overdue": f"⚠️ Proyecto retrasado: **{details.get('name')}** - Vencía: {details.get('due_date')}",
+            "payment_received": f"💵 Pago recibido: **${details.get('amount')}** para factura **{details.get('invoice')}**"
+        }
+        
+        message = messages.get(event_type, f"Evento: {event_type}")
+        color = "good" if event_type in ["task_completed", "invoice_paid", "payment_received"] else "#764FA5"
+        
+        await send_slack_notification(webhook_url, message, "Notificación del Sistema", color)
+    except Exception as e:
+        print(f"Error in notify_slack_event: {e}")
+
 async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)) -> User:
     token = session_token
     if not token:
