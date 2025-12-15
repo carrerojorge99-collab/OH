@@ -2,164 +2,186 @@
 The user wants to create a web application for managing projects and their budgets.
 
 Over the course of the session, the user added the following requirements:
-- User authentication with roles (Admin, Collaborator).
+- User authentication with roles (Admin, Collaborator, Gestor, Empleado).
 - Project management (create, read, update, delete).
 - Budget management per project, including calculating profit (Project Value - Expenses).
+- CRUD for budget categories and expenses within a project.
 - Task management within projects.
 - Document uploading and management for each project.
 - A Kanban board view for tasks with drag-and-drop functionality.
-- A user management page to create, view, and delete users.
+- A user management page to create, view, and delete users. Email/password should be optional, with a view-only Empleado role.
 - An advanced reports page with analytics like ROI and project-on-time status.
-- Email notifications for events like task assignment, to be sent via SMTP.
+- Email notifications for events like task assignment, to be sent via SMTP, with a UI for configuration.
+- Add specific PO (Purchase Order) fields to projects.
+- Add a salary management section per project to track labor costs.
+- Add a timesheet section per project to log daily hours.
+- Mark projects with a payment status (Pending, Partial, Paid).
+- Remove the Made with Emergent badge.
 
 **User's preferred language**: Spanish. The next agent MUST respond in Spanish.
 
 **what currently exists?**
-A full-stack project management application built with FastAPI, React, and MongoDB. The application supports user authentication, project and task management, budget tracking with profit calculation, document uploads, a Kanban board, user administration, in-app notifications, and an advanced reporting dashboard. The backend logic for sending email notifications via SMTP has been implemented, but the frontend interface to configure SMTP settings is missing.
+A comprehensive full-stack project management application using FastAPI, React, and MongoDB. The application supports user authentication with four roles, full CRUD for projects, tasks, budget categories, and expenses. It features a Kanban board, document uploads, user management (with optional credentials), salary tracking, a daily timesheet, in-app notifications, and an SMTP configuration page. Most of the user's feature requests from the session have been implemented.
 
 **Last working item**:
--   **Last item agent was working on**: Implementing a settings page to allow the user to configure SMTP credentials for email notifications. The user pointed out that the SMTP feature was added to the backend, but there was no way to configure it from the frontend. The agent had just acknowledged this and was about to create the necessary backend endpoints and frontend page.
--   **Status**: IN PROGRESS
--   **Agent Testing Done**: N
--   **Which testing method agent to use?**: both. Use the backend testing agent (or curl) to verify the new  endpoints. Use the frontend testing agent (or screenshot tool) to verify the new settings page UI.
+-   **Last item agent was working**: Removing the Made with Emergent badge from the application.
+-   **Status**: COMPLETED
+-   **Agent Testing Done**: Y (Agent confirmed the badge was in  and removed it).
+-   **Which testing method agent to use?**: NA
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: No UI for SMTP configuration (P0)
--   **Issue 2**: Potential recurring crash with task assignment dropdown (P1)
+-   **Issue 1**: Editing an expense does not update the parent category's display (P0)
 
 **Issues Detail**:
 -   **Issue 1**:
-    -   **Description**: The backend has been set up to send email notifications via SMTP, but there is no user interface for the administrator to enter or update the SMTP server credentials (host, port, username, password). This makes the email notification feature unusable.
-    -   **Attempted fixes**: None. The agent was just about to start the implementation.
+    -   **Description**: The user reported that after editing an expense, the changes are not reflected in the budget category's summary view (). The backend logic seems to handle the update, but the frontend state is not being refreshed correctly to show the new totals in the category card.
+    -   **Attempted fixes**: The agent started to investigate , confirmed the backend logic seemed correct, and then got distracted by a new user request to add a project deletion feature. The issue was never resolved.
     -   **Next debug checklist**:
-        1.  In , create a new data model for settings and add two endpoints:
-            -    to fetch the current SMTP configuration.
-            -    to update the SMTP configuration.
-        2.  Create a new page . This page should contain a form with fields for SMTP Host, Port, Username, Password, and an enable/disable toggle.
-        3.  Add a link to the new Settings page in the main layout ().
-        4.  Add the new route for  in .
-    -   **Why fix this issue and what will be achieved with the fix?**: This will make the email notification feature fully functional by allowing users to connect their own SMTP server.
+        1.  In , locate the  function.
+        2.  After the  call succeeds, ensure that  or a more targeted state update function is called to refresh the project's budget, categories, and expenses.
+        3.  Verify that the API response from editing an expense returns all the necessary data for the UI to update.
+        4.  Test by editing an expense and observing if the Gastado and Disponible fields on the parent category card update immediately.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical data consistency bug. Fixing it will ensure users see accurate, real-time budget information after making changes, preventing confusion and incorrect financial tracking.
     -   **Status**: IN PROGRESS
     -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on other issue**: None
-
--   **Issue 2**:
-    -   **Description**: The user reported a crash with the error . The agent pushed a fix by changing a  value from  to . However, this fix was never visually verified or confirmed by the user.
-    -   **Attempted fixes**: The agent modified  to change the value property of a .
-    -   **Next debug checklist**:
-        1.  Navigate to a project's detail page.
-        2.  Open the Create Task modal.
-        3.  Check the browser's developer console for any errors when the modal opens.
-        4.  Attempt to create a task assigned to Sin asignar (Unassigned).
-        5.  Attempt to create a task assigned to a specific user.
-        6.  Confirm that no crashes occur and tasks are created with the correct assignment.
-    -   **Why fix this issue and what will be achieved with the fix?**: To ensure the application is stable and task assignment, a core feature, works without crashing.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
--   **Task 1**: Implement UI for SMTP Configuration (P0)
-    -   **Where to resume**: Start by editing  to add the API endpoints for getting and updating settings, as planned in the last message.
-    -   **What will be achieved with this?**: A fully functional and user-configurable email notification system.
+-   **Task 1**: Implement Frontend UI for Editing Users (P0)
+
+**Task Detail**:
+-   **Task 1**:
+    -   **Description**: The user requested the ability to create employees with just a name and role, and assign their email/password later. The agent made email/password optional and added the backend  endpoint, but never created the frontend interface to edit a user and add/update their credentials.
+    -   **Where to resume**:
+        1.  In , add an Edit button to each user row in the user list.
+        2.  Create a new  component for editing a user, similar to the Create User dialog.
+        3.  The dialog should be pre-filled with the user's current data (name, email, role).
+        4.  Implement a  function that calls the  endpoint.
+        5.  Ensure the user list refreshes automatically after a successful update.
+    -   **What will be achieved with this?**: This will complete the user management workflow, allowing admins to fully manage employee accounts from creation to granting system access.
     -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on something**: None
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **Dashboard Personalizable (P1)**: Implement a customizable dashboard where users can move/resize widgets and see different information based on their role. (Ref: )
-    -   **Filtros y Búsqueda Avanzada (P2)**: Add advanced filtering and search capabilities to the Projects and Tasks pages.
+    -   **Dashboard Mejorado con Gráficos (P1)**: Enhance the main dashboard with charts for project progress, budget vs. actuals, and payment statuses. (Ref: )
+    -   **Exportación de Reportes (P1)**: Add functionality to export the timesheet and salary reports to Excel or PDF.
+    -   **Búsqueda y Filtros Avanzados (P2)**: Implement a global search and advanced date/status filters for timesheets, projects, and tasks.
 -   **Future Tasks**:
-    -   **Timeline/Gantt Chart (P2)**: Add a new view to visualize projects and tasks on a timeline.
-    -   **Historial de Actividad (Audit Log) (P3)**: Create a log to track all significant actions taken by users within the application.
+    -   **Calendario de Proyectos (P2)**: A calendar view for task deadlines and project milestones.
+    -   **Timer en Tiempo Real (P2)**: An integrated stopwatch to track time on tasks automatically.
+    -   **Historial de Cambios (Audit Log) (P3)**: A log to track all significant actions taken by users.
+    -   **Facturación Automática (P3)**: Generate invoices from timesheet data.
 
 **Completed work in this session**
--   Full-stack application foundation with FastAPI and React.
--   User authentication (register, login) and role-based access.
--   CRUD functionality for Projects.
--   Project profit calculation ( - expenses).
--   Document management system with upload, download, and delete.
--   Task management with a Kanban board view and drag-and-drop status changes.
--   User management page to create, view, and delete users.
--   In-app notification center.
--   Advanced reports page with analytics charts.
--   Backend integration for SMTP email notifications.
--   Task progress update via a slider in the list view.
--   Deletion functionality for both projects and users.
+-   SMTP settings page created and tested.
+-   Kanban board drag-and-drop functionality fixed.
+-   Budget analysis cards (Total, Assigned, Available) added to Project Detail.
+-   CRUD functionality for Budget Categories, including edit/delete buttons.
+-   CRUD functionality for Expenses, including edit/delete buttons.
+-   Project deletion feature added to the main projects list.
+-   Project payment status (Pending, Partial, Paid) implemented on backend and frontend.
+-   Custom Purchase Order (PO) fields added to project creation/edit forms.
+-   New Salarios (Labor) tab with full CRUD for managing labor costs.
+-   Consumed Hours and Consumed Salary tracking added to the Salarios tab.
+-   New Timesheet tab with full CRUD for logging daily work hours.
+-   Project Number is now displayed on project cards.
+-   User creation form updated to make email/password optional and add a view-only Empleado role.
+-   Made with Emergent badge removed from .
+-   Recurring  crash was fixed and verified.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1**: The  crash (detailed in All Pending/In progress Issue list). A fix was attempted but never fully verified.
+-   **Issue 1**: The expense editing UI refresh bug (detailed in All Pending/In progress Issue list).
 
 **Known issue recurrence from previous fork**
--   None. This is the first summary.
+-   **Issue recurrence in previous fork**: The original summary mentioned a  crash. A similar but distinct  crash () occurred during this session when implementing the Timesheet. The agent fixed it.
+-   **Recurrence count**: 2 (related  value issues).
+-   **Status**: RESOLVED
+-   **Note**: The Shadcn  component is strict about  props not being empty strings. The next agent should be mindful of this, using a non-empty placeholder value like  or  for default/empty states.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
 -   **Backend**: FastAPI, Pydantic, Motor (async MongoDB driver)
--   **Frontend**: React, React Router, TailwindCSS, Shadcn/UI components
+-   **Frontend**: React, React Router, TailwindCSS, Shadcn/UI, 
 -   **Database**: MongoDB
 -   **Authentication**: JWT-based session management
--   **Real-time UI**: Polling for notifications, client-side state management for immediate UI updates.
--   **Drag & Drop**:  for the Kanban board.
 
 **key DB schema**
--   **users**: {user_id, name, email, password_hash, role, created_at}
--   **projects**: {project_id, name, description, budget, project_value, owner_id, status, ...}
--   **tasks**: {task_id, project_id, name, status, assigned_to, due_date, priority}
--   **documents**: {document_id, project_id, file_name, file_path, uploaded_by, size}
--   **notifications**: {notification_id, user_id, message, is_read, created_at}
--   **settings**: A singleton collection to store SMTP configuration: {smtp_enabled, smtp_host, smtp_port, ...}
+-   **users**: {user_id, name, email?, password_hash?, role, ...}
+-   **projects**: {project_id, name, ..., payment_status, client, sponsor, project_number, po_number, ...}
+-   **tasks**: {task_id, project_id, name, status, assigned_to, ...}
+-   **budget_categories**: {category_id, project_id, name, amount}
+-   **expenses**: {expense_id, project_id, category_id, description, amount, date}
+-   **labor**: {labor_id, project_id, category, ..., consumed_hours, consumed_cost}
+-   **timesheet_entries**: {entry_id, project_id, user_id, task_id, date, hours, description}
+-   **settings**: Singleton collection for SMTP configuration.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : Contains all backend logic, API endpoints, and database models.
--   : New file for handling SMTP logic.
--   : A complex page that handles tasks, documents, budget, comments, and the Kanban board.
--   : Page for user management.
--   : New page for advanced reports.
--   : Main layout, contains sidebar navigation.
--   : Contains all the frontend routes.
+-   : Heavily modified. Contains all backend logic for all new features (PO fields, payment status, labor, timesheet, user updates).
+-   : Heavily modified. Contains the UI for almost all new features (Budget, Categories, Expenses, Salarios, Timesheet). It is now extremely large.
+-   : Modified to add project deletion and display the new payment status and project number fields. The creation form was also updated significantly.
+-   : Modified to make email/password optional and add the new Empleado role. Needs further modification for the edit functionality.
+-   : Modified to remove the Made with Emergent badge.
+
+**Areas that need refactoring**
+-   ****: This file has become a monolith, containing all data models and API endpoints. It should be broken down into a more scalable structure (e.g., , ).
+-   ****: This React component is now over 2,500 lines long and manages the state and UI for at least 7 different tabs/features. It should be refactored by extracting each tab's content and logic into its own dedicated component.
+
+**key api endpoints**
+-   
+-   
+-   
+-   
+-   
+-    (GET, POST)
+-    (PUT, DELETE)
+-    (GET, POST)
+-    (PUT, DELETE)
 
 **Critical Info for New Agent**
 -   You MUST communicate with the user in **Spanish**.
--   The immediate task is to create a Settings page in the frontend and corresponding backend endpoints so the user can configure their SMTP credentials.
--   You should also verify the previous fix for the  crash, as it was not confirmed.
--   The application uses Shadcn/UI components. Be mindful of their props and requirements, like the  prop on .
+-   Your highest priorities are fixing the bug where editing an expense doesn't update the UI (P0) and implementing the UI to edit existing users (P0).
+-   The files  and  are very large and complex. Be cautious when editing them. Refactoring them should be proposed to the user as a future task.
+-   Be mindful of the Shadcn  component; it crashes if a  has . Use a placeholder like .
+
+**documents created in this job**
+-   : A temporary file used to insert a large block of code into . Can be deleted.
 
 **Last 10 User Messages and any pending user messages**
-1.  **User**:  (Create an admin account for me...) - **Status: Completed.**
-2.  **User**:  (I need to edit the budget and see the profit...) - **Status: Completed.**
-3.  **User**:  (I don't have an option to delete the project) - **Status: Completed.**
-4.  **User**:  (add a tab to upload documents...) - **Status: Completed.**
-5.  **User**:  (Kanban Board... do this) - **Status: Completed.**
-6.  **User**:  (User pastes a console error) - **Status: Fix Attempted, Verification Pending.**
-7.  **User**:  (in the task list I can't update progress and add the ability to create users) - **Status: Completed.**
-8.  **User**:  (add the option to delete users) - **Status: Completed.**
-9.  **User**:  (Advanced Reports... add an smtp for sending notifications) - **Status: Partially Completed.**
-10. **User**:  (where is the smtp, I don't see it? what else can be added?) - **Status: Pending. This is the current active request.**
+1.  **User**: Add  and  to the salary table. - **Status: Completed**, but introduced a bug.
+2.  **User**:  (Project not found, what happened?) - **Status: Completed**. Agent fixed a Pydantic validation error for old data.
+3.  **User**:  (Create a timesheet in the project...). - **Status: Completed**, but introduced a  crash.
+4.  **User**:  (User pastes crash log). - **Status: Completed**. Agent fixed the crash.
+5.  **User**:  (What else can we add to the app?). - **Status: Completed**. Agent provided a list of suggestions.
+6.  **User**:  (Delete the 'made with emergent' badge). - **Status: Completed**.
+7.  **User**: Allow creating employees and assigning their email/password later. - **Status: In Progress**. Backend is done, but frontend UI for editing is missing.
+8.  **User**:  (In the salary area, show the people assigned to the project). - **Status: Completed**.
+9.  **User**:  (On the project card, show the project number). - **Status: Completed**, after one revision for better styling.
+10. **User**:  (Not there, it doesn't look good.) - **Status: Completed**. Agent revised the project number display.
 
 **Project Health Check:**
 -   **Broken**:
-    -   The email notification feature is unusable as there is no UI to configure SMTP credentials.
+    -   The UI does not automatically update a category's budget summary when a related expense is edited.
+    -   There is no UI to edit an existing user's credentials, which is a required part of the user management flow.
 -   **Mocked**:
-    -   SMTP credentials in  are placeholder values.
+    -   SMTP credentials in  are still placeholders.
 
 **3rd Party Integrations**
--   None managed via Emergent tools. The agent is implementing a custom SMTP integration.
+-   Custom SMTP integration for email notifications. No Emergent-managed integrations.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, used after the initial build.
+-   **Testing agent used after significant changes**: YES, but the user interrupted it once.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: None identified, but the fix for the  crash needs verification.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
 -   **Email**: 
@@ -167,4 +189,5 @@ A full-stack project management application built with FastAPI, React, and Mongo
 -   **Role**: admin
 
 **What agent forgot to execute**
--   The agent implemented the backend logic for SMTP email sending but forgot to create the corresponding frontend UI for configuration, which the user immediately noticed and pointed out.</analysis>
+-   The agent did not implement the frontend UI for **editing users** to add/change their credentials, which was a key part of the request to make email/password optional. Only the backend endpoint was created.
+-   The agent did not resolve the bug where editing an expense fails to refresh the category's budget summary in the UI. The agent was distracted by another user request and never returned to it.</analysis>
