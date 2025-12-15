@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Calendar from './pages/Calendar';
+import ClockInOut from './pages/ClockInOut';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
 import Invoices from './pages/Invoices';
@@ -52,6 +53,12 @@ function AppRouter() {
       <Route path="/calendar" element={
         <ProtectedRoute>
           <Calendar />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/clock" element={
+        <ProtectedRoute>
+          <ClockInOut />
         </ProtectedRoute>
       } />
       
