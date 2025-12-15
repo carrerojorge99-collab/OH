@@ -66,7 +66,7 @@ export const exportTimesheetToPDF = (timesheetData, projectName) => {
 
   const totalHours = timesheetData.reduce((sum, entry) => sum + (entry.hours || 0), 0);
 
-  doc.autoTable({
+  autoTable(doc, {
     head: [['Fecha', 'Usuario', 'Tarea', 'Horas', 'Descripción']],
     body: tableData,
     foot: [['TOTAL', '', '', totalHours.toString(), '']],
