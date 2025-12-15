@@ -509,6 +509,33 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleTimerStop = async (hours) => {
+    const roundedHours = Math.round(hours * 100) / 100; // Round to 2 decimals
+    
+    if (roundedHours === 0) {
+      toast.error('El tiempo registrado es demasiado corto');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/timesheet`, {
+        project_id: projectId,
+        user_id: users[0]?.user_id || '', // Use first user or let backend handle
+        user_name: users[0]?.name || 'Usuario',
+        task_id: null,
+        date: new Date().toISOString().split('T')[0],
+        hours_worked: roundedHours,
+        description: `Registro automático del timer (${roundedHours} horas)`
+      }, { withCredentials: true });
+      
+      toast.success(`Tiempo guardado: ${roundedHours} horas`);
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al guardar el tiempo');
+      console.error(error);
+    }
+  };
+
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
