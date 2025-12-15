@@ -267,8 +267,12 @@ const Invoices = () => {
         return <Badge className="bg-slate-100 text-slate-700">Borrador</Badge>;
       case 'sent':
         return <Badge className="bg-blue-100 text-blue-700">Enviada</Badge>;
+      case 'partial':
+        return <Badge className="bg-orange-100 text-orange-700">Pago Parcial</Badge>;
       case 'paid':
         return <Badge className="bg-green-100 text-green-700">Pagada</Badge>;
+      case 'overdue':
+        return <Badge className="bg-red-100 text-red-700">Vencida</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
