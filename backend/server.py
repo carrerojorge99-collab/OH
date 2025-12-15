@@ -683,6 +683,12 @@ async def create_project(project_data: ProjectCreate, request: Request, session_
         {"budget": project_data.budget_total, "status": project_data.status}
     )
     
+    # Send Slack notification
+    await notify_slack_event("project_created", {
+        "name": project_data.name,
+        "created_by": user.name
+    })
+    
     return Project(**project_doc)
 
 @api_router.get("/projects", response_model=List[Project])
