@@ -25,7 +25,8 @@ import {
   Calendar,
   FileText,
   DollarSign,
-  Zap
+  Zap,
+  Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,6 +38,7 @@ const Layout = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Ponchar', href: '/clock', icon: Clock },
     { name: 'Proyectos', href: '/projects', icon: FolderKanban },
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
