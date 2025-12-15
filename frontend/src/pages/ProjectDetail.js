@@ -2273,13 +2273,32 @@ const ProjectDetail = () => {
           <TabsContent value="timesheet" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold tracking-tight">Timesheet - Registro de Horas</h2>
-              <Dialog open={timesheetDialogOpen} onOpenChange={setTimesheetDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Registro
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => exportTimesheetToExcel(timesheet, project?.name || 'Proyecto')}
+                  disabled={timesheet.length === 0}
+                  title="Exportar a Excel"
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Excel
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => exportTimesheetToPDF(timesheet, project?.name || 'Proyecto')}
+                  disabled={timesheet.length === 0}
+                  title="Exportar a PDF"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDF
+                </Button>
+                <Dialog open={timesheetDialogOpen} onOpenChange={setTimesheetDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nuevo Registro
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Registrar Horas de Trabajo</DialogTitle>
