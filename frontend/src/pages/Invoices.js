@@ -22,7 +22,7 @@ import { Plus, FileText, Download, Eye, Trash2, DollarSign } from 'lucide-react'
 import { toast } from 'sonner';
 import moment from 'moment';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
