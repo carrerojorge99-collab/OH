@@ -128,6 +128,64 @@ const Invoices = () => {
     }
   };
 
+  const handleSendInvoice = async (invoiceId, clientEmail) => {
+    if (!clientEmail) {
+      toast.error('La factura no tiene email del cliente');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/invoices/${invoiceId}/send`, {}, { withCredentials: true });
+      toast.success(`Factura enviada a ${clientEmail}`);
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al enviar factura');
+    }
+  };
+
+  const handleOpenPaymentDialog = async (invoice) => {
+    setSelectedInvoiceForPayment(invoice);
+    setPaymentForm({
+      amount: invoice.balance_due || invoice.total,
+      payment_method: 'transfer',
+      reference: '',
+      notes: ''
+    });
+    
+    // Load existing payments
+    try {
+      const response = await axios.get(`${API}/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
+      setPayments(response.data);
+    } catch (error) {
+      console.error('Error loading payments:', error);
+    }
+    
+    setPaymentDialogOpen(true);
+  };
+
+  const handleAddPayment = async (e) => {
+    e.preventDefault();
+
+    try {
+      await axios.post(
+        `${API}/invoices/${selectedInvoiceForPayment.invoice_id}/payments`,
+        paymentForm,
+        { withCredentials: true }
+      );
+      toast.success('Pago registrado exitosamente');
+      setPaymentDialogOpen(false);
+      setPaymentForm({
+        amount: 0,
+        payment_method: 'transfer',
+        reference: '',
+        notes: ''
+      });
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al registrar pago');
+    }
+  };
+
   const exportToPDF = (invoice) => {
     const doc = new jsPDF();
 
