@@ -556,6 +556,18 @@ async def create_project(project_data: ProjectCreate, request: Request, session_
     }
     
     await db.projects.insert_one(project_doc)
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "create",
+        "project",
+        project_id,
+        project_data.name,
+        {"budget": project_data.budget_total, "status": project_data.status}
+    )
+    
     return Project(**project_doc)
 
 @api_router.get("/projects", response_model=List[Project])
