@@ -194,7 +194,7 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Charts */}
+        {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Budget Chart */}
           <Card className="border-slate-200 shadow-sm">
@@ -269,6 +269,137 @@ const Dashboard = () => {
               ) : (
                 <div className="flex items-center justify-center h-[300px] text-muted-foreground">
                   <p>No hay proyectos disponibles</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Payment Status */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold tracking-tight">Estados de Pago</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {projectsByPaymentStatus.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={projectsByPaymentStatus}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {projectsByPaymentStatus.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <p>No hay datos de pago disponibles</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* On-Time Projects */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold tracking-tight">Proyectos a Tiempo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {onTimeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={onTimeData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {onTimeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <p>No hay proyectos activos</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row 3 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* ROI Chart */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold tracking-tight">Top 5 ROI por Proyecto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {projectsWithROI.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={projectsWithROI} layout="horizontal">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis type="number" tick={{ fontSize: 12 }} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={120} />
+                    <Tooltip 
+                      formatter={(value, name) => {
+                        if (name === 'roi') return [`${value.toFixed(2)}%`, 'ROI'];
+                        return [value, name];
+                      }}
+                    />
+                    <Bar dataKey="roi" fill="#10B981" radius={[0, 8, 8, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <p>No hay datos de ROI disponibles</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Budget Progress */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold tracking-tight">Progreso de Presupuesto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {projectsBudgetProgress.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={projectsBudgetProgress}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" height={80} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(value) => `$${value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`} />
+                    <Legend />
+                    <Bar dataKey="gastado" fill="#EF4444" name="Gastado" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="asignado" fill="#10B981" name="Asignado" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  <p>No hay datos de presupuesto disponibles</p>
                 </div>
               )}
             </CardContent>
