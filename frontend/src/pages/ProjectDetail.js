@@ -2558,6 +2558,9 @@ const ProjectDetail = () => {
               </Dialog>
             </div>
 
+            {/* Timer Component */}
+            <Timer onStop={handleTimerStop} />
+
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
