@@ -26,6 +26,7 @@ import {
   Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User
 } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
+import Timer from '../components/Timer';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { 
