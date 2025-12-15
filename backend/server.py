@@ -347,11 +347,32 @@ class Invoice(BaseModel):
     tax_rate: float
     tax_amount: float
     total: float
-    status: str  # draft, sent, paid
+    amount_paid: float = 0.0
+    balance_due: float = 0.0
+    status: str  # draft, sent, paid, overdue, partial
     notes: Optional[str] = None
     created_by: str
     created_at: str
     due_date: Optional[str] = None
+    sent_date: Optional[str] = None
+    paid_date: Optional[str] = None
+
+class PaymentCreate(BaseModel):
+    amount: float
+    payment_method: str  # cash, card, transfer, check
+    reference: Optional[str] = None
+    notes: Optional[str] = None
+
+class Payment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    payment_id: str
+    invoice_id: str
+    amount: float
+    payment_method: str
+    reference: Optional[str] = None
+    notes: Optional[str] = None
+    created_by: str
+    created_at: str
 
 async def log_audit(user_id: str, user_name: str, action: str, entity_type: str, entity_id: str, entity_name: str, details: dict = None):
     """Helper function to create audit log entries"""
