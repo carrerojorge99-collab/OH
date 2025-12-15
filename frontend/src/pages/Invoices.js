@@ -395,6 +395,107 @@ const Invoices = () => {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Payment Dialog */}
+          <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Registrar Pago</DialogTitle>
+                <DialogDescription>
+                  {selectedInvoiceForPayment && (
+                    <div className="mt-2">
+                      <p>Factura: {selectedInvoiceForPayment.invoice_number}</p>
+                      <p className="text-lg font-bold mt-1">
+                        Saldo Pendiente: ${selectedInvoiceForPayment.balance_due?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddPayment}>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Monto del Pago *</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={paymentForm.amount}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, amount: parseFloat(e.target.value) || 0 })}
+                      required
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_method">Método de Pago *</Label>
+                    <Select
+                      value={paymentForm.payment_method}
+                      onValueChange={(value) => setPaymentForm({ ...paymentForm, payment_method: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="transfer">Transferencia</SelectItem>
+                        <SelectItem value="card">Tarjeta</SelectItem>
+                        <SelectItem value="cash">Efectivo</SelectItem>
+                        <SelectItem value="check">Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="reference">Referencia/Confirmación</Label>
+                    <Input
+                      id="reference"
+                      value={paymentForm.reference}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
+                      placeholder="Número de referencia o confirmación"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_notes">Notas</Label>
+                    <Textarea
+                      id="payment_notes"
+                      value={paymentForm.notes}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                      placeholder="Información adicional del pago..."
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Existing Payments */}
+                  {payments.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <h4 className="font-semibold mb-2 text-sm">Pagos Anteriores:</h4>
+                      <div className="space-y-2">
+                        {payments.map((payment) => (
+                          <div key={payment.payment_id} className="text-xs bg-slate-50 p-2 rounded">
+                            <div className="flex justify-between">
+                              <span>{moment(payment.created_at).format('DD/MM/YYYY')}</span>
+                              <span className="font-bold">${payment.amount.toFixed(2)}</span>
+                            </div>
+                            <div className="text-slate-600">{payment.payment_method}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                    Registrar Pago
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Invoices List */}
