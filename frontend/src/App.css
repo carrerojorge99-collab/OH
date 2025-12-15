@@ -125,3 +125,49 @@
 .rbc-toolbar button.rbc-active:hover {
   background-color: #1D4ED8;
 }
+
+/* PWA Install Banner Animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .stat-card {
+    min-height: 120px;
+  }
+  
+  /* Larger touch targets for mobile */
+  button, a {
+    min-height: 44px;
+  }
+  
+  /* Better spacing on mobile */
+  .space-y-8 > * + * {
+    margin-top: 1.5rem;
+  }
+}
+
+/* PWA standalone mode styles */
+@media all and (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Hide install banner when already installed */
+  .pwa-install-banner {
+    display: none;
+  }
+}
