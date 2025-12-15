@@ -322,6 +322,38 @@ class AuditLog(BaseModel):
     details: Optional[dict] = None
     timestamp: str
 
+class InvoiceItem(BaseModel):
+    description: str
+    hours: float
+    rate: float
+    amount: float
+
+class InvoiceCreate(BaseModel):
+    project_id: str
+    client_name: str
+    client_email: Optional[str] = None
+    tax_rate: float = 0.0
+    notes: Optional[str] = None
+
+class Invoice(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    invoice_id: str
+    invoice_number: str
+    project_id: str
+    project_name: str
+    client_name: str
+    client_email: Optional[str] = None
+    items: List[InvoiceItem]
+    subtotal: float
+    tax_rate: float
+    tax_amount: float
+    total: float
+    status: str  # draft, sent, paid
+    notes: Optional[str] = None
+    created_by: str
+    created_at: str
+    due_date: Optional[str] = None
+
 async def log_audit(user_id: str, user_name: str, action: str, entity_type: str, entity_id: str, entity_name: str, details: dict = None):
     """Helper function to create audit log entries"""
     log_entry = {
