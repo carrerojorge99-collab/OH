@@ -21,7 +21,8 @@ import {
   Briefcase,
   Users,
   BarChart3,
-  Settings
+  Settings,
+  Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,6 +35,7 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+    { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
     { name: 'Usuarios', href: '/users', icon: Users },
     { name: 'Configuración', href: '/settings', icon: Settings },
