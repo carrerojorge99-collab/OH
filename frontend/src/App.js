@@ -12,6 +12,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import Calendar from './pages/Calendar';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
+import Invoices from './pages/Invoices';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -62,6 +63,12 @@ function AppRouter() {
       <Route path="/reports" element={
         <ProtectedRoute>
           <Reports />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/invoices" element={
+        <ProtectedRoute>
+          <Invoices />
         </ProtectedRoute>
       } />
       
