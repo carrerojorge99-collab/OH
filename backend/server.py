@@ -470,6 +470,59 @@ class Estimate(BaseModel):
     approved_date: Optional[str] = None
     converted_invoice_id: Optional[str] = None
 
+# Purchase Order Models
+class PurchaseOrderItem(BaseModel):
+    description: str
+    quantity: float = 1.0
+    unit_price: float
+    amount: float
+
+class PurchaseOrderCreate(BaseModel):
+    project_id: Optional[str] = None
+    supplier_name: str
+    supplier_email: Optional[str] = None
+    supplier_phone: Optional[str] = None
+    supplier_address: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    items: List[PurchaseOrderItem]
+    tax_rate: float = 0.0
+    discount_percent: float = 0.0
+    notes: Optional[str] = None
+    terms: Optional[str] = None
+    expected_delivery_date: Optional[str] = None
+
+class PurchaseOrder(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    po_id: str
+    po_number: str
+    project_id: Optional[str] = None
+    project_name: Optional[str] = None
+    supplier_name: str
+    supplier_email: Optional[str] = None
+    supplier_phone: Optional[str] = None
+    supplier_address: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    items: List[PurchaseOrderItem]
+    subtotal: float
+    discount_percent: float = 0.0
+    discount_amount: float = 0.0
+    tax_rate: float = 0.0
+    tax_amount: float = 0.0
+    total: float
+    status: str  # draft, approved, sent, partially_received, completed, cancelled
+    notes: Optional[str] = None
+    terms: Optional[str] = None
+    expected_delivery_date: Optional[str] = None
+    created_by: str
+    created_by_name: str
+    created_at: str
+    approved_date: Optional[str] = None
+    sent_date: Optional[str] = None
+    received_date: Optional[str] = None
+    linked_expense_id: Optional[str] = None
+
 async def log_audit(user_id: str, user_name: str, action: str, entity_type: str, entity_id: str, entity_name: str, details: dict = None):
     """Helper function to create audit log entries"""
     log_entry = {
