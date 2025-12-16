@@ -85,7 +85,10 @@ const Projects = () => {
 
   const loadProjects = async () => {
     try {
-      const response = await axios.get(`${API}/projects`, { withCredentials: true });
+      const response = await axios.get(`${API}/projects?_t=${Date.now()}`, { 
+        withCredentials: true,
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       setProjects(response.data);
       setFilteredProjects(response.data);
     } catch (error) {
