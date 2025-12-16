@@ -65,6 +65,46 @@ const ClockInOut = () => {
     }
   };
 
+  const getLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Tu navegador no soporta geolocalización'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          let errorMessage = 'Error al obtener ubicación';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Debes permitir el acceso a tu ubicación para poder ponchar';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Información de ubicación no disponible';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Tiempo de espera agotado al obtener ubicación';
+              break;
+            default:
+              errorMessage = 'Error desconocido al obtener ubicación';
+          }
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  };
+
   const handleClockIn = async () => {
     if (!selectedProject) {
       toast.error('Selecciona un proyecto');
@@ -72,16 +112,25 @@ const ClockInOut = () => {
     }
 
     try {
+      toast.info('Obteniendo tu ubicación GPS...', { duration: 2000 });
+      
+      const location = await getLocation();
+      
       await axios.post(
         `${API}/clock/in`,
         null,
         {
-          params: { project_id: selectedProject, notes },
+          params: { 
+            project_id: selectedProject, 
+            notes,
+            latitude: location.latitude,
+            longitude: location.longitude
+          },
           withCredentials: true
         }
       );
       
-      toast.success('¡Ponche de entrada registrado!');
+      toast.success('¡Ponche de entrada registrado con ubicación!');
       
       // Show notification
       if ('Notification' in window && Notification.permission === 'granted') {
@@ -95,22 +144,34 @@ const ClockInOut = () => {
       setSelectedProject('');
       loadData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al registrar entrada');
+      if (error.message && error.message.includes('ubicación')) {
+        toast.error(error.message, { duration: 5000 });
+      } else {
+        toast.error(error.response?.data?.detail || 'Error al registrar entrada');
+      }
     }
   };
 
   const handleClockOut = async () => {
     try {
+      toast.info('Obteniendo tu ubicación GPS...', { duration: 2000 });
+      
+      const location = await getLocation();
+      
       await axios.post(
         `${API}/clock/out`,
         null,
         {
-          params: { notes },
+          params: { 
+            notes,
+            latitude: location.latitude,
+            longitude: location.longitude
+          },
           withCredentials: true
         }
       );
       
-      toast.success('¡Ponche de salida registrado! Horas agregadas al timesheet');
+      toast.success('¡Ponche de salida registrado con ubicación! Horas agregadas al timesheet');
       
       // Show notification
       if ('Notification' in window && Notification.permission === 'granted') {
