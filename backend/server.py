@@ -1501,6 +1501,30 @@ async def clock_in(
     if user.user_id not in project.get('team_members', []) and user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="No estás asignado a este proyecto")
     
+    # ========== GEOFENCING VALIDATION ==========
+    geofence_enabled = project.get('geofence_enabled', False)
+    project_lat = project.get('location_latitude')
+    project_lon = project.get('location_longitude')
+    geofence_radius = project.get('geofence_radius', 100)
+    
+    # Si el proyecto no tiene geofencing, verificar ubicación general de empresa
+    if not geofence_enabled or not project_lat or not project_lon:
+        company = await db.company_settings.find_one({}, {"_id": 0})
+        if company and company.get('geofence_enabled'):
+            geofence_enabled = True
+            project_lat = company.get('location_latitude')
+            project_lon = company.get('location_longitude')
+            geofence_radius = company.get('geofence_radius', 100)
+    
+    # Validar geofencing si está habilitado
+    if geofence_enabled and project_lat and project_lon:
+        distance = calculate_distance(latitude, longitude, project_lat, project_lon)
+        if distance > geofence_radius:
+            raise HTTPException(
+                status_code=403,
+                detail=f"No puedes ponchar desde esta ubicación. Estás a {int(distance)} metros del área de trabajo permitida (máximo {int(geofence_radius)} metros)."
+            )
+    
     # Create clock entry
     clock_id = f"clk_{uuid4().hex[:16]}"
     now = datetime.now(timezone.utc)
