@@ -228,7 +228,7 @@ const Invoices = () => {
     ]);
 
     // Generate table using autoTable plugin
-    (doc as any).autoTable({
+    doc.autoTable({
       head: [['Descripción', 'Horas', 'Tarifa', 'Total']],
       body: tableData,
       startY: 80,
@@ -236,7 +236,7 @@ const Invoices = () => {
       headStyles: { fillColor: [37, 99, 235] }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const finalY = doc.lastAutoTable.finalY + 10;
 
     // Totals
     doc.setFontSize(10);
