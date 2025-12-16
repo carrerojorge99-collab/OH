@@ -110,7 +110,7 @@ const Layout = ({ children }) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {navigation.map((item) => {
+            {navigation.filter(item => !item.adminOnly || user?.role === 'admin').map((item) => {
               const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
               return (
                 <Link
