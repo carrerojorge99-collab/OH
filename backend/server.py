@@ -2890,9 +2890,15 @@ async def create_estimate(
 ):
     user = await get_current_user(request, session_token)
     
-    # Generate estimate number
-    count = await db.estimates.count_documents({})
-    estimate_number = f"EST-{datetime.now().year}-{str(count + 1).zfill(4)}"
+    # Generate estimate number (use custom if provided)
+    if estimate_data.custom_number and estimate_data.custom_number.strip():
+        estimate_number = estimate_data.custom_number.strip()
+    else:
+        company_settings = await db.company_settings.find_one({}, {"_id": 0})
+        next_num = company_settings.get("next_estimate_number", 1) if company_settings else 1
+        estimate_number = f"EST-{datetime.now().year}-{str(next_num).zfill(4)}"
+        await db.company_settings.update_one({}, {"$inc": {"next_estimate_number": 1}}, upsert=True)
+    
     estimate_id = f"est_{uuid4().hex[:16]}"
     now = datetime.now(timezone.utc).isoformat()
     
