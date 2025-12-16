@@ -199,18 +199,20 @@ const ProjectDetail = () => {
   }, [selectedTimesheetUser, timesheet]);
 
   const loadProjectData = async () => {
+    const ts = Date.now();
+    const cfg = { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } };
     try {
       const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, timesheetRes, commentsRes, documentsRes, statsRes, logsRes] = await Promise.all([
-        axios.get(`${API}/projects/${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/tasks?project_id=${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/budget/categories?project_id=${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/expenses?project_id=${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/labor?project_id=${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/timesheet?project_id=${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/comments?project_id=${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/documents?project_id=${projectId}`, { withCredentials: true }),
-        axios.get(`${API}/projects/${projectId}/stats`, { withCredentials: true }),
-        axios.get(`${API}/project-logs?project_id=${projectId}`, { withCredentials: true })
+        axios.get(`${API}/projects/${projectId}?_t=${ts}`, cfg),
+        axios.get(`${API}/tasks?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/budget/categories?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/expenses?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/labor?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/timesheet?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/comments?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/documents?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/projects/${projectId}/stats?_t=${ts}`, cfg),
+        axios.get(`${API}/project-logs?project_id=${projectId}&_t=${ts}`, cfg)
       ]);
       
       setProject(projectRes.data);
