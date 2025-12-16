@@ -47,7 +47,6 @@ const Layout = ({ children }) => {
     { name: 'Estimados', href: '/estimates', icon: FileText },
     { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
     { name: 'Facturas', href: '/invoices', icon: DollarSign },
-    { name: 'Integraciones', href: '/integrations', icon: Zap },
     { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
     { name: 'Usuarios', href: '/users', icon: Users },
     { name: 'Configuración', href: '/settings', icon: Settings },
