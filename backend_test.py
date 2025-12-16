@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 
 class ProjectManagementAPITester:
-    def __init__(self, base_url="https://proyekta-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://resourcehub-24.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None
