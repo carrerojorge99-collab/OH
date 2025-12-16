@@ -377,6 +377,7 @@ class InvoiceCreate(BaseModel):
     client_email: Optional[str] = None
     tax_rate: float = 0.0
     notes: Optional[str] = None
+    custom_number: Optional[str] = None
 
 class Invoice(BaseModel):
     model_config = ConfigDict(extra="ignore")
