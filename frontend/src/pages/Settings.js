@@ -40,7 +40,10 @@ const Settings = () => {
     website: '',
     tax_id: '',
     currency: 'USD',
-    footer_text: ''
+    footer_text: '',
+    next_invoice_number: 1,
+    next_estimate_number: 1,
+    next_po_number: 1
   });
 
   const API_URL = process.env.REACT_APP_BACKEND_URL;
