@@ -98,6 +98,21 @@ const ClockHistory = () => {
     setExpandedGroups({});
   };
 
+  const handleDeleteClock = async (clockId, userName, date) => {
+    if (!window.confirm(`¿Eliminar el ponche de ${userName} del ${moment(date).format('DD/MM/YYYY')}?`)) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/clock/${clockId}`, { withCredentials: true });
+      toast.success('Ponche eliminado exitosamente');
+      loadData(); // Reload data
+    } catch (error) {
+      console.error('Error deleting clock:', error);
+      toast.error(error.response?.data?.detail || 'Error al eliminar ponche');
+    }
+  };
+
   const loadData = async () => {
     try {
       const timestamp = Date.now();
