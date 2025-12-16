@@ -455,6 +455,63 @@ const Settings = () => {
                     </div>
                   </div>
 
+                  {/* Geofencing - Ubicación General */}
+                  <div className="p-4 border rounded-lg bg-green-50 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-base font-medium">Restricción de Ubicación (Geofencing)</Label>
+                        <p className="text-sm text-slate-500">Los empleados solo podrán ponchar dentro del área permitida</p>
+                      </div>
+                      <Switch
+                        checked={company.geofence_enabled || false}
+                        onCheckedChange={(checked) => setCompany(prev => ({ ...prev, geofence_enabled: checked }))}
+                      />
+                    </div>
+                    
+                    {company.geofence_enabled && (
+                      <div className="space-y-4 pt-2">
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="location_latitude">Latitud</Label>
+                            <Input
+                              id="location_latitude"
+                              type="number"
+                              step="0.000001"
+                              placeholder="18.4655"
+                              value={company.location_latitude || ''}
+                              onChange={(e) => setCompany(prev => ({ ...prev, location_latitude: parseFloat(e.target.value) || null }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="location_longitude">Longitud</Label>
+                            <Input
+                              id="location_longitude"
+                              type="number"
+                              step="0.000001"
+                              placeholder="-66.1057"
+                              value={company.location_longitude || ''}
+                              onChange={(e) => setCompany(prev => ({ ...prev, location_longitude: parseFloat(e.target.value) || null }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="geofence_radius">Radio (metros)</Label>
+                            <Input
+                              id="geofence_radius"
+                              type="number"
+                              min="10"
+                              max="1000"
+                              value={company.geofence_radius || 100}
+                              onChange={(e) => setCompany(prev => ({ ...prev, geofence_radius: parseInt(e.target.value) || 100 }))}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          💡 Tip: Puedes obtener las coordenadas desde Google Maps (clic derecho → "¿Qué hay aquí?")
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Submit Button */}
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={savingCompany} className="flex items-center space-x-2">
