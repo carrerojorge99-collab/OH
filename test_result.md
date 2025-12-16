@@ -152,15 +152,18 @@ frontend:
 
   - task: "Estimate to Invoice Conversion UI"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/pages/Estimates.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Convert button appears for approved estimates. handleConvert function calls POST /api/estimates/{id}/convert. Need to test full flow via UI."
+        - working: false
+          agent: "testing"
+          comment: "CRITICAL: JavaScript error 'moment is not defined' prevents navigation to Estimates page. Cannot test estimate to invoice conversion functionality. Same moment.js import issue affecting entire frontend."
 
 backend:
   - task: "Project Logs CRUD API"
