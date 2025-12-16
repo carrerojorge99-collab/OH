@@ -6,6 +6,400 @@ import json
 import time
 from datetime import datetime
 
+class ClockSystemTester:
+    def __init__(self, base_url="https://resourcehub-24.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.test_project_id = None
+        self.active_clock_id = None
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="carrerojorge99@gmail.com", password="Axel52418!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_get_projects(self):
+        """Test getting available projects for clock-in"""
+        print(f"\n🔍 Testing Get Available Projects...")
+        
+        try:
+            url = f"{self.api_url}/clock/projects"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                projects = response.json()
+                if isinstance(projects, list) and len(projects) > 0:
+                    self.test_project_id = projects[0]['project_id']
+                    project_name = projects[0]['name']
+                    self.log_test("Get Available Projects", True, f"Found {len(projects)} projects. Using: {project_name} (ID: {self.test_project_id})")
+                    return True, projects
+                else:
+                    self.log_test("Get Available Projects", False, "", "No projects available for clock-in")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Available Projects", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Available Projects", False, "", str(e))
+            return False, []
+
+    def test_get_active_clock_initial(self):
+        """Test getting active clock - should be null initially"""
+        print(f"\n🔍 Testing Get Active Clock (Initial State)...")
+        
+        try:
+            url = f"{self.api_url}/clock/active"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                active_clock = response.json()
+                if active_clock is None:
+                    self.log_test("Get Active Clock (Initial)", True, "No active clock found (as expected)")
+                    return True
+                else:
+                    self.log_test("Get Active Clock (Initial)", False, "", f"Found unexpected active clock: {active_clock}")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Active Clock (Initial)", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Get Active Clock (Initial)", False, "", str(e))
+            return False
+
+    def test_clock_in(self):
+        """Test clock in functionality"""
+        print(f"\n🔍 Testing Clock IN...")
+        
+        if not self.test_project_id:
+            self.log_test("Clock IN", False, "", "No project ID available")
+            return False
+        
+        try:
+            # Use the coordinates specified in the request
+            params = {
+                "project_id": self.test_project_id,
+                "latitude": 18.207,
+                "longitude": -65.740,
+                "notes": "Test clock in"
+            }
+            
+            url = f"{self.api_url}/clock/in"
+            response = self.session.post(url, params=params, timeout=30)
+            
+            if response.status_code == 200:
+                clock_data = response.json()
+                if 'clock_id' in clock_data and clock_data.get('status') == 'active':
+                    self.active_clock_id = clock_data['clock_id']
+                    self.log_test("Clock IN", True, f"Clock ID: {self.active_clock_id}, Status: {clock_data['status']}")
+                    return True, clock_data
+                else:
+                    self.log_test("Clock IN", False, "", f"Invalid response structure: {clock_data}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Clock IN", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Clock IN", False, "", str(e))
+            return False, {}
+
+    def test_get_active_clock_after_in(self):
+        """Test getting active clock after clock-in - CRITICAL TEST"""
+        print(f"\n🔍 Testing Get Active Clock (After Clock IN) - CRITICAL...")
+        
+        try:
+            url = f"{self.api_url}/clock/active"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                active_clock = response.json()
+                print(f"   Response Body: {json.dumps(active_clock, indent=2)}")
+                
+                if active_clock is not None:
+                    # Verify the active clock has expected fields
+                    required_fields = ['clock_id', 'project_id', 'status', 'clock_in']
+                    missing_fields = [field for field in required_fields if field not in active_clock]
+                    
+                    if not missing_fields and active_clock.get('status') == 'active':
+                        clock_id = active_clock['clock_id']
+                        project_id = active_clock['project_id']
+                        clock_in_time = active_clock['clock_in']
+                        self.log_test("Get Active Clock (After Clock IN)", True, 
+                                    f"Found active clock - ID: {clock_id}, Project: {project_id}, Clock In: {clock_in_time}")
+                        return True, active_clock
+                    else:
+                        error_msg = f"Missing fields: {missing_fields}" if missing_fields else f"Invalid status: {active_clock.get('status')}"
+                        self.log_test("Get Active Clock (After Clock IN)", False, "", error_msg)
+                        return False, {}
+                else:
+                    self.log_test("Get Active Clock (After Clock IN)", False, "", "Active clock is null - this is the main problem!")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Get Active Clock (After Clock IN)", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Get Active Clock (After Clock IN)", False, "", str(e))
+            return False, {}
+
+    def test_clock_out(self):
+        """Test clock out functionality"""
+        print(f"\n🔍 Testing Clock OUT...")
+        
+        try:
+            params = {
+                "latitude": 18.207,
+                "longitude": -65.740,
+                "notes": "Test clock out"
+            }
+            
+            url = f"{self.api_url}/clock/out"
+            response = self.session.post(url, params=params, timeout=30)
+            
+            if response.status_code == 200:
+                clock_data = response.json()
+                if 'hours_worked' in clock_data and clock_data.get('status') == 'completed':
+                    hours_worked = clock_data['hours_worked']
+                    self.log_test("Clock OUT", True, f"Hours worked: {hours_worked}, Status: {clock_data['status']}")
+                    return True, clock_data
+                else:
+                    self.log_test("Clock OUT", False, "", f"Invalid response structure: {clock_data}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Clock OUT", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Clock OUT", False, "", str(e))
+            return False, {}
+
+    def test_get_active_clock_after_out(self):
+        """Test getting active clock after clock-out - should be null"""
+        print(f"\n🔍 Testing Get Active Clock (After Clock OUT)...")
+        
+        try:
+            url = f"{self.api_url}/clock/active"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                active_clock = response.json()
+                if active_clock is None:
+                    self.log_test("Get Active Clock (After Clock OUT)", True, "No active clock found (as expected after clock out)")
+                    return True
+                else:
+                    self.log_test("Get Active Clock (After Clock OUT)", False, "", f"Found unexpected active clock: {active_clock}")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Active Clock (After Clock OUT)", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Get Active Clock (After Clock OUT)", False, "", str(e))
+            return False
+
+    def test_get_clock_history(self):
+        """Test getting clock history for today"""
+        print(f"\n🔍 Testing Get Clock History...")
+        
+        try:
+            # Use today's date
+            today = datetime.now().strftime("%Y-%m-%d")
+            params = {"date": today}
+            
+            url = f"{self.api_url}/clock/history"
+            response = self.session.get(url, params=params, timeout=30)
+            
+            if response.status_code == 200:
+                history = response.json()
+                if isinstance(history, list):
+                    completed_entries = [entry for entry in history if entry.get('status') == 'completed']
+                    self.log_test("Get Clock History", True, f"Found {len(history)} total entries, {len(completed_entries)} completed for {today}")
+                    return True, history
+                else:
+                    self.log_test("Get Clock History", False, "", f"Invalid response format: {history}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Clock History", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Clock History", False, "", str(e))
+            return False, []
+
+    def run_clock_system_tests(self):
+        """Run complete clock system test suite"""
+        print("🚀 Starting Clock System Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Get available projects
+        success, projects = self.test_get_projects()
+        if not success:
+            print("❌ Failed to get projects, stopping tests")
+            return self.generate_report()
+        
+        # Step 3: Check initial active clock state
+        self.test_get_active_clock_initial()
+        
+        # Step 4: Clock IN
+        success, clock_data = self.test_clock_in()
+        if not success:
+            print("❌ Clock IN failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 5: CRITICAL - Check active clock after clock-in
+        success, active_clock = self.test_get_active_clock_after_in()
+        if not success:
+            print("🚨 CRITICAL ISSUE: Active clock endpoint not working after clock-in!")
+        
+        # Step 6: Clock OUT
+        self.test_clock_out()
+        
+        # Step 7: Check active clock after clock-out
+        self.test_get_active_clock_after_out()
+        
+        # Step 8: Check history
+        self.test_get_clock_history()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 CLOCK SYSTEM TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if "Active Clock (After Clock IN)" in test['test']]
+        if critical_failures:
+            print("\n🚨 CRITICAL ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+                print("     This is the main problem reported by the user!")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 class ProjectManagementAPITester:
     def __init__(self, base_url="https://resourcehub-24.preview.emergentagent.com"):
         self.base_url = base_url
