@@ -26,6 +26,7 @@ const ClockHistory = () => {
   const [startDate, setStartDate] = useState(moment().subtract(7, 'days').format('YYYY-MM-DD'));
   const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -52,6 +53,7 @@ const ClockHistory = () => {
       
       // Show specific error message
       if (error.response?.status === 403) {
+        setAccessDenied(true);
         toast.error('Solo los administradores pueden ver el historial de ponches');
       } else if (error.response?.status === 401) {
         toast.error('Sesión expirada. Por favor inicia sesión nuevamente');
@@ -103,6 +105,32 @@ const ClockHistory = () => {
             <Clock className="w-12 h-12 mx-auto mb-4 animate-spin text-blue-600" />
             <p className="text-slate-600">Cargando historial...</p>
           </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <Layout>
+        <div className="p-6 max-w-2xl mx-auto">
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="w-8 h-8 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-red-900 mb-2">Acceso Denegado</h2>
+              <p className="text-red-700 mb-6">
+                Solo los administradores pueden ver el historial completo de ponches.
+              </p>
+              <Button 
+                onClick={() => window.history.back()}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Volver
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </Layout>
     );
