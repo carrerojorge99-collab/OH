@@ -61,6 +61,13 @@ const Projects = () => {
   useEffect(() => {
     loadProjects();
     loadUsers();
+    
+    // Auto-refresh cada 30 segundos
+    const interval = setInterval(() => {
+      loadProjects();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
