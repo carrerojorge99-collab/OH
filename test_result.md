@@ -107,15 +107,18 @@ user_problem_statement: "Test Project Logs (Bitácora) module and Estimate to In
 frontend:
   - task: "Project Logs (Bitácora) UI - Create Log"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/pages/ProjectDetail.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Bitácora tab implemented in ProjectDetail.js. Uses /api/project-logs endpoints. Need to test creating a new log entry via UI."
+        - working: false
+          agent: "testing"
+          comment: "CRITICAL: JavaScript error 'moment is not defined' prevents ProjectDetail page from loading properly. Cannot access Bitácora tab or test functionality. Frontend shows red error screen with ReferenceError in multiple components."
 
   - task: "Project Logs (Bitácora) UI - List and Filter"
     implemented: true
