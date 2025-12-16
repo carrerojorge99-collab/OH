@@ -253,38 +253,48 @@ const PurchaseOrders = () => {
     }
   };
 
-  const exportPDF = (po) => {
+  const exportPDF = async (po) => {
     const doc = new jsPDF();
+    const company = await fetchCompanyInfo();
     
-    // Header
+    // Encabezado de empresa
+    let startY = await addCompanyHeader(doc, company, 15);
+    
+    // Título del documento
     doc.setFontSize(20);
-    doc.text('ORDEN DE COMPRA', 105, 20, { align: 'center' });
+    doc.setTextColor(34, 197, 94);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ORDEN DE COMPRA', 105, startY, { align: 'center' });
     doc.setFontSize(12);
-    doc.text(po.po_number, 105, 28, { align: 'center' });
-    
-    // Company info (left)
-    doc.setFontSize(10);
-    doc.text('ProyectHub', 20, 45);
-    doc.text('Sistema de Gestión de Proyectos', 20, 51);
+    doc.setTextColor(0, 0, 0);
+    doc.text(po.po_number, 105, startY + 8, { align: 'center' });
+    startY += 18;
     
     // Supplier info (right)
-    doc.text('Proveedor:', 120, 45);
-    doc.text(po.supplier_name || '', 120, 51);
-    if (po.supplier_email) doc.text(po.supplier_email, 120, 57);
-    if (po.supplier_phone) doc.text(po.supplier_phone, 120, 63);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Proveedor:', 120, startY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(po.supplier_name || '', 120, startY + 6);
+    if (po.supplier_email) doc.text(po.supplier_email, 120, startY + 12);
+    if (po.supplier_phone) doc.text(po.supplier_phone, 120, startY + 18);
     
-    // PO details
-    doc.text(`Fecha: ${moment(po.created_at).format('DD/MM/YYYY')}`, 20, 75);
-    doc.text(`Entrega esperada: ${po.expected_delivery_date ? moment(po.expected_delivery_date).format('DD/MM/YYYY') : 'N/A'}`, 20, 81);
-    doc.text(`Estado: ${statusLabels[po.status]}`, 120, 75);
-    if (po.project_name) doc.text(`Proyecto: ${po.project_name}`, 120, 81);
+    // PO details (left)
+    doc.text(`Fecha: ${moment(po.created_at).format('DD/MM/YYYY')}`, 20, startY);
+    doc.text(`Entrega esperada: ${po.expected_delivery_date ? moment(po.expected_delivery_date).format('DD/MM/YYYY') : 'N/A'}`, 20, startY + 6);
+    doc.text(`Estado: ${statusLabels[po.status]}`, 20, startY + 12);
+    if (po.project_name) doc.text(`Proyecto: ${po.project_name}`, 20, startY + 18);
     
     // Title
-    doc.setFontSize(12);
-    doc.text(`Título: ${po.title}`, 20, 95);
+    startY += 26;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Título: ${po.title}`, 20, startY);
     if (po.description) {
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.text(po.description, 20, 103);
+      doc.text(po.description, 20, startY + 6, { maxWidth: 170 });
+      startY += 8;
     }
     
     // Items table
@@ -296,7 +306,7 @@ const PurchaseOrders = () => {
     ]);
     
     doc.autoTable({
-      startY: 115,
+      startY: startY + 8,
       head: [['Descripción', 'Cantidad', 'Precio Unit.', 'Total']],
       body: tableData,
       theme: 'striped',
@@ -305,6 +315,7 @@ const PurchaseOrders = () => {
     
     // Totals
     const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(10);
     doc.text(`Subtotal: $${po.subtotal.toFixed(2)}`, 140, finalY);
     if (po.discount_amount > 0) {
       doc.text(`Descuento (${po.discount_percent}%): -$${po.discount_amount.toFixed(2)}`, 140, finalY + 6);
@@ -313,22 +324,27 @@ const PurchaseOrders = () => {
       doc.text(`Impuesto (${po.tax_rate}%): $${po.tax_amount.toFixed(2)}`, 140, finalY + 12);
     }
     doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
     doc.text(`TOTAL: $${po.total.toFixed(2)}`, 140, finalY + 22);
     
     // Notes and terms
     if (po.notes || po.terms) {
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       let notesY = finalY + 35;
       if (po.notes) {
         doc.text('Notas:', 20, notesY);
-        doc.text(po.notes, 20, notesY + 6);
-        notesY += 15;
+        doc.text(po.notes, 20, notesY + 6, { maxWidth: 170 });
+        notesY += 18;
       }
       if (po.terms) {
         doc.text('Términos y Condiciones:', 20, notesY);
-        doc.text(po.terms, 20, notesY + 6);
+        doc.text(po.terms, 20, notesY + 6, { maxWidth: 170 });
       }
     }
+    
+    // Pie de página
+    addCompanyFooter(doc, company);
     
     doc.save(`${po.po_number}.pdf`);
   };
