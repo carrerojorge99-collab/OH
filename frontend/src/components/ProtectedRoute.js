@@ -3,32 +3,11 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading, checkAuth } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
-  const [isChecking, setIsChecking] = useState(true);
 
-  useEffect(() => {
-    const verifyAuth = async () => {
-      if (location.state?.user) {
-        setIsChecking(false);
-        return;
-      }
-
-      const justAuth = sessionStorage.getItem('just_authenticated');
-      if (!justAuth) {
-        await new Promise(r => setTimeout(r, 150));
-      } else {
-        sessionStorage.removeItem('just_authenticated');
-      }
-
-      await checkAuth();
-      setIsChecking(false);
-    };
-
-    verifyAuth();
-  }, [location, checkAuth]);
-
-  if (loading || isChecking) {
+  // Show loading spinner while checking auth
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center space-y-4">
@@ -39,10 +18,12 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
+  // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  // User is authenticated, render children
   return children;
 };
 
