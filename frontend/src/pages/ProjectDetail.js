@@ -1139,6 +1139,55 @@ const ProjectDetail = () => {
                       rows={3}
                     />
                   </div>
+
+                  {/* Geofencing */}
+                  <div className="p-4 border rounded-lg bg-green-50 space-y-3 mt-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="font-medium">Restricción de Ubicación (Geofencing)</Label>
+                        <p className="text-xs text-slate-500">Solo permitir ponches dentro del área del proyecto</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={editForm.geofence_enabled || false}
+                        onChange={(e) => setEditForm({ ...editForm, geofence_enabled: e.target.checked })}
+                        className="h-4 w-4"
+                      />
+                    </div>
+                    {editForm.geofence_enabled && (
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-xs">Latitud</Label>
+                          <Input
+                            type="number"
+                            step="0.000001"
+                            placeholder="18.4655"
+                            value={editForm.location_latitude || ''}
+                            onChange={(e) => setEditForm({ ...editForm, location_latitude: parseFloat(e.target.value) || null })}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Longitud</Label>
+                          <Input
+                            type="number"
+                            step="0.000001"
+                            placeholder="-66.1057"
+                            value={editForm.location_longitude || ''}
+                            onChange={(e) => setEditForm({ ...editForm, location_longitude: parseFloat(e.target.value) || null })}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Radio (m)</Label>
+                          <Input
+                            type="number"
+                            min="10"
+                            value={editForm.geofence_radius || 100}
+                            onChange={(e) => setEditForm({ ...editForm, geofence_radius: parseInt(e.target.value) || 100 })}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <DialogFooter>
