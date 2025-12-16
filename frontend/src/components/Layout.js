@@ -51,16 +51,9 @@ const Layout = ({ children }) => {
   ];
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Sesión cerrada exitosamente');
-      // Force reload to clear all state
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Error logging out:', error);
-      // Force redirect even on error
-      window.location.href = '/login';
-    }
+    await logout();
+    toast.success('Sesión cerrada exitosamente');
+    navigate('/login');
   };
 
   const getInitials = (name) => {
