@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
-import { MapPin, Calendar, User, Clock, FolderKanban } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
+import { MapPin, Calendar, User, Clock, FolderKanban, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
@@ -20,6 +21,7 @@ const ClockHistory = () => {
   const [clockEntries, setClockEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
   const [groupedEntries, setGroupedEntries] = useState([]);
+  const [expandedGroups, setExpandedGroups] = useState({});
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedUser, setSelectedUser] = useState('all');
@@ -45,6 +47,7 @@ const ClockHistory = () => {
       const key = `${entry.user_id}_${entry.date}`;
       if (!grouped[key]) {
         grouped[key] = {
+          key,
           user_id: entry.user_id,
           user_name: entry.user_name,
           date: entry.date,
@@ -71,7 +74,29 @@ const ClockHistory = () => {
     groupedArray.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     setGroupedEntries(groupedArray);
+    
+    // Auto-expand first group
+    if (groupedArray.length > 0 && Object.keys(expandedGroups).length === 0) {
+      setExpandedGroups({ [groupedArray[0].key]: true });
+    }
   }, [filteredEntries]);
+
+  const toggleGroup = (key) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const expandAll = () => {
+    const allExpanded = {};
+    groupedEntries.forEach(g => { allExpanded[g.key] = true; });
+    setExpandedGroups(allExpanded);
+  };
+
+  const collapseAll = () => {
+    setExpandedGroups({});
+  };
 
   const loadData = async () => {
     try {
@@ -238,7 +263,7 @@ const ClockHistory = () => {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
               <div className="text-sm text-slate-600">
                 <span className="font-semibold">{groupedEntries.length}</span> días con registros
                 {filteredEntries.length > 0 && (
@@ -250,140 +275,167 @@ const ClockHistory = () => {
                   </>
                 )}
               </div>
-              <Button 
-                onClick={loadData}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Actualizar
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={expandAll}>
+                  Expandir Todo
+                </Button>
+                <Button variant="outline" size="sm" onClick={collapseAll}>
+                  Colapsar Todo
+                </Button>
+                <Button onClick={loadData} className="bg-blue-600 hover:bg-blue-700">
+                  Actualizar
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Grouped Clock Entries */}
-        <div className="space-y-4">
+        {/* Grouped Clock Entries as Accordion */}
+        <div className="space-y-3">
           {groupedEntries.length > 0 ? (
             groupedEntries.map((group) => (
-              <Card key={`${group.user_id}_${group.date}`} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3 border-b bg-slate-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <User className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg text-slate-900">{group.user_name}</h3>
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Calendar className="w-4 h-4" />
-                          {moment(group.date).format('dddd, D [de] MMMM [de] YYYY')}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold font-mono text-blue-600">
-                        {group.totalHours.toFixed(2)}h
-                      </div>
-                      <Badge className="bg-blue-100 text-blue-700">
-                        {group.entries.length} ponche{group.entries.length !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                  </div>
-                  {group.projects.length > 0 && (
-                    <div className="mt-2 flex items-center gap-2 flex-wrap">
-                      <FolderKanban className="w-4 h-4 text-slate-500" />
-                      {group.projects.map((proj, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {proj}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-3">
-                    {group.entries.map((entry, idx) => (
-                      <div 
-                        key={entry.clock_id} 
-                        className={`p-4 rounded-lg border ${
-                          entry.status === 'active' 
-                            ? 'bg-green-50 border-green-200' 
-                            : 'bg-slate-50 border-slate-200'
-                        }`}
-                      >
+              <Collapsible 
+                key={group.key} 
+                open={expandedGroups[group.key]} 
+                onOpenChange={() => toggleGroup(group.key)}
+              >
+                <Card className="overflow-hidden">
+                  <CollapsibleTrigger asChild>
+                    <div className="cursor-pointer hover:bg-slate-50 transition-colors">
+                      <CardHeader className="pb-3 border-b bg-slate-50">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-sm font-medium flex items-center justify-center">
-                                {idx + 1}
-                              </span>
-                              <Badge className={entry.status === 'active' ? 'bg-green-500' : 'bg-slate-500'}>
-                                {entry.status === 'active' ? 'Activo' : 'Completado'}
-                              </Badge>
-                            </div>
-                            <div className="text-sm">
-                              <span className="font-medium text-slate-700">Proyecto:</span>{' '}
-                              <span className="text-slate-600">{entry.project_name}</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            {entry.hours_worked > 0 && (
-                              <span className="font-mono font-semibold text-blue-600">
-                                {entry.hours_worked.toFixed(2)}h
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock className="w-4 h-4 text-green-600" />
-                              <span className="font-medium">Entrada:</span>
-                              <span className="font-mono">{moment(entry.clock_in).format('HH:mm:ss')}</span>
-                            </div>
-                            {entry.clock_in_latitude && entry.clock_in_longitude && (
-                              <a
-                                href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline text-xs flex items-center gap-1"
-                              >
-                                <MapPin className="w-3 h-3" /> Ver mapa
-                              </a>
-                            )}
-                          </div>
-
-                          {entry.clock_out && (
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-2 text-sm">
-                                <Clock className="w-4 h-4 text-red-600" />
-                                <span className="font-medium">Salida:</span>
-                                <span className="font-mono">{moment(entry.clock_out).format('HH:mm:ss')}</span>
-                              </div>
-                              {entry.clock_out_latitude && entry.clock_out_longitude && (
-                                <a
-                                  href={`https://www.google.com/maps?q=${entry.clock_out_latitude},${entry.clock_out_longitude}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline text-xs flex items-center gap-1"
-                                >
-                                  <MapPin className="w-3 h-3" /> Ver mapa
-                                </a>
+                            <div className="flex items-center justify-center w-8 h-8">
+                              {expandedGroups[group.key] ? (
+                                <ChevronDown className="w-5 h-5 text-slate-500" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-slate-500" />
                               )}
                             </div>
-                          )}
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                              <User className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-lg text-slate-900">{group.user_name}</h3>
+                              <div className="flex items-center gap-2 text-sm text-slate-600">
+                                <Calendar className="w-4 h-4" />
+                                {moment(group.date).format('dddd, D [de] MMMM [de] YYYY')}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right flex items-center gap-4">
+                            <div>
+                              <div className="text-2xl font-bold font-mono text-blue-600">
+                                {group.totalHours.toFixed(2)}h
+                              </div>
+                              <Badge className="bg-blue-100 text-blue-700">
+                                {group.entries.length} ponche{group.entries.length !== 1 ? 's' : ''}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
-
-                        {entry.notes && entry.notes !== 'Ponche automático' && (
-                          <div className="mt-2 text-sm text-slate-600 bg-white p-2 rounded border">
-                            <span className="font-medium">Notas:</span> {entry.notes}
+                        {group.projects.length > 0 && (
+                          <div className="mt-2 ml-11 flex items-center gap-2 flex-wrap">
+                            <FolderKanban className="w-4 h-4 text-slate-500" />
+                            {group.projects.map((proj, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {proj}
+                              </Badge>
+                            ))}
                           </div>
                         )}
+                      </CardHeader>
+                    </div>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <CardContent className="pt-4">
+                      <div className="space-y-3">
+                        {group.entries.map((entry, idx) => (
+                          <div 
+                            key={entry.clock_id} 
+                            className={`p-4 rounded-lg border ${
+                              entry.status === 'active' 
+                                ? 'bg-green-50 border-green-200' 
+                                : 'bg-slate-50 border-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-sm font-medium flex items-center justify-center">
+                                    {idx + 1}
+                                  </span>
+                                  <Badge className={entry.status === 'active' ? 'bg-green-500' : 'bg-slate-500'}>
+                                    {entry.status === 'active' ? 'Activo' : 'Completado'}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm">
+                                  <span className="font-medium text-slate-700">Proyecto:</span>{' '}
+                                  <span className="text-slate-600">{entry.project_name}</span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                {entry.hours_worked > 0 && (
+                                  <span className="font-mono font-semibold text-blue-600">
+                                    {entry.hours_worked.toFixed(2)}h
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Clock className="w-4 h-4 text-green-600" />
+                                  <span className="font-medium">Entrada:</span>
+                                  <span className="font-mono">{moment(entry.clock_in).format('HH:mm:ss')}</span>
+                                </div>
+                                {entry.clock_in_latitude && entry.clock_in_longitude && (
+                                  <a
+                                    href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline text-xs flex items-center gap-1"
+                                  >
+                                    <MapPin className="w-3 h-3" /> Ver mapa
+                                  </a>
+                                )}
+                              </div>
+
+                              {entry.clock_out && (
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Clock className="w-4 h-4 text-red-600" />
+                                    <span className="font-medium">Salida:</span>
+                                    <span className="font-mono">{moment(entry.clock_out).format('HH:mm:ss')}</span>
+                                  </div>
+                                  {entry.clock_out_latitude && entry.clock_out_longitude && (
+                                    <a
+                                      href={`https://www.google.com/maps?q=${entry.clock_out_latitude},${entry.clock_out_longitude}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline text-xs flex items-center gap-1"
+                                    >
+                                      <MapPin className="w-3 h-3" /> Ver mapa
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {entry.notes && entry.notes !== 'Ponche automático' && (
+                              <div className="mt-2 text-sm text-slate-600 bg-white p-2 rounded border">
+                                <span className="font-medium">Notas:</span> {entry.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             ))
           ) : (
             <Card>
