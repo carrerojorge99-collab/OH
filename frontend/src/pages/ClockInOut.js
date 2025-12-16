@@ -219,8 +219,12 @@ const ClockInOut = () => {
       
       setNotes('');
       
+      // Force clear active clock immediately
+      setActiveClock(null);
+      console.log('🔄 Forced activeClock to null');
+      
       // Wait a bit before reloading to ensure backend has updated
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await loadData();
       
       console.log('🔄 Data reloaded after clock OUT');
