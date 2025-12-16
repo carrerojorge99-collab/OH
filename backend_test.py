@@ -920,8 +920,14 @@ class ProjectManagementAPITester:
 
 def main():
     """Main function"""
-    tester = ProjectManagementAPITester()
-    results = tester.run_all_tests()
+    if len(sys.argv) > 1 and sys.argv[1] == "clock":
+        # Run clock system tests
+        tester = ClockSystemTester()
+        results = tester.run_clock_system_tests()
+    else:
+        # Run full API tests
+        tester = ProjectManagementAPITester()
+        results = tester.run_all_tests()
     
     # Return appropriate exit code
     return 0 if results['failed_tests'] == 0 else 1
