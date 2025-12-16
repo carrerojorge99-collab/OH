@@ -3170,9 +3170,6 @@ async def delete_estimate(
     if not estimate:
         raise HTTPException(status_code=404, detail="Estimado no encontrado")
     
-    if estimate.get('status') == 'converted':
-        raise HTTPException(status_code=400, detail="No se puede eliminar un estimado convertido a factura")
-    
     await db.estimates.delete_one({"estimate_id": estimate_id})
     
     await log_audit(user.user_id, user.name, "delete", "estimate", estimate_id, estimate.get('estimate_number'), {})
