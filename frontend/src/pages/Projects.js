@@ -55,7 +55,11 @@ const Projects = () => {
     po_number: '',
     po_quantity: 0,
     proposal_number: '',
-    team_members: []
+    team_members: [],
+    location_latitude: null,
+    location_longitude: null,
+    geofence_radius: 100,
+    geofence_enabled: false
   });
 
   useEffect(() => {
