@@ -169,7 +169,18 @@ const ClockInOut = () => {
     return 'En turno';
   };
 
-  const meetsMinimum = punches.length >= MIN_PUNCHES;
+  // Count individual punch actions (each IN and OUT counts as 1 punch)
+  const countPunches = () => {
+    let count = 0;
+    punches.forEach(punch => {
+      count++; // Clock IN
+      if (punch.clock_out) count++; // Clock OUT
+    });
+    return count;
+  };
+  
+  const totalPunches = countPunches();
+  const meetsMinimum = totalPunches >= MIN_PUNCHES;
 
   if (loading) {
     return (
@@ -237,7 +248,7 @@ const ClockInOut = () => {
                 <Badge className={`text-sm py-2 px-4 ${
                   meetsMinimum ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
                 }`}>
-                  Ponches hoy: {punches.length}/{MIN_PUNCHES}
+                  Ponches hoy: {totalPunches}/{MIN_PUNCHES}
                 </Badge>
               </div>
             </div>
@@ -246,7 +257,7 @@ const ClockInOut = () => {
               <div className="mt-4 flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded">
                 <AlertCircle className="w-5 h-5" />
                 <span className="font-medium">
-                  Faltan {MIN_PUNCHES - punches.length} ponche(s) para completar el mínimo diario
+                  Faltan {MIN_PUNCHES - totalPunches} ponche(s) para completar el mínimo diario
                 </span>
               </div>
             )}
