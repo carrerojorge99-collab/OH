@@ -477,7 +477,8 @@ const Projects = () => {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         {/* Search and Filters */}
