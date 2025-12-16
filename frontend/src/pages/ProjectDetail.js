@@ -2785,6 +2785,180 @@ const ProjectDetail = () => {
             </Card>
           </TabsContent>
 
+          {/* Project Logs Tab */}
+          <TabsContent value="logs" className="space-y-6">
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl font-semibold tracking-tight">Bitácora del Proyecto</CardTitle>
+                <Dialog open={logDialogOpen} onOpenChange={setLogDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" /> Nuevo Registro
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>{editingLogId ? 'Editar Registro' : 'Nuevo Registro de Bitácora'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmitLog} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Tipo de Registro *</Label>
+                          <Select value={logForm.log_type} onValueChange={(v) => setLogForm({...logForm, log_type: v})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="work">Trabajo Realizado</SelectItem>
+                              <SelectItem value="update">Actualización</SelectItem>
+                              <SelectItem value="problem">Problema</SelectItem>
+                              <SelectItem value="milestone">Hito/Milestone</SelectItem>
+                              <SelectItem value="note">Nota General</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Horas Trabajadas</Label>
+                          <Input 
+                            type="number" 
+                            step="0.5"
+                            value={logForm.hours_worked} 
+                            onChange={(e) => setLogForm({...logForm, hours_worked: e.target.value})}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Título *</Label>
+                        <Input 
+                          value={logForm.title} 
+                          onChange={(e) => setLogForm({...logForm, title: e.target.value})}
+                          placeholder="Resumen breve del registro"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label>Descripción *</Label>
+                        <Textarea 
+                          value={logForm.description} 
+                          onChange={(e) => setLogForm({...logForm, description: e.target.value})}
+                          placeholder="Descripción detallada..."
+                          rows={4}
+                          required
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => { setLogDialogOpen(false); resetLogForm(); }}>
+                          Cancelar
+                        </Button>
+                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                          {editingLogId ? 'Actualizar' : 'Guardar'} Registro
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {/* Filter by type */}
+                <div className="flex items-center gap-4 mb-4">
+                  <span className="text-sm text-slate-600">Filtrar por tipo:</span>
+                  <div className="flex gap-2">
+                    {['all', 'work', 'update', 'problem', 'milestone', 'note'].map(type => (
+                      <Button
+                        key={type}
+                        variant={logTypeFilter === type ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setLogTypeFilter(type)}
+                        className={logTypeFilter === type ? 'bg-blue-600' : ''}
+                      >
+                        {type === 'all' ? 'Todos' : 
+                         type === 'work' ? 'Trabajo' :
+                         type === 'update' ? 'Actualización' :
+                         type === 'problem' ? 'Problema' :
+                         type === 'milestone' ? 'Hito' : 'Nota'}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Logs list */}
+                <div className="space-y-4">
+                  {projectLogs.filter(l => logTypeFilter === 'all' || l.log_type === logTypeFilter).length > 0 ? (
+                    projectLogs
+                      .filter(l => logTypeFilter === 'all' || l.log_type === logTypeFilter)
+                      .map(log => (
+                        <div key={log.log_id} className={`p-4 rounded-lg border ${
+                          log.log_type === 'problem' ? 'bg-red-50 border-red-200' :
+                          log.log_type === 'milestone' ? 'bg-green-50 border-green-200' :
+                          log.log_type === 'work' ? 'bg-blue-50 border-blue-200' :
+                          'bg-slate-50 border-slate-200'
+                        }`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge className={
+                                  log.log_type === 'work' ? 'bg-blue-100 text-blue-700' :
+                                  log.log_type === 'update' ? 'bg-purple-100 text-purple-700' :
+                                  log.log_type === 'problem' ? 'bg-red-100 text-red-700' :
+                                  log.log_type === 'milestone' ? 'bg-green-100 text-green-700' :
+                                  'bg-slate-100 text-slate-700'
+                                }>
+                                  {log.log_type === 'work' ? 'Trabajo' :
+                                   log.log_type === 'update' ? 'Actualización' :
+                                   log.log_type === 'problem' ? 'Problema' :
+                                   log.log_type === 'milestone' ? 'Hito' : 'Nota'}
+                                </Badge>
+                                <h4 className="font-semibold">{log.title}</h4>
+                                {log.hours_worked > 0 && (
+                                  <Badge variant="outline" className="ml-2">
+                                    {log.hours_worked}h
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-slate-700 whitespace-pre-wrap">{log.description}</p>
+                              <div className="flex items-center gap-4 mt-3 text-sm text-slate-500">
+                                <span className="flex items-center gap-1">
+                                  <User className="w-4 h-4" /> {log.user_name}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" /> {moment(log.created_at).format('DD/MM/YYYY HH:mm')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditLog(log)}
+                                className="text-slate-600 hover:text-blue-600"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLog(log.log_id)}
+                                className="text-slate-600 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="text-center py-12 text-slate-500">
+                      <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg">No hay registros en la bitácora</p>
+                      <p className="text-sm mt-2">Crea el primer registro para documentar el progreso del proyecto</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Comments Tab */}
           <TabsContent value="comments" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
