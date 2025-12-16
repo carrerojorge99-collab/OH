@@ -2318,6 +2318,116 @@ def update_env_var(content: str, key: str, value: str) -> str:
     
     return '\n'.join(lines)
 
+# ============== COMPANY SETTINGS ENDPOINTS ==============
+
+@api_router.get("/company")
+async def get_company_settings(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    company = await db.company_settings.find_one({}, {"_id": 0})
+    if not company:
+        company = {
+            "company_name": "",
+            "company_logo": None,
+            "address": "",
+            "city": "",
+            "state": "",
+            "zip_code": "",
+            "country": "",
+            "phone": "",
+            "email": "",
+            "website": "",
+            "tax_id": "",
+            "currency": "USD",
+            "footer_text": ""
+        }
+    return company
+
+@api_router.put("/company")
+async def update_company_settings(
+    company_data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden modificar la configuración de empresa")
+    
+    existing = await db.company_settings.find_one({})
+    
+    update_data = {
+        "company_name": company_data.get("company_name", ""),
+        "address": company_data.get("address", ""),
+        "city": company_data.get("city", ""),
+        "state": company_data.get("state", ""),
+        "zip_code": company_data.get("zip_code", ""),
+        "country": company_data.get("country", ""),
+        "phone": company_data.get("phone", ""),
+        "email": company_data.get("email", ""),
+        "website": company_data.get("website", ""),
+        "tax_id": company_data.get("tax_id", ""),
+        "currency": company_data.get("currency", "USD"),
+        "footer_text": company_data.get("footer_text", ""),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if existing:
+        # Mantener el logo existente si no se envía uno nuevo
+        if "company_logo" not in company_data:
+            update_data["company_logo"] = existing.get("company_logo")
+        else:
+            update_data["company_logo"] = company_data.get("company_logo")
+        await db.company_settings.update_one({}, {"$set": update_data})
+    else:
+        update_data["company_logo"] = company_data.get("company_logo")
+        update_data["created_at"] = datetime.now(timezone.utc).isoformat()
+        await db.company_settings.insert_one(update_data)
+    
+    await log_audit(user.user_id, user.name, "update", "company_settings", "company", "Configuración de empresa", {})
+    
+    return {"message": "Configuración de empresa actualizada"}
+
+@api_router.post("/company/logo")
+async def upload_company_logo(
+    file: UploadFile = File(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden subir el logo")
+    
+    # Validar tipo de archivo
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Use JPG, PNG, GIF, WebP o SVG")
+    
+    # Crear directorio si no existe
+    upload_dir = Path("/app/uploads/logos")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generar nombre único
+    ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
+    filename = f"company_logo_{uuid4().hex[:8]}.{ext}"
+    file_path = upload_dir / filename
+    
+    # Guardar archivo
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    logo_url = f"/uploads/logos/{filename}"
+    
+    # Actualizar en base de datos
+    await db.company_settings.update_one(
+        {},
+        {"$set": {"company_logo": logo_url, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return {"logo_url": logo_url, "message": "Logo subido exitosamente"}
+
 UPLOAD_DIR = Path("/app/backend/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
