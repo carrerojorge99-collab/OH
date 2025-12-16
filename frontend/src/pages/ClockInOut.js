@@ -146,7 +146,7 @@ const ClockInOut = () => {
       
       setNotes('');
       setSelectedProject('');
-      loadData();
+      await loadData();
     } catch (error) {
       if (error.message && error.message.includes('ubicación')) {
         toast.error(error.message, { duration: 5000 });
