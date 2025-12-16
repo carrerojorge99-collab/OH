@@ -394,6 +394,58 @@ class Payment(BaseModel):
     created_by: str
     created_at: str
 
+# Estimate Models
+class EstimateItem(BaseModel):
+    description: str
+    quantity: float = 1.0
+    unit_price: float
+    amount: float
+
+class EstimateCreate(BaseModel):
+    project_id: Optional[str] = None
+    client_name: str
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    items: List[EstimateItem]
+    tax_rate: float = 0.0
+    discount_percent: float = 0.0
+    notes: Optional[str] = None
+    terms: Optional[str] = None
+    valid_until: Optional[str] = None
+
+class Estimate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    estimate_id: str
+    estimate_number: str
+    project_id: Optional[str] = None
+    project_name: Optional[str] = None
+    client_name: str
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    items: List[EstimateItem]
+    subtotal: float
+    discount_percent: float = 0.0
+    discount_amount: float = 0.0
+    tax_rate: float = 0.0
+    tax_amount: float = 0.0
+    total: float
+    status: str  # draft, sent, approved, rejected, converted
+    notes: Optional[str] = None
+    terms: Optional[str] = None
+    valid_until: Optional[str] = None
+    created_by: str
+    created_by_name: str
+    created_at: str
+    sent_date: Optional[str] = None
+    approved_date: Optional[str] = None
+    converted_invoice_id: Optional[str] = None
+
 async def log_audit(user_id: str, user_name: str, action: str, entity_type: str, entity_id: str, entity_name: str, details: dict = None):
     """Helper function to create audit log entries"""
     log_entry = {
