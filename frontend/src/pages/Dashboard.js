@@ -5,7 +5,8 @@ import PWAInstallBanner from '../components/PWAInstallBanner';
 import QuickTimesheet from '../components/QuickTimesheet';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { FolderKanban, CheckCircle2, Clock, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { FolderKanban, CheckCircle2, Clock, DollarSign, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
