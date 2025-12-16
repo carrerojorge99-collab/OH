@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
-import { MapPin, Calendar, User, Clock, FolderKanban, ChevronDown, ChevronRight } from 'lucide-react';
+import { MapPin, Calendar, User, Clock, FolderKanban, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
