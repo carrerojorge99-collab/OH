@@ -390,6 +390,17 @@ const PurchaseOrders = () => {
                 <DialogTitle>{editingPO ? 'Editar Orden de Compra' : 'Nueva Orden de Compra'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Número personalizado */}
+                <div className="space-y-2">
+                  <Label>Número de Orden (opcional)</Label>
+                  <Input 
+                    value={form.custom_number} 
+                    onChange={(e) => setForm({...form, custom_number: e.target.value})} 
+                    placeholder="Ej: PO-2025-0150 (dejar vacío para auto-generar)"
+                  />
+                  <p className="text-xs text-slate-500">Si lo deja vacío, se generará automáticamente</p>
+                </div>
+
                 {/* Supplier Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
