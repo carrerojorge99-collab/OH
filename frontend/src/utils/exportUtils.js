@@ -57,10 +57,10 @@ export const exportTimesheetToPDF = (timesheetData, projectName) => {
   doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 14, 38);
 
   const tableData = timesheetData.map(entry => [
-    entry.date,
+    entry.date || 'N/A',
     entry.user_name || 'N/A',
     entry.task_name || 'Sin tarea',
-    entry.hours.toString(),
+    (entry.hours !== undefined && entry.hours !== null) ? entry.hours.toString() : '0',
     entry.description || ''
   ]);
 
