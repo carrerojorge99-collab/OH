@@ -3236,16 +3236,14 @@ async def create_purchase_order(
 ):
     user = await get_current_user(request, session_token)
     
-    # Get next PO number
-    last_po = await db.purchase_orders.find_one(sort=[("created_at", -1)], projection={"_id": 0, "po_number": 1})
-    if last_po and last_po.get('po_number'):
-        try:
-            last_num = int(last_po['po_number'].split('-')[-1])
-            po_number = f"PO-{datetime.now(timezone.utc).year}-{str(last_num + 1).zfill(4)}"
-        except:
-            po_number = f"PO-{datetime.now(timezone.utc).year}-0001"
+    # Generate PO number (use custom if provided)
+    if po_data.custom_number and po_data.custom_number.strip():
+        po_number = po_data.custom_number.strip()
     else:
-        po_number = f"PO-{datetime.now(timezone.utc).year}-0001"
+        company_settings = await db.company_settings.find_one({}, {"_id": 0})
+        next_num = company_settings.get("next_po_number", 1) if company_settings else 1
+        po_number = f"PO-{datetime.now(timezone.utc).year}-{str(next_num).zfill(4)}"
+        await db.company_settings.update_one({}, {"$inc": {"next_po_number": 1}}, upsert=True)
     
     # Get project name if project_id provided
     project_name = None
