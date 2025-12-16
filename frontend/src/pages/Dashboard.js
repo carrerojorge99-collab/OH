@@ -19,6 +19,18 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
+    
+    // Auto-refresh cada 30 segundos
+    const interval = setInterval(loadDashboardData, 30000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') loadDashboardData();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   const loadDashboardData = async () => {
