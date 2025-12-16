@@ -202,13 +202,22 @@ const Projects = () => {
             <p className="text-muted-foreground mt-2">Gestiona todos tus proyectos en un solo lugar</p>
           </div>
           
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="create-project-button" className="rounded-full bg-blue-600 hover:bg-blue-700 font-medium">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Proyecto
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => { setLoading(true); loadProjects(); }}
+              className="rounded-full"
+              title="Refrescar datos"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="create-project-button" className="rounded-full bg-blue-600 hover:bg-blue-700 font-medium">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Proyecto
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-semibold tracking-tight">Crear Nuevo Proyecto</DialogTitle>
