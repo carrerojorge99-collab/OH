@@ -105,77 +105,53 @@
 user_problem_statement: "Test Project Logs (Bitácora) module and Estimate to Invoice conversion feature"
 
 frontend:
-  - task: "Task Assignment SelectItem Fix - Modal Opening"
+  - task: "Project Logs (Bitácora) UI - Create Log"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/frontend/src/pages/ProjectDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Fixed SelectItem crash by changing empty value to 'unassigned' at line 786. Need to verify modal opens without console errors."
-        - working: true
-          agent: "testing"
-          comment: "✅ Modal opens successfully without SelectItem console errors. Only minor warnings about missing Description for DialogContent, but no SelectItem-related errors detected."
+          comment: "Bitácora tab implemented in ProjectDetail.js. Uses /api/project-logs endpoints. Need to test creating a new log entry via UI."
 
-  - task: "Task Assignment SelectItem Fix - Dropdown Functionality"
+  - task: "Project Logs (Bitácora) UI - List and Filter"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/frontend/src/pages/ProjectDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Fixed SelectItem with value='unassigned' for 'Sin asignar' option. Need to verify dropdown works correctly and shows all options."
-        - working: true
-          agent: "testing"
-          comment: "✅ Dropdown functionality working perfectly. 'Sin asignar' option appears correctly, user options are visible, and no console errors when opening or interacting with dropdown."
+          comment: "Log list with filtering by type. Need to test display and filtering functionality."
 
-  - task: "Task Assignment SelectItem Fix - Task Creation with Unassigned"
+  - task: "Project Logs (Bitácora) UI - Edit and Delete"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/frontend/src/pages/ProjectDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Need to verify that tasks can be created successfully with 'Sin asignar' selection without crashes."
-        - working: true
-          agent: "testing"
-          comment: "✅ Task creation with 'Sin asignar' works perfectly. Created 'Test Task - Unassigned SelectItem Fix' successfully with success toast 'Tarea creada exitosamente'. No console errors during creation process."
+          comment: "Edit and delete functionality for logs. Need to test full CRUD via UI."
 
-  - task: "Task Assignment SelectItem Fix - Task Creation with Specific User"
+  - task: "Estimate to Invoice Conversion UI"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/ProjectDetail.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/Estimates.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Need to verify that tasks can be created successfully with specific user assignment."
-        - working: true
-          agent: "testing"
-          comment: "✅ Task creation with specific user assignment works perfectly. Created 'Test Task - Assigned User SelectItem Fix' assigned to Jorge Carrero (admin) successfully with success toast. No console errors during creation process."
-
-  - task: "Clock In/Out Frontend UI State Management"
-    implemented: true
-    working: false
-    file: "/app/frontend/src/pages/ClockInOut.js"
-    stuck_count: 1
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: false
-          agent: "testing"
-          comment: "🚨 CRITICAL ISSUE: Complete Clock In/Out flow test FAILED. UI state management is broken: 1) Entrada button already disabled on page load (suggests stale activeClock state), 2) Clock IN operation shows no success toast, 3) Green status card never appears after clock-in, 4) Salida button not found. The activeClock state is not updating properly after API calls. Backend APIs work but frontend React state is not synchronized."
+          comment: "Convert button appears for approved estimates. handleConvert function calls POST /api/estimates/{id}/convert. Need to test full flow via UI."
 
 backend:
   - task: "Project Logs CRUD API"
