@@ -18,7 +18,7 @@ import {
 } from '../components/ui/dialog';
 import { Card, CardContent, CardFooter } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Plus, Search, Calendar, DollarSign, Users, FolderKanban, Trash2 } from 'lucide-react';
+import { Plus, Search, Calendar, DollarSign, Users, FolderKanban, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
