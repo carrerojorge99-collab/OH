@@ -1291,11 +1291,11 @@ async def delete_timesheet(timesheet_id: str, request: Request, session_token: O
 
 @api_router.post("/clock/in", response_model=ClockEntry)
 async def clock_in(
-    project_id: str,
-    latitude: float,
-    longitude: float,
-    address: Optional[str] = None,
-    notes: Optional[str] = None,
+    project_id: str = Query(...),
+    latitude: float = Query(...),
+    longitude: float = Query(...),
+    address: Optional[str] = Query(None),
+    notes: Optional[str] = Query(None),
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
@@ -1363,10 +1363,10 @@ async def clock_in(
 
 @api_router.post("/clock/out", response_model=ClockEntry)
 async def clock_out(
-    latitude: float,
-    longitude: float,
-    address: Optional[str] = None,
-    notes: Optional[str] = None,
+    latitude: float = Query(...),
+    longitude: float = Query(...),
+    address: Optional[str] = Query(None),
+    notes: Optional[str] = Query(None),
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
