@@ -241,15 +241,15 @@ const Invoices = () => {
     // Totals
     doc.setFontSize(10);
     doc.text(`Subtotal:`, 140, finalY);
-    doc.text(`$${invoice.subtotal.toFixed(2)}`, 180, finalY, { align: 'right' });
+    doc.text(`$${(invoice.subtotal || 0).toFixed(2)}`, 180, finalY, { align: 'right' });
 
-    doc.text(`Impuestos (${invoice.tax_rate}%):`, 140, finalY + 6);
-    doc.text(`$${invoice.tax_amount.toFixed(2)}`, 180, finalY + 6, { align: 'right' });
+    doc.text(`Impuestos (${invoice.tax_rate || 0}%):`, 140, finalY + 6);
+    doc.text(`$${(invoice.tax_amount || 0).toFixed(2)}`, 180, finalY + 6, { align: 'right' });
 
     doc.setFont(undefined, 'bold');
     doc.setFontSize(12);
     doc.text(`TOTAL:`, 140, finalY + 14);
-    doc.text(`$${invoice.total.toFixed(2)}`, 180, finalY + 14, { align: 'right' });
+    doc.text(`$${(invoice.total || 0).toFixed(2)}`, 180, finalY + 14, { align: 'right' });
 
     // Notes
     if (invoice.notes) {
