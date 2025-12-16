@@ -228,7 +228,7 @@ const Invoices = () => {
     ]);
 
     // Generate table using autoTable plugin
-    doc.autoTable({
+    autoTable(doc, {
       head: [['Descripción', 'Horas', 'Tarifa', 'Total']],
       body: tableData,
       startY: 80,
