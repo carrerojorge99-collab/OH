@@ -184,7 +184,11 @@ const ProjectDetail = () => {
         sponsor: project.sponsor || '',
         po_number: project.po_number || '',
         po_quantity: project.po_quantity || 0,
-        proposal_number: project.proposal_number || ''
+        proposal_number: project.proposal_number || '',
+        location_latitude: project.location_latitude || null,
+        location_longitude: project.location_longitude || null,
+        geofence_radius: project.geofence_radius || 100,
+        geofence_enabled: project.geofence_enabled || false
       });
     }
   }, [project]);
