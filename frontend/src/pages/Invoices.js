@@ -19,6 +19,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Plus, FileText, Download, Eye, Trash2, DollarSign, RefreshCw } from 'lucide-react';
+import { fetchCompanyInfo, addCompanyHeader, addCompanyFooter } from '../utils/pdfHelper';
 import { toast } from 'sonner';
 import moment from 'moment';
 import { jsPDF } from 'jspdf';
