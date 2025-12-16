@@ -88,6 +88,12 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       
+      <Route path="/estimates" element={
+        <ProtectedRoute>
+          <Estimates />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/integrations" element={
         <ProtectedRoute>
           <Integrations />
