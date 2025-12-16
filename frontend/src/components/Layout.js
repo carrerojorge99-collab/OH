@@ -43,6 +43,7 @@ const Layout = ({ children }) => {
     { name: 'Proyectos', href: '/projects', icon: FolderKanban },
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
+    { name: 'Estimados', href: '/estimates', icon: FileText },
     { name: 'Facturas', href: '/invoices', icon: DollarSign },
     { name: 'Integraciones', href: '/integrations', icon: Zap },
     { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
