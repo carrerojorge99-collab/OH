@@ -165,6 +165,18 @@ frontend:
           agent: "testing"
           comment: "✅ Task creation with specific user assignment works perfectly. Created 'Test Task - Assigned User SelectItem Fix' assigned to Jorge Carrero (admin) successfully with success toast. No console errors during creation process."
 
+  - task: "Clock In/Out Frontend UI State Management"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/ClockInOut.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL ISSUE: Complete Clock In/Out flow test FAILED. UI state management is broken: 1) Entrada button already disabled on page load (suggests stale activeClock state), 2) Clock IN operation shows no success toast, 3) Green status card never appears after clock-in, 4) Salida button not found. The activeClock state is not updating properly after API calls. Backend APIs work but frontend React state is not synchronized."
+
 backend:
   - task: "Clock System Authentication"
     implemented: true
