@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
-import { MapPin, Calendar, User, Clock, FolderKanban, Download } from 'lucide-react';
+import { MapPin, Calendar, User, Clock, FolderKanban } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
@@ -19,6 +19,7 @@ const API = `${BACKEND_URL}/api`;
 const ClockHistory = () => {
   const [clockEntries, setClockEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
+  const [groupedEntries, setGroupedEntries] = useState([]);
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedUser, setSelectedUser] = useState('all');
@@ -36,6 +37,42 @@ const ClockHistory = () => {
     filterEntries();
   }, [selectedUser, selectedProject, startDate, endDate, clockEntries]);
 
+  // Group entries by user and date
+  useEffect(() => {
+    const grouped = {};
+    
+    filteredEntries.forEach(entry => {
+      const key = `${entry.user_id}_${entry.date}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          user_id: entry.user_id,
+          user_name: entry.user_name,
+          date: entry.date,
+          entries: [],
+          totalHours: 0,
+          projects: new Set()
+        };
+      }
+      grouped[key].entries.push(entry);
+      grouped[key].totalHours += entry.hours_worked || 0;
+      if (entry.project_name) {
+        grouped[key].projects.add(entry.project_name);
+      }
+    });
+
+    // Convert to array and sort entries within each group
+    const groupedArray = Object.values(grouped).map(group => ({
+      ...group,
+      entries: group.entries.sort((a, b) => new Date(a.clock_in) - new Date(b.clock_in)),
+      projects: Array.from(group.projects)
+    }));
+
+    // Sort by date descending
+    groupedArray.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    setGroupedEntries(groupedArray);
+  }, [filteredEntries]);
+
   const loadData = async () => {
     try {
       const timestamp = Date.now();
@@ -48,15 +85,13 @@ const ClockHistory = () => {
         axios.get(`${API}/projects?_t=${timestamp}`, { withCredentials: true })
       ]);
 
-      console.log('📊 Clock entries loaded:', entriesRes.data?.length || 0);
       setClockEntries([...(entriesRes.data || [])]);
-      setFilteredEntries([...(entriesRes.data || [])]); // Initialize filtered entries
+      setFilteredEntries([...(entriesRes.data || [])]);
       setUsers(usersRes.data || []);
       setProjects(projectsRes.data || []);
     } catch (error) {
       console.error('Error loading data:', error);
       
-      // Show specific error message
       if (error.response?.status === 403) {
         setAccessDenied(true);
         toast.error('Solo los administradores pueden ver el historial de ponches');
@@ -73,42 +108,20 @@ const ClockHistory = () => {
   const filterEntries = () => {
     let filtered = [...clockEntries];
 
-    console.log('Filtering entries:', {
-      total: clockEntries.length,
-      dateRange: { startDate, endDate },
-      selectedUser,
-      selectedProject
-    });
-
-    // Filter by user
     if (selectedUser !== 'all') {
       filtered = filtered.filter(entry => entry.user_id === selectedUser);
     }
 
-    // Filter by project
     if (selectedProject !== 'all') {
       filtered = filtered.filter(entry => entry.project_id === selectedProject);
     }
 
-    // Filter by date range
     filtered = filtered.filter(entry => {
       const entryDate = moment(entry.date);
-      const isInRange = entryDate.isBetween(startDate, endDate, 'day', '[]');
-      if (!isInRange) {
-        console.log('Entry filtered out by date:', {
-          entryDate: entry.date,
-          parsed: entryDate.format('YYYY-MM-DD'),
-          startDate,
-          endDate
-        });
-      }
-      return isInRange;
+      return entryDate.isBetween(startDate, endDate, 'day', '[]');
     });
 
-    // Sort by date descending
     filtered.sort((a, b) => new Date(b.clock_in) - new Date(a.clock_in));
-
-    console.log('Filtered results:', filtered.length);
     setFilteredEntries(filtered);
   };
 
@@ -227,126 +240,147 @@ const ClockHistory = () => {
 
             <div className="mt-4 flex items-center justify-between">
               <div className="text-sm text-slate-600">
-                <span className="font-semibold">{filteredEntries.length}</span> registros encontrados
+                <span className="font-semibold">{groupedEntries.length}</span> días con registros
                 {filteredEntries.length > 0 && (
-                  <span className="ml-4">
+                  <>
+                    <span className="mx-2">|</span>
+                    <span className="font-semibold">{filteredEntries.length}</span> ponches totales
+                    <span className="mx-2">|</span>
                     Total horas: <span className="font-semibold text-blue-600">{getTotalHours()}h</span>
-                  </span>
+                  </>
                 )}
               </div>
               <Button 
-                onClick={filterEntries}
+                onClick={loadData}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                Actualizar Búsqueda
+                Actualizar
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Clock Entries List */}
-        <div className="space-y-3">
-          {filteredEntries.length > 0 ? (
-            filteredEntries.map((entry) => (
-              <Card key={entry.clock_id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg text-slate-900">{entry.user_name}</h3>
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <FolderKanban className="w-4 h-4" />
-                            {entry.project_name}
-                          </div>
+        {/* Grouped Clock Entries */}
+        <div className="space-y-4">
+          {groupedEntries.length > 0 ? (
+            groupedEntries.map((group) => (
+              <Card key={`${group.user_id}_${group.date}`} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3 border-b bg-slate-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        <User className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg text-slate-900">{group.user_name}</h3>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Calendar className="w-4 h-4" />
+                          {moment(group.date).format('dddd, D [de] MMMM [de] YYYY')}
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="w-4 h-4 text-slate-500" />
-                            <span className="font-medium">Fecha:</span>
-                            <span>{moment(entry.date).format('DD/MM/YYYY')}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Clock className="w-4 h-4 text-green-500" />
-                            <span className="font-medium">Entrada:</span>
-                            <span>{moment(entry.clock_in).format('HH:mm:ss')}</span>
-                          </div>
-                          {entry.clock_out && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock className="w-4 h-4 text-red-500" />
-                              <span className="font-medium">Salida:</span>
-                              <span>{moment(entry.clock_out).format('HH:mm:ss')}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold font-mono text-blue-600">
+                        {group.totalHours.toFixed(2)}h
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-700">
+                        {group.entries.length} ponche{group.entries.length !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                  </div>
+                  {group.projects.length > 0 && (
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <FolderKanban className="w-4 h-4 text-slate-500" />
+                      {group.projects.map((proj, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {proj}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    {group.entries.map((entry, idx) => (
+                      <div 
+                        key={entry.clock_id} 
+                        className={`p-4 rounded-lg border ${
+                          entry.status === 'active' 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-sm font-medium flex items-center justify-center">
+                                {idx + 1}
+                              </span>
+                              <Badge className={entry.status === 'active' ? 'bg-green-500' : 'bg-slate-500'}>
+                                {entry.status === 'active' ? 'Activo' : 'Completado'}
+                              </Badge>
                             </div>
-                          )}
+                            <div className="text-sm">
+                              <span className="font-medium text-slate-700">Proyecto:</span>{' '}
+                              <span className="text-slate-600">{entry.project_name}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {entry.hours_worked > 0 && (
+                              <span className="font-mono font-semibold text-blue-600">
+                                {entry.hours_worked.toFixed(2)}h
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="space-y-2">
-                          {entry.clock_in_latitude && entry.clock_in_longitude && (
-                            <div className="flex items-start gap-2 text-sm">
-                              <MapPin className="w-4 h-4 text-green-500 mt-0.5" />
-                              <div className="flex-1">
-                                <span className="font-medium">Ubicación entrada:</span>
-                                <a
-                                  href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="ml-2 text-blue-600 hover:underline"
-                                >
-                                  Ver en mapa →
-                                </a>
-                                <div className="text-xs text-slate-500 mt-1">
-                                  {entry.clock_in_latitude.toFixed(6)}, {entry.clock_in_longitude.toFixed(6)}
-                                </div>
-                              </div>
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Clock className="w-4 h-4 text-green-600" />
+                              <span className="font-medium">Entrada:</span>
+                              <span className="font-mono">{moment(entry.clock_in).format('HH:mm:ss')}</span>
                             </div>
-                          )}
-                          {entry.clock_out_latitude && entry.clock_out_longitude && (
-                            <div className="flex items-start gap-2 text-sm">
-                              <MapPin className="w-4 h-4 text-red-500 mt-0.5" />
-                              <div className="flex-1">
-                                <span className="font-medium">Ubicación salida:</span>
+                            {entry.clock_in_latitude && entry.clock_in_longitude && (
+                              <a
+                                href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline text-xs flex items-center gap-1"
+                              >
+                                <MapPin className="w-3 h-3" /> Ver mapa
+                              </a>
+                            )}
+                          </div>
+
+                          {entry.clock_out && (
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2 text-sm">
+                                <Clock className="w-4 h-4 text-red-600" />
+                                <span className="font-medium">Salida:</span>
+                                <span className="font-mono">{moment(entry.clock_out).format('HH:mm:ss')}</span>
+                              </div>
+                              {entry.clock_out_latitude && entry.clock_out_longitude && (
                                 <a
                                   href={`https://www.google.com/maps?q=${entry.clock_out_latitude},${entry.clock_out_longitude}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="ml-2 text-blue-600 hover:underline"
+                                  className="text-blue-600 hover:underline text-xs flex items-center gap-1"
                                 >
-                                  Ver en mapa →
+                                  <MapPin className="w-3 h-3" /> Ver mapa
                                 </a>
-                                <div className="text-xs text-slate-500 mt-1">
-                                  {entry.clock_out_latitude.toFixed(6)}, {entry.clock_out_longitude.toFixed(6)}
-                                </div>
-                              </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      </div>
 
-                      {entry.notes && (
-                        <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded">
-                          <span className="font-medium">Notas:</span> {entry.notes}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-right ml-4">
-                      {entry.status === 'active' ? (
-                        <Badge className="bg-green-100 text-green-700 text-sm">Activo</Badge>
-                      ) : (
-                        <>
-                          <div className="text-2xl font-bold font-mono text-blue-600 mb-1">
-                            {entry.hours_worked?.toFixed(2)}h
+                        {entry.notes && entry.notes !== 'Ponche automático' && (
+                          <div className="mt-2 text-sm text-slate-600 bg-white p-2 rounded border">
+                            <span className="font-medium">Notas:</span> {entry.notes}
                           </div>
-                          <Badge className="bg-slate-100 text-slate-700 text-sm">Completado</Badge>
-                        </>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
