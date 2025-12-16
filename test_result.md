@@ -178,7 +178,7 @@ frontend:
           comment: "🚨 CRITICAL ISSUE: Complete Clock In/Out flow test FAILED. UI state management is broken: 1) Entrada button already disabled on page load (suggests stale activeClock state), 2) Clock IN operation shows no success toast, 3) Green status card never appears after clock-in, 4) Salida button not found. The activeClock state is not updating properly after API calls. Backend APIs work but frontend React state is not synchronized."
 
 backend:
-  - task: "Clock System Authentication"
+  - task: "Project Logs CRUD API"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -187,10 +187,10 @@ backend:
     needs_retesting: false
     status_history:
         - working: true
-          agent: "testing"
-          comment: "✅ Login successful with credentials carrerojorge99@gmail.com / Axel52418!. Session cookies working correctly. User authenticated as Jorge Carrero (ID: user_c883c51ed600)."
+          agent: "main"
+          comment: "✅ Verified via curl: POST /api/project-logs creates log successfully (plog_320652d819454928). GET /api/project-logs?project_id=X returns logs correctly."
 
-  - task: "Clock System Project Selection"
+  - task: "Estimate to Invoice Conversion API"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -199,56 +199,8 @@ backend:
     needs_retesting: false
     status_history:
         - working: true
-          agent: "testing"
-          comment: "✅ GET /api/clock/projects returns available projects correctly. Found 2 projects including 'LARC (P-2025-013)' for clock-in operations."
-
-  - task: "Clock System Active Clock Status"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ GET /api/clock/active endpoint working perfectly. Returns null when no active clock, returns complete clock data when active. This was the CRITICAL endpoint that was reported as problematic - it's working correctly."
-
-  - task: "Clock System Clock IN Operation"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ POST /api/clock/in working correctly. Successfully creates active clock entry with project_id, latitude=18.207, longitude=-65.740, notes. Returns clock_id and status='active'."
-
-  - task: "Clock System Clock OUT Operation"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ POST /api/clock/out working correctly. Calculates hours_worked, updates status to 'completed', creates automatic timesheet entry. All location and notes data properly stored."
-
-  - task: "Clock System History Retrieval"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ GET /api/clock/history?date=2025-12-16 working correctly. Returns completed clock entries for specified date. Found 2 completed entries for today."
+          agent: "main"
+          comment: "✅ Verified via curl: PUT /api/estimates/{id}/status?status=approved works. POST /api/estimates/{id}/convert creates invoice INV-2025-0001 successfully."
 
 metadata:
   created_by: "main_agent"
