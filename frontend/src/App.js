@@ -15,6 +15,7 @@ import ClockHistory from './pages/ClockHistory';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
 import Invoices from './pages/Invoices';
+import Estimates from './pages/Estimates';
 import Integrations from './pages/Integrations';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
