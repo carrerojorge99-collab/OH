@@ -2435,6 +2435,10 @@ async def update_company_settings(
         "next_invoice_number": company_data.get("next_invoice_number", 1),
         "next_estimate_number": company_data.get("next_estimate_number", 1),
         "next_po_number": company_data.get("next_po_number", 1),
+        "location_latitude": company_data.get("location_latitude"),
+        "location_longitude": company_data.get("location_longitude"),
+        "geofence_radius": company_data.get("geofence_radius", 100),
+        "geofence_enabled": company_data.get("geofence_enabled", False),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
