@@ -649,9 +649,17 @@ async def logout(request: Request, response: Response, session_token: Optional[s
             token = auth_header.split(' ')[1]
     
     if token:
+        # Delete session from database
         await db.user_sessions.delete_one({"session_token": token})
     
-    response.delete_cookie(key="session_token", path="/")
+    # Delete cookie with same parameters as set_cookie
+    response.delete_cookie(
+        key="session_token",
+        path="/",
+        secure=True,
+        samesite="none"
+    )
+    
     return {"message": "Sesión cerrada exitosamente"}
 
 @api_router.post("/projects", response_model=Project)
