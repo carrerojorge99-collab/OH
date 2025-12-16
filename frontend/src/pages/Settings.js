@@ -408,6 +408,49 @@ const Settings = () => {
                     <p className="text-xs text-slate-500">Este texto aparecerá en el pie de página de facturas, estimados y órdenes de compra</p>
                   </div>
 
+                  {/* Numeración de Documentos */}
+                  <div className="p-4 border rounded-lg bg-blue-50 space-y-4">
+                    <div>
+                      <Label className="text-base font-medium">Numeración de Documentos</Label>
+                      <p className="text-sm text-slate-500">Configure el próximo número a utilizar para cada tipo de documento</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="next_invoice_number">Próxima Factura (INV)</Label>
+                        <Input
+                          id="next_invoice_number"
+                          type="number"
+                          min="1"
+                          value={company.next_invoice_number || 1}
+                          onChange={(e) => setCompany(prev => ({ ...prev, next_invoice_number: parseInt(e.target.value) || 1 }))}
+                        />
+                        <p className="text-xs text-slate-500">INV-2025-{String(company.next_invoice_number || 1).padStart(4, '0')}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="next_estimate_number">Próximo Estimado (EST)</Label>
+                        <Input
+                          id="next_estimate_number"
+                          type="number"
+                          min="1"
+                          value={company.next_estimate_number || 1}
+                          onChange={(e) => setCompany(prev => ({ ...prev, next_estimate_number: parseInt(e.target.value) || 1 }))}
+                        />
+                        <p className="text-xs text-slate-500">EST-2025-{String(company.next_estimate_number || 1).padStart(4, '0')}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="next_po_number">Próxima Orden (PO)</Label>
+                        <Input
+                          id="next_po_number"
+                          type="number"
+                          min="1"
+                          value={company.next_po_number || 1}
+                          onChange={(e) => setCompany(prev => ({ ...prev, next_po_number: parseInt(e.target.value) || 1 }))}
+                        />
+                        <p className="text-xs text-slate-500">PO-2025-{String(company.next_po_number || 1).padStart(4, '0')}</p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Submit Button */}
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={savingCompany} className="flex items-center space-x-2">
