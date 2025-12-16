@@ -2572,6 +2572,38 @@ const ProjectDetail = () => {
             {/* Timer Component */}
             <Timer onStop={handleTimerStop} />
 
+            {/* Filter by Employee */}
+            <Card className="border-slate-200 shadow-sm mb-4">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Label htmlFor="filter-user" className="whitespace-nowrap font-semibold">Filtrar por empleado:</Label>
+                  <Select value={selectedTimesheetUser} onValueChange={setSelectedTimesheetUser}>
+                    <SelectTrigger className="max-w-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los empleados</SelectItem>
+                      {users.map((user) => (
+                        <SelectItem key={user.user_id} value={user.user_id}>
+                          {user.name} ({user.role})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="ml-auto text-sm text-slate-600">
+                    <span className="font-semibold">{filteredTimesheet.length}</span> registros
+                    {filteredTimesheet.length > 0 && (
+                      <span className="ml-4">
+                        Total: <span className="font-semibold text-blue-600">
+                          {filteredTimesheet.reduce((sum, entry) => sum + (entry.hours_worked || 0), 0).toFixed(2)}h
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -2587,7 +2619,7 @@ const ProjectDetail = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                      {timesheet.length > 0 ? timesheet.map((entry) => (
+                      {filteredTimesheet.length > 0 ? filteredTimesheet.map((entry) => (
                         <tr key={entry.timesheet_id} className="hover:bg-slate-50">
                           <td className="px-4 py-3 font-medium text-slate-900">{entry.date}</td>
                           <td className="px-4 py-3 text-slate-700">{entry.user_name}</td>
