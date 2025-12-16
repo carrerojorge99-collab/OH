@@ -240,15 +240,17 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "2.0"
+  test_sequence: 2
 
 test_plan:
   current_focus:
-    - "Task Assignment SelectItem Fix - Modal Opening"
-    - "Task Assignment SelectItem Fix - Dropdown Functionality"
-    - "Task Assignment SelectItem Fix - Task Creation with Unassigned"
-    - "Task Assignment SelectItem Fix - Task Creation with Specific User"
+    - "Clock System Authentication"
+    - "Clock System Project Selection"
+    - "Clock System Active Clock Status"
+    - "Clock System Clock IN Operation"
+    - "Clock System Clock OUT Operation"
+    - "Clock System History Retrieval"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
