@@ -205,38 +205,46 @@ const Invoices = () => {
     }
   };
 
-  const exportToPDF = (invoice) => {
+  const exportToPDF = async (invoice) => {
     const doc = new jsPDF();
+    const company = await fetchCompanyInfo();
+    
+    // Encabezado de empresa
+    let startY = await addCompanyHeader(doc, company, 15);
 
-    // Header
-    doc.setFontSize(24);
+    // Título del documento
+    doc.setFontSize(20);
     doc.setTextColor(37, 99, 235);
-    doc.text('FACTURA', 14, 22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FACTURA', 105, startY, { align: 'center' });
+    startY += 10;
 
+    // Información de factura
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Factura #: ${invoice.invoice_number}`, 14, 32);
-    doc.text(`Fecha: ${moment(invoice.created_at).format('DD/MM/YYYY')}`, 14, 38);
-    doc.text(`Vencimiento: ${moment(invoice.due_date).format('DD/MM/YYYY')}`, 14, 44);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Factura #: ${invoice.invoice_number}`, 14, startY);
+    doc.text(`Fecha: ${moment(invoice.created_at).format('DD/MM/YYYY')}`, 14, startY + 6);
+    doc.text(`Vencimiento: ${moment(invoice.due_date).format('DD/MM/YYYY')}`, 14, startY + 12);
 
     // Client info
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Cliente:', 14, 56);
-    doc.setFont(undefined, 'normal');
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Cliente:', 120, startY);
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(invoice.client_name, 14, 62);
+    doc.text(invoice.client_name, 120, startY + 6);
     if (invoice.client_email) {
-      doc.text(invoice.client_email, 14, 68);
+      doc.text(invoice.client_email, 120, startY + 12);
     }
 
     // Project info
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Proyecto:', 120, 56);
-    doc.setFont(undefined, 'normal');
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Proyecto:', 14, startY + 24);
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(invoice.project_name, 120, 62);
+    doc.text(invoice.project_name, 50, startY + 24);
 
     // Items table
     const tableData = invoice.items.map(item => [
@@ -246,11 +254,10 @@ const Invoices = () => {
       `$${(item.amount || 0).toFixed(2)}`
     ]);
 
-    // Generate table using autoTable plugin
     autoTable(doc, {
       head: [['Descripción', 'Horas', 'Tarifa', 'Total']],
       body: tableData,
-      startY: 80,
+      startY: startY + 32,
       styles: { fontSize: 9 },
       headStyles: { fillColor: [37, 99, 235] }
     });
@@ -260,23 +267,26 @@ const Invoices = () => {
     // Totals
     doc.setFontSize(10);
     doc.text(`Subtotal:`, 140, finalY);
-    doc.text(`$${(invoice.subtotal || 0).toFixed(2)}`, 180, finalY, { align: 'right' });
+    doc.text(`$${(invoice.subtotal || 0).toFixed(2)}`, 190, finalY, { align: 'right' });
 
     doc.text(`Impuestos (${invoice.tax_rate || 0}%):`, 140, finalY + 6);
-    doc.text(`$${(invoice.tax_amount || 0).toFixed(2)}`, 180, finalY + 6, { align: 'right' });
+    doc.text(`$${(invoice.tax_amount || 0).toFixed(2)}`, 190, finalY + 6, { align: 'right' });
 
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.text(`TOTAL:`, 140, finalY + 14);
-    doc.text(`$${(invoice.total || 0).toFixed(2)}`, 180, finalY + 14, { align: 'right' });
+    doc.text(`$${(invoice.total || 0).toFixed(2)}`, 190, finalY + 14, { align: 'right' });
 
     // Notes
     if (invoice.notes) {
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.text('Notas:', 14, finalY + 30);
-      doc.text(invoice.notes, 14, finalY + 36, { maxWidth: 180 });
+      doc.text('Notas:', 14, finalY + 26);
+      doc.text(invoice.notes, 14, finalY + 32, { maxWidth: 180 });
     }
+
+    // Pie de página
+    addCompanyFooter(doc, company);
 
     doc.save(`Factura_${invoice.invoice_number}.pdf`);
   };
