@@ -116,6 +116,11 @@ class ProjectCreate(BaseModel):
     po_quantity: Optional[float] = None
     proposal_number: Optional[str] = None
     team_members: List[str] = []
+    # Geofencing fields
+    location_latitude: Optional[float] = None
+    location_longitude: Optional[float] = None
+    geofence_radius: float = 100  # metros
+    geofence_enabled: bool = False
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
