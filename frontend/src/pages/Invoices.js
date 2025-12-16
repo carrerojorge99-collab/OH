@@ -120,11 +120,17 @@ const Invoices = () => {
     if (!window.confirm(`¿Eliminar factura ${invoiceNumber}?`)) return;
 
     try {
-      await axios.delete(`${API}/invoices/${invoiceId}`, { withCredentials: true });
-      toast.success('Factura eliminada');
+      await axios.delete(`${API}/invoices/${invoiceId}`, { 
+        withCredentials: true,
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      });
+      toast.success('Factura eliminada exitosamente');
+      // Force reload with cache bust
+      setInvoices(prev => prev.filter(inv => inv.invoice_id !== invoiceId));
       loadData();
     } catch (error) {
-      toast.error('Error al eliminar factura');
+      console.error('Error deleting invoice:', error);
+      toast.error(error.response?.data?.detail || 'Error al eliminar factura');
     }
   };
 
