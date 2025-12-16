@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the Task Assignment SelectItem fix in ProjectDetail page - verify that the 'Sin asignar' option works correctly without console errors"
+user_problem_statement: "Test the complete clock in/out system (ponche) with authentication, project selection, clock operations, and history verification"
 
 frontend:
   - task: "Task Assignment SelectItem Fix - Modal Opening"
