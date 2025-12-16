@@ -200,7 +200,8 @@ const Estimates = () => {
     try {
       await axios.delete(`${API}/estimates/${estimateId}`, { withCredentials: true });
       toast.success('Estimado eliminado');
-      loadData();
+      // Actualizar estado local inmediatamente para reflejar el cambio
+      setEstimates(prev => prev.filter(e => e.estimate_id !== estimateId));
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al eliminar');
     }
