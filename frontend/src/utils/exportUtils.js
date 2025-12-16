@@ -151,19 +151,25 @@ export const exportLaborToPDF = (laborData, projectName) => {
   doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 14, 38);
 
   const tableData = laborData.map(labor => {
-    const total = (labor.consumed_hours * labor.hourly_rate) + 
-                  (labor.overtime_hours * labor.overtime_rate) + 
-                  labor.expenses;
+    const consumedHours = labor.consumed_hours || 0;
+    const overtimeHours = labor.overtime_hours || 0;
+    const hourlyRate = labor.hourly_rate || 0;
+    const overtimeRate = labor.overtime_rate || 0;
+    const expenses = labor.expenses || 0;
+    
+    const total = (consumedHours * hourlyRate) + 
+                  (overtimeHours * overtimeRate) + 
+                  expenses;
     
     return [
-      labor.labor_category,
-      labor.hours_per_week.toString(),
-      `$${labor.hourly_rate.toFixed(2)}`,
-      labor.estimated_total_hours.toString(),
-      (labor.consumed_hours || 0).toString(),
-      (labor.overtime_hours || 0).toString(),
-      `$${labor.overtime_rate.toFixed(2)}`,
-      `$${labor.expenses.toFixed(2)}`,
+      labor.labor_category || 'N/A',
+      (labor.hours_per_week || 0).toString(),
+      `$${hourlyRate.toFixed(2)}`,
+      (labor.estimated_total_hours || 0).toString(),
+      consumedHours.toString(),
+      overtimeHours.toString(),
+      `$${overtimeRate.toFixed(2)}`,
+      `$${expenses.toFixed(2)}`,
       `$${total.toFixed(2)}`
     ];
   });
