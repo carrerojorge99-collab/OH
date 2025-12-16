@@ -2339,7 +2339,10 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
             "website": "",
             "tax_id": "",
             "currency": "USD",
-            "footer_text": ""
+            "footer_text": "",
+            "next_invoice_number": 1,
+            "next_estimate_number": 1,
+            "next_po_number": 1
         }
     return company
 
