@@ -43,7 +43,11 @@ const Settings = () => {
     footer_text: '',
     next_invoice_number: 1,
     next_estimate_number: 1,
-    next_po_number: 1
+    next_po_number: 1,
+    location_latitude: null,
+    location_longitude: null,
+    geofence_radius: 100,
+    geofence_enabled: false
   });
 
   const API_URL = process.env.REACT_APP_BACKEND_URL;
