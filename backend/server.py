@@ -652,12 +652,15 @@ async def logout(request: Request, response: Response, session_token: Optional[s
         # Delete session from database
         await db.user_sessions.delete_one({"session_token": token})
     
-    # Delete cookie with same parameters as set_cookie
-    response.delete_cookie(
+    # Delete cookie - must set max_age=0 to force deletion
+    response.set_cookie(
         key="session_token",
-        path="/",
+        value="",
+        httponly=True,
         secure=True,
-        samesite="none"
+        samesite="none",
+        path="/",
+        max_age=0  # This forces cookie deletion
     )
     
     return {"message": "Sesión cerrada exitosamente"}
