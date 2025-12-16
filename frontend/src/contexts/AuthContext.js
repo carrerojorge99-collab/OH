@@ -76,9 +76,11 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       // Clear any session storage
-      sessionStorage.removeItem('just_authenticated');
+      sessionStorage.clear();
       // Clear any local storage auth data
-      localStorage.removeItem('user');
+      localStorage.clear();
+      // Force cookies to be cleared from axios
+      delete axios.defaults.headers.common['Authorization'];
     }
   };
 
