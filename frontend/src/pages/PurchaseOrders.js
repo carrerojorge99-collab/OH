@@ -602,15 +602,13 @@ const PurchaseOrders = () => {
                           <Copy className="w-4 h-4" />
                         </Button>
                         {!['completed', 'cancelled'].includes(po.status) && (
-                          <>
-                            <Button variant="ghost" size="sm" onClick={() => handleStatusChange(po.po_id, 'cancelled')} title="Cancelar" className="text-red-600">
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(po.po_id)} title="Eliminar" className="text-red-600">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
+                          <Button variant="ghost" size="sm" onClick={() => handleStatusChange(po.po_id, 'cancelled')} title="Cancelar" className="text-orange-600">
+                            <XCircle className="w-4 h-4" />
+                          </Button>
                         )}
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(po.po_id)} title="Eliminar" className="text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
