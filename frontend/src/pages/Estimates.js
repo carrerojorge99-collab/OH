@@ -63,7 +63,8 @@ const Estimates = () => {
     discount_percent: 0,
     notes: '',
     terms: 'Este estimado es válido por 30 días.',
-    valid_until: moment().add(30, 'days').format('YYYY-MM-DD')
+    valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
+    custom_number: ''
   });
 
   useEffect(() => {
