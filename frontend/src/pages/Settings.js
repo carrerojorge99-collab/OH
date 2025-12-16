@@ -6,8 +6,10 @@ import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
+import { Textarea } from '../components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, Mail, AlertCircle } from 'lucide-react';
+import { Save, Mail, AlertCircle, Building2, Upload, Image } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Settings = () => {
