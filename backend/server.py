@@ -1292,11 +1292,21 @@ async def delete_timesheet(timesheet_id: str, request: Request, session_token: O
 @api_router.post("/clock/in", response_model=ClockEntry)
 async def clock_in(
     project_id: str,
+    latitude: float,
+    longitude: float,
+    address: Optional[str] = None,
     notes: Optional[str] = None,
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
     user = await get_current_user(request, session_token)
+    
+    # Validate location data (mandatory)
+    if latitude is None or longitude is None:
+        raise HTTPException(
+            status_code=400, 
+            detail="La ubicación GPS es obligatoria para ponchar. Por favor, permite el acceso a tu ubicación."
+        )
     
     # Check if user is already clocked in
     active_clock = await db.clock_entries.find_one({
@@ -1334,7 +1344,10 @@ async def clock_in(
         "hours_worked": None,
         "status": "active",
         "date": now.date().isoformat(),
-        "notes": notes
+        "notes": notes,
+        "clock_in_latitude": latitude,
+        "clock_in_longitude": longitude,
+        "clock_in_address": address
     }
     
     await db.clock_entries.insert_one(clock_doc)
