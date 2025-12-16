@@ -25,7 +25,6 @@ import {
   Calendar,
   FileText,
   DollarSign,
-  Zap,
   Clock,
   Package
 } from 'lucide-react';
