@@ -100,12 +100,6 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       
-      <Route path="/integrations" element={
-        <ProtectedRoute>
-          <Integrations />
-        </ProtectedRoute>
-      } />
-      
       <Route path="/audit-log" element={
         <ProtectedRoute>
           <AuditLog />
