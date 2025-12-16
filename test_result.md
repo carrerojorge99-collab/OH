@@ -215,7 +215,6 @@ test_plan:
     - "Project Logs (Bitácora) UI - Create Log"
     - "Project Logs (Bitácora) UI - List and Filter"
     - "Project Logs (Bitácora) UI - Edit and Delete"
-    - "Estimate to Invoice Conversion UI"
   test_all: false
   test_priority: "high_first"
 
