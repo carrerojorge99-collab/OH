@@ -93,6 +93,9 @@ const ClockInOut = () => {
       );
 
       toast.success('✅ Clock IN registrado');
+      
+      // Wait a moment for backend to finish
+      await new Promise(resolve => setTimeout(resolve, 300));
       await loadPunches();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar entrada');
@@ -120,6 +123,9 @@ const ClockInOut = () => {
       );
 
       toast.success('✅ Clock OUT registrado');
+      
+      // Wait a moment for backend to finish
+      await new Promise(resolve => setTimeout(resolve, 300));
       await loadPunches();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar salida');
