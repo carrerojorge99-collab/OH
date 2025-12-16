@@ -440,6 +440,7 @@ class EstimateCreate(BaseModel):
     notes: Optional[str] = None
     terms: Optional[str] = None
     valid_until: Optional[str] = None
+    custom_number: Optional[str] = None
 
 class Estimate(BaseModel):
     model_config = ConfigDict(extra="ignore")
