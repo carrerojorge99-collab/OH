@@ -1713,6 +1713,137 @@ async def get_comments(project_id: str, request: Request, session_token: Optiona
     comments = await db.comments.find({"project_id": project_id}, {"_id": 0}).sort("timestamp", -1).to_list(1000)
     return [Comment(**c) for c in comments]
 
+# ============== PROJECT LOGS ENDPOINTS ==============
+
+@api_router.post("/project-logs", response_model=ProjectLog)
+async def create_project_log(
+    log_data: ProjectLogCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Get project name
+    project = await db.projects.find_one({"project_id": log_data.project_id}, {"_id": 0, "name": 1})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    log_id = f"plog_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    log_doc = {
+        "log_id": log_id,
+        "project_id": log_data.project_id,
+        "project_name": project.get('name'),
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "log_type": log_data.log_type,
+        "title": log_data.title,
+        "description": log_data.description,
+        "hours_worked": log_data.hours_worked,
+        "attachments": log_data.attachments or [],
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.project_logs.insert_one(log_doc)
+    
+    await log_audit(user.user_id, user.name, "create", "project_log", log_id, log_data.title, {"project_id": log_data.project_id})
+    
+    return ProjectLog(**log_doc)
+
+@api_router.get("/project-logs", response_model=List[ProjectLog])
+async def get_project_logs(
+    project_id: Optional[str] = None,
+    log_type: Optional[str] = None,
+    user_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if log_type:
+        query["log_type"] = log_type
+    if user_id:
+        query["user_id"] = user_id
+    if start_date and end_date:
+        query["created_at"] = {"$gte": start_date, "$lte": end_date}
+    
+    logs = await db.project_logs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [ProjectLog(**log) for log in logs]
+
+@api_router.get("/project-logs/{log_id}", response_model=ProjectLog)
+async def get_project_log(
+    log_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    await get_current_user(request, session_token)
+    
+    log = await db.project_logs.find_one({"log_id": log_id}, {"_id": 0})
+    if not log:
+        raise HTTPException(status_code=404, detail="Log no encontrado")
+    
+    return ProjectLog(**log)
+
+@api_router.put("/project-logs/{log_id}", response_model=ProjectLog)
+async def update_project_log(
+    log_id: str,
+    log_data: ProjectLogCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    log = await db.project_logs.find_one({"log_id": log_id}, {"_id": 0})
+    if not log:
+        raise HTTPException(status_code=404, detail="Log no encontrado")
+    
+    # Only creator or admin can edit
+    if log.get('user_id') != user.user_id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permiso para editar este log")
+    
+    update_data = {
+        "log_type": log_data.log_type,
+        "title": log_data.title,
+        "description": log_data.description,
+        "hours_worked": log_data.hours_worked,
+        "attachments": log_data.attachments or [],
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.project_logs.update_one({"log_id": log_id}, {"$set": update_data})
+    
+    updated = await db.project_logs.find_one({"log_id": log_id}, {"_id": 0})
+    return ProjectLog(**updated)
+
+@api_router.delete("/project-logs/{log_id}")
+async def delete_project_log(
+    log_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    log = await db.project_logs.find_one({"log_id": log_id}, {"_id": 0})
+    if not log:
+        raise HTTPException(status_code=404, detail="Log no encontrado")
+    
+    # Only creator or admin can delete
+    if log.get('user_id') != user.user_id and user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="No tienes permiso para eliminar este log")
+    
+    await db.project_logs.delete_one({"log_id": log_id})
+    
+    await log_audit(user.user_id, user.name, "delete", "project_log", log_id, log.get('title'), {})
+    
+    return {"message": "Log eliminado exitosamente"}
+
 @api_router.get("/notifications", response_model=List[Notification])
 async def get_notifications(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
