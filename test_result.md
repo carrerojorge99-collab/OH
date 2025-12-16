@@ -206,3 +206,5 @@ agent_communication:
       message: "✅ ALL ISSUES FIXED: Added missing 'import moment from moment' and 'Edit' icon import to ProjectDetail.js. Both Bitácora and Estimate-to-Invoice conversion features now work correctly."
     - agent: "main"
       message: "VERIFIED VIA SCREENSHOTS: 1) Bitácora tab loads, shows test log with filters and CRUD buttons. 2) Estimates page shows EST-2025-0001 as 'Convertido'. 3) Facturas page shows INV-2025-0001 created from the estimate."
+    - agent: "testing"
+      message: "COMPREHENSIVE UI TESTING COMPLETED: ✅ Estimate conversion verified - EST-2025-0001 shows 'Convertido' status and INV-2025-0001 exists with correct total $1,535.91. ❌ Bitácora testing encountered session/authentication issues preventing full CRUD testing. The main functionality appears implemented but needs authentication stability for complete verification."
