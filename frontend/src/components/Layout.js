@@ -26,7 +26,8 @@ import {
   FileText,
   DollarSign,
   Zap,
-  Clock
+  Clock,
+  Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 
