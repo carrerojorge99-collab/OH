@@ -363,12 +363,12 @@ const Estimates = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Proyecto (opcional)</Label>
-                    <Select value={form.project_id} onValueChange={(v) => setForm({...form, project_id: v})}>
+                    <Select value={form.project_id || 'none'} onValueChange={(v) => setForm({...form, project_id: v === 'none' ? '' : v})}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar proyecto" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin proyecto</SelectItem>
+                        <SelectItem value="none">Sin proyecto</SelectItem>
                         {projects.map(p => (
                           <SelectItem key={p.project_id} value={p.project_id}>{p.name}</SelectItem>
                         ))}
