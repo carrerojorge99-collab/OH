@@ -221,10 +221,10 @@ const Invoices = () => {
 
     // Items table
     const tableData = invoice.items.map(item => [
-      item.description,
-      item.hours.toFixed(2),
-      `$${item.rate.toFixed(2)}`,
-      `$${item.amount.toFixed(2)}`
+      item.description || 'N/A',
+      (item.hours || 0).toFixed(2),
+      `$${(item.rate || 0).toFixed(2)}`,
+      `$${(item.amount || 0).toFixed(2)}`
     ]);
 
     // Generate table using autoTable plugin
