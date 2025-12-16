@@ -2369,6 +2369,9 @@ async def update_company_settings(
         "tax_id": company_data.get("tax_id", ""),
         "currency": company_data.get("currency", "USD"),
         "footer_text": company_data.get("footer_text", ""),
+        "next_invoice_number": company_data.get("next_invoice_number", 1),
+        "next_estimate_number": company_data.get("next_estimate_number", 1),
+        "next_po_number": company_data.get("next_po_number", 1),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
