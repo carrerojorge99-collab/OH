@@ -65,7 +65,8 @@ const PurchaseOrders = () => {
     discount_percent: 0,
     notes: '',
     terms: 'Pago a 30 días después de la entrega.',
-    expected_delivery_date: ''
+    expected_delivery_date: '',
+    custom_number: ''
   });
 
   useEffect(() => {
