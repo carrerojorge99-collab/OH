@@ -72,8 +72,13 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     } finally {
+      // Clear all auth state
       setUser(null);
       setIsAuthenticated(false);
+      // Clear any session storage
+      sessionStorage.removeItem('just_authenticated');
+      // Clear any local storage auth data
+      localStorage.removeItem('user');
     }
   };
 
