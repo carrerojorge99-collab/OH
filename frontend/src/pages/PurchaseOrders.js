@@ -88,8 +88,8 @@ const PurchaseOrders = () => {
   const loadData = async () => {
     try {
       const [posRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/api/purchase-orders`, { withCredentials: true }),
-        axios.get(`${API}/api/projects`, { withCredentials: true })
+        axios.get(`${API}/api/purchase-orders?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        axios.get(`${API}/api/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setPurchaseOrders(posRes.data || []);
       setProjects(projectsRes.data || []);
