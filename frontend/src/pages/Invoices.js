@@ -357,6 +357,17 @@ const Invoices = () => {
               <form onSubmit={handleGenerateInvoice}>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
+                    <Label htmlFor="custom_number">Número de Factura (opcional)</Label>
+                    <Input
+                      id="custom_number"
+                      value={formData.custom_number}
+                      onChange={(e) => setFormData({ ...formData, custom_number: e.target.value })}
+                      placeholder="Ej: INV-2025-0150 (dejar vacío para auto-generar)"
+                    />
+                    <p className="text-xs text-slate-500">Si lo deja vacío, se generará automáticamente</p>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="project">Proyecto *</Label>
                     <Select
                       value={formData.project_id}
