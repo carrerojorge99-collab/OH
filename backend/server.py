@@ -1566,7 +1566,18 @@ async def delete_clock_entry(
     await db.clock_entries.delete_one({"clock_id": clock_id})
     
     # Also delete associated timesheet if exists
-    await db.timesheet.delete_one({"clock_id": clock_id})
+    # Try by clock_id first, then by user/date/project match
+    deleted_ts = await db.timesheet.delete_one({"clock_id": clock_id})
+    if deleted_ts.deleted_count == 0:
+        # Try matching by user, date, project and approximate time
+        clock_in_time = clock_entry.get('clock_in', '')
+        if clock_in_time:
+            await db.timesheet.delete_one({
+                "user_id": clock_entry.get('user_id'),
+                "date": clock_entry.get('date'),
+                "project_id": clock_entry.get('project_id'),
+                "description": {"$regex": "ponche", "$options": "i"}
+            })
     
     # Log audit
     await log_audit(
