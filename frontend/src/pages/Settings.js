@@ -519,24 +519,26 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
-        </form>
 
-        {/* Instructions Card */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Cómo configurar Gmail</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600">
-              <li>Ve a tu <strong>Cuenta de Google</strong></li>
-              <li>Navega a <strong>Seguridad → Verificación en dos pasos</strong> (debe estar activada)</li>
-              <li>Ve a <strong>Contraseñas de aplicación</strong></li>
-              <li>Selecciona "Correo" y "Otro (nombre personalizado)"</li>
-              <li>Genera la contraseña y cópiala</li>
-              <li>Pega esa contraseña en el campo "Contraseña SMTP" arriba</li>
-            </ol>
-          </CardContent>
-        </Card>
+          {/* Instructions Card */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Cómo configurar Gmail</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600">
+                <li>Ve a tu <strong>Cuenta de Google</strong></li>
+                <li>Navega a <strong>Seguridad → Verificación en dos pasos</strong> (debe estar activada)</li>
+                <li>Ve a <strong>Contraseñas de aplicación</strong></li>
+                <li>Selecciona "Correo" y "Otro (nombre personalizado)"</li>
+                <li>Genera la contraseña y cópiala</li>
+                <li>Pega esa contraseña en el campo "Contraseña SMTP" arriba</li>
+              </ol>
+            </CardContent>
+          </Card>
+            </form>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
