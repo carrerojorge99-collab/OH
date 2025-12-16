@@ -3097,6 +3097,371 @@ async def send_estimate_email(
     
     return {"message": f"Estimado enviado a {estimate.get('client_email')}", "status": "sent"}
 
+# ============== PURCHASE ORDERS ENDPOINTS ==============
+
+@api_router.post("/purchase-orders", response_model=PurchaseOrder)
+async def create_purchase_order(
+    po_data: PurchaseOrderCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Get next PO number
+    last_po = await db.purchase_orders.find_one(sort=[("created_at", -1)], projection={"_id": 0, "po_number": 1})
+    if last_po and last_po.get('po_number'):
+        try:
+            last_num = int(last_po['po_number'].split('-')[-1])
+            po_number = f"PO-{datetime.now(timezone.utc).year}-{str(last_num + 1).zfill(4)}"
+        except:
+            po_number = f"PO-{datetime.now(timezone.utc).year}-0001"
+    else:
+        po_number = f"PO-{datetime.now(timezone.utc).year}-0001"
+    
+    # Get project name if project_id provided
+    project_name = None
+    if po_data.project_id:
+        project = await db.projects.find_one({"project_id": po_data.project_id}, {"_id": 0, "name": 1})
+        if project:
+            project_name = project.get('name')
+    
+    # Calculate totals
+    subtotal = sum(item.amount for item in po_data.items)
+    discount_amount = subtotal * (po_data.discount_percent / 100)
+    taxable = subtotal - discount_amount
+    tax_amount = taxable * (po_data.tax_rate / 100)
+    total = taxable + tax_amount
+    
+    po_id = f"po_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    po_doc = {
+        "po_id": po_id,
+        "po_number": po_number,
+        "project_id": po_data.project_id,
+        "project_name": project_name,
+        "supplier_name": po_data.supplier_name,
+        "supplier_email": po_data.supplier_email,
+        "supplier_phone": po_data.supplier_phone,
+        "supplier_address": po_data.supplier_address,
+        "title": po_data.title,
+        "description": po_data.description,
+        "items": [item.model_dump() for item in po_data.items],
+        "subtotal": subtotal,
+        "discount_percent": po_data.discount_percent,
+        "discount_amount": discount_amount,
+        "tax_rate": po_data.tax_rate,
+        "tax_amount": tax_amount,
+        "total": total,
+        "status": "draft",
+        "notes": po_data.notes,
+        "terms": po_data.terms,
+        "expected_delivery_date": po_data.expected_delivery_date,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": now,
+        "approved_date": None,
+        "sent_date": None,
+        "received_date": None,
+        "linked_expense_id": None
+    }
+    
+    await db.purchase_orders.insert_one(po_doc)
+    await log_audit(user.user_id, user.name, "create", "purchase_order", po_id, po_number, {"total": total})
+    
+    return PurchaseOrder(**po_doc)
+
+@api_router.get("/purchase-orders", response_model=List[PurchaseOrder])
+async def get_purchase_orders(
+    project_id: Optional[str] = None,
+    status: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if status:
+        query["status"] = status
+    
+    pos = await db.purchase_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [PurchaseOrder(**po) for po in pos]
+
+@api_router.get("/purchase-orders/{po_id}", response_model=PurchaseOrder)
+async def get_purchase_order(
+    po_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    await get_current_user(request, session_token)
+    
+    po = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+    if not po:
+        raise HTTPException(status_code=404, detail="Orden de compra no encontrada")
+    
+    return PurchaseOrder(**po)
+
+@api_router.put("/purchase-orders/{po_id}", response_model=PurchaseOrder)
+async def update_purchase_order(
+    po_id: str,
+    po_data: PurchaseOrderCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    po = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+    if not po:
+        raise HTTPException(status_code=404, detail="Orden de compra no encontrada")
+    
+    if po.get('status') in ['completed', 'cancelled']:
+        raise HTTPException(status_code=400, detail="No se puede editar una orden completada o cancelada")
+    
+    # Get project name if project_id provided
+    project_name = None
+    if po_data.project_id:
+        project = await db.projects.find_one({"project_id": po_data.project_id}, {"_id": 0, "name": 1})
+        if project:
+            project_name = project.get('name')
+    
+    # Calculate totals
+    subtotal = sum(item.amount for item in po_data.items)
+    discount_amount = subtotal * (po_data.discount_percent / 100)
+    taxable = subtotal - discount_amount
+    tax_amount = taxable * (po_data.tax_rate / 100)
+    total = taxable + tax_amount
+    
+    update_data = {
+        "project_id": po_data.project_id,
+        "project_name": project_name,
+        "supplier_name": po_data.supplier_name,
+        "supplier_email": po_data.supplier_email,
+        "supplier_phone": po_data.supplier_phone,
+        "supplier_address": po_data.supplier_address,
+        "title": po_data.title,
+        "description": po_data.description,
+        "items": [item.model_dump() for item in po_data.items],
+        "subtotal": subtotal,
+        "discount_percent": po_data.discount_percent,
+        "discount_amount": discount_amount,
+        "tax_rate": po_data.tax_rate,
+        "tax_amount": tax_amount,
+        "total": total,
+        "notes": po_data.notes,
+        "terms": po_data.terms,
+        "expected_delivery_date": po_data.expected_delivery_date
+    }
+    
+    await db.purchase_orders.update_one({"po_id": po_id}, {"$set": update_data})
+    await log_audit(user.user_id, user.name, "update", "purchase_order", po_id, po.get('po_number'), {"total": total})
+    
+    updated = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+    return PurchaseOrder(**updated)
+
+@api_router.put("/purchase-orders/{po_id}/status")
+async def update_purchase_order_status(
+    po_id: str,
+    status: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    po = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+    if not po:
+        raise HTTPException(status_code=404, detail="Orden de compra no encontrada")
+    
+    valid_statuses = ['draft', 'approved', 'sent', 'partially_received', 'completed', 'cancelled']
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Estado inválido. Estados válidos: {', '.join(valid_statuses)}")
+    
+    update_data = {"status": status}
+    now = datetime.now(timezone.utc).isoformat()
+    
+    if status == 'approved':
+        update_data["approved_date"] = now
+    elif status == 'sent':
+        update_data["sent_date"] = now
+    elif status in ['completed', 'partially_received']:
+        update_data["received_date"] = now
+        
+        # Create expense if linked to project and status is completed
+        if status == 'completed' and po.get('project_id') and not po.get('linked_expense_id'):
+            # Find or create a budget category for purchase orders
+            category = await db.budget_categories.find_one(
+                {"project_id": po.get('project_id'), "name": "Órdenes de Compra"},
+                {"_id": 0}
+            )
+            if not category:
+                category_id = f"cat_{uuid4().hex[:12]}"
+                category = {
+                    "category_id": category_id,
+                    "project_id": po.get('project_id'),
+                    "name": "Órdenes de Compra",
+                    "allocated_amount": 0,
+                    "spent_amount": 0,
+                    "created_at": now
+                }
+                await db.budget_categories.insert_one(category)
+            else:
+                category_id = category.get('category_id')
+            
+            # Create expense
+            expense_id = f"exp_{uuid4().hex[:12]}"
+            expense_doc = {
+                "expense_id": expense_id,
+                "project_id": po.get('project_id'),
+                "category_id": category_id,
+                "description": f"OC: {po.get('po_number')} - {po.get('title')}",
+                "amount": po.get('total'),
+                "date": now[:10],
+                "created_by": user.user_id,
+                "created_at": now
+            }
+            await db.expenses.insert_one(expense_doc)
+            
+            # Update category spent amount
+            await db.budget_categories.update_one(
+                {"category_id": category_id},
+                {"$inc": {"spent_amount": po.get('total')}}
+            )
+            
+            # Update project budget_spent
+            await db.projects.update_one(
+                {"project_id": po.get('project_id')},
+                {"$inc": {"budget_spent": po.get('total')}}
+            )
+            
+            update_data["linked_expense_id"] = expense_id
+    
+    await db.purchase_orders.update_one({"po_id": po_id}, {"$set": update_data})
+    await log_audit(user.user_id, user.name, "update", "purchase_order", po_id, po.get('po_number'), {"status": status})
+    
+    return {"message": f"Estado actualizado a {status}"}
+
+@api_router.delete("/purchase-orders/{po_id}")
+async def delete_purchase_order(
+    po_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    po = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+    if not po:
+        raise HTTPException(status_code=404, detail="Orden de compra no encontrada")
+    
+    if po.get('status') == 'completed':
+        raise HTTPException(status_code=400, detail="No se puede eliminar una orden completada")
+    
+    await db.purchase_orders.delete_one({"po_id": po_id})
+    await log_audit(user.user_id, user.name, "delete", "purchase_order", po_id, po.get('po_number'), {})
+    
+    return {"message": "Orden de compra eliminada exitosamente"}
+
+@api_router.post("/purchase-orders/{po_id}/duplicate", response_model=PurchaseOrder)
+async def duplicate_purchase_order(
+    po_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    po = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+    if not po:
+        raise HTTPException(status_code=404, detail="Orden de compra no encontrada")
+    
+    # Get next PO number
+    last_po = await db.purchase_orders.find_one(sort=[("created_at", -1)], projection={"_id": 0, "po_number": 1})
+    if last_po and last_po.get('po_number'):
+        try:
+            last_num = int(last_po['po_number'].split('-')[-1])
+            po_number = f"PO-{datetime.now(timezone.utc).year}-{str(last_num + 1).zfill(4)}"
+        except:
+            po_number = f"PO-{datetime.now(timezone.utc).year}-0001"
+    else:
+        po_number = f"PO-{datetime.now(timezone.utc).year}-0001"
+    
+    new_po_id = f"po_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    new_po = {
+        **po,
+        "po_id": new_po_id,
+        "po_number": po_number,
+        "status": "draft",
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": now,
+        "approved_date": None,
+        "sent_date": None,
+        "received_date": None,
+        "linked_expense_id": None
+    }
+    
+    await db.purchase_orders.insert_one(new_po)
+    await log_audit(user.user_id, user.name, "create", "purchase_order", new_po_id, po_number, {"duplicated_from": po_id})
+    
+    return PurchaseOrder(**new_po)
+
+@api_router.post("/purchase-orders/{po_id}/send")
+async def send_purchase_order_email(
+    po_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    po = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+    if not po:
+        raise HTTPException(status_code=404, detail="Orden de compra no encontrada")
+    
+    if not po.get('supplier_email'):
+        raise HTTPException(status_code=400, detail="La orden no tiene email de proveedor")
+    
+    # Build email content
+    items_html = ""
+    for item in po.get('items', []):
+        items_html += f"<tr><td>{item['description']}</td><td>{item['quantity']}</td><td>${item['unit_price']:.2f}</td><td>${item['amount']:.2f}</td></tr>"
+    
+    html_content = f"""
+    <h2>Orden de Compra {po.get('po_number')}</h2>
+    <p><strong>Título:</strong> {po.get('title')}</p>
+    <p><strong>Fecha:</strong> {po.get('created_at')[:10]}</p>
+    {f"<p><strong>Entrega esperada:</strong> {po.get('expected_delivery_date')}</p>" if po.get('expected_delivery_date') else ""}
+    <table border="1" cellpadding="5">
+        <tr><th>Descripción</th><th>Cantidad</th><th>Precio Unit.</th><th>Total</th></tr>
+        {items_html}
+    </table>
+    <p><strong>Subtotal:</strong> ${po.get('subtotal', 0):.2f}</p>
+    {f"<p><strong>Descuento ({po.get('discount_percent')}%):</strong> -${po.get('discount_amount', 0):.2f}</p>" if po.get('discount_amount') else ""}
+    {f"<p><strong>Impuesto ({po.get('tax_rate')}%):</strong> ${po.get('tax_amount', 0):.2f}</p>" if po.get('tax_amount') else ""}
+    <p><strong>Total:</strong> ${po.get('total', 0):.2f}</p>
+    {f"<p><strong>Notas:</strong> {po.get('notes')}</p>" if po.get('notes') else ""}
+    {f"<p><strong>Términos:</strong> {po.get('terms')}</p>" if po.get('terms') else ""}
+    """
+    
+    text_content = f"Orden de Compra {po.get('po_number')} - Total: ${po.get('total', 0):.2f}"
+    
+    await send_email(
+        po.get('supplier_email'),
+        f"Orden de Compra {po.get('po_number')} - {po.get('title')}",
+        html_content,
+        text_content
+    )
+    
+    # Update status to sent
+    await db.purchase_orders.update_one(
+        {"po_id": po_id},
+        {"$set": {"status": "sent", "sent_date": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    await log_audit(user.user_id, user.name, "update", "purchase_order", po_id, po.get('po_number'), {"action": "sent_email", "to": po.get('supplier_email')})
+    
+    return {"message": f"Orden enviada a {po.get('supplier_email')}", "status": "sent"}
+
 @api_router.get("/audit-logs", response_model=List[AuditLog])
 async def get_audit_logs(
     limit: int = 100,
