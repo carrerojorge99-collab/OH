@@ -579,6 +579,68 @@ const ProjectDetail = () => {
     }
   };
 
+  // Project Logs functions
+  const resetLogForm = () => {
+    setLogForm({ log_type: 'work', title: '', description: '', hours_worked: '' });
+    setEditingLogId(null);
+  };
+
+  const handleSubmitLog = async (e) => {
+    e.preventDefault();
+    if (!logForm.title || !logForm.description || !logForm.log_type) {
+      toast.error('Complete los campos requeridos');
+      return;
+    }
+
+    try {
+      const payload = {
+        project_id: projectId,
+        log_type: logForm.log_type,
+        title: logForm.title,
+        description: logForm.description,
+        hours_worked: logForm.hours_worked ? parseFloat(logForm.hours_worked) : null,
+        attachments: []
+      };
+
+      if (editingLogId) {
+        await axios.put(`${API}/project-logs/${editingLogId}`, payload, { withCredentials: true });
+        toast.success('Registro actualizado');
+      } else {
+        await axios.post(`${API}/project-logs`, payload, { withCredentials: true });
+        toast.success('Registro creado');
+      }
+
+      setLogDialogOpen(false);
+      resetLogForm();
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al guardar registro');
+    }
+  };
+
+  const handleEditLog = (log) => {
+    setEditingLogId(log.log_id);
+    setLogForm({
+      log_type: log.log_type,
+      title: log.title,
+      description: log.description,
+      hours_worked: log.hours_worked || ''
+    });
+    setLogDialogOpen(true);
+  };
+
+  const handleDeleteLog = async (logId) => {
+    if (!window.confirm('¿Eliminar este registro de la bitácora?')) return;
+
+    try {
+      await axios.delete(`${API}/project-logs/${logId}`, { withCredentials: true });
+      toast.success('Registro eliminado');
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al eliminar registro');
+    }
+  };
+
   const handleExport = async (format) => {
     try {
       const response = await axios.get(
