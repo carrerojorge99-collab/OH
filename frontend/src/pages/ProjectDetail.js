@@ -73,6 +73,18 @@ const ProjectDetail = () => {
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [editingLaborId, setEditingLaborId] = useState(null);
   const [editingTimesheetId, setEditingTimesheetId] = useState(null);
+  
+  // Project Logs state
+  const [projectLogs, setProjectLogs] = useState([]);
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [editingLogId, setEditingLogId] = useState(null);
+  const [logTypeFilter, setLogTypeFilter] = useState('all');
+  const [logForm, setLogForm] = useState({
+    log_type: 'work',
+    title: '',
+    description: '',
+    hours_worked: ''
+  });
 
   const [taskForm, setTaskForm] = useState({
     title: '',
