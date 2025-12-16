@@ -251,26 +251,18 @@ backend:
           comment: "✅ GET /api/clock/history?date=2025-12-16 working correctly. Returns completed clock entries for specified date. Found 2 completed entries for today."
 
 metadata:
-  created_by: "testing_agent"
-  version: "2.0"
-  test_sequence: 2
+  created_by: "main_agent"
+  version: "3.0"
+  test_sequence: 3
 
 test_plan:
   current_focus:
-    - "Clock In/Out Frontend UI State Management"
-  stuck_tasks: 
-    - "Clock In/Out Frontend UI State Management"
+    - "Project Logs (Bitácora) CRUD operations"
+    - "Estimate to Invoice conversion"
+  stuck_tasks: []
   test_all: false
-  test_priority: "stuck_first"
+  test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-      message: "Fixed SelectItem crash in ProjectDetail.js by changing empty value to 'unassigned' at line 786. Need testing agent to verify the fix works correctly with admin user credentials: carrerojorge99@gmail.com / Axel52418!"
-    - agent: "testing"
-      message: "Starting comprehensive test of Task Assignment SelectItem fix. Will test modal opening, dropdown functionality, and task creation with both unassigned and specific user assignments while monitoring console for errors."
-    - agent: "testing"
-      message: "✅ SELECTITEM FIX VERIFICATION COMPLETED SUCCESSFULLY! All tests passed: Modal opens without errors, dropdown shows 'Sin asignar' option correctly, both unassigned and assigned task creation work perfectly. No SelectItem-related console errors detected throughout entire test process. Fix is working as expected."
-    - agent: "testing"
-      message: "🚀 CLOCK SYSTEM COMPREHENSIVE TESTING COMPLETED! Tested complete ponche (clock in/out) flow with credentials carrerojorge99@gmail.com / Axel52418!. All 8 tests passed with 100% success rate. CRITICAL FINDING: The GET /api/clock/active endpoint is working perfectly - it correctly returns active clock data after clock-in and null after clock-out. The reported issue appears to be resolved or was a temporary problem."
-    - agent: "testing"
-      message: "🚨 CRITICAL FRONTEND ISSUE CONFIRMED! Complete Clock In/Out flow test FAILED. The UI is NOT updating properly after clock operations. Key findings: 1) Entrada button already disabled on page load (suggests stale state), 2) Clock IN operation shows no success toast, 3) Green status card never appears after clock-in, 4) Salida button not found after clock-in. The backend APIs work but frontend state management is broken. This confirms the user's reported problem - the activeClock state is not being updated correctly in the React component."
+      message: "Backend APIs verified via curl - both Project Logs and Estimate-to-Invoice conversion work correctly. Need frontend testing for: 1) Bitácora tab in ProjectDetail page - create/edit/delete logs, 2) Estimates page - convert approved estimate to invoice. Credentials: carrerojorge99@gmail.com / Axel52418!"
