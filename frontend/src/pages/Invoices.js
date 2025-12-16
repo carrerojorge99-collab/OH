@@ -44,7 +44,8 @@ const Invoices = () => {
     client_name: '',
     client_email: '',
     tax_rate: 16,
-    notes: ''
+    notes: '',
+    custom_number: ''
   });
 
   const [paymentForm, setPaymentForm] = useState({
