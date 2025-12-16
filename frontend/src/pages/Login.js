@@ -16,7 +16,8 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Only redirect if user is authenticated and we're not already on dashboard
+    if (isAuthenticated && window.location.pathname === '/login') {
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
