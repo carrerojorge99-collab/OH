@@ -206,6 +206,8 @@ const ClockInOut = () => {
       
       toast.success('¡Ponche de salida registrado con ubicación! Horas agregadas al timesheet');
       
+      console.log('✅ Clock OUT successful, reloading data...');
+      
       // Show notification
       if ('Notification' in window && Notification.permission === 'granted') {
         const hours = (elapsedTime / 3600).toFixed(2);
@@ -216,7 +218,12 @@ const ClockInOut = () => {
       }
       
       setNotes('');
-      await loadData(); // Ensure data is reloaded
+      
+      // Wait a bit before reloading to ensure backend has updated
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadData();
+      
+      console.log('🔄 Data reloaded after clock OUT');
     } catch (error) {
       if (error.message && error.message.includes('ubicación')) {
         toast.error(error.message, { duration: 5000 });
