@@ -281,7 +281,7 @@ const ClockInOut = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {punches.map((punch, idx) => (
-                      <tr key={punch.clock_id} className="hover:bg-slate-50">
+                      <tr key={`${punch.clock_id}-${idx}-${punch.clock_in}`} className="hover:bg-slate-50">
                         <td className="px-4 py-3 text-sm">{idx + 1}</td>
                         <td className="px-4 py-3">
                           <Badge className={punch.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}>
