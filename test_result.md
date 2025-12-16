@@ -204,8 +204,8 @@ backend:
 
 metadata:
   created_by: "main_agent"
-  version: "4.0"
-  test_sequence: 4
+  version: "5.0"
+  test_sequence: 5
 
 test_plan:
   current_focus:
