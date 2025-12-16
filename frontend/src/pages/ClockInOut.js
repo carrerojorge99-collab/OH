@@ -18,32 +18,40 @@ const MIN_PUNCHES = 4;
 const ClockInOut = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [punches, setPunches] = useState([]);
+  const [activeClock, setActiveClock] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    loadPunches();
+    loadData();
     const timer = setInterval(() => setCurrentTime(new Date()), 250);
     return () => clearInterval(timer);
   }, []);
 
-  const loadPunches = async () => {
+  const loadData = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      // Add timestamp to prevent caching
       const timestamp = Date.now();
-      const res = await axios.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      console.log('📊 Punches loaded:', res.data?.length || 0);
-      // Force new array reference to trigger React update
-      setPunches([...(res.data || [])]);
+      
+      // Load both history and active clock
+      const [historyRes, activeRes] = await Promise.all([
+        axios.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
+          withCredentials: true,
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+        }),
+        axios.get(`${API}/clock/active?_t=${timestamp}`, { 
+          withCredentials: true,
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+        })
+      ]);
+      
+      console.log('📊 Punches loaded:', historyRes.data?.length || 0);
+      console.log('📊 Active clock:', activeRes.data ? 'YES' : 'NO');
+      
+      setPunches([...(historyRes.data || [])]);
+      setActiveClock(activeRes.data ? {...activeRes.data} : null);
     } catch (error) {
-      console.error('Error loading punches:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -103,12 +111,12 @@ const ClockInOut = () => {
       );
 
       toast.success('✅ Clock IN registrado');
-      console.log('🔄 Reloading punches after Clock IN...');
+      console.log('🔄 Reloading data after Clock IN...');
       
       // Wait a moment for backend to finish
       await new Promise(resolve => setTimeout(resolve, 500));
-      await loadPunches();
-      console.log('✅ Punches reloaded');
+      await loadData();
+      console.log('✅ Data reloaded');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar entrada');
     } finally {
@@ -135,12 +143,12 @@ const ClockInOut = () => {
       );
 
       toast.success('✅ Clock OUT registrado');
-      console.log('🔄 Reloading punches after Clock OUT...');
+      console.log('🔄 Reloading data after Clock OUT...');
       
       // Wait a moment for backend to finish
       await new Promise(resolve => setTimeout(resolve, 500));
-      await loadPunches();
-      console.log('✅ Punches reloaded');
+      await loadData();
+      console.log('✅ Data reloaded');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar salida');
     } finally {
@@ -148,19 +156,17 @@ const ClockInOut = () => {
     }
   };
 
-  const getLastType = () => {
-    if (!punches.length) return null;
-    const last = punches[punches.length - 1];
-    return last.status === 'active' ? 'IN' : 'OUT';
-  };
-
   const canClockIn = () => {
-    const lastType = getLastType();
-    return !lastType || lastType === 'OUT';
+    return !activeClock;
   };
 
   const canClockOut = () => {
-    return getLastType() === 'IN';
+    return !!activeClock;
+  };
+
+  const getStatusText = () => {
+    if (!activeClock) return 'Sin ponche';
+    return 'En turno';
   };
 
   const meetsMinimum = punches.length >= MIN_PUNCHES;
@@ -224,11 +230,9 @@ const ClockInOut = () => {
 
               <div className="ml-auto flex gap-2">
                 <Badge className={`text-sm py-2 px-4 ${
-                  !getLastType() ? 'bg-slate-200 text-slate-700' :
-                  getLastType() === 'IN' ? 'bg-green-100 text-green-700' :
-                  'bg-slate-200 text-slate-700'
+                  activeClock ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-700'
                 }`}>
-                  Estado: {!getLastType() ? 'Sin ponche' : getLastType() === 'IN' ? 'En turno' : 'Fuera de turno'}
+                  Estado: {getStatusText()}
                 </Badge>
                 <Badge className={`text-sm py-2 px-4 ${
                   meetsMinimum ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
