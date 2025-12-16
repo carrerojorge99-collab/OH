@@ -51,9 +51,16 @@ const Layout = ({ children }) => {
   ];
 
   const handleLogout = async () => {
-    await logout();
-    toast.success('Sesión cerrada exitosamente');
-    navigate('/login');
+    try {
+      await logout();
+      toast.success('Sesión cerrada exitosamente');
+      // Use replace to avoid back button issues
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still navigate to login even if there's an error
+      navigate('/login', { replace: true });
+    }
   };
 
   const getInitials = (name) => {
