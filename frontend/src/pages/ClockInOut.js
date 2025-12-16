@@ -47,6 +47,11 @@ const ClockInOut = () => {
     }
   }, [currentTime, activeClock]);
 
+  // Debug effect to track activeClock changes
+  useEffect(() => {
+    console.log('🔔 activeClock changed:', activeClock ? `Active in ${activeClock.project_name}` : 'No active clock');
+  }, [activeClock]);
+
   const loadData = async () => {
     try {
       console.log('🔄 Loading clock data...');
