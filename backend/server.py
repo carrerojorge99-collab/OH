@@ -493,6 +493,7 @@ class PurchaseOrderCreate(BaseModel):
     notes: Optional[str] = None
     terms: Optional[str] = None
     expected_delivery_date: Optional[str] = None
+    custom_number: Optional[str] = None
 
 class PurchaseOrder(BaseModel):
     model_config = ConfigDict(extra="ignore")
