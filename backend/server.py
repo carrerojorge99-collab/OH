@@ -1423,17 +1423,20 @@ async def clock_out(
     timesheet_doc = {
         "timesheet_id": timesheet_id,
         "project_id": active_clock['project_id'],
+        "project_name": active_clock.get('project_name', ''),
         "user_id": user.user_id,
         "user_name": user.name,
         "date": active_clock['date'],
         "hours_worked": round(hours_worked, 2),
         "description": notes or f"Trabajo registrado mediante ponche ({clock_in_time.strftime('%H:%M')} - {clock_out_time.strftime('%H:%M')})",
         "task_id": None,
+        "clock_id": active_clock['clock_id'],
         "created_at": clock_out_time.isoformat(),
         "updated_at": clock_out_time.isoformat()
     }
     
     await db.timesheet.insert_one(timesheet_doc)
+    print(f"✅ Timesheet creado automáticamente: {timesheet_id} para proyecto {active_clock['project_id']}")
     
     # Get updated clock entry
     updated_clock = await db.clock_entries.find_one({"clock_id": active_clock['clock_id']}, {"_id": 0})
