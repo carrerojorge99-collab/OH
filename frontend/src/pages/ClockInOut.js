@@ -19,6 +19,8 @@ const ClockInOut = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [punches, setPunches] = useState([]);
   const [activeClock, setActiveClock] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
@@ -33,8 +35,8 @@ const ClockInOut = () => {
       const today = new Date().toISOString().split('T')[0];
       const timestamp = Date.now();
       
-      // Load both history and active clock
-      const [historyRes, activeRes] = await Promise.all([
+      // Load history, active clock, and projects
+      const [historyRes, activeRes, projectsRes] = await Promise.all([
         axios.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
@@ -42,14 +44,19 @@ const ClockInOut = () => {
         axios.get(`${API}/clock/active?_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+        }),
+        axios.get(`${API}/clock/projects?_t=${timestamp}`, { 
+          withCredentials: true 
         })
       ]);
       
       console.log('📊 Punches loaded:', historyRes.data?.length || 0);
       console.log('📊 Active clock:', activeRes.data ? 'YES' : 'NO');
+      console.log('📊 Projects loaded:', projectsRes.data?.length || 0);
       
       setPunches([...(historyRes.data || [])]);
       setActiveClock(activeRes.data ? {...activeRes.data} : null);
+      setProjects(projectsRes.data || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -74,34 +81,22 @@ const ClockInOut = () => {
     });
   };
 
-  const getDefaultProject = async () => {
-    try {
-      const res = await axios.get(`${API}/clock/projects`, { withCredentials: true });
-      return res.data[0]?.project_id || null;
-    } catch {
-      return null;
-    }
-  };
-
   const handleClockIn = async () => {
+    if (!selectedProject) {
+      toast.error('Por favor selecciona un proyecto');
+      return;
+    }
+
     setProcessing(true);
     try {
-      const [location, projectId] = await Promise.all([
-        getLocation(),
-        getDefaultProject()
-      ]);
-
-      if (!projectId) {
-        toast.error('No hay proyectos disponibles');
-        return;
-      }
+      const location = await getLocation();
 
       await axios.post(
         `${API}/clock/in`,
         null,
         {
           params: {
-            project_id: projectId,
+            project_id: selectedProject,
             latitude: location.latitude,
             longitude: location.longitude,
             notes: 'Ponche automático'
