@@ -65,12 +65,21 @@ const ClockInOut = () => {
       console.log('📊 Projects:', projectsRes.data.length);
       console.log('📊 History:', historyRes.data.length);
 
-      // Explicitly set to null if no active clock
-      setActiveClock(activeRes.data || null);
+      // Force state update with new object reference
+      const clockData = activeRes.data;
+      if (clockData && clockData.clock_id) {
+        // Create a new object to force React to detect the change
+        setActiveClock({...clockData});
+        console.log('✅ Active clock SET:', clockData.clock_id, clockData.project_name);
+      } else {
+        setActiveClock(null);
+        console.log('✅ No active clock');
+      }
+      
       setProjects(projectsRes.data);
       setHistory(historyRes.data);
       
-      console.log('✅ State updated. Active clock:', activeRes.data ? 'YES' : 'NO');
+      console.log('✅ State updated. Active clock:', clockData ? 'YES' : 'NO');
     } catch (error) {
       console.error('❌ Error loading data:', error);
       // Don't show error toast on initial load
