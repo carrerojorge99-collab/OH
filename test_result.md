@@ -122,15 +122,18 @@ frontend:
 
   - task: "Project Logs (Bitácora) UI - List and Filter"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/pages/ProjectDetail.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Log list with filtering by type. Need to test display and filtering functionality."
+        - working: false
+          agent: "testing"
+          comment: "CRITICAL: JavaScript error 'moment is not defined' prevents ProjectDetail page from loading properly. Cannot access Bitácora tab or test list/filter functionality."
 
   - task: "Project Logs (Bitácora) UI - Edit and Delete"
     implemented: true
