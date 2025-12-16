@@ -45,6 +45,7 @@ const Layout = ({ children }) => {
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
     { name: 'Estimados', href: '/estimates', icon: FileText },
+    { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
     { name: 'Facturas', href: '/invoices', icon: DollarSign },
     { name: 'Integraciones', href: '/integrations', icon: Zap },
     { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
