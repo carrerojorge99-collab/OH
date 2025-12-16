@@ -95,6 +95,12 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       
+      <Route path="/purchase-orders" element={
+        <ProtectedRoute>
+          <PurchaseOrders />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/integrations" element={
         <ProtectedRoute>
           <Integrations />
