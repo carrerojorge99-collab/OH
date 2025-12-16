@@ -17,13 +17,13 @@ export const exportTimesheetToExcel = (timesheetData, projectName) => {
       entry.date,
       entry.user_name || 'N/A',
       entry.task_name || 'Sin tarea',
-      entry.hours,
+      entry.hours_worked || entry.hours || 0,
       entry.description || ''
     ]);
   });
 
   // Add totals
-  const totalHours = timesheetData.reduce((sum, entry) => sum + (entry.hours || 0), 0);
+  const totalHours = timesheetData.reduce((sum, entry) => sum + (entry.hours_worked || entry.hours || 0), 0);
   ws_data.push([]);
   ws_data.push(['TOTAL HORAS', '', '', totalHours, '']);
 
@@ -60,11 +60,11 @@ export const exportTimesheetToPDF = (timesheetData, projectName) => {
     entry.date || 'N/A',
     entry.user_name || 'N/A',
     entry.task_name || 'Sin tarea',
-    (entry.hours !== undefined && entry.hours !== null) ? entry.hours.toString() : '0',
+    (entry.hours_worked || entry.hours || 0).toString(),
     entry.description || ''
   ]);
 
-  const totalHours = timesheetData.reduce((sum, entry) => sum + (entry.hours || 0), 0);
+  const totalHours = timesheetData.reduce((sum, entry) => sum + (entry.hours_worked || entry.hours || 0), 0);
 
   autoTable(doc, {
     head: [['Fecha', 'Usuario', 'Tarea', 'Horas', 'Descripción']],
