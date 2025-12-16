@@ -2547,6 +2547,348 @@ async def send_invoice_email(
     
     return {"message": f"Factura enviada a {invoice.get('client_email')}", "status": "sent"}
 
+# ============== ESTIMATES ENDPOINTS ==============
+
+@api_router.post("/estimates", response_model=Estimate)
+async def create_estimate(
+    estimate_data: EstimateCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Generate estimate number
+    count = await db.estimates.count_documents({})
+    estimate_number = f"EST-{datetime.now().year}-{str(count + 1).zfill(4)}"
+    estimate_id = f"est_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get project name if project_id provided
+    project_name = None
+    if estimate_data.project_id:
+        project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0, "name": 1})
+        if project:
+            project_name = project.get('name')
+    
+    # Calculate totals
+    subtotal = sum(item.amount for item in estimate_data.items)
+    discount_amount = subtotal * (estimate_data.discount_percent / 100)
+    taxable_amount = subtotal - discount_amount
+    tax_amount = taxable_amount * (estimate_data.tax_rate / 100)
+    total = taxable_amount + tax_amount
+    
+    estimate_doc = {
+        "estimate_id": estimate_id,
+        "estimate_number": estimate_number,
+        "project_id": estimate_data.project_id,
+        "project_name": project_name,
+        "client_name": estimate_data.client_name,
+        "client_email": estimate_data.client_email,
+        "client_phone": estimate_data.client_phone,
+        "client_address": estimate_data.client_address,
+        "title": estimate_data.title,
+        "description": estimate_data.description,
+        "items": [item.model_dump() for item in estimate_data.items],
+        "subtotal": round(subtotal, 2),
+        "discount_percent": estimate_data.discount_percent,
+        "discount_amount": round(discount_amount, 2),
+        "tax_rate": estimate_data.tax_rate,
+        "tax_amount": round(tax_amount, 2),
+        "total": round(total, 2),
+        "status": "draft",
+        "notes": estimate_data.notes,
+        "terms": estimate_data.terms,
+        "valid_until": estimate_data.valid_until,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": now,
+        "sent_date": None,
+        "approved_date": None,
+        "converted_invoice_id": None
+    }
+    
+    await db.estimates.insert_one(estimate_doc)
+    
+    await log_audit(user.user_id, user.name, "create", "estimate", estimate_id, estimate_number, {})
+    
+    return Estimate(**estimate_doc)
+
+@api_router.get("/estimates", response_model=List[Estimate])
+async def get_estimates(
+    status: Optional[str] = None,
+    project_id: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    await get_current_user(request, session_token)
+    
+    query = {}
+    if status:
+        query["status"] = status
+    if project_id:
+        query["project_id"] = project_id
+    
+    estimates = await db.estimates.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [Estimate(**e) for e in estimates]
+
+@api_router.get("/estimates/{estimate_id}", response_model=Estimate)
+async def get_estimate(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    await get_current_user(request, session_token)
+    
+    estimate = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    return Estimate(**estimate)
+
+@api_router.put("/estimates/{estimate_id}", response_model=Estimate)
+async def update_estimate(
+    estimate_id: str,
+    estimate_data: EstimateCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    if estimate.get('status') == 'converted':
+        raise HTTPException(status_code=400, detail="No se puede editar un estimado convertido a factura")
+    
+    # Get project name if project_id provided
+    project_name = None
+    if estimate_data.project_id:
+        project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0, "name": 1})
+        if project:
+            project_name = project.get('name')
+    
+    # Calculate totals
+    subtotal = sum(item.amount for item in estimate_data.items)
+    discount_amount = subtotal * (estimate_data.discount_percent / 100)
+    taxable_amount = subtotal - discount_amount
+    tax_amount = taxable_amount * (estimate_data.tax_rate / 100)
+    total = taxable_amount + tax_amount
+    
+    update_data = {
+        "project_id": estimate_data.project_id,
+        "project_name": project_name,
+        "client_name": estimate_data.client_name,
+        "client_email": estimate_data.client_email,
+        "client_phone": estimate_data.client_phone,
+        "client_address": estimate_data.client_address,
+        "title": estimate_data.title,
+        "description": estimate_data.description,
+        "items": [item.model_dump() for item in estimate_data.items],
+        "subtotal": round(subtotal, 2),
+        "discount_percent": estimate_data.discount_percent,
+        "discount_amount": round(discount_amount, 2),
+        "tax_rate": estimate_data.tax_rate,
+        "tax_amount": round(tax_amount, 2),
+        "total": round(total, 2),
+        "notes": estimate_data.notes,
+        "terms": estimate_data.terms,
+        "valid_until": estimate_data.valid_until
+    }
+    
+    await db.estimates.update_one({"estimate_id": estimate_id}, {"$set": update_data})
+    
+    updated = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    await log_audit(user.user_id, user.name, "update", "estimate", estimate_id, estimate.get('estimate_number'), {})
+    
+    return Estimate(**updated)
+
+@api_router.put("/estimates/{estimate_id}/status")
+async def update_estimate_status(
+    estimate_id: str,
+    status: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    valid_statuses = ['draft', 'sent', 'approved', 'rejected', 'converted']
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Estado inválido. Debe ser uno de: {valid_statuses}")
+    
+    estimate = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    update_data = {"status": status}
+    now = datetime.now(timezone.utc).isoformat()
+    
+    if status == 'sent':
+        update_data["sent_date"] = now
+    elif status == 'approved':
+        update_data["approved_date"] = now
+    
+    await db.estimates.update_one({"estimate_id": estimate_id}, {"$set": update_data})
+    
+    await log_audit(user.user_id, user.name, "update", "estimate", estimate_id, estimate.get('estimate_number'), {"status": status})
+    
+    return {"message": f"Estado actualizado a {status}"}
+
+@api_router.post("/estimates/{estimate_id}/convert")
+async def convert_estimate_to_invoice(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    if estimate.get('status') == 'converted':
+        raise HTTPException(status_code=400, detail="Este estimado ya fue convertido a factura")
+    
+    if estimate.get('status') != 'approved':
+        raise HTTPException(status_code=400, detail="Solo se pueden convertir estimados aprobados")
+    
+    # Generate invoice
+    count = await db.invoices.count_documents({})
+    invoice_number = f"INV-{datetime.now().year}-{str(count + 1).zfill(4)}"
+    invoice_id = f"inv_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Convert estimate items to invoice items
+    invoice_items = []
+    for item in estimate.get('items', []):
+        invoice_items.append({
+            "description": item.get('description'),
+            "hours": item.get('quantity', 1),
+            "rate": item.get('unit_price'),
+            "amount": item.get('amount')
+        })
+    
+    invoice_doc = {
+        "invoice_id": invoice_id,
+        "invoice_number": invoice_number,
+        "project_id": estimate.get('project_id') or '',
+        "project_name": estimate.get('project_name') or estimate.get('title'),
+        "client_name": estimate.get('client_name'),
+        "client_email": estimate.get('client_email'),
+        "items": invoice_items,
+        "subtotal": estimate.get('subtotal'),
+        "tax_rate": estimate.get('tax_rate'),
+        "tax_amount": estimate.get('tax_amount'),
+        "total": estimate.get('total'),
+        "amount_paid": 0,
+        "balance_due": estimate.get('total'),
+        "status": "draft",
+        "notes": estimate.get('notes'),
+        "created_by": user.user_id,
+        "created_at": now,
+        "due_date": None,
+        "sent_date": None,
+        "paid_date": None
+    }
+    
+    await db.invoices.insert_one(invoice_doc)
+    
+    # Update estimate status
+    await db.estimates.update_one(
+        {"estimate_id": estimate_id},
+        {"$set": {"status": "converted", "converted_invoice_id": invoice_id}}
+    )
+    
+    await log_audit(user.user_id, user.name, "convert", "estimate", estimate_id, estimate.get('estimate_number'), {"invoice_id": invoice_id})
+    
+    return {"message": "Estimado convertido a factura exitosamente", "invoice_id": invoice_id, "invoice_number": invoice_number}
+
+@api_router.post("/estimates/{estimate_id}/duplicate", response_model=Estimate)
+async def duplicate_estimate(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    # Generate new estimate
+    count = await db.estimates.count_documents({})
+    new_estimate_number = f"EST-{datetime.now().year}-{str(count + 1).zfill(4)}"
+    new_estimate_id = f"est_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    new_estimate = {
+        **estimate,
+        "estimate_id": new_estimate_id,
+        "estimate_number": new_estimate_number,
+        "status": "draft",
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": now,
+        "sent_date": None,
+        "approved_date": None,
+        "converted_invoice_id": None
+    }
+    
+    await db.estimates.insert_one(new_estimate)
+    
+    await log_audit(user.user_id, user.name, "duplicate", "estimate", new_estimate_id, new_estimate_number, {"original": estimate_id})
+    
+    return Estimate(**new_estimate)
+
+@api_router.delete("/estimates/{estimate_id}")
+async def delete_estimate(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    if estimate.get('status') == 'converted':
+        raise HTTPException(status_code=400, detail="No se puede eliminar un estimado convertido a factura")
+    
+    await db.estimates.delete_one({"estimate_id": estimate_id})
+    
+    await log_audit(user.user_id, user.name, "delete", "estimate", estimate_id, estimate.get('estimate_number'), {})
+    
+    return {"message": "Estimado eliminado exitosamente"}
+
+@api_router.post("/estimates/{estimate_id}/send")
+async def send_estimate_email(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    if not estimate.get('client_email'):
+        raise HTTPException(status_code=400, detail="El estimado no tiene email del cliente")
+    
+    # Update status and sent date
+    await db.estimates.update_one(
+        {"estimate_id": estimate_id},
+        {"$set": {
+            "status": "sent",
+            "sent_date": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    await log_audit(user.user_id, user.name, "update", "estimate", estimate_id, estimate.get('estimate_number'), {"action": "sent_email", "to": estimate.get('client_email')})
+    
+    return {"message": f"Estimado enviado a {estimate.get('client_email')}", "status": "sent"}
+
 @api_router.get("/audit-logs", response_model=List[AuditLog])
 async def get_audit_logs(
     limit: int = 100,
