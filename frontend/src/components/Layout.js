@@ -39,12 +39,13 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Ponchar', href: '/clock', icon: Clock },
+    { name: 'Historial Ponches', href: '/clock/history', icon: Clock, adminOnly: true },
     { name: 'Proyectos', href: '/projects', icon: FolderKanban },
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
     { name: 'Facturas', href: '/invoices', icon: DollarSign },
     { name: 'Integraciones', href: '/integrations', icon: Zap },
-    { name: 'Historial', href: '/audit-log', icon: FileText },
+    { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
     { name: 'Usuarios', href: '/users', icon: Users },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];
