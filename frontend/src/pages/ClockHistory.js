@@ -390,12 +390,23 @@ const ClockHistory = () => {
                                   <span className="text-slate-600">{entry.project_name}</span>
                                 </div>
                               </div>
-                              <div className="text-right">
+                              <div className="text-right flex items-center gap-3">
                                 {entry.hours_worked > 0 && (
                                   <span className="font-mono font-semibold text-blue-600">
                                     {entry.hours_worked.toFixed(2)}h
                                   </span>
                                 )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteClock(entry.clock_id, entry.user_name, entry.date);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
                             </div>
 
