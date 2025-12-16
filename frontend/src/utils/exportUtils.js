@@ -175,9 +175,15 @@ export const exportLaborToPDF = (laborData, projectName) => {
   });
 
   const totalCost = laborData.reduce((sum, labor) => {
-    return sum + (labor.consumed_hours * labor.hourly_rate) + 
-           (labor.overtime_hours * labor.overtime_rate) + 
-           labor.expenses;
+    const consumedHours = labor.consumed_hours || 0;
+    const overtimeHours = labor.overtime_hours || 0;
+    const hourlyRate = labor.hourly_rate || 0;
+    const overtimeRate = labor.overtime_rate || 0;
+    const expenses = labor.expenses || 0;
+    
+    return sum + (consumedHours * hourlyRate) + 
+           (overtimeHours * overtimeRate) + 
+           expenses;
   }, 0);
 
   autoTable(doc, {
