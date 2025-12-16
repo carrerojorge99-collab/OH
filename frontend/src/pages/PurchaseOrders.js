@@ -69,6 +69,20 @@ const PurchaseOrders = () => {
 
   useEffect(() => {
     loadData();
+    
+    // Auto-refresh cada 30 segundos
+    const interval = setInterval(loadData, 30000);
+    
+    // Refresh cuando la ventana vuelve a estar visible
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   const loadData = async () => {
