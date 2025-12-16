@@ -245,108 +245,142 @@ const ClockInOut = () => {
           )}
         </div>
 
-        {/* Active Clock Status */}
-        {activeClock ? (
+        {/* Status Card */}
+        {activeClock && (
           <Card className="border-green-200 bg-green-50">
             <CardContent className="p-6">
               <div className="text-center space-y-4">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-600 mb-4 animate-pulse">
-                  <Clock className="w-10 h-10 text-white" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-600 animate-pulse">
+                  <Clock className="w-8 h-8 text-white" />
                 </div>
                 
                 <div>
-                  <h2 className="text-2xl font-bold text-green-900 mb-1">Poncheado en:</h2>
-                  <p className="text-xl font-semibold text-green-700">{activeClock.project_name}</p>
+                  <h3 className="text-xl font-bold text-green-900">Poncheado en:</h3>
+                  <p className="text-lg font-semibold text-green-700">{activeClock.project_name}</p>
                 </div>
 
                 <div className="bg-white rounded-lg p-4 inline-block">
                   <p className="text-sm text-slate-600 mb-1">Tiempo transcurrido</p>
-                  <p className="text-4xl font-mono font-bold text-green-600">{formatTime(elapsedTime)}</p>
-                  <p className="text-sm text-slate-500 mt-2">
+                  <p className="text-3xl font-mono font-bold text-green-600">{formatTime(elapsedTime)}</p>
+                  <p className="text-xs text-slate-500 mt-2">
                     Entrada: {moment(activeClock.clock_in).format('HH:mm:ss')}
                   </p>
-                </div>
-
-                <div className="space-y-2 max-w-md mx-auto">
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Notas opcionales sobre el trabajo realizado..."
-                    rows={3}
-                  />
-                </div>
-
-                <Button
-                  onClick={handleClockOut}
-                  size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-lg px-8 py-6 h-auto"
-                >
-                  <LogOut className="w-6 h-6 mr-2" />
-                  Ponchar Salida
-                </Button>
-
-                <p className="text-xs text-green-700">
-                  Las horas se registrarán automáticamente en el timesheet del proyecto
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-6">
-              <div className="text-center space-y-6">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-600 mb-4">
-                  <LogIn className="w-10 h-10 text-white" />
-                </div>
-
-                <div>
-                  <h2 className="text-2xl font-bold text-blue-900 mb-2">Ponchar Entrada</h2>
-                  <p className="text-slate-600">Selecciona el proyecto en el que vas a trabajar</p>
-                </div>
-
-                <div className="space-y-4 max-w-md mx-auto">
-                  <div>
-                    <Select value={selectedProject} onValueChange={setSelectedProject}>
-                      <SelectTrigger className="h-12 text-base">
-                        <SelectValue placeholder="Seleccionar proyecto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map(project => (
-                          <SelectItem key={project.project_id} value={project.project_id}>
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Notas opcionales (qué vas a hacer hoy)..."
-                    rows={3}
-                  />
-
-                  <Button
-                    onClick={handleClockIn}
-                    disabled={!selectedProject}
-                    size="lg"
-                    className="w-full bg-green-600 hover:bg-green-700 text-lg px-8 py-6 h-auto"
-                  >
-                    <LogIn className="w-6 h-6 mr-2" />
-                    Ponchar Entrada
-                  </Button>
-
-                  {projects.length === 0 && (
-                    <p className="text-sm text-orange-600">
-                      ⚠️ No tienes proyectos asignados. Contacta a tu administrador.
-                    </p>
-                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Action Buttons - ALWAYS VISIBLE */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Clock IN Button */}
+          <Card className="border-blue-200">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <LogIn className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-blue-900">Entrada</h3>
+                </div>
+                
+                <div>
+                  <Label className="text-left block mb-2">Proyecto</Label>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona proyecto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.project_id} value={project.project_id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-left block mb-2">Notas (Opcional)</Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Descripción breve..."
+                    rows={2}
+                  />
+                </div>
+
+                <Button
+                  onClick={handleClockIn}
+                  disabled={!selectedProject || activeClock}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  size="lg"
+                >
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Ponchar Entrada
+                </Button>
+                
+                {activeClock && (
+                  <p className="text-xs text-amber-600 text-center">
+                    ⚠️ Ya tienes un ponche activo
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Clock OUT Button */}
+          <Card className="border-red-200">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <LogOut className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-red-900">Salida</h3>
+                </div>
+                
+                {activeClock ? (
+                  <>
+                    <div className="bg-red-50 rounded-lg p-4">
+                      <p className="text-sm text-red-700 font-medium">
+                        Proyecto: {activeClock.project_name}
+                      </p>
+                      <p className="text-xs text-red-600 mt-1">
+                        Tiempo: {formatTime(elapsedTime)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label className="text-left block mb-2">Notas de Salida</Label>
+                      <Textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="¿Qué completaste?"
+                        rows={2}
+                      />
+                    </div>
+
+                    <Button
+                      onClick={handleClockOut}
+                      className="w-full bg-red-600 hover:bg-red-700"
+                      size="lg"
+                    >
+                      <LogOut className="w-5 h-5 mr-2" />
+                      Ponchar Salida
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px]">
+                    <p className="text-slate-400 text-center">
+                      Primero debes hacer<br />ponche de entrada
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Today's History */}
         <Card className="border-slate-200 shadow-sm">
