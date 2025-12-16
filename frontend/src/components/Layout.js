@@ -54,12 +54,16 @@ const Layout = ({ children }) => {
     try {
       await logout();
       toast.success('Sesión cerrada exitosamente');
-      // Use replace to avoid back button issues
-      navigate('/login', { replace: true });
+      // Wait a brief moment for state to update
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 100);
     } catch (error) {
       console.error('Error during logout:', error);
       // Still navigate to login even if there's an error
-      navigate('/login', { replace: true });
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 100);
     }
   };
 
