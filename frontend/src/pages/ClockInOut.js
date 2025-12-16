@@ -30,8 +30,18 @@ const ClockInOut = () => {
   const loadPunches = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const res = await axios.get(`${API}/clock/history?date=${today}`, { withCredentials: true });
-      setPunches(res.data || []);
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
+      const res = await axios.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
+        withCredentials: true,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      console.log('📊 Punches loaded:', res.data?.length || 0);
+      // Force new array reference to trigger React update
+      setPunches([...(res.data || [])]);
     } catch (error) {
       console.error('Error loading punches:', error);
     } finally {
@@ -93,10 +103,12 @@ const ClockInOut = () => {
       );
 
       toast.success('✅ Clock IN registrado');
+      console.log('🔄 Reloading punches after Clock IN...');
       
       // Wait a moment for backend to finish
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
       await loadPunches();
+      console.log('✅ Punches reloaded');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar entrada');
     } finally {
@@ -123,10 +135,12 @@ const ClockInOut = () => {
       );
 
       toast.success('✅ Clock OUT registrado');
+      console.log('🔄 Reloading punches after Clock OUT...');
       
       // Wait a moment for backend to finish
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
       await loadPunches();
+      console.log('✅ Punches reloaded');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar salida');
     } finally {
