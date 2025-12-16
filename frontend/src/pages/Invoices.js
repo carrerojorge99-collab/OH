@@ -425,7 +425,8 @@ const Invoices = () => {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
 
           {/* Payment Dialog */}
           <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
