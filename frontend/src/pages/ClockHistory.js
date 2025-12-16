@@ -176,6 +176,12 @@ const ClockHistory = () => {
                   </span>
                 )}
               </div>
+              <Button 
+                onClick={filterEntries}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Actualizar Búsqueda
+              </Button>
             </div>
           </CardContent>
         </Card>
