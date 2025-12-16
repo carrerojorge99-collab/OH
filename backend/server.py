@@ -1466,6 +1466,44 @@ async def get_clock_history(
     
     return [ClockEntry(**entry) for entry in clock_entries]
 
+@api_router.get("/clock/all", response_model=List[ClockEntry])
+async def get_all_clock_entries(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user_id: Optional[str] = None,
+    project_id: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get all clock entries (admin only)"""
+    user = await get_current_user(request, session_token)
+    
+    # Only admin can see all entries
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver todos los ponches")
+    
+    query = {}
+    
+    if user_id:
+        query["user_id"] = user_id
+    
+    if project_id:
+        query["project_id"] = project_id
+    
+    if start_date or end_date:
+        query["date"] = {}
+        if start_date:
+            query["date"]["$gte"] = start_date
+        if end_date:
+            query["date"]["$lte"] = end_date
+    
+    clock_entries = await db.clock_entries.find(
+        query, 
+        {"_id": 0}
+    ).sort("clock_in", -1).to_list(1000)
+    
+    return [ClockEntry(**entry) for entry in clock_entries]
+
 @api_router.get("/clock/projects", response_model=List[dict])
 async def get_assigned_projects(
     request: Request,
