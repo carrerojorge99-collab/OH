@@ -72,8 +72,8 @@ const Invoices = () => {
   const loadData = async () => {
     try {
       const [invoicesRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/invoices`, { withCredentials: true }),
-        axios.get(`${API}/projects`, { withCredentials: true })
+        axios.get(`${API}/invoices?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        axios.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setInvoices(invoicesRes.data);
       setProjects(projectsRes.data);
