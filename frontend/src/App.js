@@ -11,6 +11,7 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Calendar from './pages/Calendar';
 import ClockInOut from './pages/ClockInOut';
+import ClockHistory from './pages/ClockHistory';
 import Users from './pages/Users';
 import Reports from './pages/Reports';
 import Invoices from './pages/Invoices';
@@ -59,6 +60,12 @@ function AppRouter() {
       <Route path="/clock" element={
         <ProtectedRoute>
           <ClockInOut />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/clock/history" element={
+        <ProtectedRoute>
+          <ClockHistory />
         </ProtectedRoute>
       } />
       
