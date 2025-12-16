@@ -3460,9 +3460,6 @@ async def delete_purchase_order(
     if not po:
         raise HTTPException(status_code=404, detail="Orden de compra no encontrada")
     
-    if po.get('status') == 'completed':
-        raise HTTPException(status_code=400, detail="No se puede eliminar una orden completada")
-    
     await db.purchase_orders.delete_one({"po_id": po_id})
     await log_audit(user.user_id, user.name, "delete", "purchase_order", po_id, po.get('po_number'), {})
     
