@@ -102,6 +102,12 @@
   font-weight: 500;
 }
 
+.rbc-toolbar {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
 .rbc-toolbar button {
   color: #475569;
   font-weight: 500;
@@ -109,6 +115,10 @@
   padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.2s;
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 11;
 }
 
 .rbc-toolbar button:hover {
@@ -124,6 +134,17 @@
 
 .rbc-toolbar button.rbc-active:hover {
   background-color: #1D4ED8;
+}
+
+.rbc-btn-group {
+  position: relative;
+  z-index: 11;
+  pointer-events: auto;
+}
+
+.rbc-btn-group button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 /* PWA Install Banner Animation */
