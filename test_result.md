@@ -257,15 +257,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Clock System Authentication"
-    - "Clock System Project Selection"
-    - "Clock System Active Clock Status"
-    - "Clock System Clock IN Operation"
-    - "Clock System Clock OUT Operation"
-    - "Clock System History Retrieval"
-  stuck_tasks: []
-  test_all: true
-  test_priority: "high_first"
+    - "Clock In/Out Frontend UI State Management"
+  stuck_tasks: 
+    - "Clock In/Out Frontend UI State Management"
+  test_all: false
+  test_priority: "stuck_first"
 
 agent_communication:
     - agent: "main"
