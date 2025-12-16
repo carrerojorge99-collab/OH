@@ -1363,11 +1363,21 @@ async def clock_in(
 
 @api_router.post("/clock/out", response_model=ClockEntry)
 async def clock_out(
+    latitude: float,
+    longitude: float,
+    address: Optional[str] = None,
     notes: Optional[str] = None,
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
     user = await get_current_user(request, session_token)
+    
+    # Validate location data (mandatory)
+    if latitude is None or longitude is None:
+        raise HTTPException(
+            status_code=400, 
+            detail="La ubicación GPS es obligatoria para ponchar. Por favor, permite el acceso a tu ubicación."
+        )
     
     # Find active clock entry
     active_clock = await db.clock_entries.find_one({
@@ -1390,7 +1400,10 @@ async def clock_out(
             "clock_out": clock_out_time.isoformat(),
             "hours_worked": round(hours_worked, 2),
             "status": "completed",
-            "notes": notes or active_clock.get('notes')
+            "notes": notes or active_clock.get('notes'),
+            "clock_out_latitude": latitude,
+            "clock_out_longitude": longitude,
+            "clock_out_address": address
         }}
     )
     
