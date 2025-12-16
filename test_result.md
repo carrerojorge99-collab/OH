@@ -119,6 +119,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "CRITICAL: JavaScript error 'moment is not defined' prevents ProjectDetail page from loading properly. Cannot access Bitácora tab or test functionality. Frontend shows red error screen with ReferenceError in multiple components."
+        - working: false
+          agent: "testing"
+          comment: "CONFIRMED: ProjectDetail page loads URL (proj_c174dc6a217b) but JavaScript crashes due to moment.js import issue. No tabs render, cannot access Bitácora functionality. moment@2.30.1 is installed but not properly imported in ProjectDetail component."
 
   - task: "Project Logs (Bitácora) UI - List and Filter"
     implemented: true
