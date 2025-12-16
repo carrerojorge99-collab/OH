@@ -322,6 +322,12 @@ class ClockEntry(BaseModel):
     status: str  # active, completed
     date: str
     notes: Optional[str] = None
+    clock_in_latitude: Optional[float] = None
+    clock_in_longitude: Optional[float] = None
+    clock_in_address: Optional[str] = None
+    clock_out_latitude: Optional[float] = None
+    clock_out_longitude: Optional[float] = None
+    clock_out_address: Optional[str] = None
 
 class AuditLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
