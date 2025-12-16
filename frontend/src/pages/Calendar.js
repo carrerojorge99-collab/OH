@@ -209,7 +209,10 @@ const Calendar = () => {
                 onSelectEvent={handleSelectEvent}
                 messages={messages}
                 views={['month', 'week', 'day', 'agenda']}
-                defaultView="month"
+                view={currentView}
+                onView={(view) => setCurrentView(view)}
+                date={currentDate}
+                onNavigate={(date) => setCurrentDate(date)}
               />
             </div>
           </CardContent>
