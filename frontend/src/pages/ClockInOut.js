@@ -49,18 +49,25 @@ const ClockInOut = () => {
 
   const loadData = async () => {
     try {
+      console.log('🔄 Loading clock data...');
       const [activeRes, projectsRes, historyRes] = await Promise.all([
         axios.get(`${API}/clock/active`, { withCredentials: true }),
         axios.get(`${API}/clock/projects`, { withCredentials: true }),
         axios.get(`${API}/clock/history?date=${new Date().toISOString().split('T')[0]}`, { withCredentials: true })
       ]);
 
+      console.log('📊 Active clock response:', activeRes.data);
+      console.log('📊 Projects:', projectsRes.data.length);
+      console.log('📊 History:', historyRes.data.length);
+
       // Explicitly set to null if no active clock
       setActiveClock(activeRes.data || null);
       setProjects(projectsRes.data);
       setHistory(historyRes.data);
+      
+      console.log('✅ State updated. Active clock:', activeRes.data ? 'YES' : 'NO');
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Error loading data:', error);
       // Don't show error toast on initial load
       if (!loading) {
         toast.error('Error al cargar datos');
@@ -137,6 +144,8 @@ const ClockInOut = () => {
       
       toast.success('¡Ponche de entrada registrado con ubicación!');
       
+      console.log('✅ Clock IN successful, reloading data...');
+      
       // Show notification
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Ponche registrado', {
@@ -147,7 +156,12 @@ const ClockInOut = () => {
       
       setNotes('');
       setSelectedProject('');
+      
+      // Wait a bit before reloading to ensure backend has updated
+      await new Promise(resolve => setTimeout(resolve, 500));
       await loadData();
+      
+      console.log('🔄 Data reloaded after clock IN');
     } catch (error) {
       if (error.message && error.message.includes('ubicación')) {
         toast.error(error.message, { duration: 5000 });
