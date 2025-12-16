@@ -52,7 +52,7 @@ const Settings = () => {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/settings`, {
+      const response = await fetch(`${API_URL}/api/settings?_t=${Date.now()}`, {
         credentials: 'include'
       });
 
@@ -73,6 +73,76 @@ const Settings = () => {
       toast.error('Error al cargar la configuración');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCompany = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/company?_t=${Date.now()}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCompany(data);
+      }
+    } catch (error) {
+      console.error('Error fetching company:', error);
+    }
+  };
+
+  const handleSaveCompany = async (e) => {
+    e.preventDefault();
+    setSavingCompany(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/company`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(company)
+      });
+
+      if (response.ok) {
+        toast.success('Información de empresa guardada');
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || 'Error al guardar');
+      }
+    } catch (error) {
+      toast.error('Error al guardar la información');
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(`${API_URL}/api/company/logo`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCompany(prev => ({ ...prev, company_logo: data.logo_url }));
+        toast.success('Logo subido exitosamente');
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || 'Error al subir el logo');
+      }
+    } catch (error) {
+      toast.error('Error al subir el logo');
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
