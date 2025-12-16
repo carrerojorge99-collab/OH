@@ -23,7 +23,7 @@ const ClockHistory = () => {
   const [projects, setProjects] = useState([]);
   const [selectedUser, setSelectedUser] = useState('all');
   const [selectedProject, setSelectedProject] = useState('all');
-  const [startDate, setStartDate] = useState(moment().subtract(7, 'days').format('YYYY-MM-DD'));
+  const [startDate, setStartDate] = useState(moment().startOf('month').format('YYYY-MM-DD'));
   const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -38,16 +38,21 @@ const ClockHistory = () => {
 
   const loadData = async () => {
     try {
+      const timestamp = Date.now();
       const [entriesRes, usersRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/clock/all`, { withCredentials: true }),
-        axios.get(`${API}/users`, { withCredentials: true }),
-        axios.get(`${API}/projects`, { withCredentials: true })
+        axios.get(`${API}/clock/all?_t=${timestamp}`, { 
+          withCredentials: true,
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+        }),
+        axios.get(`${API}/users?_t=${timestamp}`, { withCredentials: true }),
+        axios.get(`${API}/projects?_t=${timestamp}`, { withCredentials: true })
       ]);
 
-      setClockEntries(entriesRes.data);
-      setFilteredEntries(entriesRes.data); // Initialize filtered entries
-      setUsers(usersRes.data);
-      setProjects(projectsRes.data);
+      console.log('📊 Clock entries loaded:', entriesRes.data?.length || 0);
+      setClockEntries([...(entriesRes.data || [])]);
+      setFilteredEntries([...(entriesRes.data || [])]); // Initialize filtered entries
+      setUsers(usersRes.data || []);
+      setProjects(projectsRes.data || []);
     } catch (error) {
       console.error('Error loading data:', error);
       
