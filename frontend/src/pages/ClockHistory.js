@@ -49,7 +49,15 @@ const ClockHistory = () => {
       setProjects(projectsRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Error al cargar datos');
+      
+      // Show specific error message
+      if (error.response?.status === 403) {
+        toast.error('Solo los administradores pueden ver el historial de ponches');
+      } else if (error.response?.status === 401) {
+        toast.error('Sesión expirada. Por favor inicia sesión nuevamente');
+      } else {
+        toast.error(error.response?.data?.detail || 'Error al cargar datos');
+      }
     } finally {
       setLoading(false);
     }
