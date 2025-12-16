@@ -24,7 +24,7 @@ import { Progress } from '../components/ui/progress';
 import { 
   ArrowLeft, Plus, FileDown, CheckCircle2, Circle, Clock,
   DollarSign, Calendar, Tag, MessageSquare, Trash2, Pencil, TrendingUp, TrendingDown,
-  Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User
+  Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User, Edit
 } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import Timer from '../components/Timer';
