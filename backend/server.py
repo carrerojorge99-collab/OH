@@ -2398,7 +2398,11 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
             "footer_text": "",
             "next_invoice_number": 1,
             "next_estimate_number": 1,
-            "next_po_number": 1
+            "next_po_number": 1,
+            "location_latitude": None,
+            "location_longitude": None,
+            "geofence_radius": 100,
+            "geofence_enabled": False
         }
     return company
 
