@@ -54,12 +54,16 @@ const ClockInOut = () => {
         axios.get(`${API}/clock/history?date=${new Date().toISOString().split('T')[0]}`, { withCredentials: true })
       ]);
 
-      setActiveClock(activeRes.data);
+      // Explicitly set to null if no active clock
+      setActiveClock(activeRes.data || null);
       setProjects(projectsRes.data);
       setHistory(historyRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Error al cargar datos');
+      // Don't show error toast on initial load
+      if (!loading) {
+        toast.error('Error al cargar datos');
+      }
     } finally {
       setLoading(false);
     }
