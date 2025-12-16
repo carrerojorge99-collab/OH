@@ -245,6 +245,30 @@ class Notification(BaseModel):
     read: bool = False
     timestamp: str
 
+# Project Logs Models
+class ProjectLogCreate(BaseModel):
+    project_id: str
+    log_type: str  # work, update, problem, milestone, note
+    title: str
+    description: str
+    hours_worked: Optional[float] = None
+    attachments: Optional[List[str]] = []
+
+class ProjectLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    log_id: str
+    project_id: str
+    project_name: Optional[str] = None
+    user_id: str
+    user_name: str
+    log_type: str
+    title: str
+    description: str
+    hours_worked: Optional[float] = None
+    attachments: List[str] = []
+    created_at: str
+    updated_at: Optional[str] = None
+
 class Document(BaseModel):
     model_config = ConfigDict(extra="ignore")
     document_id: str
