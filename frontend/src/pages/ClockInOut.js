@@ -210,13 +210,55 @@ const ClockInOut = () => {
           </CardContent>
         </Card>
 
+        {/* Project Selection */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex-1 min-w-[300px]">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Proyecto a Trabajar:
+                </label>
+                <select
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  disabled={activeClock}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed text-base"
+                >
+                  <option value="">-- Selecciona un proyecto --</option>
+                  {projects.map((project) => (
+                    <option key={project.project_id} value={project.project_id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+                {activeClock && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    ⚠️ No puedes cambiar de proyecto mientras estés en turno
+                  </p>
+                )}
+              </div>
+              
+              {activeClock && (
+                <div className="flex-1 min-w-[200px] bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-700 font-medium">
+                    Trabajando en:
+                  </p>
+                  <p className="text-lg font-bold text-green-900 mt-1">
+                    {activeClock.project_name}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Action Buttons */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4 flex-wrap">
               <Button
                 onClick={handleClockIn}
-                disabled={!canClockIn() || processing}
+                disabled={!canClockIn() || processing || !selectedProject}
                 size="lg"
                 className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6"
               >
