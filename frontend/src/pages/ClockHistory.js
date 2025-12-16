@@ -44,6 +44,7 @@ const ClockHistory = () => {
       ]);
 
       setClockEntries(entriesRes.data);
+      setFilteredEntries(entriesRes.data); // Initialize filtered entries
       setUsers(usersRes.data);
       setProjects(projectsRes.data);
     } catch (error) {
