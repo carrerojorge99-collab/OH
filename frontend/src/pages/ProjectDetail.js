@@ -176,6 +176,15 @@ const ProjectDetail = () => {
     }
   }, [project]);
 
+  // Filter timesheet by user
+  useEffect(() => {
+    if (selectedTimesheetUser === 'all') {
+      setFilteredTimesheet(timesheet);
+    } else {
+      setFilteredTimesheet(timesheet.filter(entry => entry.user_id === selectedTimesheetUser));
+    }
+  }, [selectedTimesheetUser, timesheet]);
+
   const loadProjectData = async () => {
     try {
       const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, timesheetRes, commentsRes, documentsRes, statsRes] = await Promise.all([
