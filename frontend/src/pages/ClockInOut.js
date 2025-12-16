@@ -183,9 +183,13 @@ const ClockInOut = () => {
       }
       
       setNotes('');
-      loadData();
+      await loadData(); // Ensure data is reloaded
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al registrar salida');
+      if (error.message && error.message.includes('ubicación')) {
+        toast.error(error.message, { duration: 5000 });
+      } else {
+        toast.error(error.response?.data?.detail || 'Error al registrar salida');
+      }
     }
   };
 
