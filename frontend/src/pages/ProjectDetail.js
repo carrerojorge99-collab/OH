@@ -2654,19 +2654,21 @@ const ProjectDetail = () => {
                       )) : (
                         <tr>
                           <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
-                            No hay registros de tiempo. Añade el primero haciendo clic en "Nuevo Registro".
+                            {selectedTimesheetUser === 'all' 
+                              ? 'No hay registros de tiempo. Añade el primero haciendo clic en "Nuevo Registro".' 
+                              : 'No hay registros para el empleado seleccionado'}
                           </td>
                         </tr>
                       )}
                     </tbody>
-                    {timesheet.length > 0 && (
+                    {filteredTimesheet.length > 0 && (
                       <tfoot className="bg-slate-50 border-t-2 border-slate-300">
                         <tr>
                           <td colSpan="2" className="px-4 py-3 text-right font-semibold text-slate-700">
-                            Total Horas:
+                            Total Horas {selectedTimesheetUser !== 'all' && '(Filtrado)'}:
                           </td>
                           <td className="px-4 py-3 text-right font-bold font-mono text-lg text-blue-700">
-                            {timesheet.reduce((sum, entry) => sum + entry.hours_worked, 0).toFixed(2)}h
+                            {filteredTimesheet.reduce((sum, entry) => sum + entry.hours_worked, 0).toFixed(2)}h
                           </td>
                           <td colSpan="3"></td>
                         </tr>
