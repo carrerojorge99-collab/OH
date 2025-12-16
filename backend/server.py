@@ -142,6 +142,11 @@ class ProjectUpdate(BaseModel):
     po_quantity: Optional[float] = None
     proposal_number: Optional[str] = None
     team_members: Optional[List[str]] = None
+    # Geofencing fields
+    location_latitude: Optional[float] = None
+    location_longitude: Optional[float] = None
+    geofence_radius: Optional[float] = None
+    geofence_enabled: Optional[bool] = None
 
 class Project(BaseModel):
     model_config = ConfigDict(extra="ignore")
