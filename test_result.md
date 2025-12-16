@@ -194,3 +194,5 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "Backend APIs verified via curl - both Project Logs and Estimate-to-Invoice conversion work correctly. Need frontend testing for: 1) Bitácora tab in ProjectDetail page - create/edit/delete logs, 2) Estimates page - convert approved estimate to invoice. Credentials: carrerojorge99@gmail.com / Axel52418!"
+    - agent: "testing"
+      message: "CRITICAL ISSUE FOUND: JavaScript error 'moment is not defined' is breaking the frontend. This prevents proper loading of ProjectDetail page and navigation to other pages. The moment.js library is not properly imported/loaded. This blocks testing of both Bitácora functionality and Estimate to Invoice conversion. Frontend needs immediate fix before testing can proceed."
