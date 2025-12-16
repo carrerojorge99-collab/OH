@@ -362,6 +362,19 @@ const ClockInOut = () => {
                             </>
                           )}
                         </div>
+                        {entry.clock_in_latitude && entry.clock_in_longitude && (
+                          <div className="flex items-center gap-1 text-xs text-green-600 mt-1">
+                            📍 Ubicación registrada
+                            <a 
+                              href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline hover:text-green-700"
+                            >
+                              Ver en mapa
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
@@ -398,6 +411,8 @@ const ClockInOut = () => {
               <li>• Poncha entrada al comenzar tu jornada laboral</li>
               <li>• Poncha salida cuando termines de trabajar</li>
               <li>• Las horas se registran automáticamente en el timesheet</li>
+              <li>• 📍 Tu ubicación GPS es obligatoria para verificar asistencia</li>
+              <li>• Asegúrate de permitir acceso a ubicación en tu navegador</li>
               <li>• Solo puedes tener un ponche activo a la vez</li>
               <li>• Agrega notas para documentar mejor tu trabajo</li>
             </ul>
