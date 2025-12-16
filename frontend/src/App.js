@@ -16,6 +16,7 @@ import Users from './pages/Users';
 import Reports from './pages/Reports';
 import Invoices from './pages/Invoices';
 import Estimates from './pages/Estimates';
+import PurchaseOrders from './pages/PurchaseOrders';
 import Integrations from './pages/Integrations';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
