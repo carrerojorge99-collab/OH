@@ -1544,6 +1544,43 @@ async def get_assigned_projects(
     
     return projects
 
+@api_router.delete("/clock/{clock_id}")
+async def delete_clock_entry(
+    clock_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a clock entry (admin only)"""
+    user = await get_current_user(request, session_token)
+    
+    # Only admins can delete clock entries
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden eliminar ponches")
+    
+    # Find the clock entry
+    clock_entry = await db.clock_entries.find_one({"clock_id": clock_id}, {"_id": 0})
+    if not clock_entry:
+        raise HTTPException(status_code=404, detail="Ponche no encontrado")
+    
+    # Delete the clock entry
+    await db.clock_entries.delete_one({"clock_id": clock_id})
+    
+    # Also delete associated timesheet if exists
+    await db.timesheet.delete_one({"clock_id": clock_id})
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "delete",
+        "clock_entry",
+        clock_id,
+        f"Ponche de {clock_entry.get('user_name', 'Unknown')}",
+        {"date": clock_entry.get('date'), "project": clock_entry.get('project_name')}
+    )
+    
+    return {"message": "Ponche eliminado exitosamente"}
+
 @api_router.post("/comments", response_model=Comment)
 async def create_comment(comment_data: CommentCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
