@@ -185,9 +185,18 @@ const Dashboard = () => {
       
       <div className="space-y-8 fade-in">
         {/* Header */}
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Resumen general de tus proyectos y presupuestos</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">Dashboard</h1>
+            <p className="text-muted-foreground mt-2">Resumen general de tus proyectos y presupuestos</p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => { setLoading(true); loadDashboardData(); }}
+            title="Refrescar datos"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
 
         {/* Quick Timesheet for Mobile */}
