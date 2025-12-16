@@ -68,6 +68,13 @@ const ClockHistory = () => {
   const filterEntries = () => {
     let filtered = [...clockEntries];
 
+    console.log('Filtering entries:', {
+      total: clockEntries.length,
+      dateRange: { startDate, endDate },
+      selectedUser,
+      selectedProject
+    });
+
     // Filter by user
     if (selectedUser !== 'all') {
       filtered = filtered.filter(entry => entry.user_id === selectedUser);
@@ -81,12 +88,22 @@ const ClockHistory = () => {
     // Filter by date range
     filtered = filtered.filter(entry => {
       const entryDate = moment(entry.date);
-      return entryDate.isBetween(startDate, endDate, 'day', '[]');
+      const isInRange = entryDate.isBetween(startDate, endDate, 'day', '[]');
+      if (!isInRange) {
+        console.log('Entry filtered out by date:', {
+          entryDate: entry.date,
+          parsed: entryDate.format('YYYY-MM-DD'),
+          startDate,
+          endDate
+        });
+      }
+      return isInRange;
     });
 
     // Sort by date descending
     filtered.sort((a, b) => new Date(b.clock_in) - new Date(a.clock_in));
 
+    console.log('Filtered results:', filtered.length);
     setFilteredEntries(filtered);
   };
 
