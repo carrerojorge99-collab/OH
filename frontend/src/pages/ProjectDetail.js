@@ -2335,8 +2335,8 @@ const ProjectDetail = () => {
               <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
-                  onClick={() => exportTimesheetToExcel(timesheet, project?.name || 'Proyecto')}
-                  disabled={timesheet.length === 0}
+                  onClick={() => exportTimesheetToExcel(filteredTimesheet, project?.name || 'Proyecto')}
+                  disabled={filteredTimesheet.length === 0}
                   title="Exportar a Excel"
                 >
                   <FileDown className="w-4 h-4 mr-2" />
@@ -2344,8 +2344,8 @@ const ProjectDetail = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => exportTimesheetToPDF(timesheet, project?.name || 'Proyecto')}
-                  disabled={timesheet.length === 0}
+                  onClick={() => exportTimesheetToPDF(filteredTimesheet, project?.name || 'Proyecto')}
+                  disabled={filteredTimesheet.length === 0}
                   title="Exportar a PDF"
                 >
                   <FileText className="w-4 h-4 mr-2" />
