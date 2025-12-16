@@ -605,11 +605,9 @@ const Estimates = () => {
                         <Button variant="ghost" size="sm" onClick={() => handleDuplicate(estimate.estimate_id)} title="Duplicar">
                           <Copy className="w-4 h-4" />
                         </Button>
-                        {estimate.status !== 'converted' && (
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(estimate.estimate_id)} title="Eliminar" className="text-red-600">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(estimate.estimate_id)} title="Eliminar" className="text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
