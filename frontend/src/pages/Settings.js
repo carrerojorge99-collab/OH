@@ -16,6 +16,8 @@ const Settings = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingCompany, setSavingCompany] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [settings, setSettings] = useState({
     smtp_host: '',
     smtp_port: 587,
@@ -25,11 +27,27 @@ const Settings = () => {
     smtp_from_name: '',
     email_notifications_enabled: false
   });
+  const [company, setCompany] = useState({
+    company_name: '',
+    company_logo: null,
+    address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    country: '',
+    phone: '',
+    email: '',
+    website: '',
+    tax_id: '',
+    currency: 'USD',
+    footer_text: ''
+  });
 
   const API_URL = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     fetchSettings();
+    fetchCompany();
   }, []);
 
   const fetchSettings = async () => {
