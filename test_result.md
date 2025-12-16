@@ -155,6 +155,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "CRITICAL: JavaScript error 'moment is not defined' prevents ProjectDetail page from loading properly. Cannot access Bitácora tab or test edit/delete functionality."
+        - working: false
+          agent: "testing"
+          comment: "CONFIRMED: Same moment.js import issue blocks all ProjectDetail functionality including log edit and delete operations."
 
   - task: "Estimate to Invoice Conversion UI"
     implemented: true
