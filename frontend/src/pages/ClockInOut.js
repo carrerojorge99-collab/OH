@@ -213,13 +213,27 @@ const ClockInOut = () => {
     <Layout>
       <div className="space-y-6 fade-in max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight text-[#0F172A] mb-2">Control de Asistencia</h1>
           <p className="text-muted-foreground">Registra tu entrada y salida diaria</p>
           <div className="mt-4 text-2xl font-mono font-bold text-blue-600">
             {currentTime.toLocaleTimeString('es-MX')}
           </div>
           <p className="text-sm text-slate-600">{moment().format('dddd, D [de] MMMM [de] YYYY')}</p>
+          
+          {/* Quick Clock Out Button */}
+          {activeClock && (
+            <div className="flex justify-center pt-2">
+              <Button
+                onClick={handleClockOut}
+                size="lg"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 shadow-lg"
+              >
+                <LogOut className="w-5 h-5 mr-2" />
+                Salida Rápida
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Active Clock Status */}
