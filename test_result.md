@@ -199,7 +199,11 @@ test_plan:
   current_focus:
     - "Project Logs (Bitácora) CRUD operations"
     - "Estimate to Invoice conversion"
-  stuck_tasks: []
+  stuck_tasks: 
+    - "Project Logs (Bitácora) UI - Create Log"
+    - "Project Logs (Bitácora) UI - List and Filter"
+    - "Project Logs (Bitácora) UI - Edit and Delete"
+    - "Estimate to Invoice Conversion UI"
   test_all: false
   test_priority: "high_first"
 
