@@ -23,7 +23,7 @@ import {
 import { fetchCompanyInfo, addCompanyHeader, addCompanyFooter } from '../utils/pdfHelper';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
