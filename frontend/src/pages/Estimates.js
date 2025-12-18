@@ -316,7 +316,7 @@ const Estimates = () => {
       `$${item.amount.toFixed(2)}`
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: startY + 8,
       head: [['Descripción', 'Cantidad', 'Precio Unit.', 'Total']],
       body: tableData,
