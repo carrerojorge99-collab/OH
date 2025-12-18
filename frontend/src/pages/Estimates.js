@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 moment.locale('es');
 
