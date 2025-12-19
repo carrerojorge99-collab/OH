@@ -4168,6 +4168,74 @@ async def delete_cost_estimate(
     
     return {"message": "Estimación eliminada exitosamente"}
 
+# ==================== REQUIRED DOCUMENTS ENDPOINTS ====================
+@api_router.get("/required-documents")
+async def get_required_documents(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    from_client = await db.required_documents.find({"direction": "from_client"}, {"_id": 0}).to_list(1000)
+    to_client = await db.required_documents.find({"direction": "to_client"}, {"_id": 0}).to_list(1000)
+    
+    return {"from_client": from_client, "to_client": to_client}
+
+@api_router.post("/required-documents/from-client")
+async def add_document_from_client(
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    doc_id = f"doc_{uuid4().hex[:16]}"
+    doc = {
+        "document_id": doc_id,
+        "document_name": data["document_name"],
+        "direction": "from_client",
+        "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.required_documents.insert_one(doc)
+    return doc
+
+@api_router.post("/required-documents/to-client")
+async def add_document_to_client(
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    doc_id = f"doc_{uuid4().hex[:16]}"
+    doc = {
+        "document_id": doc_id,
+        "document_name": data["document_name"],
+        "direction": "to_client",
+        "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.required_documents.insert_one(doc)
+    return doc
+
+@api_router.delete("/required-documents/{doc_id}")
+async def delete_required_document(
+    doc_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    await db.required_documents.delete_one({"document_id": doc_id})
+    return {"message": "Documento eliminado"}
+
 app.include_router(api_router)
 
 # Middleware para prevenir caché en respuestas de API
