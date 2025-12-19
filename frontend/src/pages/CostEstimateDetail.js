@@ -125,11 +125,9 @@ const CostEstimateDetail = () => {
       qty_personnel: 1,
       regular_hours: 0,
       overtime_hours: 0,
-      quoted_rate: laborRates[0]?.quoted_rate || 0,
-      assumed_rate: laborRates[0]?.assumed_rate || 0,
+      rate: laborRates[0]?.quoted_rate || 0,
       overtime_rate: laborRates[0]?.overtime_rate || 0,
-      subtotal_quoted: 0,
-      subtotal_assumed: 0
+      subtotal: 0
     };
     setLaborCosts([...laborCosts, newRow]);
   };
@@ -140,23 +138,20 @@ const CostEstimateDetail = () => {
 
     // Update rates when role changes
     if (field === 'role_name') {
-      const rate = laborRates.find(r => r.role_name === value);
-      if (rate) {
-        updated[index].quoted_rate = rate.quoted_rate;
-        updated[index].assumed_rate = rate.assumed_rate;
-        updated[index].overtime_rate = rate.overtime_rate;
+      const rateData = laborRates.find(r => r.role_name === value);
+      if (rateData) {
+        updated[index].rate = rateData.quoted_rate;
+        updated[index].overtime_rate = rateData.overtime_rate;
       }
     }
 
-    // Calculate subtotals
+    // Calculate subtotal
     const regular = Number(updated[index].regular_hours) || 0;
     const overtime = Number(updated[index].overtime_hours) || 0;
-    const qRate = Number(updated[index].quoted_rate) || 0;
-    const aRate = Number(updated[index].assumed_rate) || 0;
+    const rate = Number(updated[index].rate) || 0;
     const oRate = Number(updated[index].overtime_rate) || 0;
 
-    updated[index].subtotal_quoted = (regular * qRate) + (overtime * oRate);
-    updated[index].subtotal_assumed = (regular * aRate) + (overtime * oRate);
+    updated[index].subtotal = (regular * rate) + (overtime * oRate);
 
     setLaborCosts(updated);
   };
