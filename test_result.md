@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test Project Logs (Bitácora) module and Estimate to Invoice conversion feature"
+user_problem_statement: "Test timezone fixes and chronological ordering in punch system (ClockInOut.js)"
 
 frontend:
   - task: "Project Logs (Bitácora) UI - Create Log"
