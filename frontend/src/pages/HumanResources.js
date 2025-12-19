@@ -132,19 +132,18 @@ const HumanResources = () => {
         notes: profile.notes || ''
       };
       
-      const saveResponse = await axios.put(`${API}/employees/${selectedEmployee.user_id}/profile`, dataToSave, { withCredentials: true });
+      await axios.put(`${API}/employees/${selectedEmployee.user_id}/profile`, dataToSave, { withCredentials: true });
+      toast.success('Perfil guardado correctamente');
       
-      if (saveResponse.data.message === 'Perfil actualizado') {
-        toast.success('Perfil guardado correctamente');
-        // Reload employees list
-        const response = await axios.get(`${API}/employees?_t=${Date.now()}`, { withCredentials: true });
-        setEmployees(response.data);
-        // Don't trigger useEffect - manually update the profile with saved data
-        const updated = response.data.find(e => e.user_id === selectedEmployee.user_id);
-        if (updated) {
-          // Update selectedEmployee without triggering useEffect cascade
-          selectedEmployee.profile = updated.profile;
-        }
+      // Update the employees list in background without changing selectedEmployee
+      const response = await axios.get(`${API}/employees?_t=${Date.now()}`, { withCredentials: true });
+      const updatedEmployees = response.data;
+      
+      // Update the selected employee's profile in the employees array without triggering useEffect
+      const updatedEmp = updatedEmployees.find(e => e.user_id === selectedEmployee.user_id);
+      if (updatedEmp) {
+        // Update the profile data in selectedEmployee directly for the sidebar display
+        setEmployees(updatedEmployees);
       }
     } catch (error) {
       console.error('Error saving:', error);
