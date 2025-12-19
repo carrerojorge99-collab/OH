@@ -501,12 +501,15 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="company" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 text-sm">
+          <TabsList className="grid w-full grid-cols-6 text-sm">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Empresa
             </TabsTrigger>
             <TabsTrigger value="labor-rates" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" /> Tarifas
+            </TabsTrigger>
+            <TabsTrigger value="payroll" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" /> Nómina
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="h-4 w-4" /> Documentos
