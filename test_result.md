@@ -310,6 +310,30 @@ backend:
           agent: "testing"
           comment: "✅ FIXED & VERIFIED: Moved required documents endpoints before router registration and fixed MongoDB ObjectId serialization issues. All endpoints now working: GET /api/required-documents (returns from_client and to_client document lists), POST /api/required-documents/from-client (creates client documents), POST /api/required-documents/to-client (creates documents to send to client). Document structure includes: document_id, document_name, direction, created_at."
 
+  - task: "Cost Estimate PDF Export API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: PDF export endpoint working perfectly. GET /api/cost-estimates/{estimate_id}/export/pdf successfully generates PDF files with correct Content-Type (application/pdf), proper filename format (estimacion_{estimate_id}_{date}.pdf), and valid PDF content. Tested with estimate ID ce_91fd8f68b8684405 - file size 2096 bytes, proper headers set."
+
+  - task: "Cost Estimate Excel Export API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Excel export endpoint working perfectly. GET /api/cost-estimates/{estimate_id}/export/excel successfully generates Excel files with correct Content-Type (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet), proper filename format (estimacion_{estimate_id}_{date}.xlsx), and valid Excel content. Tested with estimate ID ce_91fd8f68b8684405 - file size 5428 bytes, proper headers set."
+
 metadata:
   created_by: "main_agent"
   version: "9.0"
