@@ -4226,7 +4226,13 @@ async def add_document_to_client(
     }
     
     await db.required_documents.insert_one(doc)
-    return doc
+    # Return document without MongoDB _id field
+    return {
+        "document_id": doc_id,
+        "document_name": data["document_name"],
+        "direction": "to_client",
+        "created_at": doc["created_at"]
+    }
 
 @api_router.delete("/required-documents/{doc_id}")
 async def delete_required_document(
