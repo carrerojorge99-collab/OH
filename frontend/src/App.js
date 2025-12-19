@@ -133,6 +133,12 @@ function AppRouter() {
           <HumanResources />
         </ProtectedRoute>
       } />
+      
+      <Route path="/payroll" element={
+        <ProtectedRoute>
+          <Payroll />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
