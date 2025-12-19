@@ -3088,7 +3088,20 @@ const ProjectDetail = () => {
                                 }>
                                   {log.log_type === 'work' ? 'Trabajo' :
                                    log.log_type === 'update' ? 'Actualización' :
-
+                                   log.log_type === 'problem' ? 'Problema' :
+                                   log.log_type === 'milestone' ? 'Hito' : 'Nota'}
+                                </span>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           {/* Required Documents Tab */}
           <TabsContent value="required-docs" className="space-y-6">
