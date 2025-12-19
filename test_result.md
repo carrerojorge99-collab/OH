@@ -270,10 +270,50 @@ frontend:
           agent: "testing"
           comment: "✅ VERIFIED: Edit operations working correctly. 'Ver' button successfully opens estimate for editing, navigation to detail page working, can modify existing estimates. Delete button (trash icon) present and accessible for removal operations."
 
+backend:
+  - task: "Login Flow Authentication"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Login flow working perfectly with credentials carrerojorge99@gmail.com / Axel52418!. Successfully authenticated as Jorge Carrero (Role: admin, ID: user_c883c51ed600). Session management and authentication endpoints functioning correctly."
+
+  - task: "Project Logs API (Bitácora)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Project logs API fully functional. Successfully tested GET /api/project-logs (retrieves logs with correct structure: log_id, title, description, user_name, created_at, log_type), POST /api/project-logs (creates new log entries with all fields including hours_worked), PUT /api/project-logs/{log_id} (updates existing logs), and DELETE /api/project-logs/{log_id} (removes log entries). All CRUD operations working correctly."
+
+  - task: "Required Documents API (Documentos Requeridos)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ INITIAL ISSUE: Required documents endpoints were returning 404 Not Found errors due to endpoints being defined after app.include_router() call."
+        - working: true
+          agent: "testing"
+          comment: "✅ FIXED & VERIFIED: Moved required documents endpoints before router registration and fixed MongoDB ObjectId serialization issues. All endpoints now working: GET /api/required-documents (returns from_client and to_client document lists), POST /api/required-documents/from-client (creates client documents), POST /api/required-documents/to-client (creates documents to send to client). Document structure includes: document_id, document_name, direction, created_at."
+
 metadata:
   created_by: "main_agent"
-  version: "8.0"
-  test_sequence: 8
+  version: "9.0"
+  test_sequence: 9
 
 test_plan:
   current_focus: []
