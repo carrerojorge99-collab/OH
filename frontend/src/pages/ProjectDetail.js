@@ -1316,6 +1316,7 @@ const ProjectDetail = () => {
             <TabsTrigger value="labor" data-testid="labor-tab">Salarios</TabsTrigger>
             <TabsTrigger value="timesheet" data-testid="timesheet-tab">Timesheet</TabsTrigger>
             <TabsTrigger value="documents" data-testid="documents-tab">Documentos</TabsTrigger>
+            <TabsTrigger value="required-docs" data-testid="required-docs-tab">Doc. Requeridos</TabsTrigger>
             <TabsTrigger value="logs" data-testid="logs-tab">Bitácora</TabsTrigger>
             <TabsTrigger value="comments" data-testid="comments-tab">Comentarios</TabsTrigger>
           </TabsList>
