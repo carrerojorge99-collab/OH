@@ -104,7 +104,7 @@ const ClockHistory = () => {
     }
     
     try {
-      await axios.delete(`${API}/api/clock/${clockId}`, { withCredentials: true });
+      await axios.delete(`${API}/clock/${clockId}`, { withCredentials: true });
       toast.success('Ponche eliminado exitosamente');
       loadData(); // Reload data
     } catch (error) {
@@ -117,12 +117,12 @@ const ClockHistory = () => {
     try {
       const timestamp = Date.now();
       const [entriesRes, usersRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/api/clock/all?_t=${timestamp}`, { 
+        axios.get(`${API}/clock/all?_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        axios.get(`${API}/api/users?_t=${timestamp}`, { withCredentials: true }),
-        axios.get(`${API}/api/projects?_t=${timestamp}`, { withCredentials: true })
+        axios.get(`${API}/users?_t=${timestamp}`, { withCredentials: true }),
+        axios.get(`${API}/projects?_t=${timestamp}`, { withCredentials: true })
       ]);
 
       setClockEntries([...(entriesRes.data || [])]);

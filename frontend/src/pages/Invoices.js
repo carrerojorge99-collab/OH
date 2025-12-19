@@ -79,8 +79,8 @@ const Invoices = () => {
   const loadData = async () => {
     try {
       const [invoicesRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/api/invoices`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/api/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        axios.get(`${API}/invoices`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        axios.get(`${API}/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setInvoices(invoicesRes.data);
       setProjects(projectsRes.data);
@@ -101,7 +101,7 @@ const Invoices = () => {
     }
 
     try {
-      await axios.post(`${API}/api/invoices/generate`, formData, { withCredentials: true });
+      await axios.post(`${API}/invoices/generate`, formData, { withCredentials: true });
       toast.success('Factura generada exitosamente');
       setDialogOpen(false);
       setFormData({
@@ -122,7 +122,7 @@ const Invoices = () => {
   const handleUpdateStatus = async (invoiceId, newStatus) => {
     try {
       await axios.put(
-        `${API}/api/invoices/${invoiceId}/status`,
+        `${API}/invoices/${invoiceId}/status`,
         null,
         {
           params: { status: newStatus },
@@ -140,7 +140,7 @@ const Invoices = () => {
     if (!window.confirm(`¿Eliminar factura ${invoiceNumber}?`)) return;
 
     try {
-      await axios.delete(`${API}/api/invoices/${invoiceId}`, { 
+      await axios.delete(`${API}/invoices/${invoiceId}`, { 
         withCredentials: true,
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
       });
@@ -161,7 +161,7 @@ const Invoices = () => {
     }
 
     try {
-      await axios.post(`${API}/api/invoices/${invoiceId}/send`, {}, { withCredentials: true });
+      await axios.post(`${API}/invoices/${invoiceId}/send`, {}, { withCredentials: true });
       toast.success(`Factura enviada a ${clientEmail}`);
       loadData();
     } catch (error) {
@@ -180,7 +180,7 @@ const Invoices = () => {
     
     // Load existing payments
     try {
-      const response = await axios.get(`${API}/api/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
+      const response = await axios.get(`${API}/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
       setPayments(response.data);
     } catch (error) {
       console.error('Error loading payments:', error);
@@ -194,7 +194,7 @@ const Invoices = () => {
 
     try {
       await axios.post(
-        `${API}/api/invoices/${selectedInvoiceForPayment.invoice_id}/payments`,
+        `${API}/invoices/${selectedInvoiceForPayment.invoice_id}/payments`,
         paymentForm,
         { withCredentials: true }
       );

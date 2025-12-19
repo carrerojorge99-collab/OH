@@ -30,8 +30,8 @@ const Calendar = () => {
   const loadCalendarData = async () => {
     try {
       const [projectsRes, tasksRes] = await Promise.all([
-        axios.get(`${API}/api/projects`, { withCredentials: true }),
-        axios.get(`${API}/api/tasks`, { withCredentials: true })
+        axios.get(`${API}/projects`, { withCredentials: true }),
+        axios.get(`${API}/tasks`, { withCredentials: true })
       ]);
 
       const projectEvents = projectsRes.data.map(project => ({

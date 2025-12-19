@@ -32,8 +32,8 @@ const Payroll = () => {
   const loadData = async () => {
     try {
       const [empRes, settingsRes] = await Promise.all([
-        axios.get(`${API}/api/employees`, { withCredentials: true }),
-        axios.get(`${API}/api/payroll-settings`, { withCredentials: true })
+        axios.get(`${API}/employees`, { withCredentials: true }),
+        axios.get(`${API}/payroll-settings`, { withCredentials: true })
       ]);
       setEmployees(empRes.data.filter(e => e.profile?.salary > 0));
       setPayrollSettings(settingsRes.data);

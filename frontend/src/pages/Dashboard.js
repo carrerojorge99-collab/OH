@@ -36,8 +36,8 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const [statsRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/api/dashboard/stats`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/api/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        axios.get(`${API}/dashboard/stats`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        axios.get(`${API}/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       
       setStats(statsRes.data);
@@ -450,7 +450,7 @@ const Dashboard = () => {
                     key={project.project_id}
                     data-testid={`recent-project-${project.project_id}`}
                     className="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = `${API}/api/projects/${project.project_id}`}
+                    onClick={() => window.location.href = `${API}/projects/${project.project_id}`}
                   >
                     <div className="flex-1">
                       <h3 className="font-semibold text-[#0F172A]">{project.name}</h3>

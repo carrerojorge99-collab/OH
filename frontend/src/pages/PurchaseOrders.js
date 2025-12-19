@@ -95,8 +95,8 @@ const PurchaseOrders = () => {
   const loadData = async () => {
     try {
       const [posRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/api/purchase-orders`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/api/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        axios.get(`${API}/purchase-orders`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        axios.get(`${API}/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setPurchaseOrders(posRes.data || []);
       setProjects(projectsRes.data || []);
@@ -182,10 +182,10 @@ const PurchaseOrders = () => {
       };
 
       if (editingPO) {
-        await axios.put(`${API}/api/purchase-orders/${editingPO}`, payload, { withCredentials: true });
+        await axios.put(`${API}/purchase-orders/${editingPO}`, payload, { withCredentials: true });
         toast.success('Orden actualizada');
       } else {
-        await axios.post(`${API}/api/purchase-orders`, payload, { withCredentials: true });
+        await axios.post(`${API}/purchase-orders`, payload, { withCredentials: true });
         toast.success('Orden creada');
       }
       
@@ -221,7 +221,7 @@ const PurchaseOrders = () => {
     if (!window.confirm('¿Eliminar esta orden de compra?')) return;
     
     try {
-      await axios.delete(`${API}/api/purchase-orders/${poId}`, { withCredentials: true });
+      await axios.delete(`${API}/purchase-orders/${poId}`, { withCredentials: true });
       toast.success('Orden eliminada');
       setPurchaseOrders(prev => prev.filter(po => po.po_id !== poId));
     } catch (error) {
@@ -231,7 +231,7 @@ const PurchaseOrders = () => {
 
   const handleStatusChange = async (poId, newStatus) => {
     try {
-      await axios.put(`${API}/api/purchase-orders/${poId}/status?status=${newStatus}`, {}, { withCredentials: true });
+      await axios.put(`${API}/purchase-orders/${poId}/status?status=${newStatus}`, {}, { withCredentials: true });
       toast.success(`Estado cambiado a ${statusLabels[newStatus]}`);
       loadData();
     } catch (error) {
@@ -241,7 +241,7 @@ const PurchaseOrders = () => {
 
   const handleSend = async (poId) => {
     try {
-      await axios.post(`${API}/api/purchase-orders/${poId}/send`, {}, { withCredentials: true });
+      await axios.post(`${API}/purchase-orders/${poId}/send`, {}, { withCredentials: true });
       toast.success('Orden enviada');
       loadData();
     } catch (error) {
@@ -251,7 +251,7 @@ const PurchaseOrders = () => {
 
   const handleDuplicate = async (poId) => {
     try {
-      await axios.post(`${API}/api/purchase-orders/${poId}/duplicate`, {}, { withCredentials: true });
+      await axios.post(`${API}/purchase-orders/${poId}/duplicate`, {}, { withCredentials: true });
       toast.success('Orden duplicada');
       loadData();
     } catch (error) {
