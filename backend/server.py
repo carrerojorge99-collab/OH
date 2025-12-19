@@ -4232,6 +4232,54 @@ async def add_document_to_client(
     
     if user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Solo administradores")
+
+
+# ==================== PROJECT DOCUMENT STATUS ====================
+@api_router.get("/projects/{project_id}/document-status")
+async def get_project_document_status(
+    project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    status_docs = await db.project_document_status.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    
+    # Convert to dict with document_id as key
+    status_dict = {doc["document_id"]: doc["status"] for doc in status_docs}
+    
+    return status_dict
+
+@api_router.post("/projects/{project_id}/document-status")
+async def update_project_document_status(
+    project_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Update or insert status
+    await db.project_document_status.update_one(
+        {
+            "project_id": project_id,
+            "document_id": data["document_id"]
+        },
+        {
+            "$set": {
+                "project_id": project_id,
+                "document_id": data["document_id"],
+                "direction": data["direction"],
+                "status": data["status"],
+                "updated_at": datetime.now(PUERTO_RICO_TZ).isoformat(),
+                "updated_by": user.user_id
+            }
+        },
+        upsert=True
+    )
+    
+    return {"message": "Estado actualizado"}
+
     
     doc_id = f"doc_{uuid4().hex[:16]}"
     doc = {
