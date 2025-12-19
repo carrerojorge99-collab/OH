@@ -4093,8 +4093,8 @@ async def create_cost_estimate(
     
     estimate_doc = {
         "estimate_id": estimate_id,
-        "project_id": estimate_data.project_id,
-        "project_name": project.get('name', ''),
+        "project_id": estimate_data.project_id or "",
+        "project_name": project_name,
         "estimate_name": estimate_data.estimate_name,
         "labor_costs": [item.dict() for item in estimate_data.labor_costs],
         "subcontractors": [item.dict() for item in estimate_data.subcontractors],
