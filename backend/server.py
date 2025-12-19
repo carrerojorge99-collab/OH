@@ -3875,7 +3875,7 @@ class CostEstimate(BaseModel):
     materials: List[MaterialItem] = []
     equipment: List[EquipmentItem] = []
     general_conditions: List[GeneralConditionItem] = []
-    transportation_cost: float = 0
+    transportation: List[TransportationItem] = []
     overhead_percentage: float = 0
     profit_percentage: float = 0
     contingency_percentage: float = 0
