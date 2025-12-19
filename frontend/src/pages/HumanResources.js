@@ -30,9 +30,9 @@ const documentTypes = [
 ];
 
 const emptyProfile = {
-  phone: '', address: '', city: '', date_of_birth: '', gender: '', marital_status: '',
+  phone: '', address: '', city: '', zipcode: '', date_of_birth: '', gender: '', marital_status: '',
   nationality: '', id_number: '', department: '', position: '', hire_date: '',
-  employment_type: '', worker_classification: 'employee', salary: 0, pay_frequency: '', bank_name: '', bank_account: '',
+  employment_type: '', worker_classification: 'employee', salary: 0, hourly_rate: 0, pay_frequency: '', bank_name: '', bank_account: '',
   emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relationship: '', notes: ''
 };
 
