@@ -160,7 +160,10 @@ metadata:
   test_sequence: 6
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Timezone Correction - Puerto Rico GMT-4"
+    - "Chronological Ordering - Punch History"
+    - "Clock IN/OUT Functionality"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
