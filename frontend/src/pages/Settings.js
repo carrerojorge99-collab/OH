@@ -909,6 +909,151 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
+          {/* Documents Tab */}
+          <TabsContent value="documents">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Documentos que el Cliente Debe Enviar</CardTitle>
+                  <CardDescription>Lista de documentos requeridos del cliente</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      placeholder="Ej: Permiso de Construcción"
+                      value={newDocFromClient}
+                      onChange={(e) => setNewDocFromClient(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddDocFromClient()}
+                    />
+                    <Button onClick={handleAddDocFromClient}><Plus className="w-4 h-4" /></Button>
+                  </div>
+                  <ul className="space-y-2">
+                    {documentsFromClient.map((doc) => (
+                      <li key={doc.document_id} className="flex justify-between p-2 border rounded">
+                        <span>{doc.document_name}</span>
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(doc.document_id)}>
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Documentos que Debo Enviar al Cliente</CardTitle>
+                  <CardDescription>Lista de documentos que debes entregar</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      placeholder="Ej: Propuesta de Proyecto"
+                      value={newDocToClient}
+                      onChange={(e) => setNewDocToClient(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddDocToClient()}
+                    />
+                    <Button onClick={handleAddDocToClient}><Plus className="w-4 h-4" /></Button>
+                  </div>
+                  <ul className="space-y-2">
+                    {documentsToClient.map((doc) => (
+                      <li key={doc.document_id} className="flex justify-between p-2 border rounded">
+                        <span>{doc.document_name}</span>
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteDoc(doc.document_id)}>
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Nomenclature Tab */}
+          <TabsContent value="nomenclature">
+            <Card>
+              <CardHeader>
+                <CardTitle>Nomenclaturas para Documentos</CardTitle>
+                <CardDescription>
+                  Configura nomenclaturas personalizadas (Ej: A-2025-100-#, C-2025-101-#)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSaveNomenclature} className="space-y-4 mb-6">
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <Label>Nombre</Label>
+                      <Input
+                        placeholder="Ej: Administrativa"
+                        value={nomenclatureForm.name}
+                        onChange={(e) => setNomenclatureForm({...nomenclatureForm, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Prefijo</Label>
+                      <Input
+                        placeholder="Ej: A"
+                        value={nomenclatureForm.prefix}
+                        onChange={(e) => setNomenclatureForm({...nomenclatureForm, prefix: e.target.value.toUpperCase()})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Tipo</Label>
+                      <select
+                        className="w-full border rounded px-3 py-2"
+                        value={nomenclatureForm.type}
+                        onChange={(e) => setNomenclatureForm({...nomenclatureForm, type: e.target.value})}
+                      >
+                        <option value="estimate">Estimado</option>
+                        <option value="invoice">Factura</option>
+                        <option value="purchase_order">Orden de Compra</option>
+                        <option value="cost_estimate">Estimación Costos</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Número Inicial</Label>
+                      <Input
+                        type="number"
+                        value={nomenclatureForm.starting_number}
+                        onChange={(e) => setNomenclatureForm({...nomenclatureForm, starting_number: parseInt(e.target.value)})}
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit">
+                    {editingNomenclature ? 'Actualizar' : 'Agregar Nomenclatura'}
+                  </Button>
+                </form>
+
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Nomenclaturas Configuradas</h4>
+                  {nomenclatures.length === 0 ? (
+                    <p className="text-slate-500 text-sm">No hay nomenclaturas configuradas</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {nomenclatures.map((nom) => (
+                        <div key={nom.nomenclature_id} className="flex items-center justify-between p-3 border rounded">
+                          <div>
+                            <p className="font-medium">{nom.name} ({nom.prefix})</p>
+                            <p className="text-sm text-slate-600">
+                              Formato: {nom.prefix}-{new Date().getFullYear()}-{nom.starting_number}-#
+                            </p>
+                            <p className="text-xs text-slate-500">Tipo: {nom.type}</p>
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteNomenclature(nom.nomenclature_id)}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Email Tab */}
           <TabsContent value="email">
             <form onSubmit={handleSave}>
