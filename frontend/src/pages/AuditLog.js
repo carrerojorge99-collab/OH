@@ -26,7 +26,7 @@ const AuditLog = () => {
   const loadLogs = async () => {
     try {
       const params = filterType !== 'all' ? `?entity_type=${filterType}` : '';
-      const response = await api.get(`${API}/audit-logs${params}`, { withCredentials: true });
+      const response = await api.get(`/api/audit-logs${params}`, { withCredentials: true });
       setLogs(response.data);
     } catch (error) {
       toast.error('Error al cargar historial');

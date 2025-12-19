@@ -39,15 +39,15 @@ const ClockInOut = () => {
       
       // Load history, active clock, and projects
       const [historyRes, activeRes, projectsRes] = await Promise.all([
-        api.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
+        api.get(`/api/clock/history?date=${today}&_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        api.get(`${API}/clock/active?_t=${timestamp}`, { 
+        api.get(`/api/clock/active?_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        api.get(`${API}/clock/projects?_t=${timestamp}`, { 
+        api.get(`/api/clock/projects?_t=${timestamp}`, { 
           withCredentials: true 
         })
       ]);
@@ -99,7 +99,7 @@ const ClockInOut = () => {
       const location = await getLocation();
 
       await api.post(
-        `${API}/clock/in`,
+        `/api/clock/in`,
         null,
         {
           params: {
@@ -132,7 +132,7 @@ const ClockInOut = () => {
       const location = await getLocation();
 
       await api.post(
-        `${API}/clock/out`,
+        `/api/clock/out`,
         null,
         {
           params: {

@@ -24,8 +24,8 @@ const Reports = () => {
   const loadData = async () => {
     try {
       const [projectsRes, tasksRes] = await Promise.all([
-        api.get(`${API}/projects`, { withCredentials: true }),
-        api.get(`${API}/tasks`, { withCredentials: true })
+        api.get(`/api/projects`, { withCredentials: true }),
+        api.get(`/api/tasks`, { withCredentials: true })
       ]);
       
       setProjects(projectsRes.data);
@@ -35,7 +35,7 @@ const Reports = () => {
       const allExpenses = [];
       for (const project of projectsRes.data) {
         try {
-          const expensesRes = await api.get(`${API}/expenses?project_id=${project.project_id}`, { withCredentials: true });
+          const expensesRes = await api.get(`/api/expenses?project_id=${project.project_id}`, { withCredentials: true });
           allExpenses.push(...expensesRes.data.map(e => ({ ...e, project_name: project.name })));
         } catch (err) {
           console.error('Error loading expenses:', err);

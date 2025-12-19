@@ -36,8 +36,8 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const [statsRes, projectsRes] = await Promise.all([
-        api.get(`${API}/dashboard/stats?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/api/dashboard/stats`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/api/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       
       setStats(statsRes.data);
