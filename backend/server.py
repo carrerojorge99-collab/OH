@@ -4864,6 +4864,27 @@ async def get_next_number(
     
     return {"number": full_number, "nomenclature": nomenclature}
 
+# ==================== PAYROLL SETTINGS ====================
+@api_router.get("/payroll-settings")
+async def get_payroll_settings(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    settings = await db.payroll_settings.find_one({}, {"_id": 0})
+    return settings or {
+        "hacienda_percent": 0,
+        "social_security_percent": 6.2,
+        "medicare_percent": 1.45,
+        "contractor_percent": 10
+    }
+
+@api_router.put("/payroll-settings")
+async def update_payroll_settings(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    await db.payroll_settings.update_one({}, {"$set": data}, upsert=True)
+    return {"message": "Configuración guardada"}
+
 # ==================== HUMAN RESOURCES / EMPLOYEE DOCUMENTS ====================
 EMPLOYEE_DOCS_DIR = Path("/app/uploads/employee_docs")
 EMPLOYEE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
