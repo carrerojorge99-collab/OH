@@ -68,6 +68,10 @@ const Estimates = () => {
     custom_number: ''
   });
 
+  const { nomenclatures, selectedNomenclature, generatedNumber, handleSelectNomenclature } = useNomenclature(
+    (number) => setForm(prev => ({ ...prev, custom_number: number }))
+  );
+
   useEffect(() => {
     loadData();
     
