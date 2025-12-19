@@ -9,7 +9,7 @@ import { Switch } from '../components/ui/switch';
 import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, Mail, AlertCircle, Building2, Upload, Image, DollarSign } from 'lucide-react';
+import { Save, Mail, AlertCircle, Building2, Upload, Image, DollarSign, FileText, Hash } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Settings = () => {
@@ -327,15 +327,21 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="company" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5 text-sm">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Empresa
             </TabsTrigger>
             <TabsTrigger value="labor-rates" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Tarifas Laborales
+              <DollarSign className="h-4 w-4" /> Tarifas
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Documentos
+            </TabsTrigger>
+            <TabsTrigger value="nomenclature" className="flex items-center gap-2">
+              <Hash className="h-4 w-4" /> Nomenclaturas
             </TabsTrigger>
             <TabsTrigger value="email" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" /> Email SMTP
+              <Mail className="h-4 w-4" /> Email
             </TabsTrigger>
           </TabsList>
 
