@@ -38,7 +38,6 @@ const Settings = () => {
   const [nomenclatureForm, setNomenclatureForm] = useState({
     name: '',
     prefix: '',
-    type: 'estimate',
     starting_number: 100
   });
   const [editingNomenclature, setEditingNomenclature] = useState(null);
@@ -315,7 +314,7 @@ const Settings = () => {
         });
         toast.success('Nomenclatura creada');
       }
-      setNomenclatureForm({ name: '', prefix: '', type: 'estimate', starting_number: 100 });
+      setNomenclatureForm({ name: '', prefix: '', starting_number: 100 });
       fetchNomenclatures();
     } catch (error) {
       toast.error('Error al guardar nomenclatura');
@@ -981,7 +980,7 @@ const Settings = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSaveNomenclature} className="space-y-4 mb-6">
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label>Nombre</Label>
                       <Input
@@ -992,26 +991,14 @@ const Settings = () => {
                       />
                     </div>
                     <div>
-                      <Label>Prefijo</Label>
+                      <Label>Prefijo (letra única)</Label>
                       <Input
                         placeholder="Ej: A"
+                        maxLength={1}
                         value={nomenclatureForm.prefix}
                         onChange={(e) => setNomenclatureForm({...nomenclatureForm, prefix: e.target.value.toUpperCase()})}
                         required
                       />
-                    </div>
-                    <div>
-                      <Label>Tipo</Label>
-                      <select
-                        className="w-full border rounded px-3 py-2"
-                        value={nomenclatureForm.type}
-                        onChange={(e) => setNomenclatureForm({...nomenclatureForm, type: e.target.value})}
-                      >
-                        <option value="estimate">Estimado</option>
-                        <option value="invoice">Factura</option>
-                        <option value="purchase_order">Orden de Compra</option>
-                        <option value="cost_estimate">Estimación Costos</option>
-                      </select>
                     </div>
                     <div>
                       <Label>Número Inicial</Label>
@@ -1040,7 +1027,9 @@ const Settings = () => {
                             <p className="text-sm text-slate-600">
                               Formato: {nom.prefix}-{new Date().getFullYear()}-{nom.starting_number}-#
                             </p>
-                            <p className="text-xs text-slate-500">Tipo: {nom.type}</p>
+                            <p className="text-xs text-slate-500">
+                              Próximo: {nom.prefix}-{new Date().getFullYear()}-{nom.starting_number}-{nom.current_number || 1}
+                            </p>
                           </div>
                           <Button size="sm" variant="ghost" onClick={() => handleDeleteNomenclature(nom.nomenclature_id)}>
                             <Trash2 className="w-4 h-4 text-red-600" />
