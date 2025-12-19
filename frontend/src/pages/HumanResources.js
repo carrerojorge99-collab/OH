@@ -83,7 +83,7 @@ const HumanResources = () => {
       }, { withCredentials: true });
       toast.success('Perfil guardado');
       // Reload employees and update selected
-      const response = await axios.get(`${API}/api/employees`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/employees?_t=${Date.now()}`, { withCredentials: true });
       setEmployees(response.data);
       const updated = response.data.find(e => e.user_id === selectedEmployee.user_id);
       if (updated) {
