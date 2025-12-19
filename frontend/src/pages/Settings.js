@@ -18,6 +18,14 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [laborRates, setLaborRates] = useState([]);
+  const [editingRate, setEditingRate] = useState(null);
+  const [rateForm, setRateForm] = useState({
+    role_name: '',
+    quoted_rate: 0,
+    assumed_rate: 0,
+    overtime_rate: 0
+  });
   const [settings, setSettings] = useState({
     smtp_host: '',
     smtp_port: 587,
@@ -55,6 +63,7 @@ const Settings = () => {
   useEffect(() => {
     fetchSettings();
     fetchCompany();
+    fetchLaborRates();
   }, []);
 
   const fetchSettings = async () => {
