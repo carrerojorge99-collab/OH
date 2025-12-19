@@ -386,13 +386,14 @@ const CostEstimateDetail = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="summary" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7 text-sm">
             <TabsTrigger value="summary">Resumen</TabsTrigger>
             <TabsTrigger value="labor">Mano de Obra</TabsTrigger>
             <TabsTrigger value="subcontractors">Subcontratistas</TabsTrigger>
             <TabsTrigger value="materials">Materiales</TabsTrigger>
             <TabsTrigger value="equipment">Equipos</TabsTrigger>
-            <TabsTrigger value="general">Condiciones</TabsTrigger>
+            <TabsTrigger value="transportation">Transporte</TabsTrigger>
+            <TabsTrigger value="general">Cond. Generales</TabsTrigger>
           </TabsList>
 
           {/* Summary Tab */}
