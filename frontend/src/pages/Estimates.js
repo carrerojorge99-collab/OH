@@ -20,6 +20,7 @@ import moment from 'moment';
 import 'moment/locale/es';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import NomenclatureSelector, { useNomenclature } from '../components/NomenclatureSelector';
 
 moment.locale('es');
 
