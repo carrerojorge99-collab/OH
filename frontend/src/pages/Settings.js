@@ -226,9 +226,12 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="company" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Empresa
+            </TabsTrigger>
+            <TabsTrigger value="labor-rates" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" /> Tarifas Laborales
             </TabsTrigger>
             <TabsTrigger value="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" /> Email SMTP

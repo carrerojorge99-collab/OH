@@ -18,6 +18,7 @@ import Invoices from './pages/Invoices';
 import Estimates from './pages/Estimates';
 import PurchaseOrders from './pages/PurchaseOrders';
 import CostEstimates from './pages/CostEstimates';
+import CostEstimateDetail from './pages/CostEstimateDetail';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -104,6 +105,12 @@ function AppRouter() {
       <Route path="/cost-estimates" element={
         <ProtectedRoute>
           <CostEstimates />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cost-estimates/:estimateId" element={
+        <ProtectedRoute>
+          <CostEstimateDetail />
         </ProtectedRoute>
       } />
       
