@@ -101,43 +101,14 @@ const Invoices = () => {
     try {
       await axios.post(`${API}/invoices/generate`, formData, { withCredentials: true });
       toast.success('Factura generada exitosamente');
-
-
-  const loadNomenclatures = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/nomenclatures`, { withCredentials: true });
-      setNomenclatures(response.data);
-    } catch (error) {
-      console.error('Error loading nomenclatures:', error);
-    }
-  };
-
-  const handleSelectNomenclature = async (nomenclatureId) => {
-    if (!nomenclatureId) {
-      setSelectedNomenclature('');
-      setGeneratedNumber('');
-      return;
-    }
-    
-    try {
-      const response = await axios.get(`${API_URL}/api/nomenclatures/next-number/${nomenclatureId}`, {
-        withCredentials: true
-      });
-      setSelectedNomenclature(nomenclatureId);
-      setGeneratedNumber(response.data.number);
-      setInvoiceForm(prev => ({ ...prev, invoice_number: response.data.number }));
-    } catch (error) {
-      toast.error('Error al generar número');
-    }
-  };
-
       setDialogOpen(false);
       setFormData({
         project_id: '',
         client_name: '',
         client_email: '',
         tax_rate: 16,
-        notes: ''
+        notes: '',
+        custom_number: ''
       });
       loadData();
     } catch (error) {
