@@ -3896,8 +3896,8 @@ class GeneralConditionItem(BaseModel):
 
 class CostEstimate(BaseModel):
     estimate_id: str
-    project_id: str
-    project_name: str
+    project_id: Optional[str] = None
+    project_name: Optional[str] = ""
     estimate_name: str
     labor_costs: List[LaborCostItem] = []
     subcontractors: List[SubcontractorItem] = []
@@ -3922,7 +3922,7 @@ class CostEstimate(BaseModel):
     updated_at: str
 
 class CostEstimateCreate(BaseModel):
-    project_id: str
+    project_id: Optional[str] = None
     estimate_name: str
     labor_costs: List[LaborCostItem] = []
     subcontractors: List[SubcontractorItem] = []
