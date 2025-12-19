@@ -82,7 +82,14 @@ const HumanResources = () => {
         ...profile, user_id: selectedEmployee.user_id
       }, { withCredentials: true });
       toast.success('Perfil guardado');
-      loadEmployees();
+      // Reload employees and update selected
+      const response = await axios.get(`${API}/api/employees`, { withCredentials: true });
+      setEmployees(response.data);
+      const updated = response.data.find(e => e.user_id === selectedEmployee.user_id);
+      if (updated) {
+        setSelectedEmployee(updated);
+        setProfile({ ...emptyProfile, ...updated.profile });
+      }
     } catch (error) {
       toast.error('Error al guardar perfil');
     }
