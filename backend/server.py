@@ -4188,8 +4188,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router)
-
 # ==================== REQUIRED DOCUMENTS ENDPOINTS ====================
 @api_router.get("/required-documents")
 async def get_required_documents(request: Request, session_token: Optional[str] = Cookie(None)):
