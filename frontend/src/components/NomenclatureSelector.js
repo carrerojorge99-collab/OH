@@ -54,7 +54,8 @@ export const useNomenclature = (onNumberGenerated) => {
   };
 };
 
-const NomenclatureSelector = ({ nomenclatures, selectedNomenclature, generatedNumber, onSelect, label = "Nomenclatura" }) => {
+const NomenclatureSelector = ({ nomenclatures = [], selectedNomenclature, generatedNumber, onSelect, label = "Nomenclatura" }) => {
+  console.log('NomenclatureSelector render, nomenclatures:', nomenclatures);
   return (
     <div className="grid grid-cols-2 gap-4">
       <div>
@@ -65,7 +66,7 @@ const NomenclatureSelector = ({ nomenclatures, selectedNomenclature, generatedNu
           onChange={(e) => onSelect(e.target.value)}
         >
           <option value="">Manual (sin nomenclatura)</option>
-          {nomenclatures.map(n => (
+          {Array.isArray(nomenclatures) && nomenclatures.map(n => (
             <option key={n.nomenclature_id} value={n.nomenclature_id}>
               {n.name} ({n.prefix})
             </option>
