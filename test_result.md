@@ -336,8 +336,8 @@ backend:
 
 metadata:
   created_by: "main_agent"
-  version: "9.0"
-  test_sequence: 9
+  version: "10.0"
+  test_sequence: 10
 
 test_plan:
   current_focus: []
