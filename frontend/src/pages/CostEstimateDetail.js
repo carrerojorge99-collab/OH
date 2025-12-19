@@ -28,8 +28,8 @@ const CostEstimateDetail = () => {
   const [subcontractors, setSubcontractors] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [equipment, setEquipment] = useState([]);
+  const [transportation, setTransportation] = useState([]);
   const [generalConditions, setGeneralConditions] = useState([]);
-  const [transportationCost, setTransportationCost] = useState(0);
   const [overheadPercentage, setOverheadPercentage] = useState(0);
   const [profitPercentage, setProfitPercentage] = useState(0);
   const [contingencyPercentage, setContingencyPercentage] = useState(0);
@@ -58,8 +58,8 @@ const CostEstimateDetail = () => {
         setSubcontractors(estimateRes.data.subcontractors || []);
         setMaterials(estimateRes.data.materials || []);
         setEquipment(estimateRes.data.equipment || []);
+        setTransportation(estimateRes.data.transportation || []);
         setGeneralConditions(estimateRes.data.general_conditions || []);
-        setTransportationCost(estimateRes.data.transportation_cost || 0);
         setOverheadPercentage(estimateRes.data.overhead_percentage || 0);
         setProfitPercentage(estimateRes.data.profit_percentage || 0);
         setContingencyPercentage(estimateRes.data.contingency_percentage || 0);
@@ -88,8 +88,8 @@ const CostEstimateDetail = () => {
         subcontractors,
         materials,
         equipment,
+        transportation,
         general_conditions: generalConditions,
-        transportation_cost: Number(transportationCost),
         overhead_percentage: Number(overheadPercentage),
         profit_percentage: Number(profitPercentage),
         contingency_percentage: Number(contingencyPercentage),
