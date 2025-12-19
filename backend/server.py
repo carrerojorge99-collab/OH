@@ -3886,6 +3886,7 @@ class CostEstimate(BaseModel):
     total_subcontractors_assumed: float = 0
     total_materials: float = 0
     total_equipment: float = 0
+    total_transportation: float = 0
     total_general_conditions: float = 0
     subtotal_quoted: float = 0
     subtotal_assumed: float = 0
@@ -3902,8 +3903,8 @@ class CostEstimateCreate(BaseModel):
     subcontractors: List[SubcontractorItem] = []
     materials: List[MaterialItem] = []
     equipment: List[EquipmentItem] = []
+    transportation: List[TransportationItem] = []
     general_conditions: List[GeneralConditionItem] = []
-    transportation_cost: float = 0
     overhead_percentage: float = 0
     profit_percentage: float = 0
     contingency_percentage: float = 0
