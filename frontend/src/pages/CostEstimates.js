@@ -122,27 +122,11 @@ const CostEstimates = () => {
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4 mt-4">
                         <div>
-                          <p className="text-xs text-slate-500">Costo Cotizado</p>
-                          <p className="text-lg font-bold text-blue-600">
-                            ${estimate.grand_total_quoted.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500">Costo Asumido</p>
-                          <p className="text-lg font-bold text-green-600">
-                            ${estimate.grand_total_assumed.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500">Diferencia</p>
-                          <p className={`text-lg font-bold ${
-                            estimate.grand_total_quoted - estimate.grand_total_assumed >= 0 
-                              ? 'text-green-600' 
-                              : 'text-red-600'
-                          }`}>
-                            ${Math.abs(estimate.grand_total_quoted - estimate.grand_total_assumed).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                          <p className="text-xs text-slate-500">Costo Total</p>
+                          <p className="text-xl font-bold text-blue-600">
+                            ${estimate.grand_total.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                         <div>
