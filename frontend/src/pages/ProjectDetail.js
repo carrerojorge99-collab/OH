@@ -3093,9 +3093,10 @@ const ProjectDetail = () => {
                                 </Badge>
                               </div>
                             </div>
-                          </li>
-                        ))}
-                      </ul>
+                          </div>
+                        </div>
+                      ))
+                    }
                     )}
                   </div>
                 </CardContent>
