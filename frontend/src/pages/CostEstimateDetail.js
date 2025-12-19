@@ -491,24 +491,19 @@ const CostEstimateDetail = () => {
 
                   <div className="grid grid-cols-3 gap-4 p-3 border-b">
                     <div>
-                      <p className="font-medium">Condiciones Generales</p>
+                      <p className="font-medium">Transporte</p>
                     </div>
                     <div className="text-right font-semibold" colSpan={2}>
-                      ${totals.totalGC.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      ${totals.totalTransportation.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 p-3 border-b">
                     <div>
-                      <p className="font-medium">Transporte</p>
+                      <p className="font-medium">Condiciones Generales</p>
                     </div>
                     <div className="text-right font-semibold" colSpan={2}>
-                      <Input
-                        type="number"
-                        value={transportationCost}
-                        onChange={(e) => setTransportationCost(e.target.value)}
-                        className="text-right"
-                      />
+                      ${totals.totalGC.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
