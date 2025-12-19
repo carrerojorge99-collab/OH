@@ -294,39 +294,30 @@ const CostEstimateDetail = () => {
 
   // Calculate totals
   const calculateTotals = () => {
-    const totalLaborQuoted = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal_quoted) || 0), 0);
-    const totalLaborAssumed = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal_assumed) || 0), 0);
-    const totalSubcontractorsQuoted = subcontractors.reduce((sum, item) => sum + (Number(item.quoted_cost) || 0), 0);
-    const totalSubcontractorsAssumed = subcontractors.reduce((sum, item) => sum + (Number(item.assumed_cost) || 0), 0);
+    const totalLabor = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
+    const totalSubcontractors = subcontractors.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
     const totalMaterials = materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const totalEquipment = equipment.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const totalTransportation = transportation.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const totalGC = generalConditions.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     
-    const subtotalQuoted = totalLaborQuoted + totalSubcontractorsQuoted + totalMaterials + 
-                          totalEquipment + totalTransportation + totalGC;
-    const subtotalAssumed = totalLaborAssumed + totalSubcontractorsAssumed + totalMaterials + 
-                           totalEquipment + totalTransportation + totalGC;
+    const subtotal = totalLabor + totalSubcontractors + totalMaterials + 
+                     totalEquipment + totalTransportation + totalGC;
     
     const multiplier = 1 + (Number(overheadPercentage) / 100) + (Number(profitPercentage) / 100) + 
                       (Number(contingencyPercentage) / 100) + (Number(taxPercentage) / 100);
     
-    const grandTotalQuoted = subtotalQuoted * multiplier;
-    const grandTotalAssumed = subtotalAssumed * multiplier;
+    const grandTotal = subtotal * multiplier;
 
     return {
-      totalLaborQuoted,
-      totalLaborAssumed,
-      totalSubcontractorsQuoted,
-      totalSubcontractorsAssumed,
+      totalLabor,
+      totalSubcontractors,
       totalMaterials,
       totalEquipment,
       totalTransportation,
       totalGC,
-      subtotalQuoted,
-      subtotalAssumed,
-      grandTotalQuoted,
-      grandTotalAssumed
+      subtotal,
+      grandTotal
     };
   };
 
