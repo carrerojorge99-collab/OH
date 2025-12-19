@@ -135,7 +135,7 @@ const Settings = () => {
           smtp_user: data.smtp_user || '',
           smtp_password: '',
           smtp_from_email: data.smtp_from_email || 'noreply@proyecthub.com',
-          smtp_from_name: data.smtp_from_name || 'ProyectHub',
+          smtp_from_name: data.smtp_from_name || 'OHSMS ProManage',
           email_notifications_enabled: data.email_notifications_enabled || false
         });
       }
