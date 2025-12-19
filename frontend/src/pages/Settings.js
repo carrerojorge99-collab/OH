@@ -41,6 +41,15 @@ const Settings = () => {
     starting_number: 100
   });
   const [editingNomenclature, setEditingNomenclature] = useState(null);
+  
+  // Payroll deductions state
+  const [payrollSettings, setPayrollSettings] = useState({
+    hacienda_percent: 0,
+    social_security_percent: 6.2,
+    medicare_percent: 1.45,
+    contractor_percent: 10
+  });
+  
   const [settings, setSettings] = useState({
     smtp_host: '',
     smtp_port: 587,
