@@ -142,29 +142,17 @@ frontend:
           comment: "Clock IN/OUT operations with project selection (LARC). Need to verify correct time recording and hours calculation."
 
 backend:
-  - task: "Project Logs CRUD API"
+  - task: "Timezone Configuration - America/Puerto_Rico"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: true
+        - working: "NA"
           agent: "main"
-          comment: "✅ Verified via curl: POST /api/project-logs creates log successfully (plog_320652d819454928). GET /api/project-logs?project_id=X returns logs correctly."
-
-  - task: "Estimate to Invoice Conversion API"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "✅ Verified via curl: PUT /api/estimates/{id}/status?status=approved works. POST /api/estimates/{id}/convert creates invoice INV-2025-0001 successfully."
+          comment: "Backend timezone changed from UTC to America/Puerto_Rico (GMT-4). Clock API endpoints should return times in Puerto Rico timezone."
 
 metadata:
   created_by: "main_agent"
