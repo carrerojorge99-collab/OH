@@ -136,6 +136,7 @@ class EmployeeProfile(BaseModel):
     position: Optional[str] = ""
     hire_date: Optional[str] = ""
     employment_type: Optional[str] = ""  # full-time, part-time, contractor
+    worker_classification: Optional[str] = "employee"  # employee or contractor (servicios profesionales)
     salary: Optional[float] = 0
     pay_frequency: Optional[str] = ""  # weekly, biweekly, monthly
     bank_name: Optional[str] = ""
