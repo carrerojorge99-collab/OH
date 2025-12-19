@@ -79,19 +79,75 @@ const HumanResources = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API}/employees/${selectedEmployee.user_id}/profile`, {
-        ...profile, user_id: selectedEmployee.user_id
-      }, { withCredentials: true });
+      // Prepare data ensuring all values are sent
+      const dataToSave = {
+        phone: profile.phone || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        zipcode: profile.zipcode || '',
+        date_of_birth: profile.date_of_birth || '',
+        gender: profile.gender || '',
+        marital_status: profile.marital_status || '',
+        nationality: profile.nationality || '',
+        id_number: profile.id_number || '',
+        department: profile.department || '',
+        position: profile.position || '',
+        hire_date: profile.hire_date || '',
+        employment_type: profile.employment_type || '',
+        worker_classification: profile.worker_classification || 'employee',
+        salary: parseFloat(profile.salary) || 0,
+        hourly_rate: parseFloat(profile.hourly_rate) || 0,
+        pay_frequency: profile.pay_frequency || '',
+        bank_name: profile.bank_name || '',
+        bank_account: profile.bank_account || '',
+        emergency_contact_name: profile.emergency_contact_name || '',
+        emergency_contact_phone: profile.emergency_contact_phone || '',
+        emergency_contact_relationship: profile.emergency_contact_relationship || '',
+        notes: profile.notes || '',
+        user_id: selectedEmployee.user_id
+      };
+      
+      console.log('Saving profile:', dataToSave);
+      
+      await axios.put(`${API}/employees/${selectedEmployee.user_id}/profile`, dataToSave, { withCredentials: true });
       toast.success('Perfil guardado');
+      
       // Reload employees and update selected
       const response = await axios.get(`${API}/employees`, { withCredentials: true });
       setEmployees(response.data);
       const updated = response.data.find(e => e.user_id === selectedEmployee.user_id);
       if (updated) {
         setSelectedEmployee(updated);
-        setProfile({ ...emptyProfile, ...updated.profile });
+        // Update profile with fresh data from server
+        const freshProfile = updated.profile || {};
+        setProfile({
+          phone: freshProfile.phone || '',
+          address: freshProfile.address || '',
+          city: freshProfile.city || '',
+          zipcode: freshProfile.zipcode || '',
+          date_of_birth: freshProfile.date_of_birth || '',
+          gender: freshProfile.gender || '',
+          marital_status: freshProfile.marital_status || '',
+          nationality: freshProfile.nationality || '',
+          id_number: freshProfile.id_number || '',
+          department: freshProfile.department || '',
+          position: freshProfile.position || '',
+          hire_date: freshProfile.hire_date || '',
+          employment_type: freshProfile.employment_type || '',
+          worker_classification: freshProfile.worker_classification || '',
+          salary: freshProfile.salary || 0,
+          hourly_rate: freshProfile.hourly_rate || 0,
+          pay_frequency: freshProfile.pay_frequency || '',
+          bank_name: freshProfile.bank_name || '',
+          bank_account: freshProfile.bank_account || '',
+          emergency_contact_name: freshProfile.emergency_contact_name || '',
+          emergency_contact_phone: freshProfile.emergency_contact_phone || '',
+          emergency_contact_relationship: freshProfile.emergency_contact_relationship || '',
+          notes: freshProfile.notes || ''
+        });
       }
     } catch (error) {
+      console.error('Error saving profile:', error);
       toast.error('Error al guardar perfil');
     }
     setSaving(false);
