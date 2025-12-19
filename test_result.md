@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test complete Cost Estimates system with tabs functionality - Labor Rates configuration, Cost Estimate creation, all tabs functionality, calculations, and CRUD operations"
+user_problem_statement: "Test the ProyectHub application focusing on: 1) Login Flow with credentials carrerojorge99@gmail.com / Axel52418!, 2) Project Detail - Logs Tab (Bitácora) functionality, 3) Project Detail - Required Documents Tab (Documentos Requeridos) functionality"
 
 frontend:
   - task: "Labor Rates Configuration in Settings"
