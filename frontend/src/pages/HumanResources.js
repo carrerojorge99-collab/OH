@@ -131,6 +131,9 @@ const HumanResources = () => {
             <h1 className="text-2xl font-bold text-slate-900">Recursos Humanos</h1>
             <p className="text-slate-600">Gestión de perfiles y documentos de empleados</p>
           </div>
+          <Button onClick={() => navigate('/payroll')} className="bg-green-600 hover:bg-green-700">
+            <Calculator className="w-4 h-4 mr-2" /> Procesar Nómina
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
