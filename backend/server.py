@@ -4892,7 +4892,7 @@ async def upload_employee_document(
     }
     
     await db.employee_documents.insert_one(doc)
-    del doc["_id"] if "_id" in doc else None
+    doc.pop("_id", None)
     return doc
 
 @api_router.delete("/employees/{employee_id}/documents/{doc_id}")
