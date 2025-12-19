@@ -4168,6 +4168,434 @@ async def delete_cost_estimate(
     
     return {"message": "Estimación eliminada exitosamente"}
 
+# ==================== COST ESTIMATE EXPORT ENDPOINTS ====================
+@api_router.get("/cost-estimates/{estimate_id}/export/pdf")
+async def export_cost_estimate_pdf(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    import io
+    
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=20, alignment=1)
+    heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], fontSize=12, spaceAfter=10, spaceBefore=15)
+    
+    elements = []
+    
+    # Title
+    elements.append(Paragraph(f"Estimación de Costos: {estimate.get('estimate_name', 'Sin nombre')}", title_style))
+    elements.append(Paragraph(f"Proyecto: {estimate.get('project_name', 'N/A')}", styles['Normal']))
+    elements.append(Paragraph(f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ALIGN', (-1, 1), (-1, -1), 'RIGHT'),
+    ])
+    
+    # Labor Costs Section
+    labor_costs = estimate.get('labor_costs', [])
+    if labor_costs:
+        elements.append(Paragraph("Mano de Obra", heading_style))
+        labor_data = [['Rol', 'Horas', 'Tarifa/Hora', 'Subtotal']]
+        for item in labor_costs:
+            labor_data.append([
+                item.get('role_name', ''),
+                str(item.get('hours', 0)),
+                f"${item.get('hourly_rate', 0):,.2f}",
+                f"${item.get('subtotal', 0):,.2f}"
+            ])
+        labor_data.append(['', '', 'Total:', f"${estimate.get('total_labor', 0):,.2f}"])
+        t = Table(labor_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        t.setStyle(table_style)
+        elements.append(t)
+    
+    # Subcontractors Section
+    subcontractors = estimate.get('subcontractors', [])
+    if subcontractors:
+        elements.append(Paragraph("Subcontratistas", heading_style))
+        sub_data = [['Oficio', 'Descripción', 'Costo']]
+        for item in subcontractors:
+            sub_data.append([
+                item.get('trade', ''),
+                item.get('description', '')[:40],
+                f"${item.get('cost', 0):,.2f}"
+            ])
+        sub_data.append(['', 'Total:', f"${estimate.get('total_subcontractors', 0):,.2f}"])
+        t = Table(sub_data, colWidths=[2*inch, 3*inch, 1.5*inch])
+        t.setStyle(table_style)
+        elements.append(t)
+    
+    # Materials Section
+    materials = estimate.get('materials', [])
+    if materials:
+        elements.append(Paragraph("Materiales", heading_style))
+        mat_data = [['Descripción', 'Cantidad', 'Precio Unitario', 'Total']]
+        for item in materials:
+            mat_data.append([
+                item.get('description', '')[:30],
+                str(item.get('quantity', 0)),
+                f"${item.get('unit_cost', 0):,.2f}",
+                f"${item.get('total', 0):,.2f}"
+            ])
+        mat_data.append(['', '', 'Total:', f"${estimate.get('total_materials', 0):,.2f}"])
+        t = Table(mat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        t.setStyle(table_style)
+        elements.append(t)
+    
+    # Equipment Section
+    equipment = estimate.get('equipment', [])
+    if equipment:
+        elements.append(Paragraph("Equipos", heading_style))
+        eq_data = [['Descripción', 'Cantidad', 'Días', 'Tarifa/Día', 'Total']]
+        for item in equipment:
+            eq_data.append([
+                item.get('description', '')[:25],
+                str(item.get('quantity', 0)),
+                str(item.get('days', 0)),
+                f"${item.get('rate_per_day', 0):,.2f}",
+                f"${item.get('total', 0):,.2f}"
+            ])
+        eq_data.append(['', '', '', 'Total:', f"${estimate.get('total_equipment', 0):,.2f}"])
+        t = Table(eq_data, colWidths=[2*inch, 1*inch, 0.8*inch, 1.2*inch, 1.5*inch])
+        t.setStyle(table_style)
+        elements.append(t)
+    
+    # Transportation Section
+    transportation = estimate.get('transportation', [])
+    if transportation:
+        elements.append(Paragraph("Transporte", heading_style))
+        trans_data = [['Descripción', 'Cantidad', 'Costo Unitario', 'Total']]
+        for item in transportation:
+            trans_data.append([
+                item.get('description', '')[:30],
+                str(item.get('quantity', 0)),
+                f"${item.get('unit_cost', 0):,.2f}",
+                f"${item.get('total', 0):,.2f}"
+            ])
+        trans_data.append(['', '', 'Total:', f"${estimate.get('total_transportation', 0):,.2f}"])
+        t = Table(trans_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        t.setStyle(table_style)
+        elements.append(t)
+    
+    # General Conditions Section
+    general_conditions = estimate.get('general_conditions', [])
+    if general_conditions:
+        elements.append(Paragraph("Condiciones Generales", heading_style))
+        gc_data = [['Descripción', 'Cantidad', 'Costo Unitario', 'Total']]
+        for item in general_conditions:
+            gc_data.append([
+                item.get('description', '')[:30],
+                str(item.get('quantity', 0)),
+                f"${item.get('unit_cost', 0):,.2f}",
+                f"${item.get('total', 0):,.2f}"
+            ])
+        gc_data.append(['', '', 'Total:', f"${estimate.get('total_general_conditions', 0):,.2f}"])
+        t = Table(gc_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        t.setStyle(table_style)
+        elements.append(t)
+    
+    # Summary Section
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph("Resumen", heading_style))
+    
+    summary_data = [
+        ['Concepto', 'Monto'],
+        ['Subtotal', f"${estimate.get('subtotal', 0):,.2f}"],
+        [f"Gastos Generales ({estimate.get('overhead_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('overhead_percentage', 0) / 100:,.2f}"],
+        [f"Utilidad ({estimate.get('profit_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('profit_percentage', 0) / 100:,.2f}"],
+        [f"Contingencia ({estimate.get('contingency_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('contingency_percentage', 0) / 100:,.2f}"],
+        [f"Impuestos ({estimate.get('tax_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('tax_percentage', 0) / 100:,.2f}"],
+        ['GRAN TOTAL', f"${estimate.get('grand_total', 0):,.2f}"],
+    ]
+    
+    summary_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#dbeafe')),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+    ])
+    
+    t = Table(summary_data, colWidths=[4*inch, 2.5*inch])
+    t.setStyle(summary_style)
+    elements.append(t)
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    filename = f"estimacion_{estimate_id}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/cost-estimates/{estimate_id}/export/excel")
+async def export_cost_estimate_excel(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.utils import get_column_letter
+    import io
+    
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    wb = Workbook()
+    
+    # Styles
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1e40af", end_color="1e40af", fill_type="solid")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    currency_format = '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'
+    
+    # Summary Sheet
+    ws_summary = wb.active
+    ws_summary.title = "Resumen"
+    
+    ws_summary['A1'] = "Estimación de Costos"
+    ws_summary['A1'].font = Font(bold=True, size=16)
+    ws_summary.merge_cells('A1:D1')
+    
+    ws_summary['A2'] = f"Nombre: {estimate.get('estimate_name', '')}"
+    ws_summary['A3'] = f"Proyecto: {estimate.get('project_name', '')}"
+    ws_summary['A4'] = f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}"
+    
+    # Summary table starting at row 6
+    summary_headers = ['Categoría', 'Total']
+    for col, header in enumerate(summary_headers, 1):
+        cell = ws_summary.cell(row=6, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+    
+    summary_data = [
+        ('Mano de Obra', estimate.get('total_labor', 0)),
+        ('Subcontratistas', estimate.get('total_subcontractors', 0)),
+        ('Materiales', estimate.get('total_materials', 0)),
+        ('Equipos', estimate.get('total_equipment', 0)),
+        ('Transporte', estimate.get('total_transportation', 0)),
+        ('Condiciones Generales', estimate.get('total_general_conditions', 0)),
+        ('Subtotal', estimate.get('subtotal', 0)),
+        (f"Gastos Generales ({estimate.get('overhead_percentage', 0)}%)", estimate.get('subtotal', 0) * estimate.get('overhead_percentage', 0) / 100),
+        (f"Utilidad ({estimate.get('profit_percentage', 0)}%)", estimate.get('subtotal', 0) * estimate.get('profit_percentage', 0) / 100),
+        (f"Contingencia ({estimate.get('contingency_percentage', 0)}%)", estimate.get('subtotal', 0) * estimate.get('contingency_percentage', 0) / 100),
+        (f"Impuestos ({estimate.get('tax_percentage', 0)}%)", estimate.get('subtotal', 0) * estimate.get('tax_percentage', 0) / 100),
+        ('GRAN TOTAL', estimate.get('grand_total', 0)),
+    ]
+    
+    for row_idx, (category, total) in enumerate(summary_data, 7):
+        ws_summary.cell(row=row_idx, column=1, value=category).border = border
+        cell = ws_summary.cell(row=row_idx, column=2, value=total)
+        cell.border = border
+        cell.number_format = currency_format
+    
+    # Make last row bold
+    ws_summary.cell(row=18, column=1).font = Font(bold=True)
+    ws_summary.cell(row=18, column=2).font = Font(bold=True)
+    
+    ws_summary.column_dimensions['A'].width = 35
+    ws_summary.column_dimensions['B'].width = 20
+    
+    # Labor Costs Sheet
+    labor_costs = estimate.get('labor_costs', [])
+    if labor_costs:
+        ws_labor = wb.create_sheet("Mano de Obra")
+        headers = ['Rol', 'Horas', 'Tarifa/Hora', 'Subtotal']
+        for col, header in enumerate(headers, 1):
+            cell = ws_labor.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = border
+        
+        for row_idx, item in enumerate(labor_costs, 2):
+            ws_labor.cell(row=row_idx, column=1, value=item.get('role_name', '')).border = border
+            ws_labor.cell(row=row_idx, column=2, value=item.get('hours', 0)).border = border
+            cell = ws_labor.cell(row=row_idx, column=3, value=item.get('hourly_rate', 0))
+            cell.border = border
+            cell.number_format = currency_format
+            cell = ws_labor.cell(row=row_idx, column=4, value=item.get('subtotal', 0))
+            cell.border = border
+            cell.number_format = currency_format
+        
+        for col in range(1, 5):
+            ws_labor.column_dimensions[get_column_letter(col)].width = 18
+    
+    # Subcontractors Sheet
+    subcontractors = estimate.get('subcontractors', [])
+    if subcontractors:
+        ws_sub = wb.create_sheet("Subcontratistas")
+        headers = ['Oficio', 'Descripción', 'Costo']
+        for col, header in enumerate(headers, 1):
+            cell = ws_sub.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = border
+        
+        for row_idx, item in enumerate(subcontractors, 2):
+            ws_sub.cell(row=row_idx, column=1, value=item.get('trade', '')).border = border
+            ws_sub.cell(row=row_idx, column=2, value=item.get('description', '')).border = border
+            cell = ws_sub.cell(row=row_idx, column=3, value=item.get('cost', 0))
+            cell.border = border
+            cell.number_format = currency_format
+        
+        ws_sub.column_dimensions['A'].width = 20
+        ws_sub.column_dimensions['B'].width = 40
+        ws_sub.column_dimensions['C'].width = 18
+    
+    # Materials Sheet
+    materials = estimate.get('materials', [])
+    if materials:
+        ws_mat = wb.create_sheet("Materiales")
+        headers = ['Descripción', 'Cantidad', 'Precio Unitario', 'Total']
+        for col, header in enumerate(headers, 1):
+            cell = ws_mat.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = border
+        
+        for row_idx, item in enumerate(materials, 2):
+            ws_mat.cell(row=row_idx, column=1, value=item.get('description', '')).border = border
+            ws_mat.cell(row=row_idx, column=2, value=item.get('quantity', 0)).border = border
+            cell = ws_mat.cell(row=row_idx, column=3, value=item.get('unit_cost', 0))
+            cell.border = border
+            cell.number_format = currency_format
+            cell = ws_mat.cell(row=row_idx, column=4, value=item.get('total', 0))
+            cell.border = border
+            cell.number_format = currency_format
+        
+        for col in range(1, 5):
+            ws_mat.column_dimensions[get_column_letter(col)].width = 18
+    
+    # Equipment Sheet
+    equipment = estimate.get('equipment', [])
+    if equipment:
+        ws_eq = wb.create_sheet("Equipos")
+        headers = ['Descripción', 'Cantidad', 'Días', 'Tarifa/Día', 'Total']
+        for col, header in enumerate(headers, 1):
+            cell = ws_eq.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = border
+        
+        for row_idx, item in enumerate(equipment, 2):
+            ws_eq.cell(row=row_idx, column=1, value=item.get('description', '')).border = border
+            ws_eq.cell(row=row_idx, column=2, value=item.get('quantity', 0)).border = border
+            ws_eq.cell(row=row_idx, column=3, value=item.get('days', 0)).border = border
+            cell = ws_eq.cell(row=row_idx, column=4, value=item.get('rate_per_day', 0))
+            cell.border = border
+            cell.number_format = currency_format
+            cell = ws_eq.cell(row=row_idx, column=5, value=item.get('total', 0))
+            cell.border = border
+            cell.number_format = currency_format
+        
+        for col in range(1, 6):
+            ws_eq.column_dimensions[get_column_letter(col)].width = 18
+    
+    # Transportation Sheet
+    transportation = estimate.get('transportation', [])
+    if transportation:
+        ws_trans = wb.create_sheet("Transporte")
+        headers = ['Descripción', 'Cantidad', 'Costo Unitario', 'Total']
+        for col, header in enumerate(headers, 1):
+            cell = ws_trans.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = border
+        
+        for row_idx, item in enumerate(transportation, 2):
+            ws_trans.cell(row=row_idx, column=1, value=item.get('description', '')).border = border
+            ws_trans.cell(row=row_idx, column=2, value=item.get('quantity', 0)).border = border
+            cell = ws_trans.cell(row=row_idx, column=3, value=item.get('unit_cost', 0))
+            cell.border = border
+            cell.number_format = currency_format
+            cell = ws_trans.cell(row=row_idx, column=4, value=item.get('total', 0))
+            cell.border = border
+            cell.number_format = currency_format
+        
+        for col in range(1, 5):
+            ws_trans.column_dimensions[get_column_letter(col)].width = 18
+    
+    # General Conditions Sheet
+    general_conditions = estimate.get('general_conditions', [])
+    if general_conditions:
+        ws_gc = wb.create_sheet("Condiciones Generales")
+        headers = ['Descripción', 'Cantidad', 'Costo Unitario', 'Total']
+        for col, header in enumerate(headers, 1):
+            cell = ws_gc.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = border
+        
+        for row_idx, item in enumerate(general_conditions, 2):
+            ws_gc.cell(row=row_idx, column=1, value=item.get('description', '')).border = border
+            ws_gc.cell(row=row_idx, column=2, value=item.get('quantity', 0)).border = border
+            cell = ws_gc.cell(row=row_idx, column=3, value=item.get('unit_cost', 0))
+            cell.border = border
+            cell.number_format = currency_format
+            cell = ws_gc.cell(row=row_idx, column=4, value=item.get('total', 0))
+            cell.border = border
+            cell.number_format = currency_format
+        
+        for col in range(1, 5):
+            ws_gc.column_dimensions[get_column_letter(col)].width = 18
+    
+    # Save to buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    filename = f"estimacion_{estimate_id}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 # ==================== REQUIRED DOCUMENTS ENDPOINTS ====================
 @api_router.get("/required-documents")
 async def get_required_documents(request: Request, session_token: Optional[str] = Cookie(None)):
