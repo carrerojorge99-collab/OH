@@ -217,6 +217,125 @@ const Settings = () => {
     setRateForm({ role_name: '', quoted_rate: 0, assumed_rate: 0, overtime_rate: 0 });
   };
 
+  // Documents functions
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/required-documents`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setDocumentsFromClient(data.from_client || []);
+        setDocumentsToClient(data.to_client || []);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    }
+  };
+
+  const handleAddDocFromClient = async () => {
+    if (!newDocFromClient.trim()) return;
+    try {
+      const response = await fetch(`${API_URL}/api/required-documents/from-client`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ document_name: newDocFromClient })
+      });
+      if (response.ok) {
+        toast.success('Documento agregado');
+        setNewDocFromClient('');
+        fetchDocuments();
+      }
+    } catch (error) {
+      toast.error('Error al agregar documento');
+    }
+  };
+
+  const handleAddDocToClient = async () => {
+    if (!newDocToClient.trim()) return;
+    try {
+      const response = await fetch(`${API_URL}/api/required-documents/to-client`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ document_name: newDocToClient })
+      });
+      if (response.ok) {
+        toast.success('Documento agregado');
+        setNewDocToClient('');
+        fetchDocuments();
+      }
+    } catch (error) {
+      toast.error('Error al agregar documento');
+    }
+  };
+
+  const handleDeleteDoc = async (docId, type) => {
+    try {
+      await fetch(`${API_URL}/api/required-documents/${docId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      toast.success('Documento eliminado');
+      fetchDocuments();
+    } catch (error) {
+      toast.error('Error al eliminar documento');
+    }
+  };
+
+  // Nomenclatures functions
+  const fetchNomenclatures = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/nomenclatures`, { credentials: 'include' });
+      if (response.ok) {
+        setNomenclatures(await response.json());
+      }
+    } catch (error) {
+      console.error('Error fetching nomenclatures:', error);
+    }
+  };
+
+  const handleSaveNomenclature = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingNomenclature) {
+        await fetch(`${API_URL}/api/nomenclatures/${editingNomenclature.nomenclature_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(nomenclatureForm)
+        });
+        toast.success('Nomenclatura actualizada');
+        setEditingNomenclature(null);
+      } else {
+        await fetch(`${API_URL}/api/nomenclatures`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(nomenclatureForm)
+        });
+        toast.success('Nomenclatura creada');
+      }
+      setNomenclatureForm({ name: '', prefix: '', type: 'estimate', starting_number: 100 });
+      fetchNomenclatures();
+    } catch (error) {
+      toast.error('Error al guardar nomenclatura');
+    }
+  };
+
+  const handleDeleteNomenclature = async (id) => {
+    if (!window.confirm('¿Eliminar esta nomenclatura?')) return;
+    try {
+      await fetch(`${API_URL}/api/nomenclatures/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      toast.success('Nomenclatura eliminada');
+      fetchNomenclatures();
+    } catch (error) {
+      toast.error('Error al eliminar');
+    }
+  };
+
   const handleSaveCompany = async (e) => {
     e.preventDefault();
     setSavingCompany(true);
