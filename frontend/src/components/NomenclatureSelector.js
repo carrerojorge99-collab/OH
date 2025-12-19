@@ -1,0 +1,81 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
+import { toast } from 'sonner';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+export const useNomenclature = (onNumberGenerated) => {
+  const [nomenclatures, setNomenclatures] = useState([]);
+  const [selectedNomenclature, setSelectedNomenclature] = useState('');
+  const [generatedNumber, setGeneratedNumber] = useState('');
+
+  useEffect(() => {
+    loadNomenclatures();
+  }, []);
+
+  const loadNomenclatures = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/nomenclatures`, { withCredentials: true });
+      setNomenclatures(response.data);
+    } catch (error) {
+      console.error('Error loading nomenclatures:', error);
+    }
+  };
+
+  const handleSelectNomenclature = async (nomenclatureId) => {
+    if (!nomenclatureId) {
+      setSelectedNomenclature('');
+      setGeneratedNumber('');
+      onNumberGenerated && onNumberGenerated('');
+      return;
+    }
+    
+    try {
+      const response = await axios.get(`${API_URL}/api/nomenclatures/next-number/${nomenclatureId}`, {
+        withCredentials: true
+      });
+      setSelectedNomenclature(nomenclatureId);
+      setGeneratedNumber(response.data.number);
+      onNumberGenerated && onNumberGenerated(response.data.number);
+    } catch (error) {
+      toast.error('Error al generar número');
+    }
+  };
+
+  return {
+    nomenclatures,
+    selectedNomenclature,
+    generatedNumber,
+    handleSelectNomenclature
+  };
+};
+
+const NomenclatureSelector = ({ nomenclatures, selectedNomenclature, generatedNumber, onSelect, label = "Nomenclatura" }) => {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <Label>{label}</Label>
+        <select 
+          className="w-full border rounded px-3 py-2"
+          value={selectedNomenclature}
+          onChange={(e) => onSelect(e.target.value)}
+        >
+          <option value="">Manual (sin nomenclatura)</option>
+          {nomenclatures.map(n => (
+            <option key={n.nomenclature_id} value={n.nomenclature_id}>
+              {n.name} ({n.prefix})
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <Label>Número Generado</Label>
+        <Input value={generatedNumber} disabled placeholder="Se generará automáticamente" />
+      </div>
+    </div>
+  );
+};
+
+export default NomenclatureSelector;
