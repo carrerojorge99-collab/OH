@@ -3098,7 +3098,7 @@ const ProjectDetail = () => {
                       ))
                   ) : (
                     <p className="text-center text-slate-500 py-8">No hay registros</p>
-                  )}}
+                  )}
                   </div>
                 </CardContent>
               </Card>
