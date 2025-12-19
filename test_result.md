@@ -105,65 +105,41 @@
 user_problem_statement: "Test timezone fixes and chronological ordering in punch system (ClockInOut.js)"
 
 frontend:
-  - task: "Project Logs (Bitácora) UI - Create Log"
+  - task: "Timezone Correction - Puerto Rico GMT-4"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/ProjectDetail.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/ClockInOut.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Bitácora tab implemented in ProjectDetail.js. Uses /api/project-logs endpoints."
-        - working: true
-          agent: "main"
-          comment: "✅ Fixed moment.js and Edit icon imports. Bitácora tab now loads correctly. Log created via API appears in list. Nuevo Registro button visible."
+          comment: "Backend timezone changed from UTC to America/Puerto_Rico (GMT-4). Need to verify punch times display correctly in Puerto Rico timezone."
 
-  - task: "Project Logs (Bitácora) UI - List and Filter"
+  - task: "Chronological Ordering - Punch History"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/ProjectDetail.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/ClockInOut.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Log list with filtering by type."
-        - working: true
-          agent: "main"
-          comment: "✅ Verified via screenshot: Bitácora tab shows log list correctly with filters (Todos, Trabajo, Actualización, Problema, Hito, Nota). Test log 'Prueba de bitácora' appears with 2.5h."
+          comment: "Punches in 'Historial de Hoy' section ordered chronologically (earliest first) using sort by clock_in time. Lines 57-60 in ClockInOut.js."
 
-  - task: "Project Logs (Bitácora) UI - Edit and Delete"
+  - task: "Clock IN/OUT Functionality"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/ProjectDetail.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/ClockInOut.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Edit and delete functionality for logs."
-        - working: true
-          agent: "main"
-          comment: "✅ Verified via screenshot: Edit and delete buttons visible on log entries."
-
-  - task: "Estimate to Invoice Conversion UI"
-    implemented: true
-    working: true
-    file: "/app/frontend/src/pages/Estimates.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-          agent: "main"
-          comment: "Convert button appears for approved estimates. handleConvert function calls POST /api/estimates/{id}/convert."
-        - working: true
-          agent: "main"
-          comment: "✅ Full flow verified: Estimate EST-2025-0001 converted to Invoice INV-2025-0001 ($1535.91). Estimate shows 'Convertido' status. Invoice appears in Facturas page with correct data."
+          comment: "Clock IN/OUT operations with project selection (LARC). Need to verify correct time recording and hours calculation."
 
 backend:
   - task: "Project Logs CRUD API"
