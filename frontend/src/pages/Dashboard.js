@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import QuickTimesheet from '../components/QuickTimesheet';
@@ -36,8 +36,8 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const [statsRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/dashboard/stats?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`${API}/dashboard/stats?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       
       setStats(statsRes.data);

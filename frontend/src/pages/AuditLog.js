@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -26,7 +26,7 @@ const AuditLog = () => {
   const loadLogs = async () => {
     try {
       const params = filterType !== 'all' ? `?entity_type=${filterType}` : '';
-      const response = await axios.get(`${API}/audit-logs${params}`, { withCredentials: true });
+      const response = await api.get(`${API}/audit-logs${params}`, { withCredentials: true });
       setLogs(response.data);
     } catch (error) {
       toast.error('Error al cargar historial');

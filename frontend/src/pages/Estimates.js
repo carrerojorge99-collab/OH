@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -93,8 +93,8 @@ const Estimates = () => {
   const loadData = async () => {
     try {
       const [estimatesRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/estimates?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`${API}/estimates?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setEstimates(estimatesRes.data || []);
       setProjects(projectsRes.data || []);
@@ -180,10 +180,10 @@ const Estimates = () => {
       };
 
       if (editingEstimate) {
-        await axios.put(`${API}/estimates/${editingEstimate}`, payload, { withCredentials: true });
+        await api.put(`${API}/estimates/${editingEstimate}`, payload, { withCredentials: true });
         toast.success('Estimado actualizado');
       } else {
-        await axios.post(`${API}/estimates`, payload, { withCredentials: true });
+        await api.post(`${API}/estimates`, payload, { withCredentials: true });
         toast.success('Estimado creado');
       }
       
@@ -219,7 +219,7 @@ const Estimates = () => {
     if (!window.confirm('¿Eliminar este estimado?')) return;
     
     try {
-      await axios.delete(`${API}/estimates/${estimateId}`, { withCredentials: true });
+      await api.delete(`${API}/estimates/${estimateId}`, { withCredentials: true });
       toast.success('Estimado eliminado');
       // Actualizar estado local inmediatamente para reflejar el cambio
       setEstimates(prev => prev.filter(e => e.estimate_id !== estimateId));
@@ -230,7 +230,7 @@ const Estimates = () => {
 
   const handleStatusChange = async (estimateId, newStatus) => {
     try {
-      await axios.put(`${API}/estimates/${estimateId}/status?status=${newStatus}`, {}, { withCredentials: true });
+      await api.put(`${API}/estimates/${estimateId}/status?status=${newStatus}`, {}, { withCredentials: true });
       toast.success(`Estado cambiado a ${statusLabels[newStatus]}`);
       loadData();
     } catch (error) {
@@ -240,7 +240,7 @@ const Estimates = () => {
 
   const handleSend = async (estimateId) => {
     try {
-      await axios.post(`${API}/estimates/${estimateId}/send`, {}, { withCredentials: true });
+      await api.post(`${API}/estimates/${estimateId}/send`, {}, { withCredentials: true });
       toast.success('Estimado enviado');
       loadData();
     } catch (error) {
@@ -250,7 +250,7 @@ const Estimates = () => {
 
   const handleDuplicate = async (estimateId) => {
     try {
-      await axios.post(`${API}/estimates/${estimateId}/duplicate`, {}, { withCredentials: true });
+      await api.post(`${API}/estimates/${estimateId}/duplicate`, {}, { withCredentials: true });
       toast.success('Estimado duplicado');
       loadData();
     } catch (error) {
@@ -262,7 +262,7 @@ const Estimates = () => {
     if (!window.confirm('¿Convertir este estimado a factura?')) return;
     
     try {
-      const res = await axios.post(`${API}/estimates/${estimateId}/convert`, {}, { withCredentials: true });
+      const res = await api.post(`${API}/estimates/${estimateId}/convert`, {}, { withCredentials: true });
       toast.success(`Factura ${res.data.invoice_number} creada`);
       loadData();
     } catch (error) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -39,15 +39,15 @@ const ClockInOut = () => {
       
       // Load history, active clock, and projects
       const [historyRes, activeRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
+        api.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        axios.get(`${API}/clock/active?_t=${timestamp}`, { 
+        api.get(`${API}/clock/active?_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        axios.get(`${API}/clock/projects?_t=${timestamp}`, { 
+        api.get(`${API}/clock/projects?_t=${timestamp}`, { 
           withCredentials: true 
         })
       ]);
@@ -98,7 +98,7 @@ const ClockInOut = () => {
     try {
       const location = await getLocation();
 
-      await axios.post(
+      await api.post(
         `${API}/clock/in`,
         null,
         {
@@ -131,7 +131,7 @@ const ClockInOut = () => {
     try {
       const location = await getLocation();
 
-      await axios.post(
+      await api.post(
         `${API}/clock/out`,
         null,
         {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -79,8 +79,8 @@ const Invoices = () => {
   const loadData = async () => {
     try {
       const [invoicesRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/invoices?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`${API}/invoices?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`${API}/projects?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setInvoices(invoicesRes.data);
       setProjects(projectsRes.data);
@@ -101,7 +101,7 @@ const Invoices = () => {
     }
 
     try {
-      await axios.post(`${API}/invoices/generate`, formData, { withCredentials: true });
+      await api.post(`${API}/invoices/generate`, formData, { withCredentials: true });
       toast.success('Factura generada exitosamente');
       setDialogOpen(false);
       setFormData({
@@ -121,7 +121,7 @@ const Invoices = () => {
 
   const handleUpdateStatus = async (invoiceId, newStatus) => {
     try {
-      await axios.put(
+      await api.put(
         `${API}/invoices/${invoiceId}/status`,
         null,
         {
@@ -140,7 +140,7 @@ const Invoices = () => {
     if (!window.confirm(`¿Eliminar factura ${invoiceNumber}?`)) return;
 
     try {
-      await axios.delete(`${API}/invoices/${invoiceId}`, { 
+      await api.delete(`${API}/invoices/${invoiceId}`, { 
         withCredentials: true,
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
       });
@@ -161,7 +161,7 @@ const Invoices = () => {
     }
 
     try {
-      await axios.post(`${API}/invoices/${invoiceId}/send`, {}, { withCredentials: true });
+      await api.post(`${API}/invoices/${invoiceId}/send`, {}, { withCredentials: true });
       toast.success(`Factura enviada a ${clientEmail}`);
       loadData();
     } catch (error) {
@@ -180,7 +180,7 @@ const Invoices = () => {
     
     // Load existing payments
     try {
-      const response = await axios.get(`${API}/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
+      const response = await api.get(`${API}/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
       setPayments(response.data);
     } catch (error) {
       console.error('Error loading payments:', error);
@@ -193,7 +193,7 @@ const Invoices = () => {
     e.preventDefault();
 
     try {
-      await axios.post(
+      await api.post(
         `${API}/invoices/${selectedInvoiceForPayment.invoice_id}/payments`,
         paymentForm,
         { withCredentials: true }

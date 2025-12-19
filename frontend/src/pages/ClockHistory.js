@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -104,7 +104,7 @@ const ClockHistory = () => {
     }
     
     try {
-      await axios.delete(`${API}/clock/${clockId}`, { withCredentials: true });
+      await api.delete(`${API}/clock/${clockId}`, { withCredentials: true });
       toast.success('Ponche eliminado exitosamente');
       loadData(); // Reload data
     } catch (error) {
@@ -117,12 +117,12 @@ const ClockHistory = () => {
     try {
       const timestamp = Date.now();
       const [entriesRes, usersRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/clock/all?_t=${timestamp}`, { 
+        api.get(`${API}/clock/all?_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        axios.get(`${API}/users?_t=${timestamp}`, { withCredentials: true }),
-        axios.get(`${API}/projects?_t=${timestamp}`, { withCredentials: true })
+        api.get(`${API}/users?_t=${timestamp}`, { withCredentials: true }),
+        api.get(`${API}/projects?_t=${timestamp}`, { withCredentials: true })
       ]);
 
       setClockEntries([...(entriesRes.data || [])]);
