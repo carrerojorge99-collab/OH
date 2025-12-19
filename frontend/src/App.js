@@ -101,6 +101,12 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       
+      <Route path="/cost-estimates" element={
+        <ProtectedRoute>
+          <CostEstimates />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/audit-log" element={
         <ProtectedRoute>
           <AuditLog />
