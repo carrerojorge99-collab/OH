@@ -28,7 +28,7 @@ const CostEstimates = () => {
   const loadData = async () => {
     try {
       const [estimatesRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/cost-estimates`, { withCredentials: true }),
+        axios.get(`${API}/cost-estimates?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
         axios.get(`${API}/projects`, { withCredentials: true })
       ]);
       
