@@ -28,7 +28,11 @@ const ClockInOut = () => {
 
   useEffect(() => {
     loadData();
-    const timer = setInterval(() => setCurrentTime(new Date()), 250);
+    // Usar moment con timezone de Puerto Rico para el reloj
+    const timer = setInterval(() => {
+      const prTime = moment.tz('America/Puerto_Rico').toDate();
+      setCurrentTime(prTime);
+    }, 250);
     return () => clearInterval(timer);
   }, []);
 
