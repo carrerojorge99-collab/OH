@@ -107,6 +107,97 @@ const Settings = () => {
     }
   };
 
+  const fetchLaborRates = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/labor-rates`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLaborRates(data);
+      }
+    } catch (error) {
+      console.error('Error fetching labor rates:', error);
+    }
+  };
+
+  const handleSaveRate = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      if (editingRate) {
+        // Update existing rate
+        const response = await fetch(`${API_URL}/api/labor-rates/${editingRate.rate_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(rateForm)
+        });
+
+        if (response.ok) {
+          toast.success('Tarifa actualizada exitosamente');
+          setEditingRate(null);
+          setRateForm({ role_name: '', quoted_rate: 0, assumed_rate: 0, overtime_rate: 0 });
+          fetchLaborRates();
+        }
+      } else {
+        // Create new rate
+        const response = await fetch(`${API_URL}/api/labor-rates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(rateForm)
+        });
+
+        if (response.ok) {
+          toast.success('Tarifa creada exitosamente');
+          setRateForm({ role_name: '', quoted_rate: 0, assumed_rate: 0, overtime_rate: 0 });
+          fetchLaborRates();
+        }
+      }
+    } catch (error) {
+      toast.error('Error al guardar tarifa');
+      console.error('Error:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditRate = (rate) => {
+    setEditingRate(rate);
+    setRateForm({
+      role_name: rate.role_name,
+      quoted_rate: rate.quoted_rate,
+      assumed_rate: rate.assumed_rate,
+      overtime_rate: rate.overtime_rate
+    });
+  };
+
+  const handleDeleteRate = async (rateId) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta tarifa?')) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/labor-rates/${rateId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        toast.success('Tarifa eliminada');
+        fetchLaborRates();
+      }
+    } catch (error) {
+      toast.error('Error al eliminar tarifa');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRate(null);
+    setRateForm({ role_name: '', quoted_rate: 0, assumed_rate: 0, overtime_rate: 0 });
+  };
+
   const handleSaveCompany = async (e) => {
     e.preventDefault();
     setSavingCompany(true);
