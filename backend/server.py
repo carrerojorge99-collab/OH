@@ -4232,7 +4232,17 @@ async def add_document_to_client(
     
     if user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Solo administradores")
-
+    
+    doc_id = f"doc_{uuid4().hex[:16]}"
+    doc = {
+        "document_id": doc_id,
+        "document_name": data["document_name"],
+        "direction": "to_client",
+        "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.required_documents.insert_one(doc)
+    return doc
 
 # ==================== PROJECT DOCUMENT STATUS ====================
 @api_router.get("/projects/{project_id}/document-status")
