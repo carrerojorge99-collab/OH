@@ -4256,7 +4256,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==================== REQUIRED DOCUMENTS ENDPOINTS ====================
+logging.basicConfig(
 @api_router.get("/required-documents")
 async def get_required_documents(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
