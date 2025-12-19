@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -44,10 +44,10 @@ const CostEstimateDetail = () => {
     try {
       const [estimateRes, ratesRes, projectsRes] = await Promise.all([
         estimateId !== 'new' 
-          ? axios.get(`${API_URL}/api/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
+          ? api.get(`${API_URL}/api/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
           : Promise.resolve({ data: null }),
-        axios.get(`${API_URL}/api/labor-rates?_t=${ts}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/projects?_t=${ts}`, { withCredentials: true })
+        api.get(`${API_URL}/api/labor-rates?_t=${ts}`, { withCredentials: true }),
+        api.get(`${API_URL}/api/projects?_t=${ts}`, { withCredentials: true })
       ]);
 
       setLaborRates(ratesRes.data);
@@ -98,11 +98,11 @@ const CostEstimateDetail = () => {
       };
 
       if (estimateId === 'new') {
-        const res = await axios.post(`${API_URL}/api/cost-estimates`, data, { withCredentials: true });
+        const res = await api.post(`${API_URL}/api/cost-estimates`, data, { withCredentials: true });
         toast.success('Estimación creada');
         navigate(`/cost-estimates/${res.data.estimate_id}`);
       } else {
-        await axios.put(`${API_URL}/api/cost-estimates/${estimateId}`, data, { withCredentials: true });
+        await api.put(`${API_URL}/api/cost-estimates/${estimateId}`, data, { withCredentials: true });
         toast.success('Estimación actualizada');
         loadData();
       }
