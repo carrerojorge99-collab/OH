@@ -1,7 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import axios from "axios";
 import "@/index.css";
 import App from "@/App";
+
+// Disable axios caching
+axios.defaults.headers.common['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+axios.defaults.headers.common['Pragma'] = 'no-cache';
+axios.defaults.headers.common['Expires'] = '0';
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
