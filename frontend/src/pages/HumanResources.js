@@ -213,6 +213,17 @@ const HumanResources = () => {
                   </TabsContent>
 
                   <TabsContent value="employment" className="space-y-4 mt-4">
+                    <div className="p-4 bg-amber-50 rounded-lg mb-4">
+                      <Label className="text-amber-800 font-medium">Clasificación para Nómina</Label>
+                      <p className="text-xs text-amber-600 mb-2">Define cómo se calcularán los descuentos</p>
+                      <Select value={profile.worker_classification} onValueChange={(v) => setProfile({...profile, worker_classification: v})}>
+                        <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="employee">Empleado de la Empresa (Hacienda, SS, Medicare)</SelectItem>
+                          <SelectItem value="contractor">Servicios Profesionales (10% Retención)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div><Label>Departamento</Label><Input value={profile.department} onChange={(e) => setProfile({...profile, department: e.target.value})} placeholder="Operaciones" /></div>
                       <div><Label>Puesto</Label><Input value={profile.position} onChange={(e) => setProfile({...profile, position: e.target.value})} placeholder="Supervisor" /></div>
