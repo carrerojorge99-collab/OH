@@ -12,7 +12,8 @@ import 'moment/locale/es';
 
 moment.locale('es');
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const CostEstimates = () => {
   const navigate = useNavigate();
