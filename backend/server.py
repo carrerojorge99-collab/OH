@@ -127,6 +127,7 @@ class EmployeeProfile(BaseModel):
     address: Optional[str] = ""
     city: Optional[str] = ""
     zipcode: Optional[str] = ""
+    country: Optional[str] = ""
     date_of_birth: Optional[str] = ""
     gender: Optional[str] = ""
     marital_status: Optional[str] = ""
@@ -137,7 +138,7 @@ class EmployeeProfile(BaseModel):
     position: Optional[str] = ""
     hire_date: Optional[str] = ""
     employment_type: Optional[str] = ""  # full-time, part-time, contractor
-    worker_classification: Optional[str] = "employee"  # employee or contractor (servicios profesionales)
+    worker_classification: Optional[str] = ""  # employee or contractor (servicios profesionales)
     salary: Optional[float] = 0
     hourly_rate: Optional[float] = 0
     pay_frequency: Optional[str] = ""  # weekly, biweekly, semimonthly, monthly
