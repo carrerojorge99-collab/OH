@@ -155,13 +155,16 @@ const ProjectDetail = () => {
   const [requiredDocsToClient, setRequiredDocsToClient] = useState([]);
   const [projectDocStatus, setProjectDocStatus] = useState({});
 
-
-    loadRequiredDocuments();
-
-
   useEffect(() => {
     loadProjectData();
     loadUsers();
+  }, [projectId]);
+  
+  // Load required documents when project loads
+  useEffect(() => {
+    if (projectId) {
+      loadRequiredDocuments();
+    }
   }, [projectId]);
 
   const loadUsers = async () => {
