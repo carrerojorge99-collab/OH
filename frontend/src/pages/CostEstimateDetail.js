@@ -221,6 +221,35 @@ const CostEstimateDetail = () => {
     }]);
   };
 
+  // Transportation functions
+  const addTransportationRow = () => {
+    setTransportation([...transportation, {
+      description: '',
+      city_town: '',
+      roundtrip_miles: 0,
+      cost_per_mile: 0,
+      days: 0,
+      total: 0
+    }]);
+  };
+
+  const updateTransportationRow = (index, field, value) => {
+    const updated = [...transportation];
+    updated[index][field] = value;
+    
+    if (field === 'roundtrip_miles' || field === 'cost_per_mile' || field === 'days') {
+      updated[index].total = (Number(updated[index].roundtrip_miles) || 0) * 
+                              (Number(updated[index].cost_per_mile) || 0) * 
+                              (Number(updated[index].days) || 0);
+    }
+    
+    setTransportation(updated);
+  };
+
+  const deleteTransportationRow = (index) => {
+    setTransportation(transportation.filter((_, i) => i !== index));
+  };
+
   const updateEquipmentRow = (index, field, value) => {
     const updated = [...equipment];
     updated[index][field] = value;
@@ -271,12 +300,13 @@ const CostEstimateDetail = () => {
     const totalSubcontractorsAssumed = subcontractors.reduce((sum, item) => sum + (Number(item.assumed_cost) || 0), 0);
     const totalMaterials = materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const totalEquipment = equipment.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+    const totalTransportation = transportation.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const totalGC = generalConditions.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     
     const subtotalQuoted = totalLaborQuoted + totalSubcontractorsQuoted + totalMaterials + 
-                          totalEquipment + totalGC + Number(transportationCost);
+                          totalEquipment + totalTransportation + totalGC;
     const subtotalAssumed = totalLaborAssumed + totalSubcontractorsAssumed + totalMaterials + 
-                           totalEquipment + totalGC + Number(transportationCost);
+                           totalEquipment + totalTransportation + totalGC;
     
     const multiplier = 1 + (Number(overheadPercentage) / 100) + (Number(profitPercentage) / 100) + 
                       (Number(contingencyPercentage) / 100) + (Number(taxPercentage) / 100);
@@ -291,6 +321,7 @@ const CostEstimateDetail = () => {
       totalSubcontractorsAssumed,
       totalMaterials,
       totalEquipment,
+      totalTransportation,
       totalGC,
       subtotalQuoted,
       subtotalAssumed,
