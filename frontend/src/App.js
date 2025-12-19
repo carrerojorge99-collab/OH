@@ -21,6 +21,7 @@ import CostEstimates from './pages/CostEstimates';
 import CostEstimateDetail from './pages/CostEstimateDetail';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
+import HumanResources from './pages/HumanResources';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
