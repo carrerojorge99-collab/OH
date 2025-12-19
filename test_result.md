@@ -102,85 +102,163 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test timezone fixes and chronological ordering in punch system (ClockInOut.js)"
+user_problem_statement: "Test complete Cost Estimates system with tabs functionality - Labor Rates configuration, Cost Estimate creation, all tabs functionality, calculations, and CRUD operations"
 
 frontend:
-  - task: "Timezone Correction - Puerto Rico GMT-4"
+  - task: "Labor Rates Configuration in Settings"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/ClockInOut.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/Settings.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Backend timezone changed from UTC to America/Puerto_Rico (GMT-4). Need to verify punch times display correctly in Puerto Rico timezone."
-        - working: true
-          agent: "testing"
-          comment: "✅ VERIFIED: Time displays correctly in 12-hour format with AM/PM (12:38:12 a.m.). Date shows in Spanish format (viernes, 19 de diciembre de 2025). Punch times recorded as 00:20:25 → 00:36:50 which appears to be in correct timezone (midnight hour range for Puerto Rico)."
+          comment: "Labor Rates tab in Settings page implemented with CRUD operations. Need to test adding Project Manager, Soldador, and Ayudante rates with quoted/assumed/overtime values."
 
-  - task: "Chronological Ordering - Punch History"
+  - task: "Cost Estimates List Page"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/ClockInOut.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimates.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Punches in 'Historial de Hoy' section ordered chronologically (earliest first) using sort by clock_in time. Lines 57-60 in ClockInOut.js."
-        - working: true
-          agent: "testing"
-          comment: "✅ VERIFIED: Chronological ordering working correctly. Tested with single punch entry showing Row 1: 00:20:25 - LARC. The sorting logic (lines 57-60) correctly orders punches by clock_in time with earliest first."
+          comment: "Cost Estimates list page with empty state, Nueva Estimación button, and estimate cards showing totals and project association. Need to verify navigation and display."
 
-  - task: "Clock IN/OUT Functionality"
+  - task: "Cost Estimate Detail - Basic Info Form"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/ClockInOut.js"
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Clock IN/OUT operations with project selection (LARC). Need to verify correct time recording and hours calculation."
-        - working: true
-          agent: "testing"
-          comment: "✅ VERIFIED: Full Clock IN/OUT cycle completed successfully. LARC project selection works. Clock IN at 00:20:25, Clock OUT at 00:36:50. Hours calculation correct (0.27h). Status updates properly (Estado: En turno → Sin ponche). Toast notifications working."
+          comment: "New estimate form with name and project selection. Need to test creating estimate with 'Estimación Prueba #1' and LARC project selection."
 
-backend:
-  - task: "Timezone Configuration - America/Puerto_Rico"
+  - task: "Cost Estimate Detail - Resumen Tab"
     implemented: true
-    working: true
-    file: "/app/backend/server.py"
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Backend timezone changed from UTC to America/Puerto_Rico (GMT-4). Clock API endpoints should return times in Puerto Rico timezone."
-        - working: true
-          agent: "testing"
-          comment: "✅ VERIFIED: Backend timezone configuration working correctly. API returns times in Puerto Rico timezone. Clock IN/OUT operations recorded at midnight hour (00:20:25, 00:36:50) which is appropriate for Puerto Rico GMT-4 timezone during testing time."
+          comment: "Summary tab showing totals breakdown, transportation input, percentage fields (overhead, profit, contingency, taxes), and final calculations. Need to verify calculations update automatically."
+
+  - task: "Cost Estimate Detail - Mano de Obra Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Labor tab with role selection from labor rates, quantity/hours inputs, automatic rate population, and subtotal calculations. Need to test adding Project Manager and Soldador roles."
+
+  - task: "Cost Estimate Detail - Subcontratistas Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Subcontractors tab with trade selection (Civil/Mechanical/Electrical), description, quoted/assumed costs. Need to test adding Civil subcontractor for foundations work."
+
+  - task: "Cost Estimate Detail - Materiales Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Materials tab with description, quantity, unit cost, and automatic total calculation. Need to test adding structural steel material."
+
+  - task: "Cost Estimate Detail - Equipos Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Equipment tab with description, quantity, days, rate/day, and automatic total calculation (qty * days * rate). Need to test adding crane equipment."
+
+  - task: "Cost Estimate Detail - Condiciones Generales Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "General Conditions tab with description, quantity, unit cost, and automatic total calculation. Need to test adding supervision item."
+
+  - task: "Cost Estimate Save/Update Functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimateDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Save functionality for creating new estimates and updating existing ones. Need to test full save cycle and navigation back to list."
+
+  - task: "Cost Estimate Edit and Delete Operations"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/CostEstimates.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Edit (Ver button) and Delete (trash icon) operations from estimates list. Need to test editing existing estimate and deletion with confirmation."
 
 metadata:
   created_by: "main_agent"
-  version: "6.0"
-  test_sequence: 6
+  version: "7.0"
+  test_sequence: 7
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Labor Rates Configuration in Settings"
+    - "Cost Estimates List Page"
+    - "Cost Estimate Detail - Basic Info Form"
+    - "Cost Estimate Detail - Resumen Tab"
+    - "Cost Estimate Detail - Mano de Obra Tab"
+    - "Cost Estimate Detail - Subcontratistas Tab"
+    - "Cost Estimate Detail - Materiales Tab"
+    - "Cost Estimate Detail - Equipos Tab"
+    - "Cost Estimate Detail - Condiciones Generales Tab"
+    - "Cost Estimate Save/Update Functionality"
+    - "Cost Estimate Edit and Delete Operations"
   stuck_tasks: []
-  test_all: false
-  test_priority: "high_first"
+  test_all: true
+  test_priority: "sequential"
 
 agent_communication:
     - agent: "testing"
-      message: "STARTING TIMEZONE AND CHRONOLOGICAL ORDERING TESTS: Will test punch system with credentials carrerojorge99@gmail.com / Axel52418! to verify: 1) Puerto Rico timezone (GMT-4) display, 2) Chronological ordering in history, 3) Clock IN/OUT with LARC project."
-    - agent: "testing"
-      message: "✅ COMPREHENSIVE TESTING COMPLETED: All timezone and chronological ordering fixes verified successfully. 1) Timezone: Times display in 12-hour AM/PM format, dates in Spanish, punch times recorded correctly in Puerto Rico timezone. 2) Chronological ordering: Verified working with sort by clock_in time. 3) Clock IN/OUT: Full cycle tested with LARC project - hours calculation (0.27h), status updates, and time recording all working correctly."
-    - agent: "testing"
-      message: "🎯 FINAL VERIFICATION COMPLETED (Dec 19, 2025): All timezone fixes working perfectly! ✅ Date shows 'jueves, 18 de diciembre de 2025' (correct - NOT viernes 19) ✅ Time displays 8:44 PM format (Puerto Rico timezone) ✅ Real-time clock updates correctly ✅ Clock IN/OUT with LARC project successful ✅ Chronological ordering verified ✅ Hours calculation working (0.27h) ✅ Status changes working (Sin ponche ↔ En turno). Minor: Time format shows 'pm' instead of 'p.m.' but functionality is correct."
+      message: "STARTING COMPREHENSIVE COST ESTIMATES SYSTEM TESTING: Will test complete flow from Labor Rates configuration in Settings through Cost Estimate creation, all tabs functionality, calculations, and CRUD operations using credentials carrerojorge99@gmail.com / Axel52418!. Testing sequence: 1) Configure 3 labor rates in Settings, 2) Create new estimate, 3) Test all 6 tabs with data entry, 4) Verify calculations, 5) Test edit/delete operations."
