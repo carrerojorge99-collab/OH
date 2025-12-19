@@ -949,6 +949,47 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
+          {/* Payroll Tab */}
+          <TabsContent value="payroll">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuración de Descuentos de Nómina</CardTitle>
+                <CardDescription>Porcentajes de descuento para empleados y contratistas</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-800 mb-2">Empleados de la Empresa</h4>
+                  <p className="text-sm text-blue-600 mb-4">Estos descuentos aplican a empleados en nómina regular</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Hacienda (%)</Label>
+                      <Input type="number" step="0.01" value={payrollSettings.hacienda_percent} onChange={(e) => setPayrollSettings({...payrollSettings, hacienda_percent: parseFloat(e.target.value) || 0})} />
+                    </div>
+                    <div>
+                      <Label>Seguro Social (%)</Label>
+                      <Input type="number" step="0.01" value={payrollSettings.social_security_percent} onChange={(e) => setPayrollSettings({...payrollSettings, social_security_percent: parseFloat(e.target.value) || 0})} />
+                    </div>
+                    <div>
+                      <Label>Medicare (%)</Label>
+                      <Input type="number" step="0.01" value={payrollSettings.medicare_percent} onChange={(e) => setPayrollSettings({...payrollSettings, medicare_percent: parseFloat(e.target.value) || 0})} />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-amber-50 rounded-lg">
+                  <h4 className="font-medium text-amber-800 mb-2">Servicios Profesionales / Contratistas</h4>
+                  <p className="text-sm text-amber-600 mb-4">Este descuento aplica a trabajadores por cuenta propia</p>
+                  <div className="w-1/3">
+                    <Label>Retención (%)</Label>
+                    <Input type="number" step="0.01" value={payrollSettings.contractor_percent} onChange={(e) => setPayrollSettings({...payrollSettings, contractor_percent: parseFloat(e.target.value) || 0})} />
+                  </div>
+                </div>
+                <Button onClick={handleSavePayrollSettings} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                  <Save className="w-4 h-4 mr-2" /> {saving ? 'Guardando...' : 'Guardar Configuración'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Documents Tab */}
           <TabsContent value="documents">
             <div className="space-y-6">
