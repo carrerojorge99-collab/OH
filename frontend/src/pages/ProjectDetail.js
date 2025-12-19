@@ -3137,9 +3137,8 @@ const ProjectDetail = () => {
                     </div>
                   )}
                 </div>
-                </CardContent>
-              </Card>
-            </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Required Documents Tab */}
