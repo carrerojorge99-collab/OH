@@ -4138,9 +4138,9 @@ async def update_cost_estimate(
     total_transportation = sum(item.total for item in estimate_data.transportation)
     total_general_conditions = sum(item.total for item in estimate_data.general_conditions)
     
-    subtotal_quoted = (
-        total_labor_quoted + 
-        total_subcontractors_quoted + 
+    subtotal = (
+        total_labor + 
+        total_subcontractors + 
         total_materials + 
         total_equipment + 
         total_transportation +
