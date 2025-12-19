@@ -1531,7 +1531,8 @@ async def clock_in(
     
     # Create clock entry
     clock_id = f"clk_{uuid4().hex[:16]}"
-    now = datetime.now(timezone.utc)
+    # Usar zona horaria de Puerto Rico en lugar de UTC
+    now = datetime.now(PUERTO_RICO_TZ)
     
     clock_doc = {
         "clock_id": clock_id,
