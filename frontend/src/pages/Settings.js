@@ -90,7 +90,36 @@ const Settings = () => {
     fetchLaborRates();
     fetchDocuments();
     fetchNomenclatures();
+    fetchPayrollSettings();
   }, []);
+  
+  const fetchPayrollSettings = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/payroll-settings`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setPayrollSettings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching payroll settings');
+    }
+  };
+  
+  const handleSavePayrollSettings = async () => {
+    setSaving(true);
+    try {
+      await fetch(`${API_URL}/api/payroll-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payrollSettings)
+      });
+      toast.success('Configuración de nómina guardada');
+    } catch (error) {
+      toast.error('Error al guardar');
+    }
+    setSaving(false);
+  };
 
   const fetchSettings = async () => {
     try {
