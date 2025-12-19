@@ -405,16 +405,24 @@ const Estimates = () => {
                 <DialogTitle>{editingEstimate ? 'Editar Estimado' : 'Nuevo Estimado'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Número personalizado */}
-                <div className="space-y-2">
-                  <Label>Número de Estimado (opcional)</Label>
-                  <Input 
-                    value={form.custom_number} 
-                    onChange={(e) => setForm({...form, custom_number: e.target.value})} 
-                    placeholder="Ej: EST-2025-0150 (dejar vacío para auto-generar)"
-                  />
-                  <p className="text-xs text-slate-500">Si lo deja vacío, se generará automáticamente</p>
-                </div>
+                {/* Nomenclatura */}
+                <NomenclatureSelector
+                  nomenclatures={nomenclatures}
+                  selectedNomenclature={selectedNomenclature}
+                  generatedNumber={generatedNumber}
+                  onSelect={handleSelectNomenclature}
+                  label="Nomenclatura de Estimado"
+                />
+                {!selectedNomenclature && (
+                  <div className="space-y-2">
+                    <Label>Número Manual (opcional)</Label>
+                    <Input 
+                      value={form.custom_number} 
+                      onChange={(e) => setForm({...form, custom_number: e.target.value})} 
+                      placeholder="Ej: EST-2025-0150"
+                    />
+                  </div>
+                )}
 
                 {/* Client Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
