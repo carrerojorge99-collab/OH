@@ -4049,24 +4049,8 @@ async def create_cost_estimate(
         total_general_conditions
     )
     
-    subtotal_assumed = (
-        total_labor_assumed + 
-        total_subcontractors_assumed + 
-        total_materials + 
-        total_equipment + 
-        total_transportation +
-        total_general_conditions
-    )
-    
     # Apply percentages
-    grand_total_quoted = subtotal_quoted * (
-        1 + estimate_data.overhead_percentage / 100 +
-        estimate_data.profit_percentage / 100 +
-        estimate_data.contingency_percentage / 100 +
-        estimate_data.tax_percentage / 100
-    )
-    
-    grand_total_assumed = subtotal_assumed * (
+    grand_total = subtotal * (
         1 + estimate_data.overhead_percentage / 100 +
         estimate_data.profit_percentage / 100 +
         estimate_data.contingency_percentage / 100 +
@@ -4134,24 +4118,8 @@ async def update_cost_estimate(
         total_general_conditions
     )
     
-    subtotal_assumed = (
-        total_labor_assumed + 
-        total_subcontractors_assumed + 
-        total_materials + 
-        total_equipment + 
-        total_transportation +
-        total_general_conditions
-    )
-    
     # Apply percentages
-    grand_total_quoted = subtotal_quoted * (
-        1 + estimate_data.overhead_percentage / 100 +
-        estimate_data.profit_percentage / 100 +
-        estimate_data.contingency_percentage / 100 +
-        estimate_data.tax_percentage / 100
-    )
-    
-    grand_total_assumed = subtotal_assumed * (
+    grand_total = subtotal * (
         1 + estimate_data.overhead_percentage / 100 +
         estimate_data.profit_percentage / 100 +
         estimate_data.contingency_percentage / 100 +
