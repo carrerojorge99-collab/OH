@@ -4056,10 +4056,12 @@ async def create_cost_estimate(
 ):
     user = await get_current_user(request, session_token)
     
-    # Verify project exists
-    project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0})
-    if not project:
-        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    # Get project name if project_id is provided
+    project_name = ""
+    if estimate_data.project_id:
+        project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0})
+        if project:
+            project_name = project.get("name", "")
     
     estimate_id = f"ce_{uuid4().hex[:16]}"
     now = datetime.now(PUERTO_RICO_TZ).isoformat()
