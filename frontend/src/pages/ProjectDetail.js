@@ -156,6 +156,9 @@ const ProjectDetail = () => {
   const [projectDocStatus, setProjectDocStatus] = useState({});
 
 
+    loadRequiredDocuments();
+
+
   useEffect(() => {
     loadProjectData();
     loadUsers();
@@ -275,6 +278,46 @@ const ProjectDetail = () => {
     } catch (error) {
       toast.error('Error al crear categoría');
     }
+
+
+  // Load required documents and project status
+  const loadRequiredDocuments = async () => {
+    try {
+      const [docsRes, statusRes] = await Promise.all([
+        axios.get(`${API}/required-documents`, { withCredentials: true }),
+        axios.get(`${API}/projects/${projectId}/document-status`, { withCredentials: true })
+      ]);
+      
+      setRequiredDocsFromClient(docsRes.data.from_client || []);
+      setRequiredDocsToClient(docsRes.data.to_client || []);
+      setProjectDocStatus(statusRes.data || {});
+    } catch (error) {
+      console.error('Error loading required documents:', error);
+    }
+  };
+
+  const toggleDocumentStatus = async (documentId, direction) => {
+    try {
+      const currentStatus = projectDocStatus[documentId] || false;
+      const newStatus = !currentStatus;
+      
+      await axios.post(`${API}/projects/${projectId}/document-status`, {
+        document_id: documentId,
+        direction: direction,
+        status: newStatus
+      }, { withCredentials: true });
+      
+      setProjectDocStatus(prev => ({
+        ...prev,
+        [documentId]: newStatus
+      }));
+      
+      toast.success(newStatus ? 'Documento marcado como completado' : 'Documento marcado como pendiente');
+    } catch (error) {
+      toast.error('Error al actualizar estado del documento');
+    }
+  };
+
   };
 
   const handleEditCategory = (category) => {
