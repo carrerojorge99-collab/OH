@@ -1591,7 +1591,8 @@ async def clock_out(
     
     # Calculate hours worked
     clock_in_time = datetime.fromisoformat(active_clock['clock_in'])
-    clock_out_time = datetime.now(timezone.utc)
+    # Usar zona horaria de Puerto Rico en lugar de UTC
+    clock_out_time = datetime.now(PUERTO_RICO_TZ)
     hours_worked = (clock_out_time - clock_in_time).total_seconds() / 3600
     
     # Update clock entry
