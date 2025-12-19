@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -27,8 +27,8 @@ const CostEstimates = () => {
   const loadData = async () => {
     try {
       const [estimatesRes, projectsRes] = await Promise.all([
-        api.get(`/cost-estimates`, { withCredentials: true }),
-        api.get(`/projects`, { withCredentials: true })
+        axios.get(`${API}/api/cost-estimates`, { withCredentials: true }),
+        axios.get(`${API}/api/projects`, { withCredentials: true })
       ]);
       
       setEstimates(estimatesRes.data);
@@ -45,7 +45,7 @@ const CostEstimates = () => {
     if (!window.confirm('¿Estás seguro de eliminar esta estimación?')) return;
 
     try {
-      await api.delete(`/cost-estimates/${estimateId}`, {
+      await axios.delete(`${API}/api/cost-estimates/${estimateId}`, {
         withCredentials: true
       });
       toast.success('Estimación eliminada');
@@ -142,7 +142,7 @@ const CostEstimates = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => navigate(`/cost-estimates/${estimate.estimate_id}`)}
+                        onClick={() => navigate(`${API}/api/cost-estimates/${estimate.estimate_id}`)}
                       >
                         <Pencil className="w-4 h-4 mr-1" />
                         Ver

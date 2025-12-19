@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -44,10 +44,10 @@ const CostEstimateDetail = () => {
     try {
       const [estimateRes, ratesRes, projectsRes] = await Promise.all([
         estimateId !== 'new' 
-          ? api.get(`/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
+          ? axios.get(`${API}/api/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
           : Promise.resolve({ data: null }),
-        api.get(`/labor-rates?_t=${ts}`, { withCredentials: true }),
-        api.get(`/projects?_t=${ts}`, { withCredentials: true })
+        axios.get(`${API}/api/labor-rates?_t=${ts}`, { withCredentials: true }),
+        axios.get(`${API}/api/projects?_t=${ts}`, { withCredentials: true })
       ]);
 
       setLaborRates(ratesRes.data);
@@ -98,11 +98,11 @@ const CostEstimateDetail = () => {
       };
 
       if (estimateId === 'new') {
-        const res = await api.post(`/cost-estimates`, data, { withCredentials: true });
+        const res = await axios.post(`${API}/api/cost-estimates`, data, { withCredentials: true });
         toast.success('Estimación creada');
-        navigate(`/cost-estimates/${res.data.estimate_id}`);
+        navigate(`${API}/api/cost-estimates/${res.data.estimate_id}`);
       } else {
-        await api.put(`/cost-estimates/${estimateId}`, data, { withCredentials: true });
+        await axios.put(`${API}/api/cost-estimates/${estimateId}`, data, { withCredentials: true });
         toast.success('Estimación actualizada');
         loadData();
       }
@@ -357,14 +357,14 @@ const CostEstimateDetail = () => {
               <>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`/cost-estimates/${estimateId}/export/pdf`, '_blank')}
+                  onClick={() => window.open(`${API}/api/cost-estimates/${estimateId}/export/pdf`, '_blank')}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   PDF
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`/cost-estimates/${estimateId}/export/excel`, '_blank')}
+                  onClick={() => window.open(`${API}/api/cost-estimates/${estimateId}/export/excel`, '_blank')}
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
                   Excel

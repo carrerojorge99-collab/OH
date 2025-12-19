@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -24,8 +24,8 @@ const Reports = () => {
   const loadData = async () => {
     try {
       const [projectsRes, tasksRes] = await Promise.all([
-        api.get(`/projects`, { withCredentials: true }),
-        api.get(`/tasks`, { withCredentials: true })
+        axios.get(`${API}/api/projects`, { withCredentials: true }),
+        axios.get(`${API}/api/tasks`, { withCredentials: true })
       ]);
       
       setProjects(projectsRes.data);
@@ -35,7 +35,7 @@ const Reports = () => {
       const allExpenses = [];
       for (const project of projectsRes.data) {
         try {
-          const expensesRes = await api.get(`/expenses?project_id=${project.project_id}`, { withCredentials: true });
+          const expensesRes = await axios.get(`${API}/api/expenses?project_id=${project.project_id}`, { withCredentials: true });
           allExpenses.push(...expensesRes.data.map(e => ({ ...e, project_name: project.name })));
         } catch (err) {
           console.error('Error loading expenses:', err);

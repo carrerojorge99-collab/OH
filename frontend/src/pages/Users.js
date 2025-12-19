@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -52,7 +52,7 @@ const Users = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await api.get(`/users`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/users`, { withCredentials: true });
       setUsers(response.data);
     } catch (error) {
       toast.error('Error al cargar usuarios');
@@ -66,7 +66,7 @@ const Users = () => {
     e.preventDefault();
     
     try {
-      await api.post(`/auth/register`, formData, { withCredentials: true });
+      await axios.post(`${API}/api/auth/register`, formData, { withCredentials: true });
       toast.success('Usuario creado exitosamente');
       setDialogOpen(false);
       setFormData({
@@ -152,7 +152,7 @@ const Users = () => {
         updateData.password = editFormData.password;
       }
       
-      await api.put(`/users/${editingUserId}`, updateData, { withCredentials: true });
+      await axios.put(`${API}/api/users/${editingUserId}`, updateData, { withCredentials: true });
       toast.success('Usuario actualizado exitosamente');
       setEditDialogOpen(false);
       setEditFormData({
@@ -175,7 +175,7 @@ const Users = () => {
     }
     
     try {
-      await api.delete(`/users/${userId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/users/${userId}`, { withCredentials: true });
       toast.success(`Usuario ${userName} eliminado exitosamente`);
       loadUsers();
     } catch (error) {

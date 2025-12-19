@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -32,8 +32,8 @@ const Payroll = () => {
   const loadData = async () => {
     try {
       const [empRes, settingsRes] = await Promise.all([
-        api.get(`/employees`, { withCredentials: true }),
-        api.get(`/payroll-settings`, { withCredentials: true })
+        axios.get(`${API}/api/employees`, { withCredentials: true }),
+        axios.get(`${API}/api/payroll-settings`, { withCredentials: true })
       ]);
       setEmployees(empRes.data.filter(e => e.profile?.salary > 0));
       setPayrollSettings(settingsRes.data);

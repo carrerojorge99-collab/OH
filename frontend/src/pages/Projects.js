@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -22,7 +22,7 @@ import { Plus, Search, Calendar, DollarSign, Users, FolderKanban, Trash2, Refres
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `/api`;
+const API = `${API}/api/api`;
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -89,7 +89,7 @@ const Projects = () => {
 
   const loadProjects = async () => {
     try {
-      const response = await api.get(`/projects`, { 
+      const response = await axios.get(`${API}/api/projects`, { 
         withCredentials: true,
         headers: { 'Cache-Control': 'no-cache' }
       });
@@ -105,7 +105,7 @@ const Projects = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await api.get(`/users`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/users`, { withCredentials: true });
       setUsers(response.data);
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
@@ -116,7 +116,7 @@ const Projects = () => {
     e.preventDefault();
     
     try {
-      await api.post(`/projects`, formData, { withCredentials: true });
+      await axios.post(`${API}/api/projects`, formData, { withCredentials: true });
       toast.success('Proyecto creado exitosamente');
       setDialogOpen(false);
       setFormData({
@@ -157,7 +157,7 @@ const Projects = () => {
     if (!window.confirm(`¿Estás seguro de eliminar el proyecto "${projectName}"? Esta acción eliminará todos los datos asociados (tareas, gastos, documentos, etc.) y no se puede deshacer.`)) return;
     
     try {
-      await api.delete(`/projects/${projectId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/projects/${projectId}`, { withCredentials: true });
       toast.success('Proyecto eliminado exitosamente');
       loadProjects();
     } catch (error) {
@@ -619,7 +619,7 @@ const Projects = () => {
                 key={project.project_id}
                 data-testid={`project-card-${project.project_id}`}
                 className="project-card border-slate-200 shadow-sm hover:shadow-md cursor-pointer"
-                onClick={() => navigate(`/projects/${project.project_id}`)}
+                onClick={() => navigate(`${API}/api/projects/${project.project_id}`)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">

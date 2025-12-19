@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import moment from 'moment';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -95,8 +95,8 @@ const PurchaseOrders = () => {
   const loadData = async () => {
     try {
       const [posRes, projectsRes] = await Promise.all([
-        api.get(`/purchase-orders`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        axios.get(`${API}/api/purchase-orders`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        axios.get(`${API}/api/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setPurchaseOrders(posRes.data || []);
       setProjects(projectsRes.data || []);
@@ -182,10 +182,10 @@ const PurchaseOrders = () => {
       };
 
       if (editingPO) {
-        await api.put(`/purchase-orders/${editingPO}`, payload, { withCredentials: true });
+        await axios.put(`${API}/api/purchase-orders/${editingPO}`, payload, { withCredentials: true });
         toast.success('Orden actualizada');
       } else {
-        await api.post(`/purchase-orders`, payload, { withCredentials: true });
+        await axios.post(`${API}/api/purchase-orders`, payload, { withCredentials: true });
         toast.success('Orden creada');
       }
       
@@ -221,7 +221,7 @@ const PurchaseOrders = () => {
     if (!window.confirm('¿Eliminar esta orden de compra?')) return;
     
     try {
-      await api.delete(`/purchase-orders/${poId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/purchase-orders/${poId}`, { withCredentials: true });
       toast.success('Orden eliminada');
       setPurchaseOrders(prev => prev.filter(po => po.po_id !== poId));
     } catch (error) {
@@ -231,7 +231,7 @@ const PurchaseOrders = () => {
 
   const handleStatusChange = async (poId, newStatus) => {
     try {
-      await api.put(`/purchase-orders/${poId}/status?status=${newStatus}`, {}, { withCredentials: true });
+      await axios.put(`${API}/api/purchase-orders/${poId}/status?status=${newStatus}`, {}, { withCredentials: true });
       toast.success(`Estado cambiado a ${statusLabels[newStatus]}`);
       loadData();
     } catch (error) {
@@ -241,7 +241,7 @@ const PurchaseOrders = () => {
 
   const handleSend = async (poId) => {
     try {
-      await api.post(`/purchase-orders/${poId}/send`, {}, { withCredentials: true });
+      await axios.post(`${API}/api/purchase-orders/${poId}/send`, {}, { withCredentials: true });
       toast.success('Orden enviada');
       loadData();
     } catch (error) {
@@ -251,7 +251,7 @@ const PurchaseOrders = () => {
 
   const handleDuplicate = async (poId) => {
     try {
-      await api.post(`/purchase-orders/${poId}/duplicate`, {}, { withCredentials: true });
+      await axios.post(`${API}/api/purchase-orders/${poId}/duplicate`, {}, { withCredentials: true });
       toast.success('Orden duplicada');
       loadData();
     } catch (error) {

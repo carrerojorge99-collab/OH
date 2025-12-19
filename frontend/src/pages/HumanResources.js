@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -57,7 +57,7 @@ const HumanResources = () => {
 
   const loadEmployees = async () => {
     try {
-      const response = await api.get(`/employees`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/employees`, { withCredentials: true });
       setEmployees(response.data);
       setLoading(false);
     } catch (error) {
@@ -68,7 +68,7 @@ const HumanResources = () => {
 
   const loadDocuments = async (employeeId) => {
     try {
-      const response = await api.get(`/employees/${employeeId}/documents`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/employees/${employeeId}/documents`, { withCredentials: true });
       setDocuments(response.data);
     } catch (error) {
       console.error('Error loading documents');
@@ -78,12 +78,12 @@ const HumanResources = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await api.put(`/employees/${selectedEmployee.user_id}/profile`, {
+      await axios.put(`${API}/api/employees/${selectedEmployee.user_id}/profile`, {
         ...profile, user_id: selectedEmployee.user_id
       }, { withCredentials: true });
       toast.success('Perfil guardado');
       // Reload employees and update selected
-      const response = await api.get(`/employees`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/employees`, { withCredentials: true });
       setEmployees(response.data);
       const updated = response.data.find(e => e.user_id === selectedEmployee.user_id);
       if (updated) {
@@ -105,7 +105,7 @@ const HumanResources = () => {
     const formData = new FormData();
     formData.append('file', uploadForm.file);
     try {
-      await api.post(`/employees/${selectedEmployee.user_id}/documents?document_type=${uploadForm.document_type}`, formData, { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } });
+      await axios.post(`${API}/api/employees/${selectedEmployee.user_id}/documents?document_type=${uploadForm.document_type}`, formData, { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Documento subido');
       setUploadDialogOpen(false);
       setUploadForm({ document_type: '', file: null });
@@ -118,7 +118,7 @@ const HumanResources = () => {
   const handleDelete = async (docId) => {
     if (!window.confirm('¿Eliminar este documento?')) return;
     try {
-      await api.delete(`/employees/${selectedEmployee.user_id}/documents/${docId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/employees/${selectedEmployee.user_id}/documents/${docId}`, { withCredentials: true });
       toast.success('Documento eliminado');
       loadDocuments(selectedEmployee.user_id);
     } catch (error) {

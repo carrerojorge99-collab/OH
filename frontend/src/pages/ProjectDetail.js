@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import axios from 'axios';
 import moment from 'moment';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -169,7 +169,7 @@ const ProjectDetail = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await api.get(`/users`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/users`, { withCredentials: true });
       setUsers(response.data);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -219,16 +219,16 @@ const ProjectDetail = () => {
     const cfg = { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } };
     try {
       const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, timesheetRes, commentsRes, documentsRes, statsRes, logsRes] = await Promise.all([
-        api.get(`/projects/${projectId}?_t=${ts}`, cfg),
-        api.get(`/tasks?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/budget/categories?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/expenses?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/labor?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/timesheet?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/comments?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/documents?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/projects/${projectId}/stats?_t=${ts}`, cfg),
-        api.get(`/project-logs?project_id=${projectId}&_t=${ts}`, cfg)
+        axios.get(`${API}/api/projects/${projectId}?_t=${ts}`, cfg),
+        axios.get(`${API}/api/tasks?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/api/budget/categories?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/api/expenses?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/api/labor?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/api/timesheet?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/api/comments?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/api/documents?project_id=${projectId}&_t=${ts}`, cfg),
+        axios.get(`${API}/api/projects/${projectId}/stats?_t=${ts}`, cfg),
+        axios.get(`${API}/api/project-logs?project_id=${projectId}&_t=${ts}`, cfg)
       ]);
       
       setProject(projectRes.data);
@@ -252,7 +252,7 @@ const ProjectDetail = () => {
   const handleCreateTask = async (e) => {
     e.preventDefault();
     try {
-      await api.post(`/tasks`, {
+      await axios.post(`${API}/api/tasks`, {
         project_id: projectId,
         ...taskForm
       }, { withCredentials: true });
@@ -269,7 +269,7 @@ const ProjectDetail = () => {
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     try {
-      await api.post(`/budget/categories`, {
+      await axios.post(`${API}/api/budget/categories`, {
         project_id: projectId,
         ...categoryForm
       }, { withCredentials: true });
@@ -287,8 +287,8 @@ const ProjectDetail = () => {
   const loadRequiredDocuments = async () => {
     try {
       const [docsRes, statusRes] = await Promise.all([
-        api.get(`/required-documents`, { withCredentials: true }),
-        api.get(`/projects/${projectId}/document-status`, { withCredentials: true })
+        axios.get(`${API}/api/required-documents`, { withCredentials: true }),
+        axios.get(`${API}/api/projects/${projectId}/document-status`, { withCredentials: true })
       ]);
       
       setRequiredDocsFromClient(docsRes.data.from_client || []);
@@ -304,7 +304,7 @@ const ProjectDetail = () => {
       const currentStatus = projectDocStatus[documentId] || false;
       const newStatus = !currentStatus;
       
-      await api.post(`/projects/${projectId}/document-status`, {
+      await axios.post(`${API}/api/projects/${projectId}/document-status`, {
         document_id: documentId,
         direction: direction,
         status: newStatus
@@ -333,7 +333,7 @@ const ProjectDetail = () => {
   const handleUpdateCategory = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/budget/categories/${editingCategoryId}`, {
+      await axios.put(`${API}/api/budget/categories/${editingCategoryId}`, {
         project_id: projectId,
         ...categoryForm
       }, { withCredentials: true });
@@ -352,7 +352,7 @@ const ProjectDetail = () => {
     if (!window.confirm(`¿Estás seguro de eliminar la categoría "${categoryName}"? Esta acción no se puede deshacer.`)) return;
     
     try {
-      await api.delete(`/budget/categories/${categoryId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/budget/categories/${categoryId}`, { withCredentials: true });
       toast.success('Categoría eliminada exitosamente');
       loadProjectData();
     } catch (error) {
@@ -367,7 +367,7 @@ const ProjectDetail = () => {
   const handleCreateExpense = async (e) => {
     e.preventDefault();
     try {
-      await api.post(`/expenses`, {
+      await axios.post(`${API}/api/expenses`, {
         project_id: projectId,
         ...expenseForm
       }, { withCredentials: true });
@@ -395,7 +395,7 @@ const ProjectDetail = () => {
   const handleUpdateExpense = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/expenses/${editingExpenseId}`, {
+      await axios.put(`${API}/api/expenses/${editingExpenseId}`, {
         project_id: projectId,
         ...expenseForm
       }, { withCredentials: true });
@@ -414,7 +414,7 @@ const ProjectDetail = () => {
     if (!window.confirm(`¿Estás seguro de eliminar el gasto "${expenseDescription}"? Esta acción no se puede deshacer.`)) return;
     
     try {
-      await api.delete(`/expenses/${expenseId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/expenses/${expenseId}`, { withCredentials: true });
       toast.success('Gasto eliminado exitosamente');
       loadProjectData();
     } catch (error) {
@@ -429,7 +429,7 @@ const ProjectDetail = () => {
   const handleCreateLabor = async (e) => {
     e.preventDefault();
     try {
-      await api.post(`/labor`, {
+      await axios.post(`${API}/api/labor`, {
         project_id: projectId,
         ...laborForm
       }, { withCredentials: true });
@@ -472,7 +472,7 @@ const ProjectDetail = () => {
   const handleUpdateLabor = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/labor/${editingLaborId}`, {
+      await axios.put(`${API}/api/labor/${editingLaborId}`, {
         project_id: projectId,
         ...laborForm
       }, { withCredentials: true });
@@ -501,7 +501,7 @@ const ProjectDetail = () => {
     if (!window.confirm(`¿Estás seguro de eliminar el registro de "${laborCategory}"? Esta acción no se puede deshacer.`)) return;
     
     try {
-      await api.delete(`/labor/${laborId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/labor/${laborId}`, { withCredentials: true });
       toast.success('Registro de labor eliminado exitosamente');
       loadProjectData();
     } catch (error) {
@@ -516,7 +516,7 @@ const ProjectDetail = () => {
   const handleCreateTimesheet = async (e) => {
     e.preventDefault();
     try {
-      await api.post(`/timesheet`, {
+      await axios.post(`${API}/api/timesheet`, {
         project_id: projectId,
         ...timesheetForm
       }, { withCredentials: true });
@@ -553,7 +553,7 @@ const ProjectDetail = () => {
   const handleUpdateTimesheet = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/timesheet/${editingTimesheetId}`, {
+      await axios.put(`${API}/api/timesheet/${editingTimesheetId}`, {
         project_id: projectId,
         ...timesheetForm
       }, { withCredentials: true });
@@ -579,7 +579,7 @@ const ProjectDetail = () => {
     if (!window.confirm(`¿Estás seguro de eliminar el registro del ${date}? Esta acción no se puede deshacer.`)) return;
     
     try {
-      await api.delete(`/timesheet/${timesheetId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/timesheet/${timesheetId}`, { withCredentials: true });
       toast.success('Registro de tiempo eliminado exitosamente');
       loadProjectData();
     } catch (error) {
@@ -600,7 +600,7 @@ const ProjectDetail = () => {
     }
 
     try {
-      await api.post(`/timesheet`, {
+      await axios.post(`${API}/api/timesheet`, {
         project_id: projectId,
         user_id: users[0]?.user_id || '', // Use first user or let backend handle
         user_name: users[0]?.name || 'Usuario',
@@ -623,7 +623,7 @@ const ProjectDetail = () => {
     if (!commentText.trim()) return;
 
     try {
-      await api.post(`/comments`, {
+      await axios.post(`${API}/api/comments`, {
         project_id: projectId,
         content: commentText
       }, { withCredentials: true });
@@ -660,10 +660,10 @@ const ProjectDetail = () => {
       };
 
       if (editingLogId) {
-        await api.put(`/project-logs/${editingLogId}`, payload, { withCredentials: true });
+        await axios.put(`${API}/api/project-logs/${editingLogId}`, payload, { withCredentials: true });
         toast.success('Registro actualizado');
       } else {
-        await api.post(`/project-logs`, payload, { withCredentials: true });
+        await axios.post(`${API}/api/project-logs`, payload, { withCredentials: true });
         toast.success('Registro creado');
       }
 
@@ -690,7 +690,7 @@ const ProjectDetail = () => {
     if (!window.confirm('¿Eliminar este registro de la bitácora?')) return;
 
     try {
-      await api.delete(`/project-logs/${logId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/project-logs/${logId}`, { withCredentials: true });
       toast.success('Registro eliminado');
       loadProjectData();
     } catch (error) {
@@ -700,8 +700,8 @@ const ProjectDetail = () => {
 
   const handleExport = async (format) => {
     try {
-      const response = await api.get(
-        `/reports/project/${projectId}/export?format=${format}`,
+      const response = await axios.get(
+        `${API}/api/reports/project/${projectId}/export?format=${format}`,
         { 
           withCredentials: true,
           responseType: 'blob'
@@ -726,7 +726,7 @@ const ProjectDetail = () => {
     if (!window.confirm('¿Estás seguro de eliminar esta tarea?')) return;
     
     try {
-      await api.delete(`/tasks/${taskId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/tasks/${taskId}`, { withCredentials: true });
       toast.success('Tarea eliminada');
       loadProjectData();
     } catch (error) {
@@ -736,7 +736,7 @@ const ProjectDetail = () => {
 
   const handleTaskUpdate = async (taskId, updatedTask) => {
     try {
-      await api.put(`/tasks/${taskId}`, {
+      await axios.put(`${API}/api/tasks/${taskId}`, {
         project_id: updatedTask.project_id,
         title: updatedTask.title,
         description: updatedTask.description,
@@ -755,7 +755,7 @@ const ProjectDetail = () => {
   const handleUpdateProject = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/projects/${projectId}`, editForm, { withCredentials: true });
+      await axios.put(`${API}/api/projects/${projectId}`, editForm, { withCredentials: true });
       toast.success('Proyecto actualizado exitosamente');
       setEditDialogOpen(false);
       loadProjectData();
@@ -768,7 +768,7 @@ const ProjectDetail = () => {
     if (!window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción eliminará también todas las tareas, presupuestos, gastos, comentarios y documentos asociados.')) return;
     
     try {
-      await api.delete(`/projects/${projectId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/projects/${projectId}`, { withCredentials: true });
       toast.success('Proyecto eliminado exitosamente');
       navigate('/projects');
     } catch (error) {
@@ -790,7 +790,7 @@ const ProjectDetail = () => {
     formData.append('file', file);
 
     try {
-      await api.post(`/documents/upload?project_id=${projectId}`, formData, {
+      await axios.post(`${API}/api/documents/upload?project_id=${projectId}`, formData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -809,7 +809,7 @@ const ProjectDetail = () => {
 
   const handleDownloadDocument = async (documentId, filename) => {
     try {
-      const response = await api.get(`/documents/${documentId}/download`, {
+      const response = await axios.get(`${API}/api/documents/${documentId}/download`, {
         withCredentials: true,
         responseType: 'blob'
       });
@@ -830,7 +830,7 @@ const ProjectDetail = () => {
     if (!window.confirm('¿Estás seguro de eliminar este documento?')) return;
     
     try {
-      await api.delete(`/documents/${documentId}`, { withCredentials: true });
+      await axios.delete(`${API}/api/documents/${documentId}`, { withCredentials: true });
       toast.success('Documento eliminado exitosamente');
       loadProjectData();
     } catch (error) {
