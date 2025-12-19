@@ -4183,6 +4183,12 @@ async def add_no_cache_headers(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(api_router)
 
 # ==================== REQUIRED DOCUMENTS ENDPOINTS ====================
 @api_router.get("/required-documents")
