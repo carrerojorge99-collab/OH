@@ -940,6 +940,104 @@ const CostEstimateDetail = () => {
             </Card>
           </TabsContent>
 
+          {/* Transportation Tab */}
+          <TabsContent value="transportation">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Transporte y Viajes</CardTitle>
+                  <Button onClick={addTransportationRow} size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Ruta
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-slate-50">
+                        <th className="p-2 text-left text-xs">Descripción</th>
+                        <th className="p-2 text-left text-xs">Ciudad/Pueblo</th>
+                        <th className="p-2 text-right text-xs">Millas Ida/Vuelta</th>
+                        <th className="p-2 text-right text-xs">Costo por Milla</th>
+                        <th className="p-2 text-right text-xs">Días</th>
+                        <th className="p-2 text-right text-xs">Total</th>
+                        <th className="p-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transportation.map((item, idx) => (
+                        <tr key={idx} className="border-b">
+                          <td className="p-2">
+                            <Input
+                              value={item.description}
+                              onChange={(e) => updateTransportationRow(idx, 'description', e.target.value)}
+                              placeholder="Ej: Transporte al site"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={item.city_town}
+                              onChange={(e) => updateTransportationRow(idx, 'city_town', e.target.value)}
+                              placeholder="Ej: San Juan"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              className="text-right w-28"
+                              value={item.roundtrip_miles}
+                              onChange={(e) => updateTransportationRow(idx, 'roundtrip_miles', e.target.value)}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="text-right w-24"
+                              value={item.cost_per_mile}
+                              onChange={(e) => updateTransportationRow(idx, 'cost_per_mile', e.target.value)}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              className="text-right w-20"
+                              value={item.days}
+                              onChange={(e) => updateTransportationRow(idx, 'days', e.target.value)}
+                            />
+                          </td>
+                          <td className="p-2 text-right font-semibold">
+                            ${item.total.toFixed(2)}
+                          </td>
+                          <td className="p-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteTransportationRow(idx)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-slate-600">
+                    💡 <strong>Cálculo:</strong> Total = Millas Ida/Vuelta × Costo por Milla × Días
+                  </p>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Ejemplo: 50 millas × $0.65/milla × 20 días = $650.00
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* General Conditions Tab */}
           <TabsContent value="general">
             <Card>
