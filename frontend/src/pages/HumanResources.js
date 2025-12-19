@@ -211,9 +211,10 @@ const HumanResources = () => {
                       <div><Label>Nacionalidad</Label><Input value={profile.nationality} onChange={(e) => setProfile({...profile, nationality: e.target.value})} placeholder="Puertorriqueño" /></div>
                       <div><Label>Cédula / ID</Label><Input value={profile.id_number} onChange={(e) => setProfile({...profile, id_number: e.target.value})} placeholder="000-00-0000" /></div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div><Label>Dirección</Label><Input value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="Calle, Número" /></div>
-                      <div><Label>Ciudad</Label><Input value={profile.city} onChange={(e) => setProfile({...profile, city: e.target.value})} placeholder="San Juan" /></div>
+                      <div><Label>Ciudad / Pueblo</Label><Input value={profile.city} onChange={(e) => setProfile({...profile, city: e.target.value})} placeholder="San Juan" /></div>
+                      <div><Label>Código Postal</Label><Input value={profile.zipcode} onChange={(e) => setProfile({...profile, zipcode: e.target.value})} placeholder="00901" /></div>
                     </div>
                     <Button onClick={handleSaveProfile} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
                       <Save className="w-4 h-4 mr-2" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
