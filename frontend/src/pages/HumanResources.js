@@ -36,6 +36,7 @@ const emptyProfile = {
 };
 
 const HumanResources = () => {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [documents, setDocuments] = useState([]);
