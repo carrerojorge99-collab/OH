@@ -4257,7 +4257,14 @@ app.add_middleware(
 )
 
 logging.basicConfig(
-@api_router.get("/required-documents")
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
 async def get_required_documents(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
