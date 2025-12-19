@@ -4836,6 +4836,84 @@ async def get_next_number(
     
     return {"number": full_number, "nomenclature": nomenclature}
 
+# ==================== HUMAN RESOURCES / EMPLOYEE DOCUMENTS ====================
+EMPLOYEE_DOCS_DIR = Path("/app/uploads/employee_docs")
+EMPLOYEE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
+
+@api_router.get("/employees")
+async def get_employees(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    employees = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    return employees
+
+@api_router.get("/employees/{employee_id}/documents")
+async def get_employee_documents(employee_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    docs = await db.employee_documents.find({"employee_id": employee_id}, {"_id": 0}).to_list(1000)
+    return docs
+
+@api_router.post("/employees/{employee_id}/documents")
+async def upload_employee_document(
+    employee_id: str,
+    file: UploadFile = File(...),
+    document_type: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    # Create employee folder
+    employee_folder = EMPLOYEE_DOCS_DIR / employee_id
+    employee_folder.mkdir(parents=True, exist_ok=True)
+    
+    # Save file
+    doc_id = f"edoc_{uuid4().hex[:16]}"
+    file_ext = Path(file.filename).suffix
+    filename = f"{doc_id}{file_ext}"
+    file_path = employee_folder / filename
+    
+    with open(file_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+    
+    doc = {
+        "doc_id": doc_id,
+        "employee_id": employee_id,
+        "document_type": document_type,
+        "original_filename": file.filename,
+        "stored_filename": filename,
+        "file_path": str(file_path),
+        "file_url": f"/uploads/employee_docs/{employee_id}/{filename}",
+        "uploaded_by": user.user_id,
+        "uploaded_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.employee_documents.insert_one(doc)
+    del doc["_id"] if "_id" in doc else None
+    return doc
+
+@api_router.delete("/employees/{employee_id}/documents/{doc_id}")
+async def delete_employee_document(
+    employee_id: str,
+    doc_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    doc = await db.employee_documents.find_one({"doc_id": doc_id})
+    if doc and Path(doc["file_path"]).exists():
+        Path(doc["file_path"]).unlink()
+    
+    await db.employee_documents.delete_one({"doc_id": doc_id})
+    return {"message": "Documento eliminado"}
+
 app.include_router(api_router)
 
 # Middleware para prevenir caché en respuestas de API
