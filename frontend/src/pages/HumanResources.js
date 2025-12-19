@@ -115,6 +115,7 @@ const HumanResources = () => {
         address: profile.address || '',
         city: profile.city || '',
         zipcode: profile.zipcode || '',
+        country: profile.country || '',
         date_of_birth: profile.date_of_birth || '',
         gender: profile.gender || '',
         marital_status: profile.marital_status || '',
