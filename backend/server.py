@@ -4872,7 +4872,45 @@ EMPLOYEE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
 async def get_employees(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     employees = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    
+    # Attach profiles to employees
+    for emp in employees:
+        profile = await db.employee_profiles.find_one({"user_id": emp["user_id"]}, {"_id": 0})
+        emp["profile"] = profile or {}
+    
     return employees
+
+@api_router.get("/employees/{employee_id}/profile")
+async def get_employee_profile(employee_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    profile = await db.employee_profiles.find_one({"user_id": employee_id}, {"_id": 0})
+    return profile or {}
+
+@api_router.put("/employees/{employee_id}/profile")
+async def update_employee_profile(
+    employee_id: str,
+    profile_data: EmployeeProfile,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    profile_dict = profile_data.model_dump()
+    profile_dict["user_id"] = employee_id
+    profile_dict["updated_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
+    
+    existing = await db.employee_profiles.find_one({"user_id": employee_id})
+    if existing:
+        await db.employee_profiles.update_one({"user_id": employee_id}, {"$set": profile_dict})
+    else:
+        profile_dict["employee_id"] = f"emp_{uuid4().hex[:16]}"
+        profile_dict["created_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
+        await db.employee_profiles.insert_one(profile_dict)
+    
+    return {"message": "Perfil actualizado"}
 
 @api_router.get("/employees/{employee_id}/documents")
 async def get_employee_documents(employee_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
