@@ -59,6 +59,7 @@ const HumanResources = () => {
         address: emp.address || '',
         city: emp.city || '',
         zipcode: emp.zipcode || '',
+        country: emp.country || '',
         date_of_birth: emp.date_of_birth || '',
         gender: emp.gender || '',
         marital_status: emp.marital_status || '',
