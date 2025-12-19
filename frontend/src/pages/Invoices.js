@@ -38,6 +38,9 @@ const Invoices = () => {
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
   const [payments, setPayments] = useState([]);
   const navigate = useNavigate();
+  const { nomenclatures, selectedNomenclature, generatedNumber, handleSelectNomenclature } = useNomenclature(
+    (number) => setFormData(prev => ({ ...prev, custom_number: number }))
+  );
 
   const [formData, setFormData] = useState({
     project_id: '',
