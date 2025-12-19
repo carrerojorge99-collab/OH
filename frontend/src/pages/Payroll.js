@@ -48,7 +48,7 @@ const Payroll = () => {
 
   const fetchClockHours = async (userId) => {
     try {
-      const response = await axios.get(`${API}/clock/history`, {
+      const response = await axios.get(`${API}/clock/all`, {
         params: {
           user_id: userId,
           start_date: payPeriod.start,
