@@ -137,15 +137,18 @@ frontend:
 
   - task: "Clock IN/OUT Functionality"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/ClockInOut.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Clock IN/OUT operations with project selection (LARC). Need to verify correct time recording and hours calculation."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Full Clock IN/OUT cycle completed successfully. LARC project selection works. Clock IN at 00:20:25, Clock OUT at 00:36:50. Hours calculation correct (0.27h). Status updates properly (Estado: En turno → Sin ponche). Toast notifications working."
 
 backend:
   - task: "Timezone Configuration - America/Puerto_Rico"
