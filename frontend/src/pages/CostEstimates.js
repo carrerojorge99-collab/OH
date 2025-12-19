@@ -127,7 +127,7 @@ const CostEstimates = () => {
                         <div>
                           <p className="text-xs text-slate-500">Costo Total</p>
                           <p className="text-xl font-bold text-blue-600">
-                            ${estimate.grand_total.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                            ${(estimate.grand_total || 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                         <div>
