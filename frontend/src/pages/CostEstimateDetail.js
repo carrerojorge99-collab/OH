@@ -351,6 +351,24 @@ const CostEstimateDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            {estimateId !== 'new' && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(`${API_URL}/api/cost-estimates/${estimateId}/export/pdf`, '_blank')}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(`${API_URL}/api/cost-estimates/${estimateId}/export/excel`, '_blank')}
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Excel
+                </Button>
+              </>
+            )}
             <Button
               onClick={handleSave}
               disabled={saving}
