@@ -389,75 +389,45 @@ const Users = () => {
 
         {/* Users Grid */}
         {users.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {users.map((user) => (
               <Card
                 key={user.user_id}
                 data-testid={`user-card-${user.user_id}`}
                 className="border-slate-200 shadow-sm hover:shadow-md transition-shadow"
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="w-16 h-16 border-2 border-slate-200">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10 border border-slate-200 flex-shrink-0">
                       <AvatarImage src={user.picture} alt={user.name} />
-                      <AvatarFallback className="bg-blue-600 text-white font-semibold text-lg">
+                      <AvatarFallback className="bg-blue-600 text-white font-semibold text-sm">
                         {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-1">
-                        <h3 className="text-lg font-semibold text-[#0F172A] truncate flex-1">
-                          {user.name}
-                        </h3>
-                        {currentUser?.role === 'admin' && (
-                          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditUser(user)}
-                              data-testid={`edit-user-${user.user_id}`}
-                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              title="Editar usuario"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            {currentUser?.user_id !== user.user_id && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteUser(user.user_id, user.name)}
-                                data-testid={`delete-user-${user.user_id}`}
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Eliminar usuario"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center text-sm text-slate-600 mb-2">
-                        <Mail className="w-3 h-3 mr-1 flex-shrink-0" />
-                        <span className="truncate">{user.email}</span>
-                      </div>
-                      <Badge className={`${getRoleBadgeColor(user.role)} border`}>
-                        {getRoleLabel(user.role)}
-                      </Badge>
+                      <h3 className="text-sm font-semibold text-[#0F172A] truncate">{user.name}</h3>
+                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
                     </div>
                   </div>
                   
-                  {user.created_at && (
-                    <div className="mt-4 pt-4 border-t border-slate-200">
-                      <p className="text-xs text-slate-500">
-                        Creado: {new Date(user.created_at).toLocaleDateString('es-MX', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+                    <Badge className={`${getRoleBadgeColor(user.role)} border text-xs px-2 py-0`}>
+                      {getRoleLabel(user.role)}
+                    </Badge>
+                    {currentUser?.role === 'admin' && (
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)} className="h-6 w-6 text-blue-600 hover:bg-blue-50">
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        {currentUser?.user_id !== user.user_id && (
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.user_id, user.name)} className="h-6 w-6 text-red-600 hover:bg-red-50">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
