@@ -52,7 +52,33 @@ const HumanResources = () => {
   useEffect(() => {
     if (selectedEmployee) {
       loadDocuments(selectedEmployee.user_id);
-      setProfile({ ...emptyProfile, ...selectedEmployee.profile });
+      // Load profile with explicit field mapping to avoid defaults overwriting
+      const emp = selectedEmployee.profile || {};
+      setProfile({
+        phone: emp.phone || '',
+        address: emp.address || '',
+        city: emp.city || '',
+        zipcode: emp.zipcode || '',
+        date_of_birth: emp.date_of_birth || '',
+        gender: emp.gender || '',
+        marital_status: emp.marital_status || '',
+        nationality: emp.nationality || '',
+        id_number: emp.id_number || '',
+        department: emp.department || '',
+        position: emp.position || '',
+        hire_date: emp.hire_date || '',
+        employment_type: emp.employment_type || '',
+        worker_classification: emp.worker_classification || '',
+        salary: emp.salary || 0,
+        hourly_rate: emp.hourly_rate || 0,
+        pay_frequency: emp.pay_frequency || '',
+        bank_name: emp.bank_name || '',
+        bank_account: emp.bank_account || '',
+        emergency_contact_name: emp.emergency_contact_name || '',
+        emergency_contact_phone: emp.emergency_contact_phone || '',
+        emergency_contact_relationship: emp.emergency_contact_relationship || '',
+        notes: emp.notes || ''
+      });
     }
   }, [selectedEmployee]);
 
