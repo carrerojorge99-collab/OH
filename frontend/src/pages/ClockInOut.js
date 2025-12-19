@@ -28,11 +28,7 @@ const ClockInOut = () => {
 
   useEffect(() => {
     loadData();
-    // Usar moment con timezone de Puerto Rico para el reloj
-    const timer = setInterval(() => {
-      const prTime = moment.tz('America/Puerto_Rico').toDate();
-      setCurrentTime(prTime);
-    }, 250);
+    const timer = setInterval(() => setCurrentTime(new Date()), 250);
     return () => clearInterval(timer);
   }, []);
 
@@ -211,10 +207,10 @@ const ClockInOut = () => {
               </div>
               <div className="text-right">
                 <div className="text-4xl font-mono font-bold text-blue-600">
-                  {currentTime.toLocaleTimeString('es-MX')}
+                  {moment.tz('America/Puerto_Rico').format('h:mm:ss a')}
                 </div>
                 <div className="text-sm text-slate-600">
-                  {moment().format('dddd, D [de] MMMM [de] YYYY')}
+                  {moment.tz('America/Puerto_Rico').format('dddd, D [de] MMMM [de] YYYY')}
                 </div>
               </div>
             </div>
