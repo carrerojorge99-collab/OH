@@ -7,9 +7,11 @@ import { Badge } from '../components/ui/badge';
 import { Clock, LogIn, LogOut, Calendar, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
+import 'moment-timezone';
 import 'moment/locale/es';
 
 moment.locale('es');
+moment.tz.setDefault('America/Puerto_Rico');
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
