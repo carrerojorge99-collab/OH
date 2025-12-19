@@ -12,6 +12,7 @@ from typing import List, Optional
 import uuid
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
+import pytz
 import bcrypt
 import jwt
 import io
@@ -19,6 +20,9 @@ import shutil
 import mimetypes
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
+
+# Zona horaria de Puerto Rico (GMT-4)
+PUERTO_RICO_TZ = pytz.timezone('America/Puerto_Rico')
 
 # Función para calcular distancia entre dos coordenadas (Haversine)
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
