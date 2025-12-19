@@ -6,9 +6,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { ArrowLeft, Calculator, DollarSign, Users, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Calculator, Clock, Users, Download, Edit2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import jsPDF from 'jspdf';
@@ -25,6 +24,7 @@ const Payroll = () => {
   const [payPeriod, setPayPeriod] = useState({ start: '', end: '' });
   const [payrollData, setPayrollData] = useState([]);
   const [processing, setProcessing] = useState(false);
+  const [editingHours, setEditingHours] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -36,7 +36,8 @@ const Payroll = () => {
         axios.get(`${API}/employees`, { withCredentials: true }),
         axios.get(`${API}/payroll-settings`, { withCredentials: true })
       ]);
-      setEmployees(empRes.data.filter(e => e.profile?.salary > 0));
+      // Include employees with salary OR hourly_rate
+      setEmployees(empRes.data.filter(e => e.profile?.salary > 0 || e.profile?.hourly_rate > 0));
       setPayrollSettings(settingsRes.data);
       setLoading(false);
     } catch (error) {
@@ -45,50 +46,128 @@ const Payroll = () => {
     }
   };
 
-  const calculatePayroll = () => {
+  const fetchClockHours = async (userId) => {
+    try {
+      const response = await axios.get(`${API}/clock/history`, {
+        params: {
+          user_id: userId,
+          start_date: payPeriod.start,
+          end_date: payPeriod.end
+        },
+        withCredentials: true
+      });
+      // Sum up all hours worked in the period
+      const totalHours = response.data.reduce((sum, entry) => sum + (entry.hours_worked || 0), 0);
+      return totalHours;
+    } catch (error) {
+      console.error('Error fetching clock hours:', error);
+      return 0;
+    }
+  };
+
+  const calculatePayroll = async () => {
     if (!payPeriod.start || !payPeriod.end) {
       toast.error('Selecciona el período de pago');
       return;
     }
 
     setProcessing(true);
-    const results = employees.map(emp => {
-      const profile = emp.profile || {};
-      const salary = profile.salary || 0;
-      const isContractor = profile.worker_classification === 'contractor';
-      
-      let deductions = {};
-      let totalDeductions = 0;
+    
+    try {
+      const results = await Promise.all(employees.map(async (emp) => {
+        const profile = emp.profile || {};
+        const hourlyRate = profile.hourly_rate || 0;
+        const fixedSalary = profile.salary || 0;
+        const isContractor = profile.worker_classification === 'contractor';
+        
+        // Fetch clock hours for this employee
+        const clockHours = await fetchClockHours(emp.user_id);
+        
+        // Calculate gross pay: if hourly rate, multiply by hours; otherwise use fixed salary
+        let grossPay = 0;
+        let hoursWorked = clockHours;
+        
+        if (hourlyRate > 0) {
+          grossPay = hourlyRate * hoursWorked;
+        } else {
+          grossPay = fixedSalary;
+        }
+        
+        let deductions = {};
+        let totalDeductions = 0;
 
-      if (isContractor) {
-        const contractorDed = salary * (payrollSettings.contractor_percent || 10) / 100;
-        deductions = { 'Retención 10%': contractorDed };
-        totalDeductions = contractorDed;
-      } else {
-        const hacienda = salary * (payrollSettings.hacienda_percent || 0) / 100;
-        const ss = salary * (payrollSettings.social_security_percent || 6.2) / 100;
-        const medicare = salary * (payrollSettings.medicare_percent || 1.45) / 100;
-        deductions = {
-          'Hacienda': hacienda,
-          'Seguro Social': ss,
-          'Medicare': medicare
+        if (isContractor) {
+          const contractorDed = grossPay * (payrollSettings.contractor_percent || 10) / 100;
+          deductions = { 'Retención 10%': contractorDed };
+          totalDeductions = contractorDed;
+        } else {
+          const hacienda = grossPay * (payrollSettings.hacienda_percent || 0) / 100;
+          const ss = grossPay * (payrollSettings.social_security_percent || 6.2) / 100;
+          const medicare = grossPay * (payrollSettings.medicare_percent || 1.45) / 100;
+          deductions = {
+            'Hacienda': hacienda,
+            'Seguro Social': ss,
+            'Medicare': medicare
+          };
+          totalDeductions = hacienda + ss + medicare;
+        }
+
+        return {
+          employee: emp,
+          hoursWorked,
+          hourlyRate,
+          grossPay,
+          deductions,
+          totalDeductions,
+          netPay: grossPay - totalDeductions,
+          isContractor,
+          isHourly: hourlyRate > 0
         };
-        totalDeductions = hacienda + ss + medicare;
+      }));
+
+      setPayrollData(results);
+      setProcessing(false);
+      toast.success('Nómina calculada');
+    } catch (error) {
+      toast.error('Error al calcular nómina');
+      setProcessing(false);
+    }
+  };
+
+  const updateEmployeeHours = (idx, newHours) => {
+    setPayrollData(prev => {
+      const updated = [...prev];
+      const item = updated[idx];
+      item.hoursWorked = parseFloat(newHours) || 0;
+      
+      // Recalculate if hourly
+      if (item.isHourly) {
+        item.grossPay = item.hourlyRate * item.hoursWorked;
+        
+        // Recalculate deductions
+        let totalDeductions = 0;
+        if (item.isContractor) {
+          const contractorDed = item.grossPay * (payrollSettings.contractor_percent || 10) / 100;
+          item.deductions = { 'Retención 10%': contractorDed };
+          totalDeductions = contractorDed;
+        } else {
+          const hacienda = item.grossPay * (payrollSettings.hacienda_percent || 0) / 100;
+          const ss = item.grossPay * (payrollSettings.social_security_percent || 6.2) / 100;
+          const medicare = item.grossPay * (payrollSettings.medicare_percent || 1.45) / 100;
+          item.deductions = {
+            'Hacienda': hacienda,
+            'Seguro Social': ss,
+            'Medicare': medicare
+          };
+          totalDeductions = hacienda + ss + medicare;
+        }
+        item.totalDeductions = totalDeductions;
+        item.netPay = item.grossPay - totalDeductions;
       }
-
-      return {
-        employee: emp,
-        grossPay: salary,
-        deductions,
-        totalDeductions,
-        netPay: salary - totalDeductions,
-        isContractor
-      };
+      
+      return updated;
     });
-
-    setPayrollData(results);
-    setProcessing(false);
-    toast.success('Nómina calculada');
+    setEditingHours(null);
   };
 
   const exportPDF = () => {
@@ -102,22 +181,24 @@ const Payroll = () => {
     const tableData = payrollData.map(p => [
       p.employee.name,
       p.isContractor ? 'Contratista' : 'Empleado',
+      p.isHourly ? `${p.hoursWorked.toFixed(2)} hrs` : 'Fijo',
       `$${p.grossPay.toFixed(2)}`,
       `$${p.totalDeductions.toFixed(2)}`,
       `$${p.netPay.toFixed(2)}`
     ]);
 
     const totals = payrollData.reduce((acc, p) => ({
+      hours: acc.hours + (p.isHourly ? p.hoursWorked : 0),
       gross: acc.gross + p.grossPay,
       deductions: acc.deductions + p.totalDeductions,
       net: acc.net + p.netPay
-    }), { gross: 0, deductions: 0, net: 0 });
+    }), { hours: 0, gross: 0, deductions: 0, net: 0 });
 
-    tableData.push(['TOTALES', '', `$${totals.gross.toFixed(2)}`, `$${totals.deductions.toFixed(2)}`, `$${totals.net.toFixed(2)}`]);
+    tableData.push(['TOTALES', '', `${totals.hours.toFixed(2)} hrs`, `$${totals.gross.toFixed(2)}`, `$${totals.deductions.toFixed(2)}`, `$${totals.net.toFixed(2)}`]);
 
     autoTable(doc, {
       startY: 42,
-      head: [['Empleado', 'Tipo', 'Salario Bruto', 'Deducciones', 'Neto']],
+      head: [['Empleado', 'Tipo', 'Horas', 'Salario Bruto', 'Deducciones', 'Neto']],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [30, 64, 175] },
@@ -137,7 +218,7 @@ const Payroll = () => {
             <Button variant="ghost" onClick={() => navigate('/hr')}><ArrowLeft className="w-4 h-4 mr-2" /> Volver a RH</Button>
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Procesar Nómina</h1>
-              <p className="text-slate-600">Calcular pagos y deducciones</p>
+              <p className="text-slate-600">Calcular pagos y deducciones basado en horas trabajadas</p>
             </div>
           </div>
         </div>
@@ -146,16 +227,17 @@ const Payroll = () => {
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Calculator className="w-5 h-5" /> Período de Pago</CardTitle></CardHeader>
           <CardContent>
-            <div className="flex items-end gap-4">
+            <div className="flex flex-wrap items-end gap-4">
               <div><Label>Fecha Inicio</Label><Input type="date" value={payPeriod.start} onChange={(e) => setPayPeriod({...payPeriod, start: e.target.value})} /></div>
               <div><Label>Fecha Fin</Label><Input type="date" value={payPeriod.end} onChange={(e) => setPayPeriod({...payPeriod, end: e.target.value})} /></div>
               <Button onClick={calculatePayroll} disabled={processing} className="bg-blue-600 hover:bg-blue-700">
-                <Calculator className="w-4 h-4 mr-2" /> Calcular Nómina
+                <Calculator className="w-4 h-4 mr-2" /> {processing ? 'Calculando...' : 'Calcular Nómina'}
               </Button>
               {payrollData.length > 0 && (
                 <Button onClick={exportPDF} variant="outline"><Download className="w-4 h-4 mr-2" /> Exportar PDF</Button>
               )}
             </div>
+            <p className="text-xs text-slate-500 mt-2">Las horas trabajadas se obtienen automáticamente de los ponches del empleado</p>
           </CardContent>
         </Card>
 
@@ -198,6 +280,8 @@ const Payroll = () => {
                     <tr>
                       <th className="text-left p-3">Empleado</th>
                       <th className="text-left p-3">Tipo</th>
+                      <th className="text-center p-3">Horas Trabajadas</th>
+                      <th className="text-right p-3">Tarifa/Salario</th>
                       <th className="text-right p-3">Salario Bruto</th>
                       <th className="text-right p-3">Deducciones</th>
                       <th className="text-right p-3">Neto a Pagar</th>
@@ -215,6 +299,43 @@ const Payroll = () => {
                             {p.isContractor ? 'Contratista' : 'Empleado'}
                           </Badge>
                         </td>
+                        <td className="p-3 text-center">
+                          {p.isHourly ? (
+                            <div className="flex items-center justify-center gap-2">
+                              {editingHours === idx ? (
+                                <div className="flex items-center gap-1">
+                                  <Input 
+                                    type="number" 
+                                    step="0.01"
+                                    defaultValue={p.hoursWorked}
+                                    className="w-20 h-8 text-center"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') updateEmployeeHours(idx, e.target.value);
+                                      if (e.key === 'Escape') setEditingHours(null);
+                                    }}
+                                    autoFocus
+                                  />
+                                  <Button size="sm" variant="ghost" onClick={(e) => updateEmployeeHours(idx, e.target.previousSibling.value)}>
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <>
+                                  <Clock className="w-4 h-4 text-slate-400" />
+                                  <span className="font-mono">{p.hoursWorked.toFixed(2)} hrs</span>
+                                  <Button size="sm" variant="ghost" onClick={() => setEditingHours(idx)} title="Editar horas">
+                                    <Edit2 className="w-3 h-3 text-slate-400" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">Salario Fijo</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right font-mono text-xs">
+                          {p.isHourly ? `$${p.hourlyRate.toFixed(2)}/hr` : `$${p.employee.profile?.salary?.toFixed(2) || '0.00'}`}
+                        </td>
                         <td className="p-3 text-right font-mono">${p.grossPay.toFixed(2)}</td>
                         <td className="p-3 text-right">
                           <p className="font-mono text-red-600">-${p.totalDeductions.toFixed(2)}</p>
@@ -231,6 +352,8 @@ const Payroll = () => {
                   <tfoot className="bg-slate-100 font-bold">
                     <tr>
                       <td colSpan="2" className="p-3">TOTALES</td>
+                      <td className="p-3 text-center font-mono">{payrollData.reduce((a, p) => a + (p.isHourly ? p.hoursWorked : 0), 0).toFixed(2)} hrs</td>
+                      <td className="p-3"></td>
                       <td className="p-3 text-right font-mono">${payrollData.reduce((a, p) => a + p.grossPay, 0).toFixed(2)}</td>
                       <td className="p-3 text-right font-mono text-red-600">-${payrollData.reduce((a, p) => a + p.totalDeductions, 0).toFixed(2)}</td>
                       <td className="p-3 text-right font-mono text-green-600">${payrollData.reduce((a, p) => a + p.netPay, 0).toFixed(2)}</td>
@@ -246,8 +369,8 @@ const Payroll = () => {
           <Card>
             <CardContent className="p-8 text-center text-slate-500">
               <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p>No hay empleados con salario configurado</p>
-              <p className="text-sm">Ve a Recursos Humanos y configura el salario en el perfil de cada empleado</p>
+              <p>No hay empleados con salario o tarifa por hora configurados</p>
+              <p className="text-sm">Ve a Recursos Humanos y configura el salario o tarifa por hora en el perfil de cada empleado</p>
             </CardContent>
           </Card>
         )}
