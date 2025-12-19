@@ -26,7 +26,8 @@ import {
   FileText,
   DollarSign,
   Clock,
-  Package
+  Package,
+  Calculator
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -44,6 +45,7 @@ const Layout = ({ children }) => {
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Reportes', href: '/reports', icon: BarChart3 },
     { name: 'Estimados', href: '/estimates', icon: FileText },
+    { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
     { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
     { name: 'Facturas', href: '/invoices', icon: DollarSign },
     { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
