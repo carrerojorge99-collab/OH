@@ -435,85 +435,73 @@ const CostEstimateDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
                     <div>
                       <p className="text-sm text-slate-600">Tipo</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-slate-600">Cotizado</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-slate-600">Asumido</p>
+                      <p className="text-sm font-medium text-slate-600">Total</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-3 border-b">
+                  <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
                       <p className="font-medium">Mano de Obra</p>
                     </div>
                     <div className="text-right text-blue-600 font-semibold">
-                      ${totals.totalLaborQuoted.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-right text-green-600 font-semibold">
-                      ${totals.totalLaborAssumed.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      ${totals.totalLabor.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-3 border-b">
+                  <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
                       <p className="font-medium">Subcontratistas</p>
                     </div>
                     <div className="text-right text-blue-600 font-semibold">
-                      ${totals.totalSubcontractorsQuoted.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-right text-green-600 font-semibold">
-                      ${totals.totalSubcontractorsAssumed.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      ${totals.totalSubcontractors.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-3 border-b">
+                  <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
                       <p className="font-medium">Materiales</p>
                     </div>
-                    <div className="text-right font-semibold" colSpan={2}>
+                    <div className="text-right text-blue-600 font-semibold">
                       ${totals.totalMaterials.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-3 border-b">
+                  <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
                       <p className="font-medium">Equipos</p>
                     </div>
-                    <div className="text-right font-semibold" colSpan={2}>
+                    <div className="text-right text-blue-600 font-semibold">
                       ${totals.totalEquipment.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-3 border-b">
+                  <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
                       <p className="font-medium">Transporte</p>
                     </div>
-                    <div className="text-right font-semibold" colSpan={2}>
+                    <div className="text-right text-blue-600 font-semibold">
                       ${totals.totalTransportation.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-3 border-b">
+                  <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
                       <p className="font-medium">Condiciones Generales</p>
                     </div>
-                    <div className="text-right font-semibold" colSpan={2}>
+                    <div className="text-right text-blue-600 font-semibold">
                       ${totals.totalGC.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg font-bold text-lg">
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg font-bold text-lg">
                     <div>SUBTOTAL</div>
                     <div className="text-right text-blue-600">
-                      ${totals.subtotalQuoted.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-right text-green-600">
-                      ${totals.subtotalAssumed.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      ${totals.subtotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
@@ -561,23 +549,10 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg font-bold text-xl mt-6">
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 rounded-lg font-bold text-xl mt-6">
                     <div>TOTAL FINAL</div>
                     <div className="text-right text-blue-600">
-                      ${totals.grandTotalQuoted.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-right text-green-600">
-                      ${totals.grandTotalAssumed.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 p-3 bg-amber-50 rounded-lg">
-                    <div className="font-medium">Diferencia</div>
-                    <div></div>
-                    <div className={`text-right font-bold text-lg ${
-                      totals.grandTotalQuoted - totals.grandTotalAssumed >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      ${Math.abs(totals.grandTotalQuoted - totals.grandTotalAssumed).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      ${totals.grandTotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
                 </div>
