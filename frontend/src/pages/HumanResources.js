@@ -254,7 +254,8 @@ const HumanResources = () => {
                           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="weekly">Semanal</SelectItem>
-                            <SelectItem value="biweekly">Quincenal</SelectItem>
+                            <SelectItem value="biweekly">Bisemanal (cada 2 semanas)</SelectItem>
+                            <SelectItem value="semimonthly">Quincenal (2 veces al mes)</SelectItem>
                             <SelectItem value="monthly">Mensual</SelectItem>
                           </SelectContent>
                         </Select>
