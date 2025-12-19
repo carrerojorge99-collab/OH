@@ -27,8 +27,8 @@ const CostEstimates = () => {
   const loadData = async () => {
     try {
       const [estimatesRes, projectsRes] = await Promise.all([
-        api.get(`/api/cost-estimates`, { withCredentials: true }),
-        api.get(`/api/projects`, { withCredentials: true })
+        api.get(`/cost-estimates`, { withCredentials: true }),
+        api.get(`/projects`, { withCredentials: true })
       ]);
       
       setEstimates(estimatesRes.data);
@@ -45,7 +45,7 @@ const CostEstimates = () => {
     if (!window.confirm('¿Estás seguro de eliminar esta estimación?')) return;
 
     try {
-      await api.delete(`/api/cost-estimates/${estimateId}`, {
+      await api.delete(`/cost-estimates/${estimateId}`, {
         withCredentials: true
       });
       toast.success('Estimación eliminada');

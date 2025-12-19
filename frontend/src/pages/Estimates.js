@@ -93,8 +93,8 @@ const Estimates = () => {
   const loadData = async () => {
     try {
       const [estimatesRes, projectsRes] = await Promise.all([
-        api.get(`/api/estimates`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`/api/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/estimates`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setEstimates(estimatesRes.data || []);
       setProjects(projectsRes.data || []);
@@ -180,10 +180,10 @@ const Estimates = () => {
       };
 
       if (editingEstimate) {
-        await api.put(`/api/estimates/${editingEstimate}`, payload, { withCredentials: true });
+        await api.put(`/estimates/${editingEstimate}`, payload, { withCredentials: true });
         toast.success('Estimado actualizado');
       } else {
-        await api.post(`/api/estimates`, payload, { withCredentials: true });
+        await api.post(`/estimates`, payload, { withCredentials: true });
         toast.success('Estimado creado');
       }
       
@@ -219,7 +219,7 @@ const Estimates = () => {
     if (!window.confirm('¿Eliminar este estimado?')) return;
     
     try {
-      await api.delete(`/api/estimates/${estimateId}`, { withCredentials: true });
+      await api.delete(`/estimates/${estimateId}`, { withCredentials: true });
       toast.success('Estimado eliminado');
       // Actualizar estado local inmediatamente para reflejar el cambio
       setEstimates(prev => prev.filter(e => e.estimate_id !== estimateId));
@@ -230,7 +230,7 @@ const Estimates = () => {
 
   const handleStatusChange = async (estimateId, newStatus) => {
     try {
-      await api.put(`/api/estimates/${estimateId}/status?status=${newStatus}`, {}, { withCredentials: true });
+      await api.put(`/estimates/${estimateId}/status?status=${newStatus}`, {}, { withCredentials: true });
       toast.success(`Estado cambiado a ${statusLabels[newStatus]}`);
       loadData();
     } catch (error) {
@@ -240,7 +240,7 @@ const Estimates = () => {
 
   const handleSend = async (estimateId) => {
     try {
-      await api.post(`/api/estimates/${estimateId}/send`, {}, { withCredentials: true });
+      await api.post(`/estimates/${estimateId}/send`, {}, { withCredentials: true });
       toast.success('Estimado enviado');
       loadData();
     } catch (error) {
@@ -250,7 +250,7 @@ const Estimates = () => {
 
   const handleDuplicate = async (estimateId) => {
     try {
-      await api.post(`/api/estimates/${estimateId}/duplicate`, {}, { withCredentials: true });
+      await api.post(`/estimates/${estimateId}/duplicate`, {}, { withCredentials: true });
       toast.success('Estimado duplicado');
       loadData();
     } catch (error) {
@@ -262,7 +262,7 @@ const Estimates = () => {
     if (!window.confirm('¿Convertir este estimado a factura?')) return;
     
     try {
-      const res = await api.post(`/api/estimates/${estimateId}/convert`, {}, { withCredentials: true });
+      const res = await api.post(`/estimates/${estimateId}/convert`, {}, { withCredentials: true });
       toast.success(`Factura ${res.data.invoice_number} creada`);
       loadData();
     } catch (error) {
