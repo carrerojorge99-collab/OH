@@ -17,8 +17,10 @@ export const useNomenclature = (onNumberGenerated) => {
 
   const loadNomenclatures = async () => {
     try {
+      console.log('Loading nomenclatures from:', `${API_URL}/api/nomenclatures`);
       const response = await axios.get(`${API_URL}/api/nomenclatures`, { withCredentials: true });
-      setNomenclatures(response.data);
+      console.log('Nomenclatures loaded:', response.data);
+      setNomenclatures(response.data || []);
     } catch (error) {
       console.error('Error loading nomenclatures:', error);
     }
