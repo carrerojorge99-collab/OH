@@ -3164,59 +3164,6 @@ const ProjectDetail = () => {
             </div>
           </TabsContent>
 
-                                   log.log_type === 'problem' ? 'Problema' :
-                                   log.log_type === 'milestone' ? 'Hito' : 'Nota'}
-                                </Badge>
-                                <h4 className="font-semibold">{log.title}</h4>
-                                {log.hours_worked > 0 && (
-                                  <Badge variant="outline" className="ml-2">
-                                    {log.hours_worked}h
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-slate-700 whitespace-pre-wrap">{log.description}</p>
-                              <div className="flex items-center gap-4 mt-3 text-sm text-slate-500">
-                                <span className="flex items-center gap-1">
-                                  <User className="w-4 h-4" /> {log.user_name}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" /> {moment(log.created_at).format('DD/MM/YYYY HH:mm')}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditLog(log)}
-                                className="text-slate-600 hover:text-blue-600"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteLog(log.log_id)}
-                                className="text-slate-600 hover:text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="text-center py-12 text-slate-500">
-                      <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg">No hay registros en la bitácora</p>
-                      <p className="text-sm mt-2">Crea el primer registro para documentar el progreso del proyecto</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           {/* Comments Tab */}
           <TabsContent value="comments" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
