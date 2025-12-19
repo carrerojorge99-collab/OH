@@ -119,6 +119,34 @@ class User(BaseModel):
     picture: Optional[str] = None
     created_at: str
 
+class EmployeeProfile(BaseModel):
+    employee_id: Optional[str] = None
+    user_id: str
+    # Personal Info
+    phone: Optional[str] = ""
+    address: Optional[str] = ""
+    city: Optional[str] = ""
+    date_of_birth: Optional[str] = ""
+    gender: Optional[str] = ""
+    marital_status: Optional[str] = ""
+    nationality: Optional[str] = ""
+    id_number: Optional[str] = ""  # Cédula/SSN
+    # Employment Info
+    department: Optional[str] = ""
+    position: Optional[str] = ""
+    hire_date: Optional[str] = ""
+    employment_type: Optional[str] = ""  # full-time, part-time, contractor
+    salary: Optional[float] = 0
+    pay_frequency: Optional[str] = ""  # weekly, biweekly, monthly
+    bank_name: Optional[str] = ""
+    bank_account: Optional[str] = ""
+    # Emergency Contact
+    emergency_contact_name: Optional[str] = ""
+    emergency_contact_phone: Optional[str] = ""
+    emergency_contact_relationship: Optional[str] = ""
+    # Notes
+    notes: Optional[str] = ""
+
 class ProjectCreate(BaseModel):
     name: str
     description: str
