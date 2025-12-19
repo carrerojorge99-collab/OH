@@ -121,7 +121,7 @@ class User(BaseModel):
 
 class EmployeeProfile(BaseModel):
     employee_id: Optional[str] = None
-    user_id: str
+    user_id: Optional[str] = None
     # Personal Info
     phone: Optional[str] = ""
     address: Optional[str] = ""
