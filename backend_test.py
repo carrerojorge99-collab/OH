@@ -1205,10 +1205,18 @@ class ProjectManagementAPITester:
 
 def main():
     """Main function"""
-    if len(sys.argv) > 1 and sys.argv[1] == "clock":
-        # Run clock system tests
-        tester = ClockSystemTester()
-        results = tester.run_clock_system_tests()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "clock":
+            # Run clock system tests
+            tester = ClockSystemTester()
+            results = tester.run_clock_system_tests()
+        elif sys.argv[1] == "export":
+            # Run cost estimate export tests
+            tester = CostEstimateExportTester()
+            results = tester.run_cost_estimate_export_tests()
+        else:
+            print("Usage: python backend_test.py [clock|export]")
+            return 1
     else:
         # Run full API tests
         tester = ProjectManagementAPITester()
