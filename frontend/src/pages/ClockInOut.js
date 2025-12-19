@@ -54,7 +54,12 @@ const ClockInOut = () => {
       console.log('📊 Active clock:', activeRes.data ? 'YES' : 'NO');
       console.log('📊 Projects loaded:', projectsRes.data?.length || 0);
       
-      setPunches([...(historyRes.data || [])]);
+      // Ordenar ponches cronológicamente (primer ponche del día primero)
+      const sortedPunches = (historyRes.data || []).sort((a, b) => {
+        return new Date(a.clock_in) - new Date(b.clock_in);
+      });
+      
+      setPunches([...sortedPunches]);
       setActiveClock(activeRes.data ? {...activeRes.data} : null);
       setProjects(projectsRes.data || []);
     } catch (error) {
