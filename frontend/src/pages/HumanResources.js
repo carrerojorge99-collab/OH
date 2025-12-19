@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
-import { Users, Upload, FileText, Trash2, Download, FolderOpen, User, Briefcase, Phone, Save } from 'lucide-react';
+import { Users, Upload, FileText, Trash2, Download, FolderOpen, User, Briefcase, Phone, Save, Calculator } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import moment from 'moment';
 
