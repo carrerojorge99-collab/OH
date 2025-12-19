@@ -89,7 +89,7 @@ const Projects = () => {
 
   const loadProjects = async () => {
     try {
-      const response = await api.get(`${API}/projects?_t=${Date.now()}`, { 
+      const response = await api.get(`/api/projects`, { 
         withCredentials: true,
         headers: { 'Cache-Control': 'no-cache' }
       });
@@ -105,7 +105,7 @@ const Projects = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await api.get(`${API}/users`, { withCredentials: true });
+      const response = await api.get(`/api/users`, { withCredentials: true });
       setUsers(response.data);
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
@@ -116,7 +116,7 @@ const Projects = () => {
     e.preventDefault();
     
     try {
-      await api.post(`${API}/projects`, formData, { withCredentials: true });
+      await api.post(`/api/projects`, formData, { withCredentials: true });
       toast.success('Proyecto creado exitosamente');
       setDialogOpen(false);
       setFormData({
@@ -157,7 +157,7 @@ const Projects = () => {
     if (!window.confirm(`¿Estás seguro de eliminar el proyecto "${projectName}"? Esta acción eliminará todos los datos asociados (tareas, gastos, documentos, etc.) y no se puede deshacer.`)) return;
     
     try {
-      await api.delete(`${API}/projects/${projectId}`, { withCredentials: true });
+      await api.delete(`/api/projects/${projectId}`, { withCredentials: true });
       toast.success('Proyecto eliminado exitosamente');
       loadProjects();
     } catch (error) {
