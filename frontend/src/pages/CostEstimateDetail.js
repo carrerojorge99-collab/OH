@@ -567,11 +567,9 @@ const CostEstimateDetail = () => {
                         <th className="p-2 text-left text-xs">Cant.</th>
                         <th className="p-2 text-left text-xs">Hrs Regular</th>
                         <th className="p-2 text-left text-xs">Hrs Overtime</th>
-                        <th className="p-2 text-left text-xs">Tarifa Cotizada</th>
-                        <th className="p-2 text-left text-xs">Tarifa Asumida</th>
+                        <th className="p-2 text-left text-xs">Tarifa/Hora</th>
                         <th className="p-2 text-left text-xs">Tarifa OT</th>
-                        <th className="p-2 text-right text-xs">Subtotal Cotizado</th>
-                        <th className="p-2 text-right text-xs">Subtotal Asumido</th>
+                        <th className="p-2 text-right text-xs">Subtotal</th>
                         <th className="p-2"></th>
                       </tr>
                     </thead>
@@ -620,17 +618,8 @@ const CostEstimateDetail = () => {
                               type="number"
                               step="0.01"
                               className="w-24"
-                              value={item.quoted_rate}
-                              onChange={(e) => updateLaborRow(idx, 'quoted_rate', e.target.value)}
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="w-24"
-                              value={item.assumed_rate}
-                              onChange={(e) => updateLaborRow(idx, 'assumed_rate', e.target.value)}
+                              value={item.rate}
+                              onChange={(e) => updateLaborRow(idx, 'rate', e.target.value)}
                             />
                           </td>
                           <td className="p-2">
@@ -643,10 +632,7 @@ const CostEstimateDetail = () => {
                             />
                           </td>
                           <td className="p-2 text-right text-sm text-blue-600 font-semibold">
-                            ${item.subtotal_quoted.toFixed(2)}
-                          </td>
-                          <td className="p-2 text-right text-sm text-green-600 font-semibold">
-                            ${item.subtotal_assumed.toFixed(2)}
+                            ${item.subtotal.toFixed(2)}
                           </td>
                           <td className="p-2">
                             <Button
