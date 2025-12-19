@@ -3851,6 +3851,14 @@ class EquipmentItem(BaseModel):
     rate: float = 0
     total: float = 0
 
+class TransportationItem(BaseModel):
+    description: str
+    city_town: str = ""
+    roundtrip_miles: float = 0
+    cost_per_mile: float = 0
+    days: int = 0
+    total: float = 0
+
 class GeneralConditionItem(BaseModel):
     description: str
     quantity: float = 0
