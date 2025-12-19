@@ -281,7 +281,7 @@ const ProjectDetail = () => {
     } catch (error) {
       toast.error('Error al crear categoría');
     }
-
+  };
 
   // Load required documents and project status
   const loadRequiredDocuments = async () => {
