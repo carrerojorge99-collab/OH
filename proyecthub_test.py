@@ -345,10 +345,7 @@ class ProyectHubTester:
         
         # Test creating "from client" document
         from_client_data = {
-            "title": f"Test Document from Client - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            "description": "This is a test document that the client should provide",
-            "required": True,
-            "completed": False
+            "document_name": f"Test Document from Client - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         }
         
         try:
