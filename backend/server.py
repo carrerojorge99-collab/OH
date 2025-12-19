@@ -4363,11 +4363,6 @@ async def get_next_number(
     
     return {"number": full_number, "nomenclature": nomenclature}
 
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
