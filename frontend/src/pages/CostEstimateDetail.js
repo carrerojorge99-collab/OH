@@ -76,15 +76,10 @@ const CostEstimateDetail = () => {
   };
 
   const handleSave = async () => {
-    if (!estimate?.project_id) {
-      toast.error('Selecciona un proyecto');
-      return;
-    }
-
     setSaving(true);
     try {
       const data = {
-        project_id: estimate.project_id,
+        project_id: estimate?.project_id || null,
         estimate_name: estimate.estimate_name || 'Nueva Estimación',
         labor_costs: laborCosts,
         subcontractors,
