@@ -17,6 +17,7 @@ import Reports from './pages/Reports';
 import Invoices from './pages/Invoices';
 import Estimates from './pages/Estimates';
 import PurchaseOrders from './pages/PurchaseOrders';
+import CostEstimates from './pages/CostEstimates';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
