@@ -3798,6 +3798,414 @@ async def test_slack_integration(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al enviar notificación: {str(e)}")
 
+# ==================== LABOR RATES MODELS ====================
+class LaborRate(BaseModel):
+    rate_id: str
+    role_name: str
+    quoted_rate: float
+    assumed_rate: float
+    overtime_rate: float
+    created_at: str
+    updated_at: str
+
+class LaborRateCreate(BaseModel):
+    role_name: str
+    quoted_rate: float
+    assumed_rate: float
+    overtime_rate: float
+
+class LaborRateUpdate(BaseModel):
+    role_name: Optional[str] = None
+    quoted_rate: Optional[float] = None
+    assumed_rate: Optional[float] = None
+    overtime_rate: Optional[float] = None
+
+# ==================== COST ESTIMATES MODELS ====================
+class LaborCostItem(BaseModel):
+    role_name: str
+    qty_personnel: int = 0
+    regular_hours: float = 0
+    overtime_hours: float = 0
+    quoted_rate: float = 0
+    assumed_rate: float = 0
+    overtime_rate: float = 0
+    subtotal_quoted: float = 0
+    subtotal_assumed: float = 0
+
+class SubcontractorItem(BaseModel):
+    trade: str  # Civil, Mechanical, Electrical
+    description: str = ""
+    quoted_cost: float = 0
+    assumed_cost: float = 0
+
+class MaterialItem(BaseModel):
+    description: str
+    quantity: float = 0
+    unit_cost: float = 0
+    total: float = 0
+
+class EquipmentItem(BaseModel):
+    description: str
+    quantity: int = 0
+    days: int = 0
+    rate: float = 0
+    total: float = 0
+
+class GeneralConditionItem(BaseModel):
+    description: str
+    quantity: float = 0
+    unit_cost: float = 0
+    total: float = 0
+
+class CostEstimate(BaseModel):
+    estimate_id: str
+    project_id: str
+    project_name: str
+    estimate_name: str
+    labor_costs: List[LaborCostItem] = []
+    subcontractors: List[SubcontractorItem] = []
+    materials: List[MaterialItem] = []
+    equipment: List[EquipmentItem] = []
+    general_conditions: List[GeneralConditionItem] = []
+    transportation_cost: float = 0
+    overhead_percentage: float = 0
+    profit_percentage: float = 0
+    contingency_percentage: float = 0
+    tax_percentage: float = 0
+    total_labor_quoted: float = 0
+    total_labor_assumed: float = 0
+    total_subcontractors_quoted: float = 0
+    total_subcontractors_assumed: float = 0
+    total_materials: float = 0
+    total_equipment: float = 0
+    total_general_conditions: float = 0
+    subtotal_quoted: float = 0
+    subtotal_assumed: float = 0
+    grand_total_quoted: float = 0
+    grand_total_assumed: float = 0
+    created_by: str
+    created_at: str
+    updated_at: str
+
+class CostEstimateCreate(BaseModel):
+    project_id: str
+    estimate_name: str
+    labor_costs: List[LaborCostItem] = []
+    subcontractors: List[SubcontractorItem] = []
+    materials: List[MaterialItem] = []
+    equipment: List[EquipmentItem] = []
+    general_conditions: List[GeneralConditionItem] = []
+    transportation_cost: float = 0
+    overhead_percentage: float = 0
+    profit_percentage: float = 0
+    contingency_percentage: float = 0
+    tax_percentage: float = 0
+
+# ==================== LABOR RATES ENDPOINTS ====================
+@api_router.get("/labor-rates", response_model=List[LaborRate])
+async def get_labor_rates(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    rates = await db.labor_rates.find({}, {"_id": 0}).to_list(1000)
+    return rates
+
+@api_router.post("/labor-rates", response_model=LaborRate)
+async def create_labor_rate(
+    rate_data: LaborRateCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden crear tarifas")
+    
+    rate_id = f"lr_{uuid4().hex[:16]}"
+    now = datetime.now(PUERTO_RICO_TZ).isoformat()
+    
+    rate_doc = {
+        "rate_id": rate_id,
+        "role_name": rate_data.role_name,
+        "quoted_rate": rate_data.quoted_rate,
+        "assumed_rate": rate_data.assumed_rate,
+        "overtime_rate": rate_data.overtime_rate,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.labor_rates.insert_one(rate_doc)
+    return LaborRate(**rate_doc)
+
+@api_router.put("/labor-rates/{rate_id}", response_model=LaborRate)
+async def update_labor_rate(
+    rate_id: str,
+    rate_data: LaborRateUpdate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden actualizar tarifas")
+    
+    rate = await db.labor_rates.find_one({"rate_id": rate_id}, {"_id": 0})
+    if not rate:
+        raise HTTPException(status_code=404, detail="Tarifa no encontrada")
+    
+    update_data = {"updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()}
+    
+    if rate_data.role_name is not None:
+        update_data["role_name"] = rate_data.role_name
+    if rate_data.quoted_rate is not None:
+        update_data["quoted_rate"] = rate_data.quoted_rate
+    if rate_data.assumed_rate is not None:
+        update_data["assumed_rate"] = rate_data.assumed_rate
+    if rate_data.overtime_rate is not None:
+        update_data["overtime_rate"] = rate_data.overtime_rate
+    
+    await db.labor_rates.update_one({"rate_id": rate_id}, {"$set": update_data})
+    
+    updated_rate = await db.labor_rates.find_one({"rate_id": rate_id}, {"_id": 0})
+    return LaborRate(**updated_rate)
+
+@api_router.delete("/labor-rates/{rate_id}")
+async def delete_labor_rate(
+    rate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar tarifas")
+    
+    result = await db.labor_rates.delete_one({"rate_id": rate_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tarifa no encontrada")
+    
+    return {"message": "Tarifa eliminada exitosamente"}
+
+# ==================== COST ESTIMATES ENDPOINTS ====================
+@api_router.get("/cost-estimates", response_model=List[CostEstimate])
+async def get_cost_estimates(
+    project_id: Optional[str] = None,
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    estimates = await db.cost_estimates.find(query, {"_id": 0}).to_list(1000)
+    return estimates
+
+@api_router.get("/cost-estimates/{estimate_id}", response_model=CostEstimate)
+async def get_cost_estimate(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    return CostEstimate(**estimate)
+
+@api_router.post("/cost-estimates", response_model=CostEstimate)
+async def create_cost_estimate(
+    estimate_data: CostEstimateCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Verify project exists
+    project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    estimate_id = f"ce_{uuid4().hex[:16]}"
+    now = datetime.now(PUERTO_RICO_TZ).isoformat()
+    
+    # Calculate totals
+    total_labor_quoted = sum(item.subtotal_quoted for item in estimate_data.labor_costs)
+    total_labor_assumed = sum(item.subtotal_assumed for item in estimate_data.labor_costs)
+    total_subcontractors_quoted = sum(item.quoted_cost for item in estimate_data.subcontractors)
+    total_subcontractors_assumed = sum(item.assumed_cost for item in estimate_data.subcontractors)
+    total_materials = sum(item.total for item in estimate_data.materials)
+    total_equipment = sum(item.total for item in estimate_data.equipment)
+    total_general_conditions = sum(item.total for item in estimate_data.general_conditions)
+    
+    subtotal_quoted = (
+        total_labor_quoted + 
+        total_subcontractors_quoted + 
+        total_materials + 
+        total_equipment + 
+        total_general_conditions +
+        estimate_data.transportation_cost
+    )
+    
+    subtotal_assumed = (
+        total_labor_assumed + 
+        total_subcontractors_assumed + 
+        total_materials + 
+        total_equipment + 
+        total_general_conditions +
+        estimate_data.transportation_cost
+    )
+    
+    # Apply percentages
+    grand_total_quoted = subtotal_quoted * (
+        1 + estimate_data.overhead_percentage / 100 +
+        estimate_data.profit_percentage / 100 +
+        estimate_data.contingency_percentage / 100 +
+        estimate_data.tax_percentage / 100
+    )
+    
+    grand_total_assumed = subtotal_assumed * (
+        1 + estimate_data.overhead_percentage / 100 +
+        estimate_data.profit_percentage / 100 +
+        estimate_data.contingency_percentage / 100 +
+        estimate_data.tax_percentage / 100
+    )
+    
+    estimate_doc = {
+        "estimate_id": estimate_id,
+        "project_id": estimate_data.project_id,
+        "project_name": project.get('name', ''),
+        "estimate_name": estimate_data.estimate_name,
+        "labor_costs": [item.dict() for item in estimate_data.labor_costs],
+        "subcontractors": [item.dict() for item in estimate_data.subcontractors],
+        "materials": [item.dict() for item in estimate_data.materials],
+        "equipment": [item.dict() for item in estimate_data.equipment],
+        "general_conditions": [item.dict() for item in estimate_data.general_conditions],
+        "transportation_cost": estimate_data.transportation_cost,
+        "overhead_percentage": estimate_data.overhead_percentage,
+        "profit_percentage": estimate_data.profit_percentage,
+        "contingency_percentage": estimate_data.contingency_percentage,
+        "tax_percentage": estimate_data.tax_percentage,
+        "total_labor_quoted": round(total_labor_quoted, 2),
+        "total_labor_assumed": round(total_labor_assumed, 2),
+        "total_subcontractors_quoted": round(total_subcontractors_quoted, 2),
+        "total_subcontractors_assumed": round(total_subcontractors_assumed, 2),
+        "total_materials": round(total_materials, 2),
+        "total_equipment": round(total_equipment, 2),
+        "total_general_conditions": round(total_general_conditions, 2),
+        "subtotal_quoted": round(subtotal_quoted, 2),
+        "subtotal_assumed": round(subtotal_assumed, 2),
+        "grand_total_quoted": round(grand_total_quoted, 2),
+        "grand_total_assumed": round(grand_total_assumed, 2),
+        "created_by": user.user_id,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.cost_estimates.insert_one(estimate_doc)
+    return CostEstimate(**estimate_doc)
+
+@api_router.put("/cost-estimates/{estimate_id}", response_model=CostEstimate)
+async def update_cost_estimate(
+    estimate_id: str,
+    estimate_data: CostEstimateCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    # Calculate totals
+    total_labor_quoted = sum(item.subtotal_quoted for item in estimate_data.labor_costs)
+    total_labor_assumed = sum(item.subtotal_assumed for item in estimate_data.labor_costs)
+    total_subcontractors_quoted = sum(item.quoted_cost for item in estimate_data.subcontractors)
+    total_subcontractors_assumed = sum(item.assumed_cost for item in estimate_data.subcontractors)
+    total_materials = sum(item.total for item in estimate_data.materials)
+    total_equipment = sum(item.total for item in estimate_data.equipment)
+    total_general_conditions = sum(item.total for item in estimate_data.general_conditions)
+    
+    subtotal_quoted = (
+        total_labor_quoted + 
+        total_subcontractors_quoted + 
+        total_materials + 
+        total_equipment + 
+        total_general_conditions +
+        estimate_data.transportation_cost
+    )
+    
+    subtotal_assumed = (
+        total_labor_assumed + 
+        total_subcontractors_assumed + 
+        total_materials + 
+        total_equipment + 
+        total_general_conditions +
+        estimate_data.transportation_cost
+    )
+    
+    # Apply percentages
+    grand_total_quoted = subtotal_quoted * (
+        1 + estimate_data.overhead_percentage / 100 +
+        estimate_data.profit_percentage / 100 +
+        estimate_data.contingency_percentage / 100 +
+        estimate_data.tax_percentage / 100
+    )
+    
+    grand_total_assumed = subtotal_assumed * (
+        1 + estimate_data.overhead_percentage / 100 +
+        estimate_data.profit_percentage / 100 +
+        estimate_data.contingency_percentage / 100 +
+        estimate_data.tax_percentage / 100
+    )
+    
+    update_doc = {
+        "estimate_name": estimate_data.estimate_name,
+        "labor_costs": [item.dict() for item in estimate_data.labor_costs],
+        "subcontractors": [item.dict() for item in estimate_data.subcontractors],
+        "materials": [item.dict() for item in estimate_data.materials],
+        "equipment": [item.dict() for item in estimate_data.equipment],
+        "general_conditions": [item.dict() for item in estimate_data.general_conditions],
+        "transportation_cost": estimate_data.transportation_cost,
+        "overhead_percentage": estimate_data.overhead_percentage,
+        "profit_percentage": estimate_data.profit_percentage,
+        "contingency_percentage": estimate_data.contingency_percentage,
+        "tax_percentage": estimate_data.tax_percentage,
+        "total_labor_quoted": round(total_labor_quoted, 2),
+        "total_labor_assumed": round(total_labor_assumed, 2),
+        "total_subcontractors_quoted": round(total_subcontractors_quoted, 2),
+        "total_subcontractors_assumed": round(total_subcontractors_assumed, 2),
+        "total_materials": round(total_materials, 2),
+        "total_equipment": round(total_equipment, 2),
+        "total_general_conditions": round(total_general_conditions, 2),
+        "subtotal_quoted": round(subtotal_quoted, 2),
+        "subtotal_assumed": round(subtotal_assumed, 2),
+        "grand_total_quoted": round(grand_total_quoted, 2),
+        "grand_total_assumed": round(grand_total_assumed, 2),
+        "updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.cost_estimates.update_one({"estimate_id": estimate_id}, {"$set": update_doc})
+    
+    updated_estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    return CostEstimate(**updated_estimate)
+
+@api_router.delete("/cost-estimates/{estimate_id}")
+async def delete_cost_estimate(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.cost_estimates.delete_one({"estimate_id": estimate_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    return {"message": "Estimación eliminada exitosamente"}
+
 app.include_router(api_router)
 
 # Middleware para prevenir caché en respuestas de API
