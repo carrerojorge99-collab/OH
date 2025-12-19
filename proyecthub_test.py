@@ -377,8 +377,9 @@ class ProyectHubTester:
             response = self.session.post(url, json=to_client_data, timeout=30)
             
             if response.status_code == 200:
+                response_data = response.json()
                 self.log_test("Required Documents - Create To Client", True, 
-                            f"Created document: {to_client_data['title']}")
+                            f"Created document: {response_data.get('document_name', 'Unknown')}")
                 return True
             else:
                 try:
