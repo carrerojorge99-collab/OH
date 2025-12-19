@@ -26,6 +26,22 @@ const Settings = () => {
     assumed_rate: 0,
     overtime_rate: 0
   });
+  
+  // Documents state
+  const [documentsFromClient, setDocumentsFromClient] = useState([]);
+  const [documentsToClient, setDocumentsToClient] = useState([]);
+  const [newDocFromClient, setNewDocFromClient] = useState('');
+  const [newDocToClient, setNewDocToClient] = useState('');
+  
+  // Nomenclatures state
+  const [nomenclatures, setNomenclatures] = useState([]);
+  const [nomenclatureForm, setNomenclatureForm] = useState({
+    name: '',
+    prefix: '',
+    type: 'estimate',
+    starting_number: 100
+  });
+  const [editingNomenclature, setEditingNomenclature] = useState(null);
   const [settings, setSettings] = useState({
     smtp_host: '',
     smtp_port: 587,
@@ -64,6 +80,8 @@ const Settings = () => {
     fetchSettings();
     fetchCompany();
     fetchLaborRates();
+    fetchDocuments();
+    fetchNomenclatures();
   }, []);
 
   const fetchSettings = async () => {
