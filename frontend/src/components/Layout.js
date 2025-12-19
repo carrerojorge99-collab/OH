@@ -125,12 +125,12 @@ const Layout = ({ children }) => {
                   data-testid={`nav-link-${item.name.toLowerCase()}`}
                   className={`flex items-center px-4 py-3 text-sm font-medium rounded-md sidebar-link ${
                     isActive
-                      ? 'bg-blue-50 text-blue-600'
+                      ? 'bg-orange-50 text-orange-500'
                       : 'text-slate-700 hover:bg-slate-100'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-slate-500'}`} />
+                  <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-orange-500' : 'text-slate-500'}`} />
                   {item.name}
                 </Link>
               );
@@ -144,7 +144,7 @@ const Layout = ({ children }) => {
                 <button data-testid="user-menu-button" className="flex items-center w-full px-4 py-3 space-x-3 rounded-md hover:bg-slate-100 transition-colors">
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={user?.picture} alt={user?.name} />
-                    <AvatarFallback className="bg-blue-600 text-white font-medium">
+                    <AvatarFallback className="bg-orange-500 text-white font-medium">
                       {getInitials(user?.name)}
                     </AvatarFallback>
                   </Avatar>

@@ -95,7 +95,7 @@ const Login = () => {
               <Button
                 data-testid="login-submit-button"
                 type="submit"
-                className="w-full rounded-full bg-blue-600 hover:bg-blue-700 font-medium"
+                className="w-full rounded-full bg-orange-500 hover:bg-orange-600 font-medium"
                 disabled={loading}
               >
                 {loading ? 'Ingresando...' : 'Ingresar'}
@@ -128,7 +128,7 @@ const Login = () => {
 
               <p className="text-sm text-center text-muted-foreground">
                 ¿No tienes cuenta?{' '}
-                <Link to="/register" className="text-blue-600 hover:underline font-medium">
+                <Link to="/register" className="text-orange-500 hover:underline font-medium">
                   Regístrate
                 </Link>
               </p>
