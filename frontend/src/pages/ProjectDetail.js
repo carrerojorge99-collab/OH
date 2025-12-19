@@ -3088,6 +3088,67 @@ const ProjectDetail = () => {
                                 }>
                                   {log.log_type === 'work' ? 'Trabajo' :
                                    log.log_type === 'update' ? 'Actualización' :
+
+
+          {/* Required Documents Tab */}
+          <TabsContent value="required-docs" className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Documentos que el Cliente Debe Enviar</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {requiredDocsFromClient.length === 0 ? (
+                    <p className="text-slate-500 text-sm">No hay documentos configurados. Ve a Configuración para agregar.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {requiredDocsFromClient.map(doc => (
+                        <div key={doc.document_id} className="flex items-center gap-3 p-3 border rounded hover:bg-slate-50">
+                          <input
+                            type="checkbox"
+                            checked={projectDocStatus[doc.document_id] || false}
+                            onChange={() => toggleDocumentStatus(doc.document_id, 'from_client')}
+                            className="w-5 h-5 cursor-pointer"
+                          />
+                          <span className={projectDocStatus[doc.document_id] ? 'line-through text-slate-500' : ''}>
+                            {doc.document_name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Documentos que Debo Enviar al Cliente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {requiredDocsToClient.length === 0 ? (
+                    <p className="text-slate-500 text-sm">No hay documentos configurados. Ve a Configuración para agregar.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {requiredDocsToClient.map(doc => (
+                        <div key={doc.document_id} className="flex items-center gap-3 p-3 border rounded hover:bg-slate-50">
+                          <input
+                            type="checkbox"
+                            checked={projectDocStatus[doc.document_id] || false}
+                            onChange={() => toggleDocumentStatus(doc.document_id, 'to_client')}
+                            className="w-5 h-5 cursor-pointer"
+                          />
+                          <span className={projectDocStatus[doc.document_id] ? 'line-through text-slate-500' : ''}>
+                            {doc.document_name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
                                    log.log_type === 'problem' ? 'Problema' :
                                    log.log_type === 'milestone' ? 'Hito' : 'Nota'}
                                 </Badge>
