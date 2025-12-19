@@ -49,6 +49,10 @@ const Invoices = () => {
     custom_number: ''
   });
 
+  const { nomenclatures, selectedNomenclature, generatedNumber, handleSelectNomenclature } = useNomenclature(
+    (number) => setFormData(prev => ({ ...prev, custom_number: number }))
+  );
+
   const [paymentForm, setPaymentForm] = useState({
     amount: 0,
     payment_method: 'transfer',
