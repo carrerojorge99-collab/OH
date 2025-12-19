@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import moment from 'moment';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import NomenclatureSelector, { useNomenclature } from '../components/NomenclatureSelector';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -38,9 +39,6 @@ const Invoices = () => {
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
   const [payments, setPayments] = useState([]);
   const navigate = useNavigate();
-  const { nomenclatures, selectedNomenclature, generatedNumber, handleSelectNomenclature } = useNomenclature(
-    (number) => setFormData(prev => ({ ...prev, custom_number: number }))
-  );
 
   const [formData, setFormData] = useState({
     project_id: '',
