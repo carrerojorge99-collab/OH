@@ -109,7 +109,7 @@ const Settings = () => {
 
   const fetchLaborRates = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/labor-rates`, {
+      const response = await fetch(`${API_URL}/api/labor-rates?_t=${Date.now()}`, {
         credentials: 'include'
       });
 
@@ -119,6 +119,7 @@ const Settings = () => {
       }
     } catch (error) {
       console.error('Error fetching labor rates:', error);
+      toast.error('Error al cargar tarifas laborales');
     }
   };
 
