@@ -180,9 +180,7 @@ const Layout = ({ children }) => {
             <Menu className="w-6 h-6" />
           </Button>
           <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full">
-              <Briefcase className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo.webp" alt="OHSMS ProManage" className="w-8 h-8 object-contain" />
             <span className="text-lg font-bold tracking-tight text-[#0F172A]">OHSMS ProManage</span>
           </div>
           <NotificationCenter />
