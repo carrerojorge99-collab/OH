@@ -418,6 +418,273 @@ class ClockSystemTester:
             "critical_issues": critical_failures
         }
 
+class CostEstimateExportTester:
+    def __init__(self, base_url="https://project-mgmt-hub-1.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data - using the specific estimate ID from the request
+        self.estimate_id = "ce_91fd8f68b8684405"
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="carrerojorge99@gmail.com", password="Axel52418!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_get_cost_estimates(self):
+        """Test getting cost estimates list"""
+        print(f"\n🔍 Testing Get Cost Estimates List...")
+        
+        try:
+            url = f"{self.api_url}/cost-estimates"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                estimates = response.json()
+                if isinstance(estimates, list):
+                    # Look for our specific estimate
+                    target_estimate = None
+                    for estimate in estimates:
+                        if estimate.get('estimate_id') == self.estimate_id:
+                            target_estimate = estimate
+                            break
+                    
+                    if target_estimate:
+                        self.log_test("Get Cost Estimates", True, 
+                                    f"Found target estimate '{target_estimate.get('estimate_name', 'N/A')}' (ID: {self.estimate_id})")
+                        return True, target_estimate
+                    else:
+                        self.log_test("Get Cost Estimates", False, "", 
+                                    f"Target estimate ID {self.estimate_id} not found in list of {len(estimates)} estimates")
+                        return False, None
+                else:
+                    self.log_test("Get Cost Estimates", False, "", f"Invalid response format: {estimates}")
+                    return False, None
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Cost Estimates", False, "", error_msg)
+                return False, None
+                
+        except Exception as e:
+            self.log_test("Get Cost Estimates", False, "", str(e))
+            return False, None
+
+    def test_pdf_export(self):
+        """Test PDF export functionality"""
+        print(f"\n🔍 Testing PDF Export for estimate {self.estimate_id}...")
+        
+        try:
+            url = f"{self.api_url}/cost-estimates/{self.estimate_id}/export/pdf"
+            response = self.session.get(url, timeout=60)  # Longer timeout for file generation
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                if content_type == 'application/pdf':
+                    # Check content disposition header for filename
+                    content_disposition = response.headers.get('content-disposition', '')
+                    if 'estimacion_' in content_disposition and '.pdf' in content_disposition:
+                        # Check if we actually got PDF content
+                        content = response.content
+                        if content and content.startswith(b'%PDF'):
+                            file_size = len(content)
+                            self.log_test("PDF Export", True, 
+                                        f"PDF generated successfully - Size: {file_size} bytes, Content-Type: {content_type}, Filename: {content_disposition}")
+                            return True, content
+                        else:
+                            self.log_test("PDF Export", False, "", "Response content is not a valid PDF file")
+                            return False, None
+                    else:
+                        self.log_test("PDF Export", False, "", f"Invalid filename in Content-Disposition: {content_disposition}")
+                        return False, None
+                else:
+                    self.log_test("PDF Export", False, "", f"Invalid Content-Type: {content_type} (expected: application/pdf)")
+                    return False, None
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("PDF Export", False, "", error_msg)
+                return False, None
+                
+        except Exception as e:
+            self.log_test("PDF Export", False, "", str(e))
+            return False, None
+
+    def test_excel_export(self):
+        """Test Excel export functionality"""
+        print(f"\n🔍 Testing Excel Export for estimate {self.estimate_id}...")
+        
+        try:
+            url = f"{self.api_url}/cost-estimates/{self.estimate_id}/export/excel"
+            response = self.session.get(url, timeout=60)  # Longer timeout for file generation
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                expected_content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                
+                if content_type == expected_content_type:
+                    # Check content disposition header for filename
+                    content_disposition = response.headers.get('content-disposition', '')
+                    if 'estimacion_' in content_disposition and '.xlsx' in content_disposition:
+                        # Check if we actually got Excel content
+                        content = response.content
+                        if content and content.startswith(b'PK'):  # Excel files start with PK (ZIP signature)
+                            file_size = len(content)
+                            self.log_test("Excel Export", True, 
+                                        f"Excel generated successfully - Size: {file_size} bytes, Content-Type: {content_type}, Filename: {content_disposition}")
+                            return True, content
+                        else:
+                            self.log_test("Excel Export", False, "", "Response content is not a valid Excel file")
+                            return False, None
+                    else:
+                        self.log_test("Excel Export", False, "", f"Invalid filename in Content-Disposition: {content_disposition}")
+                        return False, None
+                else:
+                    self.log_test("Excel Export", False, "", f"Invalid Content-Type: {content_type} (expected: {expected_content_type})")
+                    return False, None
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Excel Export", False, "", error_msg)
+                return False, None
+                
+        except Exception as e:
+            self.log_test("Excel Export", False, "", str(e))
+            return False, None
+
+    def run_cost_estimate_export_tests(self):
+        """Run complete cost estimate export test suite"""
+        print("🚀 Starting Cost Estimate Export Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print(f"🎯 Target Estimate ID: {self.estimate_id}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Get cost estimates list to verify target exists
+        success, estimate_data = self.test_get_cost_estimates()
+        if not success:
+            print("❌ Failed to get cost estimates or target estimate not found, stopping tests")
+            return self.generate_report()
+        
+        # Step 3: Test PDF Export
+        pdf_success, pdf_content = self.test_pdf_export()
+        
+        # Step 4: Test Excel Export
+        excel_success, excel_content = self.test_excel_export()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 COST ESTIMATE EXPORT TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        export_failures = [test for test in failed_tests if "Export" in test['test']]
+        if export_failures:
+            print("\n🚨 EXPORT ISSUES FOUND:")
+            for test in export_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "export_issues": export_failures
+        }
+
 class ProjectManagementAPITester:
     def __init__(self, base_url="https://project-mgmt-hub-1.preview.emergentagent.com"):
         self.base_url = base_url
