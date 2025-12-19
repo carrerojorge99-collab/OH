@@ -321,8 +321,6 @@ const ProjectDetail = () => {
     }
   };
 
-  };
-
   const handleEditCategory = (category) => {
     setEditingCategoryId(category.category_id);
     setCategoryForm({
