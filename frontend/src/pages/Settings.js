@@ -627,6 +627,144 @@ const Settings = () => {
             </form>
           </TabsContent>
 
+          {/* Labor Rates Tab */}
+          <TabsContent value="labor-rates">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tarifas Laborales</CardTitle>
+                <CardDescription>
+                  Configura las tarifas por hora para cada rol laboral. Estas tarifas se usarán en las estimaciones de costos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSaveRate} className="space-y-6">
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="role_name">Nombre del Rol *</Label>
+                      <Input
+                        id="role_name"
+                        placeholder="Ej: Project Manager"
+                        value={rateForm.role_name}
+                        onChange={(e) => setRateForm({ ...rateForm, role_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="quoted_rate">Tarifa Cotizada ($) *</Label>
+                      <Input
+                        id="quoted_rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={rateForm.quoted_rate}
+                        onChange={(e) => setRateForm({ ...rateForm, quoted_rate: parseFloat(e.target.value) || 0 })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="assumed_rate">Tarifa Asumida ($) *</Label>
+                      <Input
+                        id="assumed_rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={rateForm.assumed_rate}
+                        onChange={(e) => setRateForm({ ...rateForm, assumed_rate: parseFloat(e.target.value) || 0 })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="overtime_rate">Tarifa Overtime ($) *</Label>
+                      <Input
+                        id="overtime_rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={rateForm.overtime_rate}
+                        onChange={(e) => setRateForm({ ...rateForm, overtime_rate: parseFloat(e.target.value) || 0 })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Guardando...' : editingRate ? 'Actualizar' : 'Agregar Tarifa'}
+                    </Button>
+                    {editingRate && (
+                      <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                        Cancelar
+                      </Button>
+                    )}
+                  </div>
+                </form>
+
+                {/* Labor Rates Table */}
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-4">Tarifas Configuradas</h3>
+                  {laborRates.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <p>No hay tarifas configuradas. Agrega la primera tarifa arriba.</p>
+                      <p className="text-sm mt-2">Sugerencia: Agrega los roles del Excel (Project Manager, Soldador, etc.)</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border rounded-lg">
+                        <thead>
+                          <tr className="bg-slate-50 border-b">
+                            <th className="text-left p-3 font-semibold">Rol</th>
+                            <th className="text-right p-3 font-semibold">Cotizada</th>
+                            <th className="text-right p-3 font-semibold">Asumida</th>
+                            <th className="text-right p-3 font-semibold">Overtime</th>
+                            <th className="text-right p-3 font-semibold">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {laborRates.map((rate) => (
+                            <tr key={rate.rate_id} className="border-b hover:bg-slate-50">
+                              <td className="p-3 font-medium">{rate.role_name}</td>
+                              <td className="p-3 text-right text-blue-600 font-semibold">
+                                ${rate.quoted_rate.toFixed(2)}
+                              </td>
+                              <td className="p-3 text-right text-green-600 font-semibold">
+                                ${rate.assumed_rate.toFixed(2)}
+                              </td>
+                              <td className="p-3 text-right text-amber-600 font-semibold">
+                                ${rate.overtime_rate.toFixed(2)}
+                              </td>
+                              <td className="p-3 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditRate(rate)}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:bg-red-50"
+                                    onClick={() => handleDeleteRate(rate.rate_id)}
+                                  >
+                                    Eliminar
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Email Tab */}
           <TabsContent value="email">
             <form onSubmit={handleSave}>
