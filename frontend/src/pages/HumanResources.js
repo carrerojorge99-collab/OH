@@ -57,7 +57,7 @@ const HumanResources = () => {
 
   const loadEmployees = async () => {
     try {
-      const response = await axios.get(`${API}/api/employees`, { withCredentials: true });
+      const response = await axios.get(`${API}/api/employees?_t=${Date.now()}`, { withCredentials: true });
       setEmployees(response.data);
       setLoading(false);
     } catch (error) {
