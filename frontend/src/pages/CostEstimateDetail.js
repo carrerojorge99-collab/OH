@@ -40,13 +40,14 @@ const CostEstimateDetail = () => {
   }, [estimateId]);
 
   const loadData = async () => {
+    const ts = Date.now(); // Prevent cache
     try {
       const [estimateRes, ratesRes, projectsRes] = await Promise.all([
         estimateId !== 'new' 
-          ? axios.get(`${API_URL}/api/cost-estimates/${estimateId}`, { withCredentials: true })
+          ? axios.get(`${API_URL}/api/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
           : Promise.resolve({ data: null }),
-        axios.get(`${API_URL}/api/labor-rates`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/projects`, { withCredentials: true })
+        axios.get(`${API_URL}/api/labor-rates?_t=${ts}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/projects?_t=${ts}`, { withCredentials: true })
       ]);
 
       setLaborRates(ratesRes.data);
