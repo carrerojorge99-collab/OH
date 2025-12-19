@@ -4183,6 +4183,180 @@ async def add_no_cache_headers(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
+
+# ==================== REQUIRED DOCUMENTS ENDPOINTS ====================
+@api_router.get("/required-documents")
+async def get_required_documents(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    from_client = await db.required_documents.find({"direction": "from_client"}, {"_id": 0}).to_list(1000)
+    to_client = await db.required_documents.find({"direction": "to_client"}, {"_id": 0}).to_list(1000)
+    
+    return {"from_client": from_client, "to_client": to_client}
+
+@api_router.post("/required-documents/from-client")
+async def add_document_from_client(
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    doc_id = f"doc_{uuid4().hex[:16]}"
+    doc = {
+        "document_id": doc_id,
+        "document_name": data["document_name"],
+        "direction": "from_client",
+        "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.required_documents.insert_one(doc)
+    return doc
+
+@api_router.post("/required-documents/to-client")
+async def add_document_to_client(
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    doc_id = f"doc_{uuid4().hex[:16]}"
+    doc = {
+        "document_id": doc_id,
+        "document_name": data["document_name"],
+        "direction": "to_client",
+        "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.required_documents.insert_one(doc)
+    return doc
+
+@api_router.delete("/required-documents/{doc_id}")
+async def delete_required_document(
+    doc_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    await db.required_documents.delete_one({"document_id": doc_id})
+    return {"message": "Documento eliminado"}
+
+# ==================== NOMENCLATURES ENDPOINTS ====================
+@api_router.get("/nomenclatures")
+async def get_nomenclatures(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    nomenclatures = await db.nomenclatures.find({}, {"_id": 0}).to_list(1000)
+    return nomenclatures
+
+@api_router.post("/nomenclatures")
+async def create_nomenclature(
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    nomenclature_id = f"nom_{uuid4().hex[:16]}"
+    current_year = datetime.now(PUERTO_RICO_TZ).year
+    
+    nom = {
+        "nomenclature_id": nomenclature_id,
+        "name": data["name"],
+        "prefix": data["prefix"].upper(),
+        "starting_number": data["starting_number"],
+        "current_number": 1,
+        "current_year": current_year,
+        "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.nomenclatures.insert_one(nom)
+    return nom
+
+@api_router.put("/nomenclatures/{nomenclature_id}")
+async def update_nomenclature(
+    nomenclature_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    update_data = {
+        "name": data["name"],
+        "prefix": data["prefix"].upper(),
+        "starting_number": data["starting_number"]
+    }
+    
+    await db.nomenclatures.update_one({"nomenclature_id": nomenclature_id}, {"$set": update_data})
+    return {"message": "Nomenclatura actualizada"}
+
+@api_router.delete("/nomenclatures/{nomenclature_id}")
+async def delete_nomenclature(
+    nomenclature_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    await db.nomenclatures.delete_one({"nomenclature_id": nomenclature_id})
+    return {"message": "Nomenclatura eliminada"}
+
+@api_router.get("/nomenclatures/next-number/{nomenclature_id}")
+async def get_next_number(
+    nomenclature_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    nomenclature = await db.nomenclatures.find_one({"nomenclature_id": nomenclature_id}, {"_id": 0})
+    if not nomenclature:
+        raise HTTPException(status_code=404, detail="Nomenclatura no encontrada")
+    
+    current_year = datetime.now(PUERTO_RICO_TZ).year
+    
+    # Si cambió el año, resetear el contador
+    if nomenclature.get("current_year") != current_year:
+        await db.nomenclatures.update_one(
+            {"nomenclature_id": nomenclature_id},
+            {"$set": {"current_number": 1, "current_year": current_year}}
+        )
+        current_number = 1
+    else:
+        current_number = nomenclature.get("current_number", 1)
+    
+    # Incrementar para el próximo
+    await db.nomenclatures.update_one(
+        {"nomenclature_id": nomenclature_id},
+        {"$set": {"current_number": current_number + 1}}
+    )
+    
+    # Generar número completo: PREFIX-YEAR-STARTING_NUMBER-CURRENT
+    full_number = f"{nomenclature['prefix']}-{current_year}-{nomenclature['starting_number']}-{current_number}"
+    
+    return {"number": full_number, "nomenclature": nomenclature}
+
     allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
