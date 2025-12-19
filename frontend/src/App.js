@@ -126,6 +126,12 @@ function AppRouter() {
           <Settings />
         </ProtectedRoute>
       } />
+      
+      <Route path="/hr" element={
+        <ProtectedRoute>
+          <HumanResources />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
