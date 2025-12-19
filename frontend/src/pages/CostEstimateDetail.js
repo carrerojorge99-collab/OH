@@ -146,12 +146,13 @@ const CostEstimateDetail = () => {
     }
 
     // Calculate subtotal
+    const qty = Number(updated[index].qty_personnel) || 1;
     const regular = Number(updated[index].regular_hours) || 0;
     const overtime = Number(updated[index].overtime_hours) || 0;
     const rate = Number(updated[index].rate) || 0;
     const oRate = Number(updated[index].overtime_rate) || 0;
 
-    updated[index].subtotal = (regular * rate) + (overtime * oRate);
+    updated[index].subtotal = qty * ((regular * rate) + (overtime * oRate));
 
     setLaborCosts(updated);
   };
