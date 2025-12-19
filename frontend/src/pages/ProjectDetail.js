@@ -3090,7 +3090,7 @@ const ProjectDetail = () => {
                                    log.log_type === 'update' ? 'Actualización' :
                                    log.log_type === 'problem' ? 'Problema' :
                                    log.log_type === 'milestone' ? 'Hito' : 'Nota'}
-                                </span>
+                                </Badge>
                               </div>
                             </div>
                           </li>
