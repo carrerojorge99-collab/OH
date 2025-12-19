@@ -24,6 +24,7 @@ import { fetchCompanyInfo, addCompanyHeader, addCompanyFooter } from '../utils/p
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import NomenclatureSelector, { useNomenclature } from '../components/NomenclatureSelector';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
