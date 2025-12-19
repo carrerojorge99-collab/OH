@@ -142,7 +142,7 @@ const CostEstimates = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => navigate(`${API}/cost-estimates/${estimate.estimate_id}`)}
+                        onClick={() => navigate(`/cost-estimates/${estimate.estimate_id}`)}
                       >
                         <Pencil className="w-4 h-4 mr-1" />
                         Ver

@@ -619,7 +619,7 @@ const Projects = () => {
                 key={project.project_id}
                 data-testid={`project-card-${project.project_id}`}
                 className="project-card border-slate-200 shadow-sm hover:shadow-md cursor-pointer"
-                onClick={() => navigate(`${API}/projects/${project.project_id}`)}
+                onClick={() => navigate(`/projects/${project.project_id}`)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">

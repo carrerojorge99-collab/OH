@@ -100,7 +100,7 @@ const CostEstimateDetail = () => {
       if (estimateId === 'new') {
         const res = await axios.post(`${API}/cost-estimates`, data, { withCredentials: true });
         toast.success('Estimación creada');
-        navigate(`${API}/cost-estimates/${res.data.estimate_id}`);
+        navigate(`/cost-estimates/${res.data.estimate_id}`);
       } else {
         await axios.put(`${API}/cost-estimates/${estimateId}`, data, { withCredentials: true });
         toast.success('Estimación actualizada');
