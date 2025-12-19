@@ -3826,17 +3826,14 @@ class LaborCostItem(BaseModel):
     qty_personnel: int = 0
     regular_hours: float = 0
     overtime_hours: float = 0
-    quoted_rate: float = 0
-    assumed_rate: float = 0
+    rate: float = 0
     overtime_rate: float = 0
-    subtotal_quoted: float = 0
-    subtotal_assumed: float = 0
+    subtotal: float = 0
 
 class SubcontractorItem(BaseModel):
     trade: str  # Civil, Mechanical, Electrical
     description: str = ""
-    quoted_cost: float = 0
-    assumed_cost: float = 0
+    cost: float = 0
 
 class MaterialItem(BaseModel):
     description: str
@@ -3880,18 +3877,14 @@ class CostEstimate(BaseModel):
     profit_percentage: float = 0
     contingency_percentage: float = 0
     tax_percentage: float = 0
-    total_labor_quoted: float = 0
-    total_labor_assumed: float = 0
-    total_subcontractors_quoted: float = 0
-    total_subcontractors_assumed: float = 0
+    total_labor: float = 0
+    total_subcontractors: float = 0
     total_materials: float = 0
     total_equipment: float = 0
     total_transportation: float = 0
     total_general_conditions: float = 0
-    subtotal_quoted: float = 0
-    subtotal_assumed: float = 0
-    grand_total_quoted: float = 0
-    grand_total_assumed: float = 0
+    subtotal: float = 0
+    grand_total: float = 0
     created_by: str
     created_at: str
     updated_at: str
@@ -4040,10 +4033,8 @@ async def create_cost_estimate(
     now = datetime.now(PUERTO_RICO_TZ).isoformat()
     
     # Calculate totals
-    total_labor_quoted = sum(item.subtotal_quoted for item in estimate_data.labor_costs)
-    total_labor_assumed = sum(item.subtotal_assumed for item in estimate_data.labor_costs)
-    total_subcontractors_quoted = sum(item.quoted_cost for item in estimate_data.subcontractors)
-    total_subcontractors_assumed = sum(item.assumed_cost for item in estimate_data.subcontractors)
+    total_labor = sum(item.subtotal for item in estimate_data.labor_costs)
+    total_subcontractors = sum(item.cost for item in estimate_data.subcontractors)
     total_materials = sum(item.total for item in estimate_data.materials)
     total_equipment = sum(item.total for item in estimate_data.equipment)
     total_transportation = sum(item.total for item in estimate_data.transportation)
@@ -4097,18 +4088,14 @@ async def create_cost_estimate(
         "profit_percentage": estimate_data.profit_percentage,
         "contingency_percentage": estimate_data.contingency_percentage,
         "tax_percentage": estimate_data.tax_percentage,
-        "total_labor_quoted": round(total_labor_quoted, 2),
-        "total_labor_assumed": round(total_labor_assumed, 2),
-        "total_subcontractors_quoted": round(total_subcontractors_quoted, 2),
-        "total_subcontractors_assumed": round(total_subcontractors_assumed, 2),
+        "total_labor": round(total_labor, 2),
+        "total_subcontractors": round(total_subcontractors, 2),
         "total_materials": round(total_materials, 2),
         "total_equipment": round(total_equipment, 2),
         "total_transportation": round(total_transportation, 2),
         "total_general_conditions": round(total_general_conditions, 2),
-        "subtotal_quoted": round(subtotal_quoted, 2),
-        "subtotal_assumed": round(subtotal_assumed, 2),
-        "grand_total_quoted": round(grand_total_quoted, 2),
-        "grand_total_assumed": round(grand_total_assumed, 2),
+        "subtotal": round(subtotal, 2),
+        "grand_total": round(grand_total, 2),
         "created_by": user.user_id,
         "created_at": now,
         "updated_at": now
@@ -4131,10 +4118,8 @@ async def update_cost_estimate(
         raise HTTPException(status_code=404, detail="Estimación no encontrada")
     
     # Calculate totals
-    total_labor_quoted = sum(item.subtotal_quoted for item in estimate_data.labor_costs)
-    total_labor_assumed = sum(item.subtotal_assumed for item in estimate_data.labor_costs)
-    total_subcontractors_quoted = sum(item.quoted_cost for item in estimate_data.subcontractors)
-    total_subcontractors_assumed = sum(item.assumed_cost for item in estimate_data.subcontractors)
+    total_labor = sum(item.subtotal for item in estimate_data.labor_costs)
+    total_subcontractors = sum(item.cost for item in estimate_data.subcontractors)
     total_materials = sum(item.total for item in estimate_data.materials)
     total_equipment = sum(item.total for item in estimate_data.equipment)
     total_transportation = sum(item.total for item in estimate_data.transportation)
@@ -4185,18 +4170,14 @@ async def update_cost_estimate(
         "profit_percentage": estimate_data.profit_percentage,
         "contingency_percentage": estimate_data.contingency_percentage,
         "tax_percentage": estimate_data.tax_percentage,
-        "total_labor_quoted": round(total_labor_quoted, 2),
-        "total_labor_assumed": round(total_labor_assumed, 2),
-        "total_subcontractors_quoted": round(total_subcontractors_quoted, 2),
-        "total_subcontractors_assumed": round(total_subcontractors_assumed, 2),
+        "total_labor": round(total_labor, 2),
+        "total_subcontractors": round(total_subcontractors, 2),
         "total_materials": round(total_materials, 2),
         "total_equipment": round(total_equipment, 2),
         "total_transportation": round(total_transportation, 2),
         "total_general_conditions": round(total_general_conditions, 2),
-        "subtotal_quoted": round(subtotal_quoted, 2),
-        "subtotal_assumed": round(subtotal_assumed, 2),
-        "grand_total_quoted": round(grand_total_quoted, 2),
-        "grand_total_assumed": round(grand_total_assumed, 2),
+        "subtotal": round(subtotal, 2),
+        "grand_total": round(grand_total, 2),
         "updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()
     }
     
