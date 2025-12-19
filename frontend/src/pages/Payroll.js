@@ -33,8 +33,8 @@ const Payroll = () => {
   const loadData = async () => {
     try {
       const [empRes, settingsRes] = await Promise.all([
-        axios.get(`${API}/employees`, { withCredentials: true }),
-        axios.get(`${API}/payroll-settings`, { withCredentials: true })
+        axios.get(`${API}/employees?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        axios.get(`${API}/payroll-settings?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       // Include employees with salary OR hourly_rate
       setEmployees(empRes.data.filter(e => e.profile?.salary > 0 || e.profile?.hourly_rate > 0));
