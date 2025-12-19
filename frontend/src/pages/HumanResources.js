@@ -248,7 +248,8 @@ const HumanResources = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div><Label>Salario</Label><Input type="number" value={profile.salary} onChange={(e) => setProfile({...profile, salary: parseFloat(e.target.value) || 0})} placeholder="0.00" /></div>
+                      <div><Label>Salario (por período)</Label><Input type="number" value={profile.salary} onChange={(e) => setProfile({...profile, salary: parseFloat(e.target.value) || 0})} placeholder="0.00" /></div>
+                      <div><Label>Tarifa por Hora</Label><Input type="number" step="0.01" value={profile.hourly_rate} onChange={(e) => setProfile({...profile, hourly_rate: parseFloat(e.target.value) || 0})} placeholder="0.00" /></div>
                       <div><Label>Frecuencia de Pago</Label>
                         <Select value={profile.pay_frequency} onValueChange={(v) => setProfile({...profile, pay_frequency: v})}>
                           <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
