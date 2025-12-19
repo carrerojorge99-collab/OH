@@ -4046,6 +4046,7 @@ async def create_cost_estimate(
     total_subcontractors_assumed = sum(item.assumed_cost for item in estimate_data.subcontractors)
     total_materials = sum(item.total for item in estimate_data.materials)
     total_equipment = sum(item.total for item in estimate_data.equipment)
+    total_transportation = sum(item.total for item in estimate_data.transportation)
     total_general_conditions = sum(item.total for item in estimate_data.general_conditions)
     
     subtotal_quoted = (
@@ -4053,8 +4054,8 @@ async def create_cost_estimate(
         total_subcontractors_quoted + 
         total_materials + 
         total_equipment + 
-        total_general_conditions +
-        estimate_data.transportation_cost
+        total_transportation +
+        total_general_conditions
     )
     
     subtotal_assumed = (
@@ -4062,8 +4063,8 @@ async def create_cost_estimate(
         total_subcontractors_assumed + 
         total_materials + 
         total_equipment + 
-        total_general_conditions +
-        estimate_data.transportation_cost
+        total_transportation +
+        total_general_conditions
     )
     
     # Apply percentages
@@ -4090,8 +4091,8 @@ async def create_cost_estimate(
         "subcontractors": [item.dict() for item in estimate_data.subcontractors],
         "materials": [item.dict() for item in estimate_data.materials],
         "equipment": [item.dict() for item in estimate_data.equipment],
+        "transportation": [item.dict() for item in estimate_data.transportation],
         "general_conditions": [item.dict() for item in estimate_data.general_conditions],
-        "transportation_cost": estimate_data.transportation_cost,
         "overhead_percentage": estimate_data.overhead_percentage,
         "profit_percentage": estimate_data.profit_percentage,
         "contingency_percentage": estimate_data.contingency_percentage,
@@ -4102,6 +4103,7 @@ async def create_cost_estimate(
         "total_subcontractors_assumed": round(total_subcontractors_assumed, 2),
         "total_materials": round(total_materials, 2),
         "total_equipment": round(total_equipment, 2),
+        "total_transportation": round(total_transportation, 2),
         "total_general_conditions": round(total_general_conditions, 2),
         "subtotal_quoted": round(subtotal_quoted, 2),
         "subtotal_assumed": round(subtotal_assumed, 2),
@@ -4135,6 +4137,7 @@ async def update_cost_estimate(
     total_subcontractors_assumed = sum(item.assumed_cost for item in estimate_data.subcontractors)
     total_materials = sum(item.total for item in estimate_data.materials)
     total_equipment = sum(item.total for item in estimate_data.equipment)
+    total_transportation = sum(item.total for item in estimate_data.transportation)
     total_general_conditions = sum(item.total for item in estimate_data.general_conditions)
     
     subtotal_quoted = (
@@ -4142,8 +4145,8 @@ async def update_cost_estimate(
         total_subcontractors_quoted + 
         total_materials + 
         total_equipment + 
-        total_general_conditions +
-        estimate_data.transportation_cost
+        total_transportation +
+        total_general_conditions
     )
     
     subtotal_assumed = (
@@ -4151,8 +4154,8 @@ async def update_cost_estimate(
         total_subcontractors_assumed + 
         total_materials + 
         total_equipment + 
-        total_general_conditions +
-        estimate_data.transportation_cost
+        total_transportation +
+        total_general_conditions
     )
     
     # Apply percentages
@@ -4176,8 +4179,8 @@ async def update_cost_estimate(
         "subcontractors": [item.dict() for item in estimate_data.subcontractors],
         "materials": [item.dict() for item in estimate_data.materials],
         "equipment": [item.dict() for item in estimate_data.equipment],
+        "transportation": [item.dict() for item in estimate_data.transportation],
         "general_conditions": [item.dict() for item in estimate_data.general_conditions],
-        "transportation_cost": estimate_data.transportation_cost,
         "overhead_percentage": estimate_data.overhead_percentage,
         "profit_percentage": estimate_data.profit_percentage,
         "contingency_percentage": estimate_data.contingency_percentage,
@@ -4188,6 +4191,7 @@ async def update_cost_estimate(
         "total_subcontractors_assumed": round(total_subcontractors_assumed, 2),
         "total_materials": round(total_materials, 2),
         "total_equipment": round(total_equipment, 2),
+        "total_transportation": round(total_transportation, 2),
         "total_general_conditions": round(total_general_conditions, 2),
         "subtotal_quoted": round(subtotal_quoted, 2),
         "subtotal_assumed": round(subtotal_assumed, 2),
