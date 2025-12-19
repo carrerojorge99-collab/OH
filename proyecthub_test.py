@@ -308,7 +308,7 @@ class ProyectHubTester:
                         all_docs = from_client + to_client
                         if len(all_docs) > 0:
                             doc = all_docs[0]
-                            required_fields = ['document_id', 'title', 'description', 'direction']
+                            required_fields = ['document_id', 'document_name', 'direction', 'created_at']
                             missing_fields = [field for field in required_fields if field not in doc]
                             
                             if not missing_fields:
