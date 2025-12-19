@@ -150,6 +150,12 @@ const ProjectDetail = () => {
     proposal_number: ''
   });
 
+  // Required documents state
+  const [requiredDocsFromClient, setRequiredDocsFromClient] = useState([]);
+  const [requiredDocsToClient, setRequiredDocsToClient] = useState([]);
+  const [projectDocStatus, setProjectDocStatus] = useState({});
+
+
   useEffect(() => {
     loadProjectData();
     loadUsers();
