@@ -4160,7 +4160,16 @@ async def update_cost_estimate(
         estimate_data.tax_percentage / 100
     )
     
+    # Get project name if project_id is provided
+    project_name = ""
+    if estimate_data.project_id:
+        project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0})
+        if project:
+            project_name = project.get("name", "")
+    
     update_doc = {
+        "project_id": estimate_data.project_id or "",
+        "project_name": project_name,
         "estimate_name": estimate_data.estimate_name,
         "labor_costs": [item.dict() for item in estimate_data.labor_costs],
         "subcontractors": [item.dict() for item in estimate_data.subcontractors],
