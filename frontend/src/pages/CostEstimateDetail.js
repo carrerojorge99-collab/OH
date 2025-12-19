@@ -165,8 +165,7 @@ const CostEstimateDetail = () => {
     setSubcontractors([...subcontractors, {
       trade: 'Civil',
       description: '',
-      quoted_cost: 0,
-      assumed_cost: 0
+      cost: 0
     }]);
   };
 
@@ -671,8 +670,7 @@ const CostEstimateDetail = () => {
                       <tr className="border-b bg-slate-50">
                         <th className="p-2 text-left text-xs">Tipo</th>
                         <th className="p-2 text-left text-xs">Descripción</th>
-                        <th className="p-2 text-right text-xs">Costo Cotizado</th>
-                        <th className="p-2 text-right text-xs">Costo Asumido</th>
+                        <th className="p-2 text-right text-xs">Costo</th>
                         <th className="p-2"></th>
                       </tr>
                     </thead>
@@ -702,17 +700,8 @@ const CostEstimateDetail = () => {
                               type="number"
                               step="0.01"
                               className="text-right"
-                              value={item.quoted_cost}
-                              onChange={(e) => updateSubcontractorRow(idx, 'quoted_cost', e.target.value)}
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="text-right"
-                              value={item.assumed_cost}
-                              onChange={(e) => updateSubcontractorRow(idx, 'assumed_cost', e.target.value)}
+                              value={item.cost}
+                              onChange={(e) => updateSubcontractorRow(idx, 'cost', e.target.value)}
                             />
                           </td>
                           <td className="p-2">
