@@ -5122,6 +5122,7 @@ async def process_payroll(data: dict, request: Request, session_token: Optional[
     }
     
     await db.payroll_runs.insert_one(payroll_run)
+    await log_audit(user.user_id, user.name, "create", "payroll", payroll_run["id"], f"Nómina {data.get('period_start')} - {data.get('period_end')}", {"total": data.get("totals", {}).get("net", 0), "employees": len(data.get("employees", []))})
     return {"message": "Nómina procesada exitosamente", "id": payroll_run["id"]}
 
 @api_router.get("/payroll/history")
