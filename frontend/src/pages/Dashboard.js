@@ -183,6 +183,9 @@ const Dashboard = () => {
       <PWAInstallBanner />
       
       <div className="space-y-8 fade-in">
+        {/* Alertas */}
+        <AlertsBanner />
+
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
