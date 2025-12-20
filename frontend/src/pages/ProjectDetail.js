@@ -221,7 +221,7 @@ const ProjectDetail = () => {
     const ts = Date.now();
     const cfg = { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } };
     try {
-      const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, timesheetRes, commentsRes, documentsRes, statsRes, logsRes] = await Promise.all([
+      const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, timesheetRes, commentsRes, documentsRes, statsRes, logsRes, changeOrdersRes] = await Promise.all([
         api.get(`/projects/${projectId}?_t=${ts}`, cfg),
         api.get(`/tasks?project_id=${projectId}&_t=${ts}`, cfg),
         api.get(`/budget/categories?project_id=${projectId}&_t=${ts}`, cfg),
