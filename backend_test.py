@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 
 class ClockSystemTester:
-    def __init__(self, base_url="https://bizflow-app-22.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ohsms-manage.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
@@ -419,7 +419,7 @@ class ClockSystemTester:
         }
 
 class CostEstimateExportTester:
-    def __init__(self, base_url="https://bizflow-app-22.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ohsms-manage.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
@@ -686,7 +686,7 @@ class CostEstimateExportTester:
         }
 
 class ProjectManagementAPITester:
-    def __init__(self, base_url="https://bizflow-app-22.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ohsms-manage.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None

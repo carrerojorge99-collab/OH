@@ -5031,7 +5031,7 @@ async def add_no_cache_headers(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["https://bizflow-app-22.preview.emergentagent.com", "http://localhost:3000"],
+    allow_origins=["https://ohsms-manage.preview.emergentagent.com", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
