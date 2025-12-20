@@ -73,7 +73,17 @@ const Payroll = () => {
     setProcessing(true);
     
     try {
-      const results = await Promise.all(employees.map(async (emp) => {
+      // Recargar datos frescos antes de calcular
+      const [empRes, settingsRes] = await Promise.all([
+        api.get(`/employees`),
+        api.get(`/payroll-settings`)
+      ]);
+      const freshEmployees = empRes.data.filter(e => e.profile?.salary > 0 || e.profile?.hourly_rate > 0);
+      const freshSettings = settingsRes.data;
+      setEmployees(freshEmployees);
+      setPayrollSettings(freshSettings);
+
+      const results = await Promise.all(freshEmployees.map(async (emp) => {
         const profile = emp.profile || {};
         const hourlyRate = profile.hourly_rate || 0;
         const fixedSalary = profile.salary || 0;
