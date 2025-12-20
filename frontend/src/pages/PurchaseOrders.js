@@ -20,7 +20,15 @@ import {
   Plus, Trash2, FileText, Download, Send, Copy, Edit, 
   CheckCircle, XCircle, Package, User, Mail, Calendar, Truck, RefreshCw
 } from 'lucide-react';
-import { fetchCompanyInfo, addCompanyHeader, addCompanyFooter } from '../utils/pdfHelper';
+import { 
+  fetchCompanyInfo, 
+  addDocumentHeader, 
+  addPartySection, 
+  addItemsTable, 
+  addTotalsSection, 
+  addNotesSection, 
+  addFooter 
+} from '../utils/pdfHelper';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
