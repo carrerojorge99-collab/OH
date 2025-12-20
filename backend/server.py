@@ -2216,6 +2216,7 @@ async def create_approval(data: dict, request: Request, session_token: Optional[
     }
     
     await db.approvals.insert_one(approval)
+    await log_audit(user.user_id, user.name, "create", "approval", approval["id"], data.get("reference_name", "Aprobación"), {"type": data.get("type"), "amount": data.get("amount")})
     return {"message": "Solicitud de aprobación creada", "id": approval["id"]}
 
 @api_router.get("/approvals")
