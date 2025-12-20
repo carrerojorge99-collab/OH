@@ -4,17 +4,14 @@ import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
-import { Users, Upload, FileText, Trash2, Download, FolderOpen, User, Briefcase, Phone, Save, Calculator } from 'lucide-react';
+import { Users, Upload, FileText, Trash2, Download, User, Phone, Mail, MapPin, Calendar, DollarSign, Building, CreditCard, Search, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import moment from 'moment';
-
 
 const documentTypes = [
   { value: 'id', label: 'Identificación' },
@@ -22,8 +19,8 @@ const documentTypes = [
   { value: 'resume', label: 'Currículum' },
   { value: 'certification', label: 'Certificación' },
   { value: 'license', label: 'Licencia' },
-  { value: 'medical', label: 'Documento Médico' },
-  { value: 'tax', label: 'Documento Fiscal' },
+  { value: 'medical', label: 'Médico' },
+  { value: 'tax', label: 'Fiscal' },
   { value: 'other', label: 'Otro' }
 ];
 
@@ -45,38 +42,25 @@ const HumanResources = () => {
   const [saving, setSaving] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadForm, setUploadForm] = useState({ document_type: '', file: null });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeSection, setActiveSection] = useState('info');
 
   useEffect(() => { loadEmployees(); }, []);
 
   useEffect(() => {
     if (selectedEmployee) {
       loadDocuments(selectedEmployee.user_id);
-      // Load profile with explicit field mapping to avoid defaults overwriting
       const emp = selectedEmployee.profile || {};
       setProfile({
-        phone: emp.phone || '',
-        address: emp.address || '',
-        city: emp.city || '',
-        zipcode: emp.zipcode || '',
-        country: emp.country || '',
-        date_of_birth: emp.date_of_birth || '',
-        gender: emp.gender || '',
-        marital_status: emp.marital_status || '',
-        nationality: emp.nationality || '',
-        id_number: emp.id_number || '',
-        department: emp.department || '',
-        position: emp.position || '',
-        hire_date: emp.hire_date || '',
-        employment_type: emp.employment_type || '',
-        worker_classification: emp.worker_classification || '',
-        salary: emp.salary || 0,
-        hourly_rate: emp.hourly_rate || 0,
-        pay_frequency: emp.pay_frequency || '',
-        bank_name: emp.bank_name || '',
-        bank_account: emp.bank_account || '',
-        emergency_contact_name: emp.emergency_contact_name || '',
-        emergency_contact_phone: emp.emergency_contact_phone || '',
-        emergency_contact_relationship: emp.emergency_contact_relationship || '',
+        phone: emp.phone || '', address: emp.address || '', city: emp.city || '', zipcode: emp.zipcode || '',
+        country: emp.country || '', date_of_birth: emp.date_of_birth || '', gender: emp.gender || '',
+        marital_status: emp.marital_status || '', nationality: emp.nationality || '', id_number: emp.id_number || '',
+        department: emp.department || '', position: emp.position || '', hire_date: emp.hire_date || '',
+        employment_type: emp.employment_type || '', worker_classification: emp.worker_classification || '',
+        salary: emp.salary || 0, hourly_rate: emp.hourly_rate || 0, pay_frequency: emp.pay_frequency || '',
+        bank_name: emp.bank_name || '', bank_account: emp.bank_account || '', routing_number: emp.routing_number || '',
+        account_type: emp.account_type || 'checking', emergency_contact_name: emp.emergency_contact_name || '',
+        emergency_contact_phone: emp.emergency_contact_phone || '', emergency_contact_relationship: emp.emergency_contact_relationship || '',
         notes: emp.notes || ''
       });
     }
@@ -84,10 +68,7 @@ const HumanResources = () => {
 
   const loadEmployees = async () => {
     try {
-      const response = await api.get(`/employees?_t=${Date.now()}`, { 
-        withCredentials: true,
-        headers: { 'Cache-Control': 'no-cache' }
-      });
+      const response = await api.get('/employees');
       setEmployees(response.data);
       setLoading(false);
     } catch (error) {
@@ -96,62 +77,23 @@ const HumanResources = () => {
     }
   };
 
-  const loadDocuments = async (employeeId) => {
+  const loadDocuments = async (userId) => {
     try {
-      const response = await api.get(`/employees/${employeeId}/documents`, { withCredentials: true });
+      const response = await api.get(`/employees/${userId}/documents`);
       setDocuments(response.data);
     } catch (error) {
-      console.error('Error loading documents');
+      setDocuments([]);
     }
   };
 
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      // Get current values directly from the profile state
-      const dataToSave = {
-        phone: profile.phone || '',
-        address: profile.address || '',
-        city: profile.city || '',
-        zipcode: profile.zipcode || '',
-        country: profile.country || '',
-        date_of_birth: profile.date_of_birth || '',
-        gender: profile.gender || '',
-        marital_status: profile.marital_status || '',
-        nationality: profile.nationality || '',
-        id_number: profile.id_number || '',
-        department: profile.department || '',
-        position: profile.position || '',
-        hire_date: profile.hire_date || '',
-        employment_type: profile.employment_type || '',
-        worker_classification: profile.worker_classification || '',
-        salary: Number(profile.salary) || 0,
-        hourly_rate: Number(profile.hourly_rate) || 0,
-        pay_frequency: profile.pay_frequency || '',
-        bank_name: profile.bank_name || '',
-        bank_account: profile.bank_account || '',
-        emergency_contact_name: profile.emergency_contact_name || '',
-        emergency_contact_phone: profile.emergency_contact_phone || '',
-        emergency_contact_relationship: profile.emergency_contact_relationship || '',
-        notes: profile.notes || ''
-      };
-      
-      await api.put(`/employees/${selectedEmployee.user_id}/profile`, dataToSave, { withCredentials: true });
-      toast.success('Perfil guardado correctamente');
-      
-      // Update the employees list in background without changing selectedEmployee
-      const response = await api.get(`/employees?_t=${Date.now()}`, { withCredentials: true });
-      const updatedEmployees = response.data;
-      
-      // Update the selected employee's profile in the employees array without triggering useEffect
-      const updatedEmp = updatedEmployees.find(e => e.user_id === selectedEmployee.user_id);
-      if (updatedEmp) {
-        // Update the profile data in selectedEmployee directly for the sidebar display
-        setEmployees(updatedEmployees);
-      }
+      await api.put(`/employees/${selectedEmployee.user_id}/profile`, profile);
+      toast.success('Perfil guardado');
+      loadEmployees();
     } catch (error) {
-      console.error('Error saving:', error);
-      toast.error('Error al guardar perfil');
+      toast.error('Error al guardar');
     }
     setSaving(false);
   };
@@ -171,248 +113,360 @@ const HumanResources = () => {
       setUploadForm({ document_type: '', file: null });
       loadDocuments(selectedEmployee.user_id);
     } catch (error) {
-      toast.error('Error al subir documento');
+      toast.error('Error al subir');
     }
   };
 
   const handleDelete = async (docId) => {
-    if (!window.confirm('¿Eliminar este documento?')) return;
+    if (!window.confirm('¿Eliminar documento?')) return;
     try {
-      await api.delete(`/employees/${selectedEmployee.user_id}/documents/${docId}`, { withCredentials: true });
-      toast.success('Documento eliminado');
+      await api.delete(`/employees/${selectedEmployee.user_id}/documents/${docId}`);
+      toast.success('Eliminado');
       loadDocuments(selectedEmployee.user_id);
     } catch (error) {
-      toast.error('Error al eliminar');
+      toast.error('Error');
     }
   };
 
-  const getDocTypeLabel = (type) => documentTypes.find(d => d.value === type)?.label || type;
+  const filteredEmployees = employees.filter(e => 
+    e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    e.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  if (loading) return <Layout><div className="p-8">Cargando...</div></Layout>;
+  const Field = ({ label, icon: Icon, children }) => (
+    <div className="space-y-1">
+      <Label className="text-xs text-slate-500 flex items-center gap-1">
+        {Icon && <Icon className="w-3 h-3" />} {label}
+      </Label>
+      {children}
+    </div>
+  );
+
+  if (loading) return <Layout><div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div></Layout>;
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Recursos Humanos</h1>
-            <p className="text-slate-600">Gestión de perfiles y documentos de empleados</p>
+      <div className="flex h-[calc(100vh-120px)]">
+        {/* Sidebar - Employee List */}
+        <div className="w-72 border-r bg-slate-50/50 flex flex-col">
+          <div className="p-4 border-b bg-white">
+            <h1 className="text-lg font-semibold text-slate-900">Empleados</h1>
+            <div className="relative mt-3">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <Input 
+                placeholder="Buscar..." 
+                className="pl-9 h-9 bg-slate-50" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
-          <Button onClick={() => navigate('/payroll')} className="bg-green-600 hover:bg-green-700">
-            <Calculator className="w-4 h-4 mr-2" /> Procesar Nómina
-          </Button>
+          
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {filteredEmployees.map(emp => (
+              <div 
+                key={emp.user_id} 
+                onClick={() => setSelectedEmployee(emp)}
+                className={`p-3 rounded-lg cursor-pointer transition-all ${
+                  selectedEmployee?.user_id === emp.user_id 
+                    ? 'bg-orange-50 border-l-2 border-orange-500' 
+                    : 'hover:bg-white hover:shadow-sm'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium ${
+                    selectedEmployee?.user_id === emp.user_id ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {emp.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-slate-900 truncate">{emp.name}</p>
+                    <p className="text-xs text-slate-500 truncate">{emp.profile?.position || emp.email}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300" />
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-3 border-t bg-white">
+            <Button onClick={() => navigate('/payroll')} className="w-full bg-orange-500 hover:bg-orange-600">
+              <DollarSign className="w-4 h-4 mr-2" /> Nómina
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Employee List */}
-          <Card className="lg:col-span-1">
-            <CardHeader><CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Empleados</CardTitle></CardHeader>
-            <CardContent className="space-y-2 max-h-[700px] overflow-y-auto">
-              {employees.map(emp => (
-                <div key={emp.user_id} onClick={() => setSelectedEmployee(emp)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedEmployee?.user_id === emp.user_id ? 'bg-blue-100 border-blue-300 border' : 'bg-slate-50 hover:bg-slate-100 border border-transparent'}`}>
-                  <p className="font-medium">{emp.name}</p>
-                  <p className="text-sm text-slate-500">{emp.profile?.position || emp.email}</p>
-                  <Badge variant="outline" className="mt-1 text-xs">{emp.role === 'admin' ? 'Admin' : emp.role === 'manager' ? 'Gerente' : 'Empleado'}</Badge>
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          {!selectedEmployee ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Users className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+                <p className="text-slate-400">Selecciona un empleado</p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {/* Header */}
+              <div className="border-b bg-gradient-to-r from-slate-50 to-white p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-2xl font-bold text-orange-600">
+                    {selectedEmployee.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">{selectedEmployee.name}</h2>
+                    <p className="text-slate-500">{profile.position || 'Sin cargo'} • {profile.department || 'Sin departamento'}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs">{selectedEmployee.role}</Badge>
+                      <Badge className={profile.worker_classification === 'contractor' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}>
+                        {profile.worker_classification === 'contractor' ? 'Contratista' : 'Empleado'}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+              </div>
 
-          {/* Profile & Documents Panel */}
-          <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                {selectedEmployee ? selectedEmployee.name : 'Selecciona un empleado'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!selectedEmployee ? (
-                <div className="text-center py-12 text-slate-500">
-                  <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <p>Selecciona un empleado para ver su perfil</p>
+              {/* Section Tabs */}
+              <div className="border-b px-6">
+                <div className="flex gap-6">
+                  {[
+                    { id: 'info', label: 'Información' },
+                    { id: 'payment', label: 'Pago' },
+                    { id: 'docs', label: 'Documentos' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveSection(tab.id)}
+                      className={`py-3 text-sm font-medium border-b-2 transition-colors ${
+                        activeSection === tab.id 
+                          ? 'border-orange-500 text-orange-600' 
+                          : 'border-transparent text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <Tabs defaultValue="personal" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="personal">Personal</TabsTrigger>
-                    <TabsTrigger value="employment">Empleo</TabsTrigger>
-                    <TabsTrigger value="emergency">Emergencia</TabsTrigger>
-                    <TabsTrigger value="documents">Documentos</TabsTrigger>
-                  </TabsList>
+              </div>
 
-                  <TabsContent value="personal" className="space-y-4 mt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div><Label>Teléfono</Label><Input value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="787-555-0000" /></div>
-                      <div><Label>Fecha de Nacimiento</Label><Input type="date" value={profile.date_of_birth} onChange={(e) => setProfile({...profile, date_of_birth: e.target.value})} /></div>
-                      <div><Label>Género</Label>
-                        <Select value={profile.gender} onValueChange={(v) => setProfile({...profile, gender: v})}>
-                          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="male">Masculino</SelectItem>
-                            <SelectItem value="female">Femenino</SelectItem>
-                            <SelectItem value="other">Otro</SelectItem>
-                          </SelectContent>
-                        </Select>
+              {/* Content */}
+              <div className="p-6">
+                {activeSection === 'info' && (
+                  <div className="space-y-6 max-w-3xl">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Personal
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <Field label="Teléfono" icon={Phone}>
+                          <Input value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="787-555-0000" />
+                        </Field>
+                        <Field label="Fecha Nacimiento" icon={Calendar}>
+                          <Input type="date" value={profile.date_of_birth} onChange={(e) => setProfile({...profile, date_of_birth: e.target.value})} />
+                        </Field>
+                        <Field label="ID / Cédula">
+                          <Input value={profile.id_number} onChange={(e) => setProfile({...profile, id_number: e.target.value})} />
+                        </Field>
                       </div>
-                      <div><Label>Estado Civil</Label>
-                        <Select value={profile.marital_status} onValueChange={(v) => setProfile({...profile, marital_status: v})}>
-                          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="single">Soltero/a</SelectItem>
-                            <SelectItem value="married">Casado/a</SelectItem>
-                            <SelectItem value="divorced">Divorciado/a</SelectItem>
-                            <SelectItem value="widowed">Viudo/a</SelectItem>
-                          </SelectContent>
-                        </Select>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <MapPin className="w-4 h-4" /> Dirección
+                      </h3>
+                      <div className="grid grid-cols-4 gap-4">
+                        <Field label="Dirección" className="col-span-2">
+                          <Input value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} />
+                        </Field>
+                        <Field label="Ciudad">
+                          <Input value={profile.city} onChange={(e) => setProfile({...profile, city: e.target.value})} />
+                        </Field>
+                        <Field label="Código Postal">
+                          <Input value={profile.zipcode} onChange={(e) => setProfile({...profile, zipcode: e.target.value})} />
+                        </Field>
                       </div>
-                      <div><Label>Nacionalidad</Label><Input value={profile.nationality} onChange={(e) => setProfile({...profile, nationality: e.target.value})} placeholder="Puertorriqueño" /></div>
-                      <div><Label>Cédula / ID</Label><Input value={profile.id_number} onChange={(e) => setProfile({...profile, id_number: e.target.value})} placeholder="000-00-0000" /></div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div><Label>Dirección</Label><Input value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="Calle, Número" /></div>
-                      <div><Label>Ciudad / Pueblo</Label><Input value={profile.city} onChange={(e) => setProfile({...profile, city: e.target.value})} placeholder="San Juan" /></div>
-                      <div><Label>Código Postal</Label><Input value={profile.zipcode} onChange={(e) => setProfile({...profile, zipcode: e.target.value})} placeholder="00901" /></div>
-                      <div><Label>País</Label><Input value={profile.country} onChange={(e) => setProfile({...profile, country: e.target.value})} placeholder="Puerto Rico" /></div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <Building className="w-4 h-4" /> Empleo
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <Field label="Cargo">
+                          <Input value={profile.position} onChange={(e) => setProfile({...profile, position: e.target.value})} />
+                        </Field>
+                        <Field label="Departamento">
+                          <Input value={profile.department} onChange={(e) => setProfile({...profile, department: e.target.value})} />
+                        </Field>
+                        <Field label="Fecha Ingreso" icon={Calendar}>
+                          <Input type="date" value={profile.hire_date} onChange={(e) => setProfile({...profile, hire_date: e.target.value})} />
+                        </Field>
+                        <Field label="Clasificación">
+                          <Select value={profile.worker_classification} onValueChange={(v) => setProfile({...profile, worker_classification: v})}>
+                            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="employee">Empleado W-2</SelectItem>
+                              <SelectItem value="contractor">Contratista 1099</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field label="Tipo">
+                          <Select value={profile.employment_type} onValueChange={(v) => setProfile({...profile, employment_type: v})}>
+                            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="full_time">Tiempo Completo</SelectItem>
+                              <SelectItem value="part_time">Medio Tiempo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
                     </div>
-                    <Button onClick={handleSaveProfile} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-                      <Save className="w-4 h-4 mr-2" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3">Contacto de Emergencia</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <Field label="Nombre">
+                          <Input value={profile.emergency_contact_name} onChange={(e) => setProfile({...profile, emergency_contact_name: e.target.value})} />
+                        </Field>
+                        <Field label="Teléfono">
+                          <Input value={profile.emergency_contact_phone} onChange={(e) => setProfile({...profile, emergency_contact_phone: e.target.value})} />
+                        </Field>
+                        <Field label="Relación">
+                          <Input value={profile.emergency_contact_relationship} onChange={(e) => setProfile({...profile, emergency_contact_relationship: e.target.value})} />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <Button onClick={handleSaveProfile} disabled={saving} className="bg-orange-500 hover:bg-orange-600">
+                      {saving ? 'Guardando...' : 'Guardar Cambios'}
                     </Button>
-                  </TabsContent>
+                  </div>
+                )}
 
-                  <TabsContent value="employment" className="space-y-4 mt-4">
-                    <div className="p-4 bg-amber-50 rounded-lg mb-4">
-                      <Label className="text-amber-800 font-medium">Clasificación para Nómina</Label>
-                      <p className="text-xs text-amber-600 mb-2">Define cómo se calcularán los descuentos</p>
-                      <Select value={profile.worker_classification} onValueChange={(v) => setProfile({...profile, worker_classification: v})}>
-                        <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="employee">Empleado de la Empresa (Hacienda, SS, Medicare)</SelectItem>
-                          <SelectItem value="contractor">Servicios Profesionales (10% Retención)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div><Label>Departamento</Label><Input value={profile.department} onChange={(e) => setProfile({...profile, department: e.target.value})} placeholder="Operaciones" /></div>
-                      <div><Label>Puesto</Label><Input value={profile.position} onChange={(e) => setProfile({...profile, position: e.target.value})} placeholder="Supervisor" /></div>
-                      <div><Label>Fecha de Contratación</Label><Input type="date" value={profile.hire_date} onChange={(e) => setProfile({...profile, hire_date: e.target.value})} /></div>
-                      <div><Label>Tipo de Empleo</Label>
-                        <Select value={profile.employment_type} onValueChange={(v) => setProfile({...profile, employment_type: v})}>
-                          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="full-time">Tiempo Completo</SelectItem>
-                            <SelectItem value="part-time">Medio Tiempo</SelectItem>
-                            <SelectItem value="contractor">Contratista</SelectItem>
-                            <SelectItem value="intern">Pasante</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div><Label>Salario (por período)</Label><Input type="number" step="0.01" value={profile.salary || ''} onChange={(e) => setProfile({...profile, salary: e.target.value})} placeholder="0.00" /></div>
-                      <div><Label>Tarifa por Hora</Label><Input type="number" step="0.01" value={profile.hourly_rate || ''} onChange={(e) => setProfile({...profile, hourly_rate: e.target.value})} placeholder="0.00" /></div>
-                      <div><Label>Frecuencia de Pago</Label>
-                        <Select value={profile.pay_frequency} onValueChange={(v) => setProfile({...profile, pay_frequency: v})}>
-                          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="weekly">Semanal</SelectItem>
-                            <SelectItem value="biweekly">Bisemanal (cada 2 semanas)</SelectItem>
-                            <SelectItem value="semimonthly">Quincenal (2 veces al mes)</SelectItem>
-                            <SelectItem value="monthly">Mensual</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div><Label>Banco</Label><Input value={profile.bank_name} onChange={(e) => setProfile({...profile, bank_name: e.target.value})} placeholder="Banco Popular" /></div>
-                      <div><Label>Cuenta Bancaria</Label><Input value={profile.bank_account} onChange={(e) => setProfile({...profile, bank_account: e.target.value})} placeholder="****1234" /></div>
-                      <div><Label>Routing Number</Label><Input value={profile.routing_number} onChange={(e) => setProfile({...profile, routing_number: e.target.value})} placeholder="021502011" /></div>
-                      <div><Label>Tipo de Cuenta</Label>
-                        <Select value={profile.account_type || 'checking'} onValueChange={(v) => setProfile({...profile, account_type: v})}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="checking">Checking</SelectItem>
-                            <SelectItem value="savings">Savings</SelectItem>
-                          </SelectContent>
-                        </Select>
+                {activeSection === 'payment' && (
+                  <div className="space-y-6 max-w-3xl">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" /> Compensación
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <Field label="Salario Fijo">
+                          <Input type="number" value={profile.salary} onChange={(e) => setProfile({...profile, salary: parseFloat(e.target.value) || 0})} />
+                        </Field>
+                        <Field label="Tarifa por Hora">
+                          <Input type="number" value={profile.hourly_rate} onChange={(e) => setProfile({...profile, hourly_rate: parseFloat(e.target.value) || 0})} />
+                        </Field>
+                        <Field label="Frecuencia de Pago">
+                          <Select value={profile.pay_frequency} onValueChange={(v) => setProfile({...profile, pay_frequency: v})}>
+                            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="weekly">Semanal</SelectItem>
+                              <SelectItem value="biweekly">Bisemanal</SelectItem>
+                              <SelectItem value="semimonthly">Quincenal</SelectItem>
+                              <SelectItem value="monthly">Mensual</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </Field>
                       </div>
                     </div>
-                    <div><Label>Notas</Label><Textarea value={profile.notes} onChange={(e) => setProfile({...profile, notes: e.target.value})} placeholder="Notas adicionales..." rows={3} /></div>
-                    <Button onClick={handleSaveProfile} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-                      <Save className="w-4 h-4 mr-2" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4" /> Información Bancaria
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Field label="Banco">
+                          <Input value={profile.bank_name} onChange={(e) => setProfile({...profile, bank_name: e.target.value})} />
+                        </Field>
+                        <Field label="Número de Cuenta">
+                          <Input value={profile.bank_account} onChange={(e) => setProfile({...profile, bank_account: e.target.value})} />
+                        </Field>
+                        <Field label="Routing Number">
+                          <Input value={profile.routing_number} onChange={(e) => setProfile({...profile, routing_number: e.target.value})} />
+                        </Field>
+                        <Field label="Tipo de Cuenta">
+                          <Select value={profile.account_type} onValueChange={(v) => setProfile({...profile, account_type: v})}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="checking">Checking</SelectItem>
+                              <SelectItem value="savings">Savings</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                      </div>
+                    </div>
+
+                    <Button onClick={handleSaveProfile} disabled={saving} className="bg-orange-500 hover:bg-orange-600">
+                      {saving ? 'Guardando...' : 'Guardar Cambios'}
                     </Button>
-                  </TabsContent>
+                  </div>
+                )}
 
-                  <TabsContent value="emergency" className="space-y-4 mt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div><Label>Nombre del Contacto</Label><Input value={profile.emergency_contact_name} onChange={(e) => setProfile({...profile, emergency_contact_name: e.target.value})} placeholder="Nombre completo" /></div>
-                      <div><Label>Teléfono</Label><Input value={profile.emergency_contact_phone} onChange={(e) => setProfile({...profile, emergency_contact_phone: e.target.value})} placeholder="787-555-0000" /></div>
-                      <div><Label>Relación</Label>
-                        <Select value={profile.emergency_contact_relationship} onValueChange={(v) => setProfile({...profile, emergency_contact_relationship: v})}>
-                          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="spouse">Esposo/a</SelectItem>
-                            <SelectItem value="parent">Padre/Madre</SelectItem>
-                            <SelectItem value="sibling">Hermano/a</SelectItem>
-                            <SelectItem value="child">Hijo/a</SelectItem>
-                            <SelectItem value="friend">Amigo/a</SelectItem>
-                            <SelectItem value="other">Otro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <Button onClick={handleSaveProfile} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-                      <Save className="w-4 h-4 mr-2" /> {saving ? 'Guardando...' : 'Guardar Cambios'}
-                    </Button>
-                  </TabsContent>
-
-                  <TabsContent value="documents" className="mt-4">
-                    <div className="flex justify-end mb-4">
+                {activeSection === 'docs' && (
+                  <div className="space-y-4 max-w-3xl">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-semibold text-slate-900">Documentos</h3>
                       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button className="bg-blue-600 hover:bg-blue-700"><Upload className="w-4 h-4 mr-2" /> Subir Documento</Button>
+                          <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                            <Upload className="w-4 h-4 mr-2" /> Subir
+                          </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader><DialogTitle>Subir Documento</DialogTitle></DialogHeader>
                           <form onSubmit={handleUpload} className="space-y-4">
-                            <div><Label>Tipo de Documento</Label>
+                            <div>
+                              <Label>Tipo</Label>
                               <Select value={uploadForm.document_type} onValueChange={(v) => setUploadForm({...uploadForm, document_type: v})}>
-                                <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
-                                <SelectContent>{documentTypes.map(dt => (<SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>))}</SelectContent>
+                                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                <SelectContent>
+                                  {documentTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                                </SelectContent>
                               </Select>
                             </div>
-                            <div><Label>Archivo</Label><Input type="file" onChange={(e) => setUploadForm({...uploadForm, file: e.target.files[0]})} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" /></div>
-                            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">Subir</Button>
+                            <div>
+                              <Label>Archivo</Label>
+                              <Input type="file" onChange={(e) => setUploadForm({...uploadForm, file: e.target.files[0]})} />
+                            </div>
+                            <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">Subir</Button>
                           </form>
                         </DialogContent>
                       </Dialog>
                     </div>
+
                     {documents.length === 0 ? (
-                      <div className="text-center py-8 text-slate-500"><FileText className="w-12 h-12 mx-auto mb-2 opacity-30" /><p>No hay documentos</p></div>
+                      <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                        <FileText className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                        <p className="text-sm text-slate-400">No hay documentos</p>
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         {documents.map(doc => (
-                          <div key={doc.doc_id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div key={doc.document_id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
                             <div className="flex items-center gap-3">
-                              <FileText className="w-6 h-6 text-blue-600" />
+                              <FileText className="w-5 h-5 text-orange-500" />
                               <div>
-                                <p className="font-medium text-sm">{doc.original_filename}</p>
-                                <div className="flex items-center gap-2 text-xs text-slate-500">
-                                  <Badge variant="outline" className="text-xs">{getDocTypeLabel(doc.document_type)}</Badge>
-                                  <span>{moment(doc.uploaded_at).format('DD/MM/YY')}</span>
-                                </div>
+                                <p className="text-sm font-medium">{doc.filename}</p>
+                                <p className="text-xs text-slate-500">{documentTypes.find(t => t.value === doc.document_type)?.label} • {moment(doc.uploaded_at).format('DD/MM/YY')}</p>
                               </div>
                             </div>
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => window.open(`${API}${doc.file_url}`, '_blank')}><Download className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete(doc.doc_id)}><Trash2 className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" asChild>
+                                <a href={doc.file_url} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.document_id)}>
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
-                  </TabsContent>
-                </Tabs>
-              )}
-            </CardContent>
-          </Card>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Layout>
