@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import Layout from '../components/Layout';
 import PWAInstallBanner from '../components/PWAInstallBanner';
-import QuickTimesheet from '../components/QuickTimesheet';
 import AlertsBanner from '../components/AlertsBanner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
