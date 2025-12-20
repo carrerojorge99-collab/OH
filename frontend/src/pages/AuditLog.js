@@ -3,86 +3,200 @@ import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { FileText, Plus, Pencil, Trash2, User, FolderKanban, CheckSquare, DollarSign } from 'lucide-react';
+import { FileText, Plus, Pencil, Trash2, User, FolderKanban, CheckSquare, DollarSign, Download, Search, Filter, Calendar, Clock, Package, Receipt, Users, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { fetchCompanyInfo } from '../utils/pdfGenerator';
 
 moment.locale('es');
-
 
 const AuditLog = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
+  const [filterAction, setFilterAction] = useState('all');
+  const [filterUser, setFilterUser] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     loadLogs();
-  }, [filterType]);
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      setUsers(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const loadLogs = async () => {
     try {
-      const params = filterType !== 'all' ? `?entity_type=${filterType}` : '';
-      const response = await api.get(`/audit-logs${params}`, { withCredentials: true });
+      const response = await api.get('/audit-logs?limit=1000');
       setLogs(response.data);
     } catch (error) {
       toast.error('Error al cargar historial');
-      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Filtrar logs localmente
+  const filteredLogs = logs.filter(log => {
+    if (filterType !== 'all' && log.entity_type !== filterType) return false;
+    if (filterAction !== 'all' && log.action !== filterAction) return false;
+    if (filterUser !== 'all' && log.user_id !== filterUser) return false;
+    if (dateFrom && moment(log.timestamp).isBefore(moment(dateFrom), 'day')) return false;
+    if (dateTo && moment(log.timestamp).isAfter(moment(dateTo), 'day')) return false;
+    if (searchTerm && !log.entity_name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !log.user_name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
+
+  const exportPDF = async () => {
+    const doc = new jsPDF();
+    const company = await fetchCompanyInfo();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(249, 115, 22);
+    doc.text('INFORME DE AUDITORÍA', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(company.company_name || 'OHSMS ProManage', 105, 28, { align: 'center' });
+    doc.text(`Generado: ${moment().format('DD/MM/YYYY HH:mm')}`, 105, 34, { align: 'center' });
+    
+    // Filters applied
+    let filterText = 'Filtros: ';
+    if (filterType !== 'all') filterText += `Tipo: ${getEntityLabel(filterType)} | `;
+    if (filterAction !== 'all') filterText += `Acción: ${filterAction} | `;
+    if (dateFrom) filterText += `Desde: ${dateFrom} | `;
+    if (dateTo) filterText += `Hasta: ${dateTo} | `;
+    if (filterText === 'Filtros: ') filterText = 'Filtros: Ninguno';
+    
+    doc.setFontSize(8);
+    doc.text(filterText, 14, 42);
+    doc.text(`Total registros: ${filteredLogs.length}`, 14, 48);
+    
+    // Table data
+    const tableData = filteredLogs.map(log => [
+      moment(log.timestamp).format('DD/MM/YY HH:mm'),
+      log.user_name,
+      getActionLabel(log.action),
+      getEntityLabel(log.entity_type),
+      log.entity_name.substring(0, 40),
+      log.details?.changes ? Object.keys(log.details.changes).join(', ').substring(0, 30) : '-'
+    ]);
+    
+    autoTable(doc, {
+      startY: 54,
+      head: [['Fecha', 'Usuario', 'Acción', 'Tipo', 'Entidad', 'Cambios']],
+      body: tableData,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [249, 115, 22], textColor: 255 },
+      alternateRowStyles: { fillColor: [252, 252, 253] },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 50 },
+        5: { cellWidth: 40 }
+      }
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Página ${i} de ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+    }
+    
+    doc.save(`Auditoria_${moment().format('YYYYMMDD_HHmm')}.pdf`);
+    toast.success('PDF generado');
+  };
+
+  const getActionLabel = (action) => {
+    const labels = { create: 'Creado', update: 'Actualizado', delete: 'Eliminado', login: 'Login', logout: 'Logout' };
+    return labels[action] || action;
+  };
+
   const getActionBadge = (action) => {
     switch (action) {
       case 'create':
-        return <Badge className="bg-green-100 text-green-700 border-green-200"><Plus className="w-3 h-3 mr-1" />Creado</Badge>;
+        return <Badge className="bg-green-100 text-green-700"><Plus className="w-3 h-3 mr-1" />Creado</Badge>;
       case 'update':
-        return <Badge className="bg-blue-100 text-blue-700 border-blue-200"><Pencil className="w-3 h-3 mr-1" />Actualizado</Badge>;
+        return <Badge className="bg-blue-100 text-blue-700"><Pencil className="w-3 h-3 mr-1" />Actualizado</Badge>;
       case 'delete':
-        return <Badge className="bg-red-100 text-red-700 border-red-200"><Trash2 className="w-3 h-3 mr-1" />Eliminado</Badge>;
+        return <Badge className="bg-red-100 text-red-700"><Trash2 className="w-3 h-3 mr-1" />Eliminado</Badge>;
+      case 'login':
+        return <Badge className="bg-purple-100 text-purple-700">Login</Badge>;
+      case 'approve':
+        return <Badge className="bg-emerald-100 text-emerald-700"><FileCheck className="w-3 h-3 mr-1" />Aprobado</Badge>;
       default:
         return <Badge>{action}</Badge>;
     }
   };
 
   const getEntityIcon = (entityType) => {
-    switch (entityType) {
-      case 'project':
-        return <FolderKanban className="w-4 h-4" />;
-      case 'task':
-        return <CheckSquare className="w-4 h-4" />;
-      case 'expense':
-        return <DollarSign className="w-4 h-4" />;
-      case 'user':
-        return <User className="w-4 h-4" />;
-      default:
-        return <FileText className="w-4 h-4" />;
-    }
+    const icons = {
+      project: <FolderKanban className="w-4 h-4" />,
+      task: <CheckSquare className="w-4 h-4" />,
+      expense: <DollarSign className="w-4 h-4" />,
+      user: <User className="w-4 h-4" />,
+      invoice: <Receipt className="w-4 h-4" />,
+      estimate: <FileText className="w-4 h-4" />,
+      purchase_order: <Package className="w-4 h-4" />,
+      employee: <Users className="w-4 h-4" />,
+      payroll: <DollarSign className="w-4 h-4" />,
+      change_order: <FileCheck className="w-4 h-4" />,
+      approval: <FileCheck className="w-4 h-4" />
+    };
+    return icons[entityType] || <FileText className="w-4 h-4" />;
   };
 
   const getEntityLabel = (entityType) => {
     const labels = {
-      'project': 'Proyecto',
-      'task': 'Tarea',
-      'expense': 'Gasto',
-      'user': 'Usuario',
-      'category': 'Categoría',
-      'labor': 'Salario',
-      'timesheet': 'Timesheet'
+      project: 'Proyecto', task: 'Tarea', expense: 'Gasto', user: 'Usuario',
+      category: 'Categoría', labor: 'Salario', timesheet: 'Timesheet',
+      invoice: 'Factura', estimate: 'Estimado', purchase_order: 'Orden Compra',
+      employee: 'Empleado', payroll: 'Nómina', change_order: 'Change Order',
+      approval: 'Aprobación', document: 'Documento', comment: 'Comentario'
     };
     return labels[entityType] || entityType;
+  };
+
+  const clearFilters = () => {
+    setFilterType('all');
+    setFilterAction('all');
+    setFilterUser('all');
+    setDateFrom('');
+    setDateTo('');
+    setSearchTerm('');
   };
 
   if (loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-muted-foreground">Cargando historial...</p>
-          </div>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       </Layout>
     );
@@ -90,96 +204,151 @@ const AuditLog = () => {
 
   return (
     <Layout>
-      <div className="space-y-6 fade-in">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">Historial de Cambios</h1>
-            <p className="text-muted-foreground mt-2">Registro de todas las acciones realizadas en el sistema</p>
+            <h1 className="text-3xl font-bold tracking-tight">Historial de Auditoría</h1>
+            <p className="text-muted-foreground mt-1">Registro completo de todas las acciones del sistema</p>
           </div>
-
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filtrar por tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los Tipos</SelectItem>
-              <SelectItem value="project">Proyectos</SelectItem>
-              <SelectItem value="task">Tareas</SelectItem>
-              <SelectItem value="expense">Gastos</SelectItem>
-              <SelectItem value="user">Usuarios</SelectItem>
-              <SelectItem value="category">Categorías</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button onClick={exportPDF} className="bg-orange-600 hover:bg-orange-700">
+            <Download className="w-4 h-4 mr-2" /> Exportar PDF
+          </Button>
         </div>
 
-        {/* Logs Timeline */}
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold tracking-tight">Actividad Reciente</CardTitle>
+        {/* Filters */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Filter className="w-4 h-4" /> Filtros
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {logs.length > 0 ? (
-              <div className="space-y-4">
-                {logs.map((log, index) => (
-                  <div
-                    key={log.log_id}
-                    className={`flex items-start gap-4 p-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors ${
-                      index === 0 ? 'border-blue-200 bg-blue-50/30' : ''
-                    }`}
-                  >
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-                        {getEntityIcon(log.entity_type)}
-                      </div>
-                    </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div>
+                <Label className="text-xs">Buscar</Label>
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-2 top-2.5 text-slate-400" />
+                  <Input 
+                    placeholder="Nombre..." 
+                    value={searchTerm} 
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 h-9"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-xs">Tipo</Label>
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="project">Proyectos</SelectItem>
+                    <SelectItem value="task">Tareas</SelectItem>
+                    <SelectItem value="expense">Gastos</SelectItem>
+                    <SelectItem value="invoice">Facturas</SelectItem>
+                    <SelectItem value="estimate">Estimados</SelectItem>
+                    <SelectItem value="purchase_order">Órdenes</SelectItem>
+                    <SelectItem value="employee">Empleados</SelectItem>
+                    <SelectItem value="payroll">Nómina</SelectItem>
+                    <SelectItem value="approval">Aprobaciones</SelectItem>
+                    <SelectItem value="user">Usuarios</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-xs">Acción</Label>
+                <Select value={filterAction} onValueChange={setFilterAction}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="create">Creado</SelectItem>
+                    <SelectItem value="update">Actualizado</SelectItem>
+                    <SelectItem value="delete">Eliminado</SelectItem>
+                    <SelectItem value="approve">Aprobado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-xs">Usuario</Label>
+                <Select value={filterUser} onValueChange={setFilterUser}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {users.map(u => (
+                      <SelectItem key={u.user_id} value={u.user_id}>{u.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-xs">Desde</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9" />
+              </div>
+              
+              <div>
+                <Label className="text-xs">Hasta</Label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9" />
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <span className="text-sm text-slate-500">
+                Mostrando {filteredLogs.length} de {logs.length} registros
+              </span>
+              <Button variant="outline" size="sm" onClick={clearFilters}>Limpiar Filtros</Button>
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Logs */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {filteredLogs.length === 0 ? (
+                <div className="p-8 text-center text-slate-500">
+                  <Clock className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                  <p>No hay registros que coincidan con los filtros</p>
+                </div>
+              ) : (
+                filteredLogs.slice(0, 100).map((log, index) => (
+                  <div key={log.log_id} className={`flex items-start gap-4 p-4 hover:bg-slate-50 ${index === 0 ? 'bg-orange-50/30' : ''}`}>
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 flex-shrink-0">
+                      {getEntityIcon(log.entity_type)}
+                    </div>
+                    
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {getActionBadge(log.action)}
-                          <span className="text-sm font-medium text-slate-600">
-                            {getEntityLabel(log.entity_type)}
-                          </span>
-                        </div>
-                        <span className="text-xs text-slate-500 flex-shrink-0">
-                          {moment(log.timestamp).fromNow()}
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {getActionBadge(log.action)}
+                        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                          {getEntityLabel(log.entity_type)}
                         </span>
                       </div>
-
-                      <p className="text-sm text-slate-900 font-medium mb-1">
-                        {log.entity_name}
-                      </p>
-
-                      <div className="flex items-center gap-2 text-xs text-slate-600">
+                      
+                      <p className="text-sm font-medium text-slate-900 truncate">{log.entity_name}</p>
+                      
+                      {log.details?.changes && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Campos: {Object.keys(log.details.changes).join(', ')}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                         <User className="w-3 h-3" />
                         <span>{log.user_name}</span>
-                        <span className="text-slate-400">•</span>
+                        <span>•</span>
+                        <Calendar className="w-3 h-3" />
                         <span>{moment(log.timestamp).format('DD/MM/YYYY HH:mm')}</span>
                       </div>
-
-                      {log.details && Object.keys(log.details).length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-slate-200">
-                          <div className="flex flex-wrap gap-2">
-                            {Object.entries(log.details).map(([key, value]) => (
-                              <Badge key={key} variant="outline" className="text-xs">
-                                {key}: {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium text-slate-600 mb-2">No hay registros</p>
-                <p className="text-sm">Los cambios realizados en el sistema aparecerán aquí</p>
-              </div>
-            )}
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
