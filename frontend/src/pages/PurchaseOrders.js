@@ -147,7 +147,7 @@ const PurchaseOrders = () => {
   const addItem = () => {
     setForm({
       ...form,
-      items: [...form.items, { description: '', quantity: 1, unit_price: 0, amount: 0 }]
+      items: [...form.items, { description: '', scope: '', quantity: 1, unit_price: 0, amount: 0 }]
     });
   };
 
