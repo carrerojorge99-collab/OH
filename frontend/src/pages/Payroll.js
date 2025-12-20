@@ -7,7 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { ArrowLeft, Calculator, Clock, Users, Download, Edit2, Check, Save } from 'lucide-react';
+import { ArrowLeft, Calculator, Clock, Users, Download, Edit2, Check, Save, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import jsPDF from 'jspdf';
