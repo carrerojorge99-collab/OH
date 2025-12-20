@@ -73,6 +73,11 @@ const ProjectDetail = () => {
   const [editingLaborId, setEditingLaborId] = useState(null);
   const [editingTimesheetId, setEditingTimesheetId] = useState(null);
   
+  // Change Orders state
+  const [changeOrders, setChangeOrders] = useState([]);
+  const [changeOrderDialogOpen, setChangeOrderDialogOpen] = useState(false);
+  const [changeOrderForm, setChangeOrderForm] = useState({ description: '', budget_change: 0, value_change: 0, reason: '' });
+  
   // Project Logs state
   const [projectLogs, setProjectLogs] = useState([]);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
