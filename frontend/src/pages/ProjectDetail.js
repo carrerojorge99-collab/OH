@@ -2064,6 +2064,94 @@ const ProjectDetail = () => {
             )}
           </TabsContent>
 
+          {/* Change Orders Tab */}
+          <TabsContent value="change-orders" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold tracking-tight">Change Orders</h2>
+              <Dialog open={changeOrderDialogOpen} onOpenChange={setChangeOrderDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button><Plus className="w-4 h-4 mr-2" /> Nueva Change Order</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Crear Change Order</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await api.post('/change-orders', { project_id: projectId, ...changeOrderForm }, { withCredentials: true });
+                      toast.success('Change Order creada');
+                      setChangeOrderDialogOpen(false);
+                      setChangeOrderForm({ description: '', budget_change: 0, value_change: 0, reason: '' });
+                      loadProjectData();
+                    } catch (err) { toast.error('Error al crear'); }
+                  }} className="space-y-4">
+                    <div>
+                      <Label>Descripción *</Label>
+                      <Input value={changeOrderForm.description} onChange={(e) => setChangeOrderForm({...changeOrderForm, description: e.target.value})} required />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Cambio en Presupuesto ($)</Label>
+                        <Input type="number" step="0.01" value={changeOrderForm.budget_change} onChange={(e) => setChangeOrderForm({...changeOrderForm, budget_change: parseFloat(e.target.value) || 0})} />
+                      </div>
+                      <div>
+                        <Label>Cambio en Valor ($)</Label>
+                        <Input type="number" step="0.01" value={changeOrderForm.value_change} onChange={(e) => setChangeOrderForm({...changeOrderForm, value_change: parseFloat(e.target.value) || 0})} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Razón</Label>
+                      <Textarea value={changeOrderForm.reason} onChange={(e) => setChangeOrderForm({...changeOrderForm, reason: e.target.value})} />
+                    </div>
+                    <Button type="submit" className="w-full">Crear</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {changeOrders.length === 0 ? (
+              <Card><CardContent className="p-8 text-center text-slate-500">No hay change orders</CardContent></Card>
+            ) : (
+              <div className="space-y-3">
+                {changeOrders.map(co => (
+                  <Card key={co.id} className={co.status === 'approved' ? 'border-green-200 bg-green-50' : co.status === 'rejected' ? 'border-red-200 bg-red-50' : ''}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{co.description}</p>
+                          <p className="text-sm text-slate-500">{co.reason}</p>
+                          <p className="text-xs text-slate-400 mt-1">Por {co.created_by_name} • {moment(co.created_at).format('DD/MM/YY')}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono text-sm">Presup: <span className={co.budget_change >= 0 ? 'text-green-600' : 'text-red-600'}>{co.budget_change >= 0 ? '+' : ''}${co.budget_change.toLocaleString()}</span></p>
+                          <p className="font-mono text-sm">Valor: <span className={co.value_change >= 0 ? 'text-green-600' : 'text-red-600'}>{co.value_change >= 0 ? '+' : ''}${co.value_change.toLocaleString()}</span></p>
+                          <Badge className={co.status === 'approved' ? 'bg-green-100 text-green-800' : co.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}>
+                            {co.status === 'approved' ? 'Aprobado' : co.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
+                          </Badge>
+                        </div>
+                      </div>
+                      {co.status === 'pending' && (
+                        <div className="flex gap-2 mt-3 pt-3 border-t">
+                          <Button size="sm" className="bg-green-600" onClick={async () => {
+                            await api.put(`/change-orders/${co.id}`, { status: 'approved' }, { withCredentials: true });
+                            toast.success('Aprobado');
+                            loadProjectData();
+                          }}>Aprobar</Button>
+                          <Button size="sm" variant="destructive" onClick={async () => {
+                            await api.put(`/change-orders/${co.id}`, { status: 'rejected' }, { withCredentials: true });
+                            toast.success('Rechazado');
+                            loadProjectData();
+                          }}>Rechazar</Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
           {/* Labor/Salarios Tab */}
           <TabsContent value="labor" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
