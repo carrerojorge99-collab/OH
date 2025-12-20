@@ -2163,6 +2163,8 @@ async def update_approval(approval_id: str, data: dict, request: Request, sessio
         raise HTTPException(status_code=404, detail="Aprobación no encontrada")
     
     return {"message": f"Solicitud {data.get('status')}"}
+
+@api_router.get("/projects/{project_id}/stats")
 async def get_project_stats(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
