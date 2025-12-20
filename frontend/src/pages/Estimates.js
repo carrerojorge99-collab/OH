@@ -272,95 +272,48 @@ const Estimates = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
-    // Encabezado de empresa
-    let startY = await addCompanyHeader(doc, company, 15);
+    // Header profesional
+    let y = await addDocumentHeader(doc, company, 'ESTIMADO', estimate.estimate_number, estimate.created_at, estimate.total);
     
-    // Título del documento
-    doc.setFontSize(20);
-    doc.setTextColor(59, 130, 246);
-    doc.setFont('helvetica', 'bold');
-    doc.text('ESTIMADO', 105, startY, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(estimate.estimate_number, 105, startY + 8, { align: 'center' });
-    startY += 18;
+    // Client section
+    y = addPartySection(doc, 'Cliente:', estimate.client_name, estimate.client_address || '', estimate.client_email, estimate.client_phone, y, true);
     
-    // Client info (right)
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Cliente:', 120, startY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(estimate.client_name || '', 120, startY + 6);
-    if (estimate.client_email) doc.text(estimate.client_email, 120, startY + 12);
-    if (estimate.client_phone) doc.text(estimate.client_phone, 120, startY + 18);
-    
-    // Estimate details (left)
-    doc.text(`Fecha: ${moment(estimate.created_at).format('DD/MM/YYYY')}`, 20, startY);
-    doc.text(`Válido hasta: ${estimate.valid_until ? moment(estimate.valid_until).format('DD/MM/YYYY') : 'N/A'}`, 20, startY + 6);
-    doc.text(`Estado: ${statusLabels[estimate.status]}`, 20, startY + 12);
+    // Valid until
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Válido hasta: ${estimate.valid_until ? moment(estimate.valid_until).format('MMM DD, YYYY') : 'N/A'}`, 110, y - 12);
     
     // Title
-    startY += 26;
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Título: ${estimate.title}`, 20, startY);
-    if (estimate.description) {
-      doc.setFont('helvetica', 'normal');
+    if (estimate.title) {
       doc.setFontSize(10);
-      doc.text(estimate.description, 20, startY + 6, { maxWidth: 170 });
-      startY += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(estimate.title, 15, y);
+      y += 6;
+    }
+    
+    if (estimate.description) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      const descLines = doc.splitTextToSize(estimate.description, 170);
+      doc.text(descLines, 15, y);
+      y += descLines.length * 4 + 4;
     }
     
     // Items table
-    const tableData = estimate.items.map(item => [
-      item.description,
-      item.quantity.toString(),
-      `$${item.unit_price.toFixed(2)}`,
-      `$${item.amount.toFixed(2)}`
-    ]);
-    
-    autoTable(doc, {
-      startY: startY + 8,
-      head: [['Descripción', 'Cantidad', 'Precio Unit.', 'Total']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { fillColor: [59, 130, 246] }
-    });
+    y = addItemsTable(doc, estimate.items, y + 4);
     
     // Totals
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(10);
-    doc.text(`Subtotal: $${estimate.subtotal.toFixed(2)}`, 140, finalY);
-    if (estimate.discount_amount > 0) {
-      doc.text(`Descuento (${estimate.discount_percent}%): -$${estimate.discount_amount.toFixed(2)}`, 140, finalY + 6);
-    }
-    if (estimate.tax_amount > 0) {
-      doc.text(`Impuesto (${estimate.tax_rate}%): $${estimate.tax_amount.toFixed(2)}`, 140, finalY + 12);
-    }
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`TOTAL: $${estimate.total.toFixed(2)}`, 140, finalY + 22);
+    y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y);
     
-    // Notes and terms
-    if (estimate.notes || estimate.terms) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      let notesY = finalY + 35;
-      if (estimate.notes) {
-        doc.text('Notas:', 20, notesY);
-        doc.text(estimate.notes, 20, notesY + 6, { maxWidth: 170 });
-        notesY += 18;
-      }
-      if (estimate.terms) {
-        doc.text('Términos y Condiciones:', 20, notesY);
-        doc.text(estimate.terms, 20, notesY + 6, { maxWidth: 170 });
-      }
-    }
+    // Notes
+    addNotesSection(doc, estimate.notes, estimate.terms, y);
     
-    // Pie de página
-    addCompanyFooter(doc, company);
+    // Footer
+    addFooter(doc, company);
     
-    doc.save(`${estimate.estimate_number}.pdf`);
+    doc.save(`Estimado_${estimate.estimate_number}.pdf`);
   };
 
   const totals = calculateTotals();
