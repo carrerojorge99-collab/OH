@@ -2248,6 +2248,8 @@ async def update_approval(approval_id: str, data: dict, request: Request, sessio
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Aprobación no encontrada")
     
+    approval = await db.approvals.find_one({"id": approval_id}, {"_id": 0})
+    await log_audit(user.user_id, user.name, "approve" if data.get("status") == "approved" else "update", "approval", approval_id, approval.get("reference_name", "Aprobación"), {"status": data.get("status")})
     return {"message": f"Solicitud {data.get('status')}"}
 
 @api_router.get("/projects/{project_id}/stats")
