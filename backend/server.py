@@ -919,6 +919,16 @@ async def create_project(project_data: ProjectCreate, request: Request, session_
     
     return Project(**project_doc)
 
+def extract_project_number(project_number: str) -> tuple:
+    """Extrae año y número para ordenamiento. P-2025-15 -> (2025, 15)"""
+    import re
+    if not project_number:
+        return (0, 0)
+    match = re.search(r'(\d{4})[^\d]*(\d+)', project_number)
+    if match:
+        return (int(match.group(1)), int(match.group(2)))
+    return (0, 0)
+
 @api_router.get("/projects", response_model=List[Project])
 async def get_projects(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
@@ -937,6 +947,9 @@ async def get_projects(request: Request, session_token: Optional[str] = Cookie(N
         p['budget_spent'] = p.get('budget_spent', 0)
         p['profit'] = p['project_value'] - p['budget_spent']
         p['payment_status'] = p.get('payment_status', 'pending')
+    
+    # Ordenar por número de proyecto (año, número)
+    projects.sort(key=lambda p: extract_project_number(p.get('project_number', '')))
     
     return [Project(**p) for p in projects]
 
