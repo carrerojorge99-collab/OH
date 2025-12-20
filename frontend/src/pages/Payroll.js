@@ -321,6 +321,7 @@ const Payroll = () => {
                     <Save className="w-4 h-4 mr-2" /> {saving ? 'Guardando...' : 'Guardar Nómina'}
                   </Button>
                   <Button onClick={exportPDF} variant="outline"><Download className="w-4 h-4 mr-2" /> Exportar PDF</Button>
+                  <Button onClick={downloadNACHA} variant="outline"><FileText className="w-4 h-4 mr-2" /> NACHA</Button>
                 </>
               )}
             </div>
