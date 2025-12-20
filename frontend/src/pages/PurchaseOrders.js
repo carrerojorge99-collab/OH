@@ -28,7 +28,7 @@ import {
   addTotalsSection, 
   addNotesSection, 
   addFooter 
-} from '../utils/pdfHelper';
+} from '../utils/pdfGenerator';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
