@@ -259,6 +259,37 @@ const Payroll = () => {
     }
   };
 
+  const downloadNACHA = async () => {
+    try {
+      const nachaData = {
+        employees: payrollData.map(p => ({
+          employee_id: p.employee.user_id,
+          employee_name: p.employee.name,
+          net_pay: p.netPay,
+          routing_number: p.employee.profile?.routing_number || '',
+          bank_account: p.employee.profile?.bank_account || '',
+          account_type: p.employee.profile?.account_type || 'checking'
+        }))
+      };
+      
+      const response = await api.post('/payroll/nacha', nachaData, { 
+        withCredentials: true,
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `NACHA_${payPeriod.start}_${payPeriod.end}.txt`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Archivo NACHA descargado');
+    } catch (error) {
+      toast.error('Error al generar NACHA');
+    }
+  };
+
   if (loading) return <Layout><div className="p-8">Cargando...</div></Layout>;
 
   return (
