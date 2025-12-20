@@ -5128,6 +5128,138 @@ async def get_payroll_history(request: Request, session_token: Optional[str] = C
     runs = await db.payroll_runs.find({}, {"_id": 0}).sort("processed_at", -1).to_list(100)
     return runs
 
+@api_router.post("/payroll/nacha")
+async def generate_nacha(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Genera archivo NACHA para depósitos directos"""
+    from fastapi.responses import Response
+    user = await get_current_user(request, session_token)
+    
+    company = await db.company_settings.find_one({}, {"_id": 0}) or {}
+    employees_data = data.get("employees", [])
+    
+    # NACHA file format
+    now = datetime.now(timezone.utc)
+    file_date = now.strftime("%y%m%d")
+    file_time = now.strftime("%H%M")
+    
+    # Company info (would need to be configured)
+    origin_routing = data.get("origin_routing", "000000000")
+    origin_name = (company.get("company_name", "COMPANY") + " " * 23)[:23]
+    company_id = data.get("company_id", "0000000000")
+    
+    lines = []
+    
+    # File Header Record (1)
+    file_header = (
+        "1"                          # Record Type
+        "01"                         # Priority Code
+        f" {origin_routing}"         # Immediate Destination (10 chars)
+        f" {company_id}"             # Immediate Origin (10 chars)
+        f"{file_date}"               # File Creation Date
+        f"{file_time}"               # File Creation Time
+        "A"                          # File ID Modifier
+        "094"                        # Record Size
+        "10"                         # Blocking Factor
+        "1"                          # Format Code
+        f"{origin_name:<23}"         # Destination Name
+        f"{origin_name:<23}"         # Origin Name
+        "        "                   # Reference Code
+    )
+    lines.append(file_header)
+    
+    # Batch Header Record (5)
+    batch_header = (
+        "5"                          # Record Type
+        "220"                        # Service Class (220=credits only)
+        f"{origin_name:<16}"         # Company Name
+        " " * 20                     # Discretionary Data
+        f"{company_id:<10}"          # Company ID
+        "PPD"                        # Entry Class Code (Prearranged Payment)
+        "PAYROLL   "                 # Entry Description
+        f"{file_date}"               # Company Descriptive Date
+        f"{file_date}"               # Effective Entry Date
+        "   "                        # Settlement Date (blank)
+        "1"                          # Originator Status
+        f"{origin_routing[:8]}"      # Originating DFI ID
+        "0000001"                    # Batch Number
+    )
+    lines.append(batch_header)
+    
+    # Entry Detail Records (6)
+    entry_count = 0
+    total_amount = 0
+    entry_hash = 0
+    
+    for emp in employees_data:
+        routing = emp.get("routing_number", "000000000")
+        account = emp.get("bank_account", "")
+        amount = int(emp.get("net_pay", 0) * 100)  # Convert to cents
+        name = (emp.get("employee_name", "")[:22] + " " * 22)[:22]
+        emp_id = emp.get("employee_id", "")[:15]
+        account_type = "22" if emp.get("account_type", "checking") == "checking" else "32"
+        
+        if routing and account and amount > 0:
+            entry_count += 1
+            total_amount += amount
+            entry_hash += int(routing[:8])
+            
+            entry = (
+                "6"                              # Record Type
+                f"{account_type}"                # Transaction Code (22=checking credit, 32=savings credit)
+                f"{routing[:8]}"                 # Receiving DFI ID
+                f"{routing[8] if len(routing) > 8 else '0'}"  # Check Digit
+                f"{account:<17}"                 # DFI Account Number
+                f"{amount:010d}"                 # Amount
+                f"{emp_id:<15}"                  # Individual ID
+                f"{name}"                        # Individual Name
+                "  "                             # Discretionary Data
+                "0"                              # Addenda Record Indicator
+                f"{origin_routing[:8]}"          # Trace Number (routing)
+                f"{entry_count:07d}"             # Trace Number (sequence)
+            )
+            lines.append(entry)
+    
+    # Batch Control Record (8)
+    batch_control = (
+        "8"                          # Record Type
+        "220"                        # Service Class
+        f"{entry_count:06d}"         # Entry/Addenda Count
+        f"{entry_hash % 10000000000:010d}"  # Entry Hash
+        f"{0:012d}"                  # Total Debit Amount
+        f"{total_amount:012d}"       # Total Credit Amount
+        f"{company_id:<10}"          # Company ID
+        " " * 19                     # Message Authentication Code
+        " " * 6                      # Reserved
+        f"{origin_routing[:8]}"      # Originating DFI ID
+        "0000001"                    # Batch Number
+    )
+    lines.append(batch_control)
+    
+    # File Control Record (9)
+    file_control = (
+        "9"                          # Record Type
+        "000001"                     # Batch Count
+        f"{(len(lines) + 1) // 10 + 1:06d}"  # Block Count
+        f"{entry_count:08d}"         # Entry/Addenda Count
+        f"{entry_hash % 10000000000:010d}"  # Entry Hash
+        f"{0:012d}"                  # Total Debit Amount
+        f"{total_amount:012d}"       # Total Credit Amount
+        " " * 39                     # Reserved
+    )
+    lines.append(file_control)
+    
+    # Pad to multiple of 10 lines with 9s
+    while len(lines) % 10 != 0:
+        lines.append("9" * 94)
+    
+    nacha_content = "\n".join(lines)
+    
+    return Response(
+        content=nacha_content,
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename=NACHA_{file_date}.txt"}
+    )
+
 # ==================== HUMAN RESOURCES / EMPLOYEE DOCUMENTS ====================
 EMPLOYEE_DOCS_DIR = Path("/app/uploads/employee_docs")
 EMPLOYEE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
