@@ -464,8 +464,8 @@ const PurchaseOrders = () => {
                       </div>
                     ))}
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={addItem} className="mt-2">
-                    <Plus className="w-4 h-4 mr-1" /> Agregar Línea
+                  <Button type="button" variant="outline" onClick={addItem} className="mt-2 w-full">
+                    <Plus className="w-4 h-4 mr-1" /> Agregar Task
                   </Button>
                 </div>
 
