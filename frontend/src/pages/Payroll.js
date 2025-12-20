@@ -277,7 +277,12 @@ const Payroll = () => {
                 <Calculator className="w-4 h-4 mr-2" /> {processing ? 'Calculando...' : 'Calcular Nómina'}
               </Button>
               {payrollData.length > 0 && (
-                <Button onClick={exportPDF} variant="outline"><Download className="w-4 h-4 mr-2" /> Exportar PDF</Button>
+                <>
+                  <Button onClick={savePayroll} disabled={saving} className="bg-green-600 hover:bg-green-700">
+                    <Save className="w-4 h-4 mr-2" /> {saving ? 'Guardando...' : 'Guardar Nómina'}
+                  </Button>
+                  <Button onClick={exportPDF} variant="outline"><Download className="w-4 h-4 mr-2" /> Exportar PDF</Button>
+                </>
               )}
             </div>
             <p className="text-xs text-slate-500 mt-2">Las horas trabajadas se obtienen automáticamente de los ponches del empleado</p>
