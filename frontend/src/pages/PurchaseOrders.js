@@ -270,43 +270,33 @@ const PurchaseOrders = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
-    // Header profesional
-    let y = await addDocumentHeader(doc, company, 'ORDEN DE COMPRA', po.po_number, po.created_at, po.total);
+    // Header: Empresa arriba izquierda, Doc info derecha
+    let y = await addDocumentHeader(doc, company, 'PURCHASE ORDER', po.po_number, po.created_at, po.total);
     
-    // Vendor section
-    y = addPartySection(doc, 'Proveedor:', po.supplier_name, po.supplier_address || '', po.supplier_email, po.supplier_phone, y, true);
+    // Vendor section - abajo de la empresa
+    y = addPartySection(doc, 'Vendor To:', po.supplier_name, po.supplier_address || '', po.supplier_email, po.supplier_phone, y);
     
-    // Project info if exists
+    // Project info (derecha)
     if (po.project_name) {
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(249, 115, 22);
-      doc.text('Proyecto:', 110, y - 18);
+      doc.text('Project:', 120, y - 16);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(30, 41, 59);
-      doc.text(po.project_name, 110, y - 12);
+      doc.text(po.project_name, 120, y - 10);
     }
     
-    // Title
-    if (po.title) {
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text(po.title, 15, y);
-      y += 6;
-    }
-    
-    if (po.description) {
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      const descLines = doc.splitTextToSize(po.description, 170);
-      doc.text(descLines, 15, y);
-      y += descLines.length * 4 + 4;
-    }
-    
-    // Items table
-    y = addItemsTable(doc, po.items, y + 4);
+    // Tasks table con espacio para descripción
+    const tasks = po.items.map(item => ({
+      description: item.description,
+      scope: item.scope || '',
+      details: item.details || '',
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      amount: item.amount
+    }));
+    y = addTasksTable(doc, tasks, y + 4);
     
     // Totals
     y = addTotalsSection(doc, po.subtotal, po.discount_amount || 0, po.tax_amount || 0, po.total, y);
