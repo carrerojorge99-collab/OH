@@ -14,7 +14,7 @@ import {
   ArrowRight, DollarSign, Calendar, User, Mail, Phone, MapPin,
   Download, Edit, MoreHorizontal, RefreshCw
 } from 'lucide-react';
-import { fetchCompanyInfo, addDocumentHeader, addPartySection, addItemsTable, addTotalsSection, addNotesSection, addFooter } from '../utils/pdfGenerator';
+import { fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addTotalsSection, addNotesSection, addFooter } from '../utils/pdfGenerator';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
