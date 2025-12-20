@@ -209,6 +209,48 @@ const Payroll = () => {
     doc.save(`Nomina_${payPeriod.start}_${payPeriod.end}.pdf`);
   };
 
+  const savePayroll = async () => {
+    if (payrollData.length === 0) {
+      toast.error('No hay datos de nómina para guardar');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const totals = payrollData.reduce((acc, p) => ({
+        hours: acc.hours + (p.isHourly ? p.hoursWorked : 0),
+        gross: acc.gross + p.grossPay,
+        deductions: acc.deductions + p.totalDeductions,
+        net: acc.net + p.netPay
+      }), { hours: 0, gross: 0, deductions: 0, net: 0 });
+
+      const payload = {
+        period_start: payPeriod.start,
+        period_end: payPeriod.end,
+        employees: payrollData.map(p => ({
+          employee_id: p.employee.id,
+          employee_name: p.employee.name,
+          type: p.isContractor ? 'contractor' : 'employee',
+          is_hourly: p.isHourly,
+          hours_worked: p.hoursWorked,
+          rate: p.rate,
+          gross_pay: p.grossPay,
+          deductions: p.deductions,
+          total_deductions: p.totalDeductions,
+          net_pay: p.netPay
+        })),
+        totals
+      };
+
+      await axios.post(`${API}/payroll/process`, payload, { withCredentials: true });
+      toast.success('Nómina guardada exitosamente');
+    } catch (error) {
+      toast.error('Error al guardar nómina');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <Layout><div className="p-8">Cargando...</div></Layout>;
 
   return (
