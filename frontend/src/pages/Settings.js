@@ -79,7 +79,8 @@ const Settings = () => {
     location_latitude: null,
     location_longitude: null,
     geofence_radius: 100,
-    geofence_enabled: false
+    geofence_enabled: false,
+    minimum_margin_percent: 15
   });
 
   const API_URL = process.env.REACT_APP_BACKEND_URL;
