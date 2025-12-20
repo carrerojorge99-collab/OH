@@ -68,7 +68,7 @@ const PurchaseOrders = () => {
     supplier_address: '',
     title: '',
     description: '',
-    items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+    items: [{ description: '', scope: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
     discount_percent: 0,
     notes: '',
