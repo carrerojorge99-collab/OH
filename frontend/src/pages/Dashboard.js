@@ -202,7 +202,6 @@ const Dashboard = () => {
 
         {/* Quick Timesheet for Mobile */}
         <div className="lg:hidden">
-          <QuickTimesheet />
         </div>
 
         {/* Stats Grid */}
