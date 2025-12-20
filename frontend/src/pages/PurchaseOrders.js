@@ -424,39 +424,43 @@ const PurchaseOrders = () => {
                   <Label className="mb-2 block">Líneas de la Orden</Label>
                   <div className="space-y-2">
                     {form.items.map((item, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                        <Input 
-                          placeholder="Descripción" 
-                          className="col-span-3"
+                      <div key={idx} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-slate-600">Task #{idx + 1}</span>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                        <Textarea 
+                          placeholder="Descripción del task / Scope of Work..." 
+                          className="min-h-[80px]"
                           value={item.description}
                           onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
                         />
-                        <Input 
-                          placeholder="Alcance" 
-                          className="col-span-3"
-                          value={item.scope || ''}
-                          onChange={(e) => handleItemChange(idx, 'scope', e.target.value)}
-                        />
-                        <Input 
-                          type="number" 
-                          placeholder="Cant."
-                          className="col-span-2"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                        />
-                        <Input 
-                          type="number" 
-                          placeholder="Precio"
-                          className="col-span-2"
-                          value={item.unit_price}
-                          onChange={(e) => handleItemChange(idx, 'unit_price', e.target.value)}
-                        />
-                        <div className="col-span-1 text-right font-mono text-sm">
-                          ${(parseFloat(item.amount) || 0).toFixed(2)}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-xs">Cantidad</Label>
+                            <Input 
+                              type="number" 
+                              value={item.quantity}
+                              onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Precio Unit.</Label>
+                            <Input 
+                              type="number" 
+                              value={item.unit_price}
+                              onChange={(e) => handleItemChange(idx, 'unit_price', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Total</Label>
+                            <div className="h-9 flex items-center font-mono font-bold text-orange-600">
+                              ${(parseFloat(item.amount) || 0).toFixed(2)}
+                            </div>
+                          </div>
                         </div>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)} className="col-span-1">
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
                       </div>
                     ))}
                   </div>
