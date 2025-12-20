@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'moment/locale/es';
@@ -13,8 +13,6 @@ import { toast } from 'sonner';
 moment.locale('es');
 const localizer = momentLocalizer(moment);
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Calendar = () => {
   const [events, setEvents] = useState([]);
@@ -30,8 +28,8 @@ const Calendar = () => {
   const loadCalendarData = async () => {
     try {
       const [projectsRes, tasksRes] = await Promise.all([
-        axios.get(`${API}/projects`, { withCredentials: true }),
-        axios.get(`${API}/tasks`, { withCredentials: true })
+        api.get(`/projects`, { withCredentials: true }),
+        api.get(`/tasks`, { withCredentials: true })
       ]);
 
       const projectEvents = projectsRes.data.map(project => ({

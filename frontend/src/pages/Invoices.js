@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -26,8 +26,6 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import NomenclatureSelector, { useNomenclature } from '../components/NomenclatureSelector';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
@@ -79,8 +77,8 @@ const Invoices = () => {
   const loadData = async () => {
     try {
       const [invoicesRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/invoices`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/invoices`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       setInvoices(invoicesRes.data);
       setProjects(projectsRes.data);
@@ -101,7 +99,7 @@ const Invoices = () => {
     }
 
     try {
-      await axios.post(`${API}/invoices/generate`, formData, { withCredentials: true });
+      await api.post(`/invoices/generate`, formData, { withCredentials: true });
       toast.success('Factura generada exitosamente');
       setDialogOpen(false);
       setFormData({
@@ -121,8 +119,8 @@ const Invoices = () => {
 
   const handleUpdateStatus = async (invoiceId, newStatus) => {
     try {
-      await axios.put(
-        `${API}/invoices/${invoiceId}/status`,
+      await api.put(
+        `/invoices/${invoiceId}/status`,
         null,
         {
           params: { status: newStatus },
@@ -140,7 +138,7 @@ const Invoices = () => {
     if (!window.confirm(`¿Eliminar factura ${invoiceNumber}?`)) return;
 
     try {
-      await axios.delete(`${API}/invoices/${invoiceId}`, { 
+      await api.delete(`/invoices/${invoiceId}`, { 
         withCredentials: true,
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
       });
@@ -161,7 +159,7 @@ const Invoices = () => {
     }
 
     try {
-      await axios.post(`${API}/invoices/${invoiceId}/send`, {}, { withCredentials: true });
+      await api.post(`/invoices/${invoiceId}/send`, {}, { withCredentials: true });
       toast.success(`Factura enviada a ${clientEmail}`);
       loadData();
     } catch (error) {
@@ -180,7 +178,7 @@ const Invoices = () => {
     
     // Load existing payments
     try {
-      const response = await axios.get(`${API}/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
+      const response = await api.get(`/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
       setPayments(response.data);
     } catch (error) {
       console.error('Error loading payments:', error);
@@ -193,8 +191,8 @@ const Invoices = () => {
     e.preventDefault();
 
     try {
-      await axios.post(
-        `${API}/invoices/${selectedInvoiceForPayment.invoice_id}/payments`,
+      await api.post(
+        `/invoices/${selectedInvoiceForPayment.invoice_id}/payments`,
         paymentForm,
         { withCredentials: true }
       );

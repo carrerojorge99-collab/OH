@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -21,8 +21,6 @@ import { Plus, Mail, Shield, User, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Users = () => {
   const { user: currentUser } = useAuth();
@@ -52,7 +50,7 @@ const Users = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await axios.get(`${API}/users`, { withCredentials: true });
+      const response = await api.get(`/users`, { withCredentials: true });
       setUsers(response.data);
     } catch (error) {
       toast.error('Error al cargar usuarios');
@@ -66,7 +64,7 @@ const Users = () => {
     e.preventDefault();
     
     try {
-      await axios.post(`${API}/auth/register`, formData, { withCredentials: true });
+      await api.post(`/auth/register`, formData, { withCredentials: true });
       toast.success('Usuario creado exitosamente');
       setDialogOpen(false);
       setFormData({
@@ -152,7 +150,7 @@ const Users = () => {
         updateData.password = editFormData.password;
       }
       
-      await axios.put(`${API}/users/${editingUserId}`, updateData, { withCredentials: true });
+      await api.put(`/users/${editingUserId}`, updateData, { withCredentials: true });
       toast.success('Usuario actualizado exitosamente');
       setEditDialogOpen(false);
       setEditFormData({
@@ -175,7 +173,7 @@ const Users = () => {
     }
     
     try {
-      await axios.delete(`${API}/users/${userId}`, { withCredentials: true });
+      await api.delete(`/users/${userId}`, { withCredentials: true });
       toast.success(`Usuario ${userName} eliminado exitosamente`);
       loadUsers();
     } catch (error) {

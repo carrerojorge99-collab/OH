@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -13,8 +13,6 @@ import 'moment/locale/es';
 moment.locale('es');
 moment.tz.setDefault('America/Puerto_Rico');
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 const MIN_PUNCHES = 4;
 
 const ClockInOut = () => {
@@ -39,15 +37,15 @@ const ClockInOut = () => {
       
       // Load history, active clock, and projects
       const [historyRes, activeRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/clock/history?date=${today}&_t=${timestamp}`, { 
+        api.get(`/clock/history?date=${today}&_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        axios.get(`${API}/clock/active?_t=${timestamp}`, { 
+        api.get(`/clock/active?_t=${timestamp}`, { 
           withCredentials: true,
           headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
         }),
-        axios.get(`${API}/clock/projects?_t=${timestamp}`, { 
+        api.get(`/clock/projects?_t=${timestamp}`, { 
           withCredentials: true 
         })
       ]);
@@ -98,8 +96,8 @@ const ClockInOut = () => {
     try {
       const location = await getLocation();
 
-      await axios.post(
-        `${API}/clock/in`,
+      await api.post(
+        `/clock/in`,
         null,
         {
           params: {
@@ -131,8 +129,8 @@ const ClockInOut = () => {
     try {
       const location = await getLocation();
 
-      await axios.post(
-        `${API}/clock/out`,
+      await api.post(
+        `/clock/out`,
         null,
         {
           params: {

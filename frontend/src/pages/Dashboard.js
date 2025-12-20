@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import QuickTimesheet from '../components/QuickTimesheet';
@@ -9,8 +9,6 @@ import { FolderKanban, CheckCircle2, Clock, DollarSign, TrendingUp, TrendingDown
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -36,8 +34,8 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const [statsRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/dashboard/stats`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/dashboard/stats`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       
       setStats(statsRes.data);

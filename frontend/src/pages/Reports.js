@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -7,8 +7,6 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { TrendingUp, TrendingDown, Calendar, DollarSign, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Reports = () => {
   const [projects, setProjects] = useState([]);
@@ -24,8 +22,8 @@ const Reports = () => {
   const loadData = async () => {
     try {
       const [projectsRes, tasksRes] = await Promise.all([
-        axios.get(`${API}/projects`, { withCredentials: true }),
-        axios.get(`${API}/tasks`, { withCredentials: true })
+        api.get(`/projects`, { withCredentials: true }),
+        api.get(`/tasks`, { withCredentials: true })
       ]);
       
       setProjects(projectsRes.data);
@@ -35,7 +33,7 @@ const Reports = () => {
       const allExpenses = [];
       for (const project of projectsRes.data) {
         try {
-          const expensesRes = await axios.get(`${API}/expenses?project_id=${project.project_id}`, { withCredentials: true });
+          const expensesRes = await api.get(`/expenses?project_id=${project.project_id}`, { withCredentials: true });
           allExpenses.push(...expensesRes.data.map(e => ({ ...e, project_name: project.name })));
         } catch (err) {
           console.error('Error loading expenses:', err);

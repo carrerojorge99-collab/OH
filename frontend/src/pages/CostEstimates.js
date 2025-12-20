@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -12,8 +12,6 @@ import 'moment/locale/es';
 
 moment.locale('es');
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const CostEstimates = () => {
   const navigate = useNavigate();
@@ -28,8 +26,8 @@ const CostEstimates = () => {
   const loadData = async () => {
     try {
       const [estimatesRes, projectsRes] = await Promise.all([
-        axios.get(`${API}/cost-estimates?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/projects`, { withCredentials: true })
+        api.get(`/cost-estimates?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/projects`, { withCredentials: true })
       ]);
       
       setEstimates(estimatesRes.data);
@@ -46,7 +44,7 @@ const CostEstimates = () => {
     if (!window.confirm('¿Estás seguro de eliminar esta estimación?')) return;
 
     try {
-      await axios.delete(`${API}/cost-estimates/${estimateId}`, {
+      await api.delete(`/cost-estimates/${estimateId}`, {
         withCredentials: true
       });
       toast.success('Estimación eliminada');

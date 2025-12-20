@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -15,8 +15,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import moment from 'moment';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const documentTypes = [
   { value: 'id', label: 'Identificación' },
@@ -85,7 +83,7 @@ const HumanResources = () => {
 
   const loadEmployees = async () => {
     try {
-      const response = await axios.get(`${API}/employees?_t=${Date.now()}`, { 
+      const response = await api.get(`/employees?_t=${Date.now()}`, { 
         withCredentials: true,
         headers: { 'Cache-Control': 'no-cache' }
       });
@@ -99,7 +97,7 @@ const HumanResources = () => {
 
   const loadDocuments = async (employeeId) => {
     try {
-      const response = await axios.get(`${API}/employees/${employeeId}/documents`, { withCredentials: true });
+      const response = await api.get(`/employees/${employeeId}/documents`, { withCredentials: true });
       setDocuments(response.data);
     } catch (error) {
       console.error('Error loading documents');
@@ -137,11 +135,11 @@ const HumanResources = () => {
         notes: profile.notes || ''
       };
       
-      await axios.put(`${API}/employees/${selectedEmployee.user_id}/profile`, dataToSave, { withCredentials: true });
+      await api.put(`/employees/${selectedEmployee.user_id}/profile`, dataToSave, { withCredentials: true });
       toast.success('Perfil guardado correctamente');
       
       // Update the employees list in background without changing selectedEmployee
-      const response = await axios.get(`${API}/employees?_t=${Date.now()}`, { withCredentials: true });
+      const response = await api.get(`/employees?_t=${Date.now()}`, { withCredentials: true });
       const updatedEmployees = response.data;
       
       // Update the selected employee's profile in the employees array without triggering useEffect
@@ -166,7 +164,7 @@ const HumanResources = () => {
     const formData = new FormData();
     formData.append('file', uploadForm.file);
     try {
-      await axios.post(`${API}/employees/${selectedEmployee.user_id}/documents?document_type=${uploadForm.document_type}`, formData, { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } });
+      await api.post(`/employees/${selectedEmployee.user_id}/documents?document_type=${uploadForm.document_type}`, formData, { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Documento subido');
       setUploadDialogOpen(false);
       setUploadForm({ document_type: '', file: null });
@@ -179,7 +177,7 @@ const HumanResources = () => {
   const handleDelete = async (docId) => {
     if (!window.confirm('¿Eliminar este documento?')) return;
     try {
-      await axios.delete(`${API}/employees/${selectedEmployee.user_id}/documents/${docId}`, { withCredentials: true });
+      await api.delete(`/employees/${selectedEmployee.user_id}/documents/${docId}`, { withCredentials: true });
       toast.success('Documento eliminado');
       loadDocuments(selectedEmployee.user_id);
     } catch (error) {

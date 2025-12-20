@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -13,8 +13,6 @@ import moment from 'moment';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Payroll = () => {
   const navigate = useNavigate();
@@ -34,8 +32,8 @@ const Payroll = () => {
   const loadData = async () => {
     try {
       const [empRes, settingsRes] = await Promise.all([
-        axios.get(`${API}/employees?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        axios.get(`${API}/payroll-settings?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/employees?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/payroll-settings?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
       // Include employees with salary OR hourly_rate
       setEmployees(empRes.data.filter(e => e.profile?.salary > 0 || e.profile?.hourly_rate > 0));
@@ -49,7 +47,7 @@ const Payroll = () => {
 
   const fetchClockHours = async (userId) => {
     try {
-      const response = await axios.get(`${API}/clock/all`, {
+      const response = await api.get(`/clock/all`, {
         params: {
           user_id: userId,
           start_date: payPeriod.start,
@@ -242,7 +240,7 @@ const Payroll = () => {
         totals
       };
 
-      await axios.post(`${API}/payroll/process`, payload, { withCredentials: true });
+      await api.post(`/payroll/process`, payload, { withCredentials: true });
       toast.success('Nómina guardada exitosamente');
     } catch (error) {
       toast.error('Error al guardar nómina');

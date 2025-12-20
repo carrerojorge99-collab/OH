@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -12,8 +12,6 @@ import { ArrowLeft, Plus, Trash2, Save, Download, FileSpreadsheet, FileText } fr
 import { toast } from 'sonner';
 import moment from 'moment';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const CostEstimateDetail = () => {
   const { estimateId } = useParams();
@@ -45,10 +43,10 @@ const CostEstimateDetail = () => {
     try {
       const [estimateRes, ratesRes, projectsRes] = await Promise.all([
         estimateId !== 'new' 
-          ? axios.get(`${API}/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
+          ? api.get(`/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
           : Promise.resolve({ data: null }),
-        axios.get(`${API}/labor-rates?_t=${ts}`, { withCredentials: true }),
-        axios.get(`${API}/projects?_t=${ts}`, { withCredentials: true })
+        api.get(`/labor-rates?_t=${ts}`, { withCredentials: true }),
+        api.get(`/projects?_t=${ts}`, { withCredentials: true })
       ]);
 
       setLaborRates(ratesRes.data);
@@ -94,11 +92,11 @@ const CostEstimateDetail = () => {
       };
 
       if (estimateId === 'new') {
-        const res = await axios.post(`${API}/cost-estimates`, data, { withCredentials: true });
+        const res = await api.post(`/cost-estimates`, data, { withCredentials: true });
         toast.success('Estimación creada');
         navigate(`/cost-estimates/${res.data.estimate_id}`);
       } else {
-        await axios.put(`${API}/cost-estimates/${estimateId}`, data, { withCredentials: true });
+        await api.put(`/cost-estimates/${estimateId}`, data, { withCredentials: true });
         toast.success('Estimación actualizada');
         loadData();
       }
@@ -353,14 +351,14 @@ const CostEstimateDetail = () => {
               <>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`${API}/cost-estimates/${estimateId}/export/pdf`, '_blank')}
+                  onClick={() => window.open(`/cost-estimates/${estimateId}/export/pdf`, '_blank')}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   PDF
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`${API}/cost-estimates/${estimateId}/export/excel`, '_blank')}
+                  onClick={() => window.open(`/cost-estimates/${estimateId}/export/excel`, '_blank')}
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
                   Excel
