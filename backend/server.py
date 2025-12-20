@@ -1094,6 +1094,7 @@ async def update_change_order(order_id: str, data: dict, request: Request, sessi
         }}
     )
     
+    await log_audit(user.user_id, user.name, "approve" if new_status == "approved" else "update", "change_order", order_id, order.get("description", "Change Order"), {"status": new_status})
     return {"message": f"Change Order {new_status}"}
 
 @api_router.post("/tasks", response_model=Task)
