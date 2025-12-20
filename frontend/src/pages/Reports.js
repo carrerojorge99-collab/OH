@@ -375,34 +375,46 @@ const Reports = () => {
               <Activity className="w-5 h-5" />
               Delta: Estimado vs Real
             </CardTitle>
+            {/* Leyenda */}
+            <div className="flex flex-wrap gap-4 text-xs mt-2">
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500"></span> &lt;90% Bajo riesgo</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-500"></span> 90-100% Riesgo</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500"></span> &gt;100% Sobrepresupuesto</span>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {projects.map((project, index) => {
-                const estimated = project.budget_total || 0;
-                const actual = project.budget_spent || 0;
-                const delta = estimated > 0 ? ((actual / estimated) * 100) : 0;
-                const deltaAmount = actual - estimated;
+              {projects
+                .map((project) => {
+                  const estimated = project.budget_total || 0;
+                  const actual = project.budget_spent || 0;
+                  const delta = estimated > 0 ? ((actual / estimated) * 100) : 0;
+                  const deltaAmount = actual - estimated;
+                  return { ...project, delta, deltaAmount, estimated, actual };
+                })
+                .sort((a, b) => b.delta - a.delta) // Ordenar por mayor % primero
+                .map((project, index) => {
+                const { delta, deltaAmount, estimated, actual } = project;
                 
                 const getBarColor = (pct) => {
-                  if (pct <= 80) return 'bg-green-500';
+                  if (pct < 90) return 'bg-green-500';
                   if (pct <= 100) return 'bg-yellow-500';
                   return 'bg-red-500';
                 };
                 
                 const getTextColor = (pct) => {
-                  if (pct <= 80) return 'text-green-600';
+                  if (pct < 90) return 'text-green-600';
                   if (pct <= 100) return 'text-yellow-600';
                   return 'text-red-600';
                 };
 
                 return (
-                  <div key={project.project_id} className="p-4 border rounded-lg hover:bg-slate-50">
+                  <div key={project.project_id} className="p-4 border rounded-lg hover:bg-slate-50 cursor-pointer" title="Porcentaje del presupuesto estimado ya consumido">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium">{project.name}</span>
                       <div className="flex items-center gap-4">
-                        <span className={`font-bold ${getTextColor(delta)}`}>
-                          {delta.toFixed(0)}%
+                        <span className={`font-bold ${getTextColor(delta)}`} title="Porcentaje del presupuesto estimado ya consumido">
+                          Uso: {delta.toFixed(0)}%
                         </span>
                         <span className={`text-sm font-mono ${deltaAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
                           {deltaAmount > 0 ? '+' : ''}{deltaAmount.toLocaleString('es-MX', { style: 'currency', currency: 'USD' })}
