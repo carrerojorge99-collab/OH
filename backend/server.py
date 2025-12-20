@@ -2050,7 +2050,119 @@ async def get_dashboard_stats(request: Request, session_token: Optional[str] = C
         "total_profit": total_profit
     }
 
-@api_router.get("/projects/{project_id}/stats")
+@api_router.get("/alerts")
+async def get_alerts(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    alerts = []
+    
+    # 1. Proyectos con presupuesto > 80%
+    projects = await db.projects.find({"status": "in_progress"}, {"_id": 0}).to_list(1000)
+    for p in projects:
+        budget = p.get('budget_total', 0)
+        spent = p.get('budget_spent', 0)
+        if budget > 0 and (spent / budget) >= 0.8:
+            pct = int((spent / budget) * 100)
+            alerts.append({
+                "type": "budget",
+                "severity": "high" if pct >= 100 else "medium",
+                "title": f"Presupuesto al {pct}%",
+                "message": f"Proyecto '{p.get('name')}' ha consumido {pct}% del presupuesto",
+                "link": f"/projects/{p.get('project_id')}"
+            })
+    
+    # 2. Facturas vencidas o por vencer
+    today = datetime.now(timezone.utc).date()
+    invoices = await db.invoices.find({"status": {"$in": ["pending", "sent"]}}, {"_id": 0}).to_list(1000)
+    for inv in invoices:
+        due_date_str = inv.get('due_date')
+        if due_date_str:
+            try:
+                due_date = datetime.fromisoformat(due_date_str.replace('Z', '+00:00')).date()
+                days_diff = (due_date - today).days
+                if days_diff < 0:
+                    alerts.append({
+                        "type": "invoice",
+                        "severity": "high",
+                        "title": "Factura vencida",
+                        "message": f"Factura #{inv.get('invoice_number')} vencida hace {abs(days_diff)} días",
+                        "link": "/invoices"
+                    })
+                elif days_diff <= 3:
+                    alerts.append({
+                        "type": "invoice",
+                        "severity": "medium",
+                        "title": "Factura por vencer",
+                        "message": f"Factura #{inv.get('invoice_number')} vence en {days_diff} días",
+                        "link": "/invoices"
+                    })
+            except:
+                pass
+    
+    # 3. Aprobaciones pendientes (solo admin)
+    if user.role == UserRole.ADMIN:
+        pending_approvals = await db.approvals.count_documents({"status": "pending"})
+        if pending_approvals > 0:
+            alerts.append({
+                "type": "approval",
+                "severity": "medium",
+                "title": f"{pending_approvals} aprobaciones pendientes",
+                "message": "Hay solicitudes esperando tu aprobación",
+                "link": "/approvals"
+            })
+    
+    return alerts
+
+# ==================== APPROVALS SYSTEM ====================
+@api_router.post("/approvals")
+async def create_approval(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    approval = {
+        "id": str(uuid4()),
+        "type": data.get("type"),  # purchase_order, expense, overtime
+        "reference_id": data.get("reference_id"),
+        "reference_name": data.get("reference_name"),
+        "amount": data.get("amount", 0),
+        "requested_by": user.user_id,
+        "requested_by_name": user.name,
+        "requested_at": datetime.now(timezone.utc).isoformat(),
+        "status": "pending",
+        "notes": data.get("notes", "")
+    }
+    
+    await db.approvals.insert_one(approval)
+    return {"message": "Solicitud de aprobación creada", "id": approval["id"]}
+
+@api_router.get("/approvals")
+async def get_approvals(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.ADMIN:
+        approvals = await db.approvals.find({}, {"_id": 0}).sort("requested_at", -1).to_list(100)
+    else:
+        approvals = await db.approvals.find({"requested_by": user.user_id}, {"_id": 0}).sort("requested_at", -1).to_list(100)
+    
+    return approvals
+
+@api_router.put("/approvals/{approval_id}")
+async def update_approval(approval_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden aprobar")
+    
+    update_data = {
+        "status": data.get("status"),  # approved, rejected
+        "reviewed_by": user.user_id,
+        "reviewed_by_name": user.name,
+        "reviewed_at": datetime.now(timezone.utc).isoformat(),
+        "review_notes": data.get("notes", "")
+    }
+    
+    result = await db.approvals.update_one({"id": approval_id}, {"$set": update_data})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Aprobación no encontrada")
+    
+    return {"message": f"Solicitud {data.get('status')}"}
 async def get_project_stats(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
