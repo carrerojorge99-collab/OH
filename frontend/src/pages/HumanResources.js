@@ -323,6 +323,16 @@ const HumanResources = () => {
                       </div>
                       <div><Label>Banco</Label><Input value={profile.bank_name} onChange={(e) => setProfile({...profile, bank_name: e.target.value})} placeholder="Banco Popular" /></div>
                       <div><Label>Cuenta Bancaria</Label><Input value={profile.bank_account} onChange={(e) => setProfile({...profile, bank_account: e.target.value})} placeholder="****1234" /></div>
+                      <div><Label>Routing Number</Label><Input value={profile.routing_number} onChange={(e) => setProfile({...profile, routing_number: e.target.value})} placeholder="021502011" /></div>
+                      <div><Label>Tipo de Cuenta</Label>
+                        <Select value={profile.account_type || 'checking'} onValueChange={(v) => setProfile({...profile, account_type: v})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="checking">Checking</SelectItem>
+                            <SelectItem value="savings">Savings</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div><Label>Notas</Label><Textarea value={profile.notes} onChange={(e) => setProfile({...profile, notes: e.target.value})} placeholder="Notas adicionales..." rows={3} /></div>
                     <Button onClick={handleSaveProfile} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
