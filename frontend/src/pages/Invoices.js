@@ -214,85 +214,47 @@ const Invoices = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
-    // Encabezado de empresa
-    let startY = await addCompanyHeader(doc, company, 15);
-
-    // Título del documento
-    doc.setFontSize(20);
-    doc.setTextColor(37, 99, 235);
-    doc.setFont('helvetica', 'bold');
-    doc.text('FACTURA', 105, startY, { align: 'center' });
-    startY += 10;
-
-    // Información de factura
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Factura #: ${invoice.invoice_number}`, 14, startY);
-    doc.text(`Fecha: ${moment(invoice.created_at).format('DD/MM/YYYY')}`, 14, startY + 6);
-    doc.text(`Vencimiento: ${moment(invoice.due_date).format('DD/MM/YYYY')}`, 14, startY + 12);
-
-    // Client info
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Cliente:', 120, startY);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(invoice.client_name, 120, startY + 6);
-    if (invoice.client_email) {
-      doc.text(invoice.client_email, 120, startY + 12);
-    }
-
+    // Header profesional
+    let y = await addDocumentHeader(doc, company, 'FACTURA', invoice.invoice_number, invoice.created_at, invoice.total || 0);
+    
+    // Client section
+    y = addPartySection(doc, 'Cliente:', invoice.client_name, '', invoice.client_email, '', y, true);
+    
     // Project info
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Proyecto:', 14, startY + 24);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(invoice.project_name, 50, startY + 24);
-
-    // Items table
-    const tableData = invoice.items.map(item => [
-      item.description || 'N/A',
-      (item.hours || 0).toFixed(2),
-      `$${(item.rate || 0).toFixed(2)}`,
-      `$${(item.amount || 0).toFixed(2)}`
-    ]);
-
-    autoTable(doc, {
-      head: [['Descripción', 'Horas', 'Tarifa', 'Total']],
-      body: tableData,
-      startY: startY + 32,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [37, 99, 235] }
-    });
-
-    const finalY = doc.lastAutoTable.finalY + 10;
-
-    // Totals
-    doc.setFontSize(10);
-    doc.text(`Subtotal:`, 140, finalY);
-    doc.text(`$${(invoice.subtotal || 0).toFixed(2)}`, 190, finalY, { align: 'right' });
-
-    doc.text(`Impuestos (${invoice.tax_rate || 0}%):`, 140, finalY + 6);
-    doc.text(`$${(invoice.tax_amount || 0).toFixed(2)}`, 190, finalY + 6, { align: 'right' });
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text(`TOTAL:`, 140, finalY + 14);
-    doc.text(`$${(invoice.total || 0).toFixed(2)}`, 190, finalY + 14, { align: 'right' });
-
-    // Notes
-    if (invoice.notes) {
-      doc.setFont('helvetica', 'normal');
+    if (invoice.project_name) {
       doc.setFontSize(9);
-      doc.text('Notas:', 14, finalY + 26);
-      doc.text(invoice.notes, 14, finalY + 32, { maxWidth: 180 });
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(249, 115, 22);
+      doc.text('Proyecto:', 110, y - 18);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 41, 59);
+      doc.text(invoice.project_name, 110, y - 12);
     }
-
-    // Pie de página
-    addCompanyFooter(doc, company);
-
+    
+    // Due date
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Vencimiento: ${moment(invoice.due_date).format('MMM DD, YYYY')}`, 15, y);
+    y += 8;
+    
+    // Items table
+    const items = invoice.items.map(item => ({
+      description: item.description,
+      quantity: item.hours || 1,
+      unit_price: item.rate || 0,
+      amount: item.amount || 0
+    }));
+    y = addItemsTable(doc, items, y, ['Descripción', 'Horas', 'Tarifa', 'Total']);
+    
+    // Totals
+    y = addTotalsSection(doc, invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y);
+    
+    // Notes
+    addNotesSection(doc, invoice.notes, invoice.terms, y);
+    
+    // Footer
+    addFooter(doc, company);
+    
     doc.save(`Factura_${invoice.invoice_number}.pdf`);
   };
 
