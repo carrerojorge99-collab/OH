@@ -231,7 +231,8 @@ const ProjectDetail = () => {
         api.get(`/comments?project_id=${projectId}&_t=${ts}`, cfg),
         api.get(`/documents?project_id=${projectId}&_t=${ts}`, cfg),
         api.get(`/projects/${projectId}/stats?_t=${ts}`, cfg),
-        api.get(`/project-logs?project_id=${projectId}&_t=${ts}`, cfg)
+        api.get(`/project-logs?project_id=${projectId}&_t=${ts}`, cfg),
+        api.get(`/change-orders?project_id=${projectId}&_t=${ts}`, cfg)
       ]);
       
       setProject(projectRes.data);
@@ -244,6 +245,7 @@ const ProjectDetail = () => {
       setDocuments(documentsRes.data);
       setStats(statsRes.data);
       setProjectLogs(logsRes.data || []);
+      setChangeOrders(changeOrdersRes.data || []);
     } catch (error) {
       toast.error('Error al cargar datos del proyecto');
       console.error(error);
