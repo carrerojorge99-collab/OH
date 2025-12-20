@@ -2608,6 +2608,7 @@ async def update_company_settings(
         "location_longitude": company_data.get("location_longitude"),
         "geofence_radius": company_data.get("geofence_radius", 100),
         "geofence_enabled": company_data.get("geofence_enabled", False),
+        "minimum_margin_percent": company_data.get("minimum_margin_percent", 15),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
