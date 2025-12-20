@@ -106,13 +106,13 @@ const Payroll = () => {
         let totalDeductions = 0;
 
         if (isContractor) {
-          const contractorDed = grossPay * (payrollSettings.contractor_percent || 10) / 100;
+          const contractorDed = grossPay * (freshSettings.contractor_percent || 10) / 100;
           deductions = { 'Retención 10%': contractorDed };
           totalDeductions = contractorDed;
         } else {
-          const hacienda = grossPay * (payrollSettings.hacienda_percent || 0) / 100;
-          const ss = grossPay * (payrollSettings.social_security_percent || 6.2) / 100;
-          const medicare = grossPay * (payrollSettings.medicare_percent || 1.45) / 100;
+          const hacienda = grossPay * (freshSettings.hacienda_percent || 0) / 100;
+          const ss = grossPay * (freshSettings.social_security_percent || 6.2) / 100;
+          const medicare = grossPay * (freshSettings.medicare_percent || 1.45) / 100;
           deductions = {
             'Hacienda': hacienda,
             'Seguro Social': ss,
