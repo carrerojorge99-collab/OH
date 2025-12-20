@@ -1025,6 +1025,74 @@ async def delete_project(project_id: str, request: Request, session_token: Optio
     
     return {"message": "Proyecto eliminado exitosamente"}
 
+# ==================== CHANGE ORDERS ====================
+@api_router.post("/change-orders")
+async def create_change_order(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    project = await db.projects.find_one({"project_id": data.get("project_id")})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    change_order = {
+        "id": str(uuid4()),
+        "project_id": data.get("project_id"),
+        "description": data.get("description", ""),
+        "budget_change": data.get("budget_change", 0),
+        "value_change": data.get("value_change", 0),
+        "reason": data.get("reason", ""),
+        "status": "pending",
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.change_orders.insert_one(change_order)
+    return {"message": "Change Order creada", "id": change_order["id"]}
+
+@api_router.get("/change-orders")
+async def get_change_orders(project_id: str = None, request: Request = None, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    query = {"project_id": project_id} if project_id else {}
+    orders = await db.change_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return orders
+
+@api_router.put("/change-orders/{order_id}")
+async def update_change_order(order_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden aprobar")
+    
+    order = await db.change_orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Change Order no encontrada")
+    
+    new_status = data.get("status")
+    
+    if new_status == "approved":
+        # Actualizar presupuesto y valor del proyecto
+        await db.projects.update_one(
+            {"project_id": order["project_id"]},
+            {"$inc": {
+                "budget_total": order.get("budget_change", 0),
+                "project_value": order.get("value_change", 0)
+            }}
+        )
+    
+    await db.change_orders.update_one(
+        {"id": order_id},
+        {"$set": {
+            "status": new_status,
+            "reviewed_by": user.user_id,
+            "reviewed_by_name": user.name,
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            "review_notes": data.get("notes", "")
+        }}
+    )
+    
+    return {"message": f"Change Order {new_status}"}
+
 @api_router.post("/tasks", response_model=Task)
 async def create_task(task_data: TaskCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
