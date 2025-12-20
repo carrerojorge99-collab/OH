@@ -367,6 +367,102 @@ const Reports = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* DELTA ESTIMADO VS REAL */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold tracking-tight flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Delta: Estimado vs Real
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {projects.map((project, index) => {
+                const estimated = project.budget_total || 0;
+                const actual = project.budget_spent || 0;
+                const delta = estimated > 0 ? ((actual / estimated) * 100) : 0;
+                const deltaAmount = actual - estimated;
+                
+                const getBarColor = (pct) => {
+                  if (pct <= 80) return 'bg-green-500';
+                  if (pct <= 100) return 'bg-yellow-500';
+                  return 'bg-red-500';
+                };
+                
+                const getTextColor = (pct) => {
+                  if (pct <= 80) return 'text-green-600';
+                  if (pct <= 100) return 'text-yellow-600';
+                  return 'text-red-600';
+                };
+
+                return (
+                  <div key={project.project_id} className="p-4 border rounded-lg hover:bg-slate-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">{project.name}</span>
+                      <div className="flex items-center gap-4">
+                        <span className={`font-bold ${getTextColor(delta)}`}>
+                          {delta.toFixed(0)}%
+                        </span>
+                        <span className={`text-sm font-mono ${deltaAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {deltaAmount > 0 ? '+' : ''}{deltaAmount.toLocaleString('es-MX', { style: 'currency', currency: 'USD' })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${getBarColor(delta)} transition-all`}
+                            style={{ width: `${Math.min(delta, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-500 mt-1">
+                      <span>Estimado: ${estimated.toLocaleString()}</span>
+                      <span>Real: ${actual.toLocaleString()}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Resumen */}
+            <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+              <h4 className="font-semibold mb-3">Resumen General</h4>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">
+                    ${projects.reduce((s, p) => s + (p.budget_total || 0), 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-slate-500">Total Estimado</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">
+                    ${projects.reduce((s, p) => s + (p.budget_spent || 0), 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-slate-500">Total Real</p>
+                </div>
+                <div>
+                  {(() => {
+                    const totalEst = projects.reduce((s, p) => s + (p.budget_total || 0), 0);
+                    const totalReal = projects.reduce((s, p) => s + (p.budget_spent || 0), 0);
+                    const diff = totalReal - totalEst;
+                    return (
+                      <>
+                        <p className={`text-2xl font-bold ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {diff > 0 ? '+' : ''}{diff.toLocaleString('es-MX', { style: 'currency', currency: 'USD' })}
+                        </p>
+                        <p className="text-xs text-slate-500">Diferencia</p>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
