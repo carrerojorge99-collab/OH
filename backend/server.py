@@ -5141,52 +5141,60 @@ async def generate_nacha(data: dict, request: Request, session_token: Optional[s
     file_date = now.strftime("%y%m%d")
     file_time = now.strftime("%H%M")
     
-    origin_routing = data.get("origin_routing", "000000000")
+    # Configuración bancaria (debería venir de settings)
+    dest_routing = data.get("dest_routing", "121000248")  # Routing del banco destino
+    company_id = data.get("company_id", "2313801042")     # ID de la empresa (10 dígitos)
     origin_name = (company.get("company_name", "COMPANY") + " " * 23)[:23]
-    company_id = data.get("company_id", "0000000000")
+    dest_name = (data.get("bank_name", "BANK OF PR") + " " * 23)[:23]
     
     lines = []
     
-    # File Header Record (1)
-    file_header = f"101 {origin_routing} {company_id}{file_date}{file_time}A094101{origin_name:<23}{origin_name:<23}        "
+    # Record 1: File Header
+    # 101 + dest_routing(9) + origin(10) + date(6) + time(4) + A094101 + dest_name(23) + origin_name(23) + ref(8)
+    file_header = f"101 {dest_routing} {company_id}{file_date}{file_time}A094101{origin_name}{dest_name}        "
     lines.append(file_header)
     
-    # Batch Header Record (5)
-    batch_header = f"5220{origin_name:<16}{' '*20}{company_id:<10}PPDPAYROLL   {file_date}{file_date}   1{origin_routing[:8]}0000001"
+    # Record 5: Batch Header  
+    # 5220 + company_name(16) + discretionary(20) + company_id(10) + PPD + desc(10) + date(6) + spaces(3) + 1 + routing(8) + batch(7)
+    batch_header = f"5220{origin_name[:16]:<16}{' '*20}{company_id:<10}PPD PAYROLL   {file_date}   1{dest_routing[:8]}0000001"
     lines.append(batch_header)
     
-    # Entry Detail Records (6)
+    # Record 6: Entry Detail
     entry_count = 0
     total_amount = 0
     entry_hash = 0
     
     for emp in employees_data:
-        routing = emp.get("routing_number", "000000000")
+        routing = emp.get("routing_number", dest_routing)
         account = emp.get("bank_account", "")
-        amount = int(emp.get("net_pay", 0) * 100)
+        amount = int(emp.get("net_pay", 0) * 100)  # Centavos
         name = (emp.get("employee_name", "")[:22] + " " * 22)[:22]
-        emp_id = (emp.get("employee_id", "")[:15] + " " * 15)[:15]
-        acc_type = "22" if emp.get("account_type", "checking") == "checking" else "32"
         
-        if routing and account and amount > 0:
+        if amount > 0:
             entry_count += 1
             total_amount += amount
-            entry_hash += int(routing[:8]) if routing[:8].isdigit() else 0
-            check_digit = routing[8] if len(routing) > 8 else "0"
+            routing_8 = routing[:8] if routing else dest_routing[:8]
+            entry_hash += int(routing_8) if routing_8.isdigit() else 0
             
-            entry = f"6{acc_type}{routing[:8]}{check_digit}{account:<17}{amount:010d}{emp_id}{name}  0{origin_routing[:8]}{entry_count:07d}"
+            # 6 + trans_code(2) + routing(8) + check(1) + account(17) + amount(10) + name(22) + trace(7)
+            acc_type = "22" if emp.get("account_type", "checking") == "checking" else "32"
+            check_digit = routing[8] if len(routing) > 8 else "0"
+            entry = f"6{acc_type}{routing_8}{check_digit}{account:<17}{amount:010d}{name}{entry_count:07d}"
             lines.append(entry)
     
-    # Batch Control Record (8)
-    batch_control = f"8220{entry_count:06d}{entry_hash % 10000000000:010d}{0:012d}{total_amount:012d}{company_id:<10}{' '*19}{' '*6}{origin_routing[:8]}0000001"
+    # Record 8: Batch Control
+    # 8220 + count(6) + hash(10) + debit(12) + credit(12) + company_id(10) + batch(7)
+    entry_hash_10 = entry_hash % 10000000000
+    batch_control = f"8220{entry_count:06d}{entry_hash_10:010d}{0:012d}{total_amount:012d}{company_id:<10}{' '*25}{dest_routing[:8]}0000001"
     lines.append(batch_control)
     
-    # File Control Record (9)
+    # Record 9: File Control
+    # 9 + batch_count(6) + block_count(6) + entry_count(8) + hash(10) + debit(12) + credit(12) + reserved(39)
     block_count = (len(lines) + 2) // 10 + 1
-    file_control = f"9{1:06d}{block_count:06d}{entry_count:08d}{entry_hash % 10000000000:010d}{0:012d}{total_amount:012d}{' '*39}"
+    file_control = f"9{1:06d}{block_count:06d}{entry_count:08d}{entry_hash_10:010d}{0:012d}{total_amount:012d}{' '*39}"
     lines.append(file_control)
     
-    # Pad to multiple of 10 lines
+    # Padding con 9s hasta múltiplo de 10
     while len(lines) % 10 != 0:
         lines.append("9" * 94)
     
