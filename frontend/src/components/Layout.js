@@ -27,7 +27,8 @@ import {
   DollarSign,
   Clock,
   Package,
-  Calculator
+  Calculator,
+  CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
