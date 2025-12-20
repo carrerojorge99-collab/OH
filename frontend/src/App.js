@@ -23,6 +23,7 @@ import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
 import HumanResources from './pages/HumanResources';
 import Payroll from './pages/Payroll';
+import Approvals from './pages/Approvals';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
