@@ -272,16 +272,16 @@ const Estimates = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
-    // Header profesional
-    let y = await addDocumentHeader(doc, company, 'ESTIMADO', estimate.estimate_number, estimate.created_at, estimate.total);
+    // Header: Empresa izquierda, Doc derecha
+    let y = await addDocumentHeader(doc, company, 'ESTIMATE', estimate.estimate_number, estimate.created_at, estimate.total);
     
-    // Client section
-    y = addPartySection(doc, 'Cliente:', estimate.client_name, estimate.client_address || '', estimate.client_email, estimate.client_phone, y, true);
+    // Client section debajo de empresa
+    y = addPartySection(doc, 'Bill To:', estimate.client_name, estimate.client_address || '', estimate.client_email, estimate.client_phone, y);
     
-    // Valid until
+    // Valid until derecha
     doc.setFontSize(8);
     doc.setTextColor(71, 85, 105);
-    doc.text(`Válido hasta: ${estimate.valid_until ? moment(estimate.valid_until).format('MMM DD, YYYY') : 'N/A'}`, 110, y - 12);
+    doc.text(`Valid Until: ${estimate.valid_until ? moment(estimate.valid_until).format('MMM DD, YYYY') : 'N/A'}`, 120, y - 10);
     
     // Title
     if (estimate.title) {
@@ -301,8 +301,8 @@ const Estimates = () => {
       y += descLines.length * 4 + 4;
     }
     
-    // Items table
-    y = addItemsTable(doc, estimate.items, y + 4);
+    // Tasks table
+    y = addTasksTable(doc, estimate.items, y + 4);
     
     // Totals
     y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y);
@@ -313,7 +313,7 @@ const Estimates = () => {
     // Footer
     addFooter(doc, company);
     
-    doc.save(`Estimado_${estimate.estimate_number}.pdf`);
+    doc.save(`Estimate_${estimate.estimate_number}.pdf`);
   };
 
   const totals = calculateTotals();
