@@ -144,6 +144,8 @@ class EmployeeProfile(BaseModel):
     pay_frequency: Optional[str] = ""  # weekly, biweekly, semimonthly, monthly
     bank_name: Optional[str] = ""
     bank_account: Optional[str] = ""
+    routing_number: Optional[str] = ""
+    account_type: Optional[str] = ""  # checking, savings
     # Emergency Contact
     emergency_contact_name: Optional[str] = ""
     emergency_contact_phone: Optional[str] = ""
