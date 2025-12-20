@@ -800,6 +800,25 @@ const Settings = () => {
                     )}
                   </div>
 
+                  {/* Margen Mínimo */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <div>
+                      <Label className="text-base font-medium">Margen Mínimo de Ganancia</Label>
+                      <p className="text-sm text-slate-500">Alerta cuando un proyecto tenga margen menor al configurado</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        className="w-24"
+                        value={company.minimum_margin_percent || 15}
+                        onChange={(e) => setCompany(prev => ({ ...prev, minimum_margin_percent: parseInt(e.target.value) || 15 }))}
+                      />
+                      <span className="text-sm text-slate-600">%</span>
+                    </div>
+                  </div>
+
                   {/* Submit Button */}
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={savingCompany} className="flex items-center space-x-2">
