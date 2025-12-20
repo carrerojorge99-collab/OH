@@ -140,6 +140,11 @@ function AppRouter() {
           <Payroll />
         </ProtectedRoute>
       } />
+      <Route path="/approvals" element={
+        <ProtectedRoute>
+          <Approvals />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
