@@ -4910,7 +4910,7 @@ async def process_payroll(data: dict, request: Request, session_token: Optional[
         "id": str(uuid4()),
         "period_start": data.get("period_start"),
         "period_end": data.get("period_end"),
-        "processed_by": user.id,
+        "processed_by": user.user_id,
         "processed_at": datetime.now(timezone.utc).isoformat(),
         "status": "completed",
         "employees": data.get("employees", []),
