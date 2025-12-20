@@ -1050,6 +1050,7 @@ async def create_change_order(data: dict, request: Request, session_token: Optio
     }
     
     await db.change_orders.insert_one(change_order)
+    await log_audit(user.user_id, user.name, "create", "change_order", change_order["id"], data.get("description", "Change Order"), {"project": project.get("name"), "budget_change": data.get("budget_change"), "value_change": data.get("value_change")})
     return {"message": "Change Order creada", "id": change_order["id"]}
 
 @api_router.get("/change-orders")
