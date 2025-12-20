@@ -25,6 +25,7 @@ const Payroll = () => {
   const [payrollData, setPayrollData] = useState([]);
   const [processing, setProcessing] = useState(false);
   const [editingHours, setEditingHours] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
