@@ -427,9 +427,15 @@ const PurchaseOrders = () => {
                       <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                         <Input 
                           placeholder="Descripción" 
-                          className="col-span-5"
+                          className="col-span-3"
                           value={item.description}
                           onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                        />
+                        <Input 
+                          placeholder="Alcance" 
+                          className="col-span-3"
+                          value={item.scope || ''}
+                          onChange={(e) => handleItemChange(idx, 'scope', e.target.value)}
                         />
                         <Input 
                           type="number" 
@@ -445,7 +451,7 @@ const PurchaseOrders = () => {
                           value={item.unit_price}
                           onChange={(e) => handleItemChange(idx, 'unit_price', e.target.value)}
                         />
-                        <div className="col-span-2 text-right font-mono">
+                        <div className="col-span-1 text-right font-mono text-sm">
                           ${(parseFloat(item.amount) || 0).toFixed(2)}
                         </div>
                         <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)} className="col-span-1">
