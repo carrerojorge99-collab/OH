@@ -214,37 +214,36 @@ const Invoices = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
-    // Header profesional
-    let y = await addDocumentHeader(doc, company, 'FACTURA', invoice.invoice_number, invoice.created_at, invoice.total || 0);
+    // Header: Empresa izquierda, Doc derecha
+    let y = await addDocumentHeader(doc, company, 'INVOICE', invoice.invoice_number, invoice.created_at, invoice.total || 0);
     
-    // Client section
-    y = addPartySection(doc, 'Cliente:', invoice.client_name, '', invoice.client_email, '', y, true);
+    // Client section debajo de empresa
+    y = addPartySection(doc, 'Bill To:', invoice.client_name, '', invoice.client_email, '', y);
     
-    // Project info
+    // Project info derecha
     if (invoice.project_name) {
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(249, 115, 22);
-      doc.text('Proyecto:', 110, y - 18);
+      doc.text('Project:', 120, y - 16);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(30, 41, 59);
-      doc.text(invoice.project_name, 110, y - 12);
+      doc.text(invoice.project_name, 120, y - 10);
     }
     
     // Due date
     doc.setFontSize(8);
     doc.setTextColor(71, 85, 105);
-    doc.text(`Vencimiento: ${moment(invoice.due_date).format('MMM DD, YYYY')}`, 15, y);
-    y += 8;
+    doc.text(`Due: ${moment(invoice.due_date).format('MMM DD, YYYY')}`, 120, y - 4);
     
-    // Items table
-    const items = invoice.items.map(item => ({
+    // Tasks table
+    const tasks = invoice.items.map(item => ({
       description: item.description,
       quantity: item.hours || 1,
       unit_price: item.rate || 0,
       amount: item.amount || 0
     }));
-    y = addItemsTable(doc, items, y, ['Descripción', 'Horas', 'Tarifa', 'Total']);
+    y = addTasksTable(doc, tasks, y + 4);
     
     // Totals
     y = addTotalsSection(doc, invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y);
@@ -255,7 +254,7 @@ const Invoices = () => {
     // Footer
     addFooter(doc, company);
     
-    doc.save(`Factura_${invoice.invoice_number}.pdf`);
+    doc.save(`Invoice_${invoice.invoice_number}.pdf`);
   };
 
   const getStatusBadge = (status) => {
