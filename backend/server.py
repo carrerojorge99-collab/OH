@@ -2567,8 +2567,12 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
             "location_latitude": None,
             "location_longitude": None,
             "geofence_radius": 100,
-            "geofence_enabled": False
+            "geofence_enabled": False,
+            "minimum_margin_percent": 15
         }
+    # Asegurar que exista minimum_margin_percent
+    if "minimum_margin_percent" not in company:
+        company["minimum_margin_percent"] = 15
     return company
 
 @api_router.put("/company")
