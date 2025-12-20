@@ -4900,6 +4900,32 @@ async def update_payroll_settings(data: dict, request: Request, session_token: O
     await db.payroll_settings.update_one({}, {"$set": data}, upsert=True)
     return {"message": "Configuración guardada"}
 
+@api_router.post("/payroll/process")
+async def process_payroll(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    
+    payroll_run = {
+        "id": str(uuid4()),
+        "period_start": data.get("period_start"),
+        "period_end": data.get("period_end"),
+        "processed_by": user.id,
+        "processed_at": datetime.now(timezone.utc).isoformat(),
+        "status": "completed",
+        "employees": data.get("employees", []),
+        "totals": data.get("totals", {})
+    }
+    
+    await db.payroll_runs.insert_one(payroll_run)
+    return {"message": "Nómina procesada exitosamente", "id": payroll_run["id"]}
+
+@api_router.get("/payroll/history")
+async def get_payroll_history(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    runs = await db.payroll_runs.find({}, {"_id": 0}).sort("processed_at", -1).to_list(100)
+    return runs
+
 # ==================== HUMAN RESOURCES / EMPLOYEE DOCUMENTS ====================
 EMPLOYEE_DOCS_DIR = Path("/app/uploads/employee_docs")
 EMPLOYEE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
