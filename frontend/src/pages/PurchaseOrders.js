@@ -24,7 +24,7 @@ import {
   fetchCompanyInfo, 
   addDocumentHeader, 
   addPartySection, 
-  addItemsTable, 
+  addTasksTable, 
   addTotalsSection, 
   addNotesSection, 
   addFooter 
