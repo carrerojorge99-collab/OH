@@ -2224,32 +2224,205 @@ async def get_alerts(request: Request, session_token: Optional[str] = Cookie(Non
     return alerts
 
 # ==================== APPROVALS SYSTEM ====================
+## ==================== SISTEMA DE SOLICITUDES ====================
+
+# Tipos de solicitudes
+class RequestCategory(str, Enum):
+    EMPLOYEE = "employee"  # Solicitudes de empleado (RRHH aprueba)
+    PROJECT = "project"    # Solicitudes de proyecto (PM aprueba)
+
+class RequestType(str, Enum):
+    # Employee requests
+    VACATION = "vacation"
+    PERMISSION = "permission"
+    OVERTIME = "overtime"
+    SICK_LEAVE = "sick_leave"
+    # Project requests
+    MATERIAL_PURCHASE = "material_purchase"
+    EMERGENCY_EXPENSE = "emergency_expense"
+    ADDITIONAL_RESOURCE = "additional_resource"
+    EQUIPMENT_RENTAL = "equipment_rental"
+
+REQUEST_CATEGORY_MAP = {
+    "vacation": "employee",
+    "permission": "employee", 
+    "overtime": "employee",
+    "sick_leave": "employee",
+    "material_purchase": "project",
+    "emergency_expense": "project",
+    "additional_resource": "project",
+    "equipment_rental": "project"
+}
+
+@api_router.post("/requests")
+async def create_request(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Crear solicitud (empleados pueden crear cualquier tipo)"""
+    user = await get_current_user(request, session_token)
+    
+    request_type = data.get("type")
+    category = REQUEST_CATEGORY_MAP.get(request_type, "employee")
+    
+    new_request = {
+        "id": str(uuid4()),
+        "category": category,
+        "type": request_type,
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        # Employee request fields
+        "start_date": data.get("start_date"),
+        "end_date": data.get("end_date"),
+        "hours": data.get("hours"),
+        # Project request fields
+        "project_id": data.get("project_id"),
+        "project_name": data.get("project_name"),
+        "amount": data.get("amount", 0),
+        "urgency": data.get("urgency", "normal"),  # normal, urgent, critical
+        # Common fields
+        "requested_by": user.user_id,
+        "requested_by_name": user.name or "Usuario",
+        "requested_at": datetime.now(timezone.utc).isoformat(),
+        "status": "pending",
+        "attachments": data.get("attachments", []),
+        "notes": data.get("notes", "")
+    }
+    
+    await db.requests.insert_one(new_request)
+    await log_audit(user.user_id, user.name, "create", "request", new_request["id"], data.get("title", "Solicitud"), {"type": request_type, "category": category})
+    
+    return {"message": "Solicitud creada exitosamente", "id": new_request["id"]}
+
+@api_router.get("/requests")
+async def get_requests(
+    request: Request, 
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Obtener solicitudes según rol del usuario"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    
+    # Filtrar por categoría si se especifica
+    if category:
+        query["category"] = category
+    
+    # Filtrar por estado si se especifica
+    if status:
+        query["status"] = status
+    
+    # Super Admin ve todo
+    if user.role == UserRole.SUPER_ADMIN:
+        pass
+    # RRHH ve solicitudes de empleados + las propias
+    elif user.role == UserRole.RRHH:
+        query["$or"] = [
+            {"category": "employee"},
+            {"requested_by": user.user_id}
+        ]
+    # Project Manager ve solicitudes de proyectos + las propias
+    elif user.role == UserRole.PROJECT_MANAGER:
+        query["$or"] = [
+            {"category": "project"},
+            {"requested_by": user.user_id}
+        ]
+    # Empleados solo ven sus propias solicitudes
+    else:
+        query["requested_by"] = user.user_id
+    
+    requests_list = await db.requests.find(query, {"_id": 0}).sort("requested_at", -1).to_list(200)
+    return requests_list
+
+@api_router.get("/requests/my")
+async def get_my_requests(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Obtener mis solicitudes"""
+    user = await get_current_user(request, session_token)
+    requests_list = await db.requests.find({"requested_by": user.user_id}, {"_id": 0}).sort("requested_at", -1).to_list(100)
+    return requests_list
+
+@api_router.put("/requests/{request_id}")
+async def update_request(request_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Aprobar/Rechazar solicitud"""
+    user = await get_current_user(request, session_token)
+    
+    # Obtener la solicitud
+    req = await db.requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    
+    # Verificar permisos según categoría
+    category = req.get("category")
+    can_approve = False
+    
+    if user.role == UserRole.SUPER_ADMIN:
+        can_approve = True
+    elif user.role == UserRole.RRHH and category == "employee":
+        can_approve = True
+    elif user.role == UserRole.PROJECT_MANAGER and category == "project":
+        can_approve = True
+    
+    if not can_approve:
+        raise HTTPException(status_code=403, detail="No tiene permisos para aprobar esta solicitud")
+    
+    update_data = {
+        "status": data.get("status"),  # approved, rejected
+        "reviewed_by": user.user_id,
+        "reviewed_by_name": user.name or "Usuario",
+        "reviewed_at": datetime.now(timezone.utc).isoformat(),
+        "review_notes": data.get("notes", "")
+    }
+    
+    await db.requests.update_one({"id": request_id}, {"$set": update_data})
+    await log_audit(user.user_id, user.name, "review", "request", request_id, req.get("title", "Solicitud"), {"status": data.get("status")})
+    
+    return {"message": f"Solicitud {data.get('status')}"}
+
+@api_router.delete("/requests/{request_id}")
+async def delete_request(request_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Cancelar solicitud propia (solo si está pendiente)"""
+    user = await get_current_user(request, session_token)
+    
+    req = await db.requests.find_one({"id": request_id}, {"_id": 0})
+    if not req:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    
+    # Solo el creador puede cancelar y solo si está pendiente
+    if req["requested_by"] != user.user_id and user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="No puede cancelar esta solicitud")
+    
+    if req["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Solo se pueden cancelar solicitudes pendientes")
+    
+    await db.requests.delete_one({"id": request_id})
+    return {"message": "Solicitud cancelada"}
+
+## ==================== LEGACY APPROVALS (mantener compatibilidad) ====================
+
 @api_router.post("/approvals")
 async def create_approval(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
     approval = {
         "id": str(uuid4()),
-        "type": data.get("type"),  # purchase_order, expense, overtime
+        "type": data.get("type"),
         "reference_id": data.get("reference_id"),
         "reference_name": data.get("reference_name"),
         "amount": data.get("amount", 0),
         "requested_by": user.user_id,
-        "requested_by_name": user.name,
+        "requested_by_name": user.name or "Usuario",
         "requested_at": datetime.now(timezone.utc).isoformat(),
         "status": "pending",
         "notes": data.get("notes", "")
     }
     
     await db.approvals.insert_one(approval)
-    await log_audit(user.user_id, user.name, "create", "approval", approval["id"], data.get("reference_name", "Aprobación"), {"type": data.get("type"), "amount": data.get("amount")})
     return {"message": "Solicitud de aprobación creada", "id": approval["id"]}
 
 @api_router.get("/approvals")
 async def get_approvals(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.SUPER_ADMIN:
+    if user.role in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER, UserRole.RRHH]:
         approvals = await db.approvals.find({}, {"_id": 0}).sort("requested_at", -1).to_list(100)
     else:
         approvals = await db.approvals.find({"requested_by": user.user_id}, {"_id": 0}).sort("requested_at", -1).to_list(100)
@@ -2259,13 +2432,13 @@ async def get_approvals(request: Request, session_token: Optional[str] = Cookie(
 @api_router.put("/approvals/{approval_id}")
 async def update_approval(approval_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role != UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Solo administradores pueden aprobar")
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER, UserRole.RRHH]:
+        raise HTTPException(status_code=403, detail="No tiene permisos para aprobar")
     
     update_data = {
-        "status": data.get("status"),  # approved, rejected
+        "status": data.get("status"),
         "reviewed_by": user.user_id,
-        "reviewed_by_name": user.name,
+        "reviewed_by_name": user.name or "Usuario",
         "reviewed_at": datetime.now(timezone.utc).isoformat(),
         "review_notes": data.get("notes", "")
     }
@@ -2274,8 +2447,6 @@ async def update_approval(approval_id: str, data: dict, request: Request, sessio
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Aprobación no encontrada")
     
-    approval = await db.approvals.find_one({"id": approval_id}, {"_id": 0})
-    await log_audit(user.user_id, user.name, "approve" if data.get("status") == "approved" else "update", "approval", approval_id, approval.get("reference_name", "Aprobación"), {"status": data.get("status")})
     return {"message": f"Solicitud {data.get('status')}"}
 
 @api_router.get("/projects/{project_id}/stats")
