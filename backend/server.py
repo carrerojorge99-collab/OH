@@ -5744,8 +5744,8 @@ async def update_employee_profile(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Solo administradores")
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+        raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
     
     profile_dict = profile_data.model_dump()
     profile_dict["user_id"] = employee_id
