@@ -421,10 +421,7 @@ backend:
           comment: "✅ FIXED: Updated field mapping in create_client to handle both Spanish (nombre_contacto, empresa) and English (name, company_name) field names. Client creation and login now working correctly."
 
 test_plan:
-  current_focus:
-    - "Client Portal - Admin creates client"
-    - "Client Portal - Client login and profile access"
-    - "Client Portal - Client cannot see projects"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
