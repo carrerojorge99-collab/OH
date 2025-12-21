@@ -217,7 +217,7 @@ const HumanResources = () => {
               <div className="border-b bg-gradient-to-r from-slate-50 to-white p-6">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-2xl font-bold text-orange-600">
-                    {selectedEmployee.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                    {getInitials(selectedEmployee.name)}
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-slate-900">{selectedEmployee.name}</h2>
