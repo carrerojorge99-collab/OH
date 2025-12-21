@@ -329,7 +329,7 @@ const ClockHistory = () => {
                               <User className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                              <h3 className="font-semibold text-lg text-slate-900">{group.user_name}</h3>
+                              <h3 className="font-semibold text-lg text-slate-900">{group.user_name || 'Sin nombre'}</h3>
                               <div className="flex items-center gap-2 text-sm text-slate-600">
                                 <Calendar className="w-4 h-4" />
                                 {moment(group.date).format('dddd, D [de] MMMM [de] YYYY')}
