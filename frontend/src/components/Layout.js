@@ -64,6 +64,7 @@ const Layout = ({ children }) => {
 
     const rrhhNav = [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Mi Perfil', href: '/my-profile', icon: User },
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Mi Historial', href: '/clock/history', icon: Clock },
       { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
