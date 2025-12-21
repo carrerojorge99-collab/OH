@@ -339,7 +339,7 @@ const AuditLog = () => {
                       
                       <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                         <User className="w-3 h-3" />
-                        <span>{log.user_name}</span>
+                        <span>{log.user_name || 'N/A'}</span>
                         <span>•</span>
                         <Calendar className="w-3 h-3" />
                         <span>{moment(log.timestamp).format('DD/MM/YYYY HH:mm')}</span>
