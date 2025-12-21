@@ -3175,7 +3175,7 @@ async def download_document(document_id: str, request: Request, session_token: O
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role != UserRole.SUPER_ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este documento")
     
     file_path = UPLOAD_DIR / document_doc['filename']
