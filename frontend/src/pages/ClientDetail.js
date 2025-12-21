@@ -25,7 +25,6 @@ const documentTypes = [
 const ClientDetail = () => {
   const { clientId } = useParams();
   const [client, setClient] = useState(null);
-  const [projects, setProjects] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
