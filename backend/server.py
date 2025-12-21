@@ -5562,23 +5562,72 @@ async def update_payroll_settings(data: dict, request: Request, session_token: O
 @api_router.post("/payroll/process")
 async def process_payroll(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role != UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Solo administradores")
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+        raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
+    
+    payroll_id = str(uuid4())
+    period_start = data.get("period_start")
+    period_end = data.get("period_end")
+    employees = data.get("employees", [])
     
     payroll_run = {
-        "id": str(uuid4()),
-        "period_start": data.get("period_start"),
-        "period_end": data.get("period_end"),
+        "id": payroll_id,
+        "period_start": period_start,
+        "period_end": period_end,
         "processed_by": user.user_id,
+        "processed_by_name": user.name or "Usuario",
         "processed_at": datetime.now(timezone.utc).isoformat(),
         "status": "completed",
-        "employees": data.get("employees", []),
+        "employees": employees,
         "totals": data.get("totals", {})
     }
     
     await db.payroll_runs.insert_one(payroll_run)
-    await log_audit(user.user_id, user.name, "create", "payroll", payroll_run["id"], f"Nómina {data.get('period_start')} - {data.get('period_end')}", {"total": data.get("totals", {}).get("net", 0), "employees": len(data.get("employees", []))})
-    return {"message": "Nómina procesada exitosamente", "id": payroll_run["id"]}
+    
+    # Generar talonarios para cada empleado
+    for emp in employees:
+        pay_stub = {
+            "id": str(uuid4()),
+            "payroll_id": payroll_id,
+            "employee_id": emp.get("user_id"),
+            "employee_name": emp.get("name"),
+            "period_start": period_start,
+            "period_end": period_end,
+            "hours_worked": emp.get("hours", 0),
+            "hourly_rate": emp.get("rate", 0),
+            "gross_pay": emp.get("grossPay", 0),
+            "deductions": {
+                "hacienda": emp.get("hacienda", 0),
+                "social_security": emp.get("ss", 0),
+                "medicare": emp.get("medicare", 0),
+                "other": emp.get("otherDeductions", 0)
+            },
+            "total_deductions": emp.get("deductions", 0),
+            "net_pay": emp.get("netPay", 0),
+            "payment_method": emp.get("payment_method", "check"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_contractor": emp.get("is_contractor", False)
+        }
+        await db.pay_stubs.insert_one(pay_stub)
+    
+    await log_audit(user.user_id, user.name, "create", "payroll", payroll_id, f"Nómina {period_start} - {period_end}", {"total": data.get("totals", {}).get("net", 0), "employees": len(employees)})
+    return {"message": "Nómina procesada y talonarios generados", "id": payroll_id, "stubs_generated": len(employees)}
+
+@api_router.get("/pay-stubs/my")
+async def get_my_pay_stubs(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Obtener mis talonarios de pago"""
+    user = await get_current_user(request, session_token)
+    stubs = await db.pay_stubs.find({"employee_id": user.user_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return stubs
+
+@api_router.get("/pay-stubs/{employee_id}")
+async def get_employee_pay_stubs(employee_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Obtener talonarios de un empleado (admin/rrhh)"""
+    user = await get_current_user(request, session_token)
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH] and user.user_id != employee_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    stubs = await db.pay_stubs.find({"employee_id": employee_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return stubs
 
 @api_router.get("/payroll/history")
 async def get_payroll_history(request: Request, session_token: Optional[str] = Cookie(None)):
