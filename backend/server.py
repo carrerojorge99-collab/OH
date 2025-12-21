@@ -2701,8 +2701,9 @@ async def update_client(client_id: str, data: dict, request: Request, session_to
 async def get_client_projects(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT and user.user_id != client_id:
-        raise HTTPException(status_code=403, detail="No autorizado")
+    # Clientes NO pueden ver proyectos - los proyectos son privados de OHSMS
+    if user.role == UserRole.CLIENT:
+        return []
     
     projects = await db.projects.find({"client_id": client_id}, {"_id": 0}).to_list(100)
     return projects
