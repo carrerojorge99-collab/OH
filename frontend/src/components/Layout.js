@@ -39,33 +39,85 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Navegación completa para admin/empleados
-  const fullNavigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Ponchar', href: '/clock', icon: Clock },
-    { name: 'Historial Ponches', href: '/clock/history', icon: Clock, adminOnly: true },
-    { name: 'Proyectos', href: '/projects', icon: FolderKanban },
-    { name: 'Calendario', href: '/calendar', icon: Calendar },
-    { name: 'Reportes', href: '/reports', icon: BarChart3 },
-    { name: 'Estimados', href: '/estimates', icon: FileText },
-    { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
-    { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
-    { name: 'Facturas', href: '/invoices', icon: DollarSign },
-    { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
-    { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
-    { name: 'Clientes', href: '/clients', icon: Building2 },
-    { name: 'Usuarios', href: '/users', icon: Users },
-    { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
-    { name: 'Configuración', href: '/settings', icon: Settings },
-  ];
+  // Definir navegación por rol
+  const getNavigationByRole = (role) => {
+    const baseEmpleado = [
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Mis Proyectos', href: '/projects', icon: FolderKanban },
+    ];
 
-  // Navegación limitada para clientes (solo perfil y documentos)
-  const clientNavigation = [
-    { name: 'Mi Perfil', href: `/clients/${user?.user_id}`, icon: Building2 },
-  ];
+    const pmNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+      { name: 'Calendario', href: '/calendar', icon: Calendar },
+      { name: 'Reportes', href: '/reports', icon: BarChart3 },
+      { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
+    ];
 
-  // Usar navegación según rol del usuario
-  const navigation = user?.role === 'client' ? clientNavigation : fullNavigation;
+    const rrhhNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
+      { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
+      { name: 'Nómina', href: '/payroll', icon: DollarSign },
+      { name: 'Usuarios', href: '/users', icon: Users },
+    ];
+
+    const superAdminNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
+      { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+      { name: 'Calendario', href: '/calendar', icon: Calendar },
+      { name: 'Reportes', href: '/reports', icon: BarChart3 },
+      { name: 'Estimados', href: '/estimates', icon: FileText },
+      { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
+      { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
+      { name: 'Facturas', href: '/invoices', icon: DollarSign },
+      { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
+      { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
+      { name: 'Clientes', href: '/clients', icon: Building2 },
+      { name: 'Usuarios', href: '/users', icon: Users },
+      { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
+      { name: 'Configuración', href: '/settings', icon: Settings },
+    ];
+
+    const clientNav = [
+      { name: 'Mi Perfil', href: `/clients/${user?.user_id}`, icon: Building2 },
+    ];
+
+    switch (role) {
+      case 'super_admin':
+      case 'admin': // backward compatibility
+        return superAdminNav;
+      case 'project_manager':
+        return pmNav;
+      case 'rrhh':
+        return rrhhNav;
+      case 'empleado':
+        return baseEmpleado;
+      case 'client':
+        return clientNav;
+      default:
+        return baseEmpleado;
+    }
+  };
+
+  const navigation = getNavigationByRole(user?.role);
+
+  // Labels de roles en español
+  const roleLabels = {
+    'super_admin': 'Super Admin',
+    'admin': 'Admin',
+    'project_manager': 'Project Manager',
+    'rrhh': 'RRHH',
+    'empleado': 'Empleado',
+    'client': 'Cliente'
+  };
 
   const handleLogout = async () => {
     try {
