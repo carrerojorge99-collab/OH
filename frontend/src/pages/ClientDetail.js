@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Building2, Upload, FileText, Trash2, Download, FolderKanban, Mail, Phone, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 
