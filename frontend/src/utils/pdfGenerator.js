@@ -32,23 +32,15 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   // === LEFT SIDE: Company Info ===
   let leftY = 15;
   
-  // Logo or company name
-  if (company.company_logo) {
-    try {
-      doc.addImage(company.company_logo, 'PNG', 15, 10, 35, 18);
-      leftY = 32;
-    } catch (e) {
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...COLORS.primary);
-      doc.text(company.company_name || 'OHSMS', 15, 20);
-      leftY = 26;
-    }
-  } else {
+  // Logo hardcoded
+  try {
+    doc.addImage(COMPANY_LOGO, 'PNG', 15, 10, 35, 18);
+    leftY = 32;
+  } catch (e) {
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLORS.primary);
-    doc.text(company.company_name || 'OHSMS', 15, 20);
+    doc.text(company.company_name || 'OHSMS ProManage', 15, 20);
     leftY = 26;
   }
   
