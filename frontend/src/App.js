@@ -148,6 +148,11 @@ function AppRouter() {
           <Approvals />
         </ProtectedRoute>
       } />
+      <Route path="/my-requests" element={
+        <ProtectedRoute>
+          <MyRequests />
+        </ProtectedRoute>
+      } />
       <Route path="/clients" element={
         <ProtectedRoute>
           <Clients />
