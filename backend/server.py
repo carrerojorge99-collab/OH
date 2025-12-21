@@ -5725,7 +5725,8 @@ EMPLOYEE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
 @api_router.get("/employees")
 async def get_employees(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    employees = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    # Filter out hidden users
+    employees = await db.users.find({"hidden": {"$ne": True}}, {"_id": 0, "password": 0}).to_list(1000)
     
     # Attach profiles to employees
     for emp in employees:
