@@ -425,11 +425,11 @@ class AuditLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
     log_id: str
     user_id: str
-    user_name: str
+    user_name: Optional[str] = "N/A"
     action: str  # create, update, delete
     entity_type: str  # project, task, expense, user, etc.
     entity_id: str
-    entity_name: str
+    entity_name: Optional[str] = "N/A"
     details: Optional[dict] = None
     timestamp: str
 
