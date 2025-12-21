@@ -1564,8 +1564,12 @@ def main():
             # Run cost estimate export tests
             tester = CostEstimateExportTester()
             results = tester.run_cost_estimate_export_tests()
+        elif sys.argv[1] == "client":
+            # Run client portal tests
+            tester = ClientPortalTester()
+            results = tester.run_client_portal_tests()
         else:
-            print("Usage: python backend_test.py [clock|export]")
+            print("Usage: python backend_test.py [clock|export|client]")
             return 1
     else:
         # Run full API tests
