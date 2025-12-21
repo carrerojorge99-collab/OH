@@ -233,7 +233,7 @@ const ClockHistory = () => {
                     <SelectItem value="all">Todos los empleados</SelectItem>
                     {users.map(user => (
                       <SelectItem key={user.user_id} value={user.user_id}>
-                        {user.name}
+                        {user.name || user.email || 'Sin nombre'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -250,7 +250,7 @@ const ClockHistory = () => {
                     <SelectItem value="all">Todos los proyectos</SelectItem>
                     {projects.map(project => (
                       <SelectItem key={project.project_id} value={project.project_id}>
-                        {project.name}
+                        {project.name || 'Sin nombre'}
                       </SelectItem>
                     ))}
                   </SelectContent>
