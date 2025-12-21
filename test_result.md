@@ -483,15 +483,18 @@ frontend:
 backend:
   - task: "Manual Invoice API"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Added POST /api/invoices/manual endpoint with ManualInvoiceCreate model. Allows creating invoices with custom items (quantity, unit_price, description)."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Manual Invoice API working correctly. Backend endpoint POST /api/invoices/manual is accessible and properly structured to handle Task format data with ManualInvoiceCreate model. Endpoint supports custom items with quantity, unit_price, description fields matching the frontend Task format implementation."
 
 agent_communication:
     - agent: "main"
