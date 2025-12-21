@@ -186,8 +186,8 @@ const HumanResources = () => {
                     {getInitials(emp.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-slate-900 truncate">{emp.name}</p>
-                    <p className="text-xs text-slate-500 truncate">{emp.profile?.position || emp.email}</p>
+                    <p className="font-medium text-sm text-slate-900 truncate">{emp.name || 'Sin nombre'}</p>
+                    <p className="text-xs text-slate-500 truncate">{emp.profile?.position || emp.email || 'Sin email'}</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-300" />
                 </div>
