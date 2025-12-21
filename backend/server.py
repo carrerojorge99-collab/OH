@@ -989,7 +989,8 @@ async def get_project(project_id: str, request: Request, session_token: Optional
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role != UserRole.SUPER_ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     # Asegurar que existan los campos y calcular profit
@@ -3113,7 +3114,8 @@ async def upload_document(
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role != UserRole.SUPER_ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     max_size = 10 * 1024 * 1024
@@ -3154,7 +3156,8 @@ async def get_documents(project_id: str, request: Request, session_token: Option
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role != UserRole.SUPER_ADMIN and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     documents = await db.documents.find({"project_id": project_id}, {"_id": 0}).sort("uploaded_at", -1).to_list(1000)
