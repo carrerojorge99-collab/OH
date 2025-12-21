@@ -3,6 +3,9 @@ import autoTable from 'jspdf-autotable';
 import moment from 'moment';
 import api from './api';
 
+// Logo hardcoded en base64
+const COMPANY_LOGO = '/logo.png';
+
 // Colores corporativos
 const COLORS = {
   primary: [249, 115, 22],    // Orange
