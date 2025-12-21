@@ -385,7 +385,7 @@ const ClockHistory = () => {
                                 </div>
                                 <div className="text-sm">
                                   <span className="font-medium text-slate-700">Proyecto:</span>{' '}
-                                  <span className="text-slate-600">{entry.project_name}</span>
+                                  <span className="text-slate-600">{entry.project_name || 'Sin proyecto'}</span>
                                 </div>
                               </div>
                               <div className="text-right flex items-center gap-3">
