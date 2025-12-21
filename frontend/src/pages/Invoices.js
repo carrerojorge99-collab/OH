@@ -516,6 +516,146 @@ const Invoices = () => {
               </form>
             </DialogContent>
             </Dialog>
+
+            {/* Manual Invoice Dialog */}
+            <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Factura Manual
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Crear Factura Manual</DialogTitle>
+                  <DialogDescription>
+                    Crea una factura con items personalizados (Tasks)
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleManualSubmit} className="space-y-6">
+                  {/* Client Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Proyecto (opcional)</Label>
+                      <Select value={manualForm.project_id || 'none'} onValueChange={(v) => setManualForm({...manualForm, project_id: v === 'none' ? '' : v})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar proyecto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin proyecto</SelectItem>
+                          {projects.map(p => (
+                            <SelectItem key={p.project_id} value={p.project_id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Nombre del Cliente *</Label>
+                      <Input value={manualForm.client_name} onChange={(e) => setManualForm({...manualForm, client_name: e.target.value})} required />
+                    </div>
+                    <div>
+                      <Label>Email del Cliente</Label>
+                      <Input type="email" value={manualForm.client_email} onChange={(e) => setManualForm({...manualForm, client_email: e.target.value})} />
+                    </div>
+                    <div>
+                      <Label>Teléfono</Label>
+                      <Input value={manualForm.client_phone} onChange={(e) => setManualForm({...manualForm, client_phone: e.target.value})} />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Dirección</Label>
+                      <Input value={manualForm.client_address} onChange={(e) => setManualForm({...manualForm, client_address: e.target.value})} />
+                    </div>
+                  </div>
+
+                  {/* Items - Task Format */}
+                  <div>
+                    <Label className="mb-2 block">Líneas de la Factura (Tasks)</Label>
+                    <div className="space-y-2">
+                      {manualForm.items.map((item, idx) => (
+                        <div key={idx} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-slate-600">Task #{idx + 1}</span>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => removeManualItem(idx)}>
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                          <Textarea 
+                            placeholder="Descripción del task / Scope of Work..." 
+                            className="min-h-[80px]"
+                            value={item.description}
+                            onChange={(e) => handleManualItemChange(idx, 'description', e.target.value)}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <Label className="text-xs">Cantidad</Label>
+                              <Input 
+                                type="number" 
+                                value={item.quantity}
+                                onChange={(e) => handleManualItemChange(idx, 'quantity', e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Precio Unit.</Label>
+                              <Input 
+                                type="number" 
+                                value={item.unit_price}
+                                onChange={(e) => handleManualItemChange(idx, 'unit_price', e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Total</Label>
+                              <div className="h-9 flex items-center font-mono font-bold text-blue-600">
+                                ${(parseFloat(item.amount) || 0).toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <Button type="button" variant="outline" onClick={addManualItem} className="mt-2 w-full">
+                      <Plus className="w-4 h-4 mr-1" /> Agregar Task
+                    </Button>
+                  </div>
+
+                  {/* Totals */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label>Descuento (%)</Label>
+                      <Input type="number" value={manualForm.discount_percent} onChange={(e) => setManualForm({...manualForm, discount_percent: e.target.value})} />
+                    </div>
+                    <div>
+                      <Label>Impuesto (%)</Label>
+                      <Input type="number" value={manualForm.tax_rate} onChange={(e) => setManualForm({...manualForm, tax_rate: e.target.value})} />
+                    </div>
+                    <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg">
+                      <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${calculateManualTotals().subtotal.toFixed(2)}</span></div>
+                      {calculateManualTotals().discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${calculateManualTotals().discountAmount.toFixed(2)}</span></div>}
+                      {calculateManualTotals().taxAmount > 0 && <div className="flex justify-between text-sm"><span>Impuesto:</span><span>${calculateManualTotals().taxAmount.toFixed(2)}</span></div>}
+                      <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${calculateManualTotals().total.toFixed(2)}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Notes & Terms */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Notas</Label>
+                      <Textarea value={manualForm.notes} onChange={(e) => setManualForm({...manualForm, notes: e.target.value})} rows={3} />
+                    </div>
+                    <div>
+                      <Label>Términos y Condiciones</Label>
+                      <Textarea value={manualForm.terms} onChange={(e) => setManualForm({...manualForm, terms: e.target.value})} rows={3} />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setManualDialogOpen(false)}>Cancelar</Button>
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                      Crear Factura
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Payment Dialog */}
