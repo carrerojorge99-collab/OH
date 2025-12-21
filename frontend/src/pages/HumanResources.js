@@ -13,6 +13,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import moment from 'moment';
 
+// Helper function to get initials safely
+const getInitials = (name) => {
+  if (!name) return '??';
+  return name.split(' ').map(n => n[0] || '').join('').slice(0, 2).toUpperCase() || '??';
+};
+
 const documentTypes = [
   { value: 'id', label: 'Identificación' },
   { value: 'contract', label: 'Contrato' },
