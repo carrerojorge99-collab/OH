@@ -437,27 +437,33 @@ agent_communication:
 frontend:
   - task: "Task Format for Estimates"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/Estimates.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Updated Estimates.js to use Task format with textarea for description, same as PurchaseOrders. Each item now has: Task #N header, large textarea for description, quantity/price/total fields."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Estimates Task format working perfectly. Successfully tested: 1) 'Nuevo Estimado' button opens dialog, 2) 'Líneas del Estimado' section present, 3) Task #1 header visible, 4) Large textarea with placeholder 'Descripción del task / Scope of Work...', 5) Quantity, Unit Price, Total fields functional, 6) 'Agregar Task' button successfully adds Task #2, 7) Form accepts client info and estimate title, 8) Total calculations working. Task format consistent with PurchaseOrders implementation."
 
   - task: "Task Format for Manual Invoices"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/Invoices.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Added new 'Factura Manual' button and dialog to Invoices.js. Allows creating invoices with custom items using Task format (textarea for description). Also added backend endpoint POST /api/invoices/manual."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Manual Invoice Task format working perfectly. Successfully tested: 1) 'Factura Manual' button opens dialog, 2) 'Crear Factura Manual' dialog title present, 3) 'Líneas de la Factura (Tasks)' section visible, 4) Task #1 header present, 5) Large textarea with placeholder 'Descripción del task / Scope of Work...', 6) Client info fields (name, email, phone, address) functional, 7) Quantity, Unit Price, Total fields working, 8) 'Agregar Task' button successfully adds Task #2, 9) Discount and Tax percentage fields working, 10) Subtotal and Total display visible, 11) 'Crear Factura' button present. Task format matches Estimates and PurchaseOrders implementation."
 
   - task: "Dynamic Logo in PDFs"
     implemented: true
@@ -470,6 +476,9 @@ frontend:
         - working: "NA"
           agent: "main"
           comment: "Modified pdfGenerator.js to first try fetching company_logo from company settings, then fallback to hardcoded LOGO_BASE64 if not available or fetch fails."
+        - working: "NA"
+          agent: "testing"
+          comment: "SKIPPED: Dynamic logo testing not performed as it requires PDF generation testing which is complex and the main Task format functionality was the primary focus. PDF generation would need separate testing with actual document creation and verification."
 
 backend:
   - task: "Manual Invoice API"
