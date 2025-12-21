@@ -2665,7 +2665,8 @@ async def export_project_report(project_id: str, format: str, request: Request, 
 async def get_users(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    # Filter out hidden users
+    users = await db.users.find({"hidden": {"$ne": True}}, {"_id": 0, "password": 0}).to_list(1000)
     
     # Convert datetime to string
     for u in users:
