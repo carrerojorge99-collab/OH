@@ -32,13 +32,13 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   
   // Logo hardcoded
   try {
-    doc.addImage(COMPANY_LOGO, 'PNG', 15, 10, 35, 18);
+    doc.addImage(LOGO_BASE64, 'WEBP', 15, 10, 35, 18);
     leftY = 32;
   } catch (e) {
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLORS.primary);
-    doc.text(company.company_name || 'ProManage ProManage', 15, 20);
+    doc.text(company.company_name || 'ProManage', 15, 20);
     leftY = 26;
   }
   
