@@ -1090,8 +1090,8 @@ async def get_change_orders(project_id: str = None, request: Request = None, ses
 @api_router.put("/change-orders/{order_id}")
 async def update_change_order(order_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role != UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Solo administradores pueden aprobar")
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER]:
+        raise HTTPException(status_code=403, detail="Solo PM o administradores pueden aprobar")
     
     order = await db.change_orders.find_one({"id": order_id})
     if not order:
