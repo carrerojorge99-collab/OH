@@ -24,6 +24,7 @@ import Settings from './pages/Settings';
 import HumanResources from './pages/HumanResources';
 import Payroll from './pages/Payroll';
 import Approvals from './pages/Approvals';
+import MyRequests from './pages/MyRequests';
 import Clients from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
 import ProtectedRoute from './components/ProtectedRoute';
