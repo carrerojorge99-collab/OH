@@ -420,7 +420,7 @@ const Users = () => {
                     <Badge className={`${getRoleBadgeColor(user.role)} border text-xs px-2 py-0`}>
                       {getRoleLabel(user.role)}
                     </Badge>
-                    {currentUser?.role === 'admin' && (
+                    {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)} className="h-6 w-6 text-blue-600 hover:bg-blue-50">
                           <Pencil className="w-3 h-3" />
