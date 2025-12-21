@@ -84,11 +84,36 @@ class Priority(str, Enum):
     URGENT = "urgent"
 
 class UserRole(str, Enum):
-    ADMIN = "admin"
-    GESTOR = "gestor"
-    COLABORADOR = "colaborador"
+    SUPER_ADMIN = "super_admin"
+    PROJECT_MANAGER = "project_manager"
+    RRHH = "rrhh"
     EMPLEADO = "empleado"
     CLIENT = "client"
+
+# Role permissions helper
+ROLE_PERMISSIONS = {
+    "super_admin": ["*"],  # All permissions
+    "project_manager": [
+        "view_assigned_projects", "view_project_budget", "view_project_delta",
+        "approve_hours", "view_timesheets", "upload_project_docs", "mark_client_visible",
+        "clock_in_out", "view_own_hours", "view_own_history", "upload_docs"
+    ],
+    "rrhh": [
+        "create_employees", "edit_employees", "view_all_hours", "view_payroll",
+        "view_employee_docs", "apply_labor_rules",
+        "clock_in_out", "view_own_hours", "view_own_history", "upload_docs"
+    ],
+    "empleado": [
+        "clock_in_out", "view_own_hours", "view_own_history", 
+        "view_assigned_projects", "upload_docs"
+    ],
+    "client": ["view_own_profile", "upload_client_docs"]
+}
+
+def has_permission(role: str, permission: str) -> bool:
+    if role == "super_admin":
+        return True
+    return permission in ROLE_PERMISSIONS.get(role, [])
 
 class PaymentStatus(str, Enum):
     PENDING = "pending"
