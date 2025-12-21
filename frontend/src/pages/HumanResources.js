@@ -129,8 +129,8 @@ const HumanResources = () => {
   };
 
   const filteredEmployees = employees.filter(e => 
-    e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (e.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (e.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const Field = ({ label, icon: Icon, children }) => (
