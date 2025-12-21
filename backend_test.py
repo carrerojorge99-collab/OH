@@ -685,6 +685,356 @@ class CostEstimateExportTester:
             "export_issues": export_failures
         }
 
+class ClientPortalTester:
+    def __init__(self, base_url="https://biz-workflow-2.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.admin_session = requests.Session()
+        self.client_session = requests.Session()
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.admin_user_id = None
+        self.client_user_id = None
+        self.client_email = "testcliente@test.com"
+        self.client_password = "Test123!"
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_admin_login(self, email="carrerojorge99@gmail.com", password="Axel52418!"):
+        """Test admin login with provided credentials"""
+        print(f"\n🔍 Testing Admin Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.admin_session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.admin_user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Admin Login", True, f"Logged in as {user_name} (ID: {self.admin_user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Admin Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Admin Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Admin Login", False, "", str(e))
+            return False
+
+    def test_admin_create_client(self):
+        """Test admin creating a new client"""
+        print(f"\n🔍 Testing Admin Create Client...")
+        
+        client_data = {
+            "nombre_contacto": "Test Cliente Portal",
+            "email": self.client_email,
+            "password": self.client_password,
+            "empresa": "Empresa Test SA"
+        }
+        
+        try:
+            url = f"{self.api_url}/clients"
+            response = self.admin_session.post(url, json=client_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                print(f"   Response Body: {json.dumps(response_data, indent=2)}")
+                
+                if 'client_id' in response_data:
+                    self.client_user_id = response_data['client_id']
+                    self.log_test("Admin Create Client", True, 
+                                f"Client created successfully - ID: {self.client_user_id}, Email: {self.client_email}")
+                    return True, response_data
+                else:
+                    self.log_test("Admin Create Client", False, "", "No client_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Admin Create Client", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Admin Create Client", False, "", str(e))
+            return False, {}
+
+    def test_client_login(self):
+        """Test client login with created credentials"""
+        print(f"\n🔍 Testing Client Login with {self.client_email}...")
+        
+        login_data = {
+            "email": self.client_email,
+            "password": self.client_password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.client_session.post(url, json=login_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    
+                    # Verify the user has client role
+                    if user_role == 'client':
+                        self.log_test("Client Login", True, 
+                                    f"Client logged in successfully - Name: {user_name}, ID: {user_id}, Role: {user_role}")
+                        return True, response_data
+                    else:
+                        self.log_test("Client Login", False, "", f"Expected role 'client', got '{user_role}'")
+                        return False, {}
+                else:
+                    self.log_test("Client Login", False, "", "No user data in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Client Login", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Client Login", False, "", str(e))
+            return False, {}
+
+    def test_client_profile_access(self):
+        """Test client can access their profile"""
+        print(f"\n🔍 Testing Client Profile Access...")
+        
+        if not self.client_user_id:
+            self.log_test("Client Profile Access", False, "", "No client user ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/clients/{self.client_user_id}"
+            response = self.client_session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                print(f"   Response Body: {json.dumps(response_data, indent=2)}")
+                
+                # Verify client can see their profile data
+                if 'client_id' in response_data or 'user_id' in response_data:
+                    self.log_test("Client Profile Access", True, 
+                                f"Client can access their profile successfully")
+                    return True, response_data
+                else:
+                    self.log_test("Client Profile Access", False, "", "Invalid profile response structure")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Client Profile Access", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Client Profile Access", False, "", str(e))
+            return False, {}
+
+    def test_client_projects_restriction(self):
+        """Test client cannot see projects - should return empty array"""
+        print(f"\n🔍 Testing Client Projects Restriction...")
+        
+        if not self.client_user_id:
+            self.log_test("Client Projects Restriction", False, "", "No client user ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/clients/{self.client_user_id}/projects"
+            response = self.client_session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                print(f"   Response Body: {json.dumps(response_data, indent=2)}")
+                
+                # Verify response is an empty array
+                if isinstance(response_data, list) and len(response_data) == 0:
+                    self.log_test("Client Projects Restriction", True, 
+                                f"Client correctly receives empty projects array (projects are private to OHSMS)")
+                    return True
+                else:
+                    self.log_test("Client Projects Restriction", False, "", 
+                                f"Expected empty array, got: {response_data}")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Client Projects Restriction", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Client Projects Restriction", False, "", str(e))
+            return False
+
+    def test_client_dashboard_restriction(self):
+        """Test client cannot access admin dashboard"""
+        print(f"\n🔍 Testing Client Dashboard Restriction...")
+        
+        try:
+            url = f"{self.api_url}/projects"
+            response = self.client_session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            # Client should either get 403 Forbidden or empty array
+            if response.status_code == 403:
+                self.log_test("Client Dashboard Restriction", True, 
+                            f"Client correctly denied access to projects dashboard (403 Forbidden)")
+                return True
+            elif response.status_code == 200:
+                response_data = response.json()
+                if isinstance(response_data, list) and len(response_data) == 0:
+                    self.log_test("Client Dashboard Restriction", True, 
+                                f"Client gets empty projects list (no access to admin projects)")
+                    return True
+                else:
+                    self.log_test("Client Dashboard Restriction", False, "", 
+                                f"Client should not see projects, but got: {len(response_data)} projects")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Client Dashboard Restriction", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Client Dashboard Restriction", False, "", str(e))
+            return False
+
+    def run_client_portal_tests(self):
+        """Run complete client portal test suite"""
+        print("🚀 Starting Client Portal Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Admin Login
+        if not self.test_admin_login():
+            print("❌ Admin login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Admin Creates Client
+        success, client_data = self.test_admin_create_client()
+        if not success:
+            print("❌ Failed to create client, stopping tests")
+            return self.generate_report()
+        
+        # Step 3: Client Login
+        success, login_data = self.test_client_login()
+        if not success:
+            print("❌ Client login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 4: Client Profile Access
+        self.test_client_profile_access()
+        
+        # Step 5: Client Projects Restriction (CRITICAL TEST)
+        self.test_client_projects_restriction()
+        
+        # Step 6: Client Dashboard Restriction
+        self.test_client_dashboard_restriction()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 CLIENT PORTAL TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if "Restriction" in test['test']]
+        if critical_failures:
+            print("\n🚨 CRITICAL SECURITY ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+                print("     This indicates clients may have unauthorized access!")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 class ProjectManagementAPITester:
     def __init__(self, base_url="https://biz-workflow-2.preview.emergentagent.com"):
         self.base_url = base_url
