@@ -329,7 +329,7 @@ const AuditLog = () => {
                         </span>
                       </div>
                       
-                      <p className="text-sm font-medium text-slate-900 truncate">{log.entity_name}</p>
+                      <p className="text-sm font-medium text-slate-900 truncate">{log.entity_name || 'N/A'}</p>
                       
                       {log.details?.changes && (
                         <p className="text-xs text-slate-500 mt-1">
