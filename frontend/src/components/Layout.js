@@ -214,8 +214,8 @@ const Layout = ({ children }) => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-slate-900">{user?.name}</p>
-                    <p className="text-xs text-slate-500 capitalize">{user?.role}</p>
+                    <p className="text-sm font-medium text-slate-900">{user?.name || 'Usuario'}</p>
+                    <p className="text-xs text-slate-500">{roleLabels[user?.role] || user?.role}</p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
