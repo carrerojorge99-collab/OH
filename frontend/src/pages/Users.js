@@ -281,15 +281,15 @@ const Users = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                          <SelectItem value="gestor">Gestor</SelectItem>
-                          <SelectItem value="colaborador">Colaborador</SelectItem>
-                          <SelectItem value="empleado">Empleado (Solo Visualización)</SelectItem>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                          <SelectItem value="project_manager">Project Manager</SelectItem>
+                          <SelectItem value="rrhh">RRHH</SelectItem>
+                          <SelectItem value="empleado">Empleado</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <p className="text-xs text-slate-500">
-                      Empleado solo puede ver información, sin permisos de edición
+                      PM: proyectos y aprobaciones | RRHH: empleados y nómina | Empleado: ponchar y ver proyectos
                     </p>
                   </div>
                 </div>
