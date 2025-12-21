@@ -2615,6 +2615,161 @@ def update_env_var(content: str, key: str, value: str) -> str:
     
     return '\n'.join(lines)
 
+# ==================== CLIENT PORTAL ====================
+@api_router.post("/clients")
+async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    if user.role not in [UserRole.ADMIN, UserRole.GESTOR]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    # Check if email exists
+    existing = await db.users.find_one({"email": data.get("email")})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email ya registrado")
+    
+    client_id = f"client_{uuid4().hex[:12]}"
+    password_hash = pwd_context.hash(data.get("password", "client123"))
+    
+    client = {
+        "user_id": client_id,
+        "name": data.get("name"),
+        "email": data.get("email"),
+        "password": password_hash,
+        "role": UserRole.CLIENT,
+        "company_name": data.get("company_name", ""),
+        "company_address": data.get("company_address", ""),
+        "company_phone": data.get("company_phone", ""),
+        "company_email": data.get("company_email", ""),
+        "contact_person": data.get("contact_person", ""),
+        "tax_id": data.get("tax_id", ""),
+        "notes": data.get("notes", ""),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user.user_id
+    }
+    
+    await db.users.insert_one(client)
+    await log_audit(user.user_id, user.name, "create", "client", client_id, data.get("name"), {})
+    return {"message": "Cliente creado", "client_id": client_id}
+
+@api_router.get("/clients")
+async def get_clients(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT:
+        # Client can only see their own profile
+        client = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "password": 0})
+        return [client] if client else []
+    
+    clients = await db.users.find({"role": UserRole.CLIENT}, {"_id": 0, "password": 0}).to_list(1000)
+    return clients
+
+@api_router.get("/clients/{client_id}")
+async def get_client(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT and user.user_id != client_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    client = await db.users.find_one({"user_id": client_id, "role": UserRole.CLIENT}, {"_id": 0, "password": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    return client
+
+@api_router.put("/clients/{client_id}")
+async def update_client(client_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT and user.user_id != client_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    update_data = {
+        "company_name": data.get("company_name"),
+        "company_address": data.get("company_address"),
+        "company_phone": data.get("company_phone"),
+        "company_email": data.get("company_email"),
+        "contact_person": data.get("contact_person"),
+        "tax_id": data.get("tax_id"),
+        "notes": data.get("notes"),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    update_data = {k: v for k, v in update_data.items() if v is not None}
+    
+    await db.users.update_one({"user_id": client_id}, {"$set": update_data})
+    return {"message": "Cliente actualizado"}
+
+@api_router.get("/clients/{client_id}/projects")
+async def get_client_projects(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT and user.user_id != client_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    projects = await db.projects.find({"client_id": client_id}, {"_id": 0}).to_list(100)
+    return projects
+
+@api_router.post("/clients/{client_id}/documents")
+async def upload_client_document(client_id: str, document_type: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT and user.user_id != client_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        raise HTTPException(status_code=400, detail="No file provided")
+    
+    content = await file.read()
+    file_b64 = base64.b64encode(content).decode()
+    
+    doc = {
+        "document_id": str(uuid4()),
+        "client_id": client_id,
+        "filename": file.filename,
+        "document_type": document_type,
+        "file_data": file_b64,
+        "uploaded_by": user.user_id,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.client_documents.insert_one(doc)
+    return {"message": "Documento subido", "document_id": doc["document_id"]}
+
+@api_router.get("/clients/{client_id}/documents")
+async def get_client_documents(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT and user.user_id != client_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    docs = await db.client_documents.find({"client_id": client_id}, {"_id": 0, "file_data": 0}).to_list(100)
+    return docs
+
+@api_router.get("/clients/{client_id}/documents/{doc_id}/download")
+async def download_client_document(client_id: str, doc_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    from fastapi.responses import Response
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT and user.user_id != client_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    doc = await db.client_documents.find_one({"document_id": doc_id, "client_id": client_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    content = base64.b64decode(doc["file_data"])
+    return Response(content=content, media_type="application/octet-stream", headers={"Content-Disposition": f"attachment; filename={doc['filename']}"})
+
+@api_router.delete("/clients/{client_id}/documents/{doc_id}")
+async def delete_client_document(client_id: str, doc_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role == UserRole.CLIENT and user.user_id != client_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    await db.client_documents.delete_one({"document_id": doc_id, "client_id": client_id})
+    return {"message": "Documento eliminado"}
+
 # ============== COMPANY SETTINGS ENDPOINTS ==============
 
 @api_router.get("/company")
