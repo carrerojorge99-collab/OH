@@ -696,10 +696,11 @@ class ClientPortalTester:
         self.tests_passed = 0
         self.test_results = []
         
-        # Test data storage
+        # Test data storage - use timestamp for unique email
         self.admin_user_id = None
         self.client_user_id = None
-        self.client_email = "testcliente@test.com"
+        timestamp = int(time.time())
+        self.client_email = f"testcliente{timestamp}@test.com"
         self.client_password = "Test123!"
 
     def log_test(self, name, success, details="", error=""):
