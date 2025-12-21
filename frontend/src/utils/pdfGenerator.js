@@ -2,9 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import moment from 'moment';
 import api from './api';
-
-// Logo hardcoded en base64
-const COMPANY_LOGO = '/logo.png';
+import { LOGO_BASE64 } from './logoData';
 
 // Colores corporativos
 const COLORS = {
