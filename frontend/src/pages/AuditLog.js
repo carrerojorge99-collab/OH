@@ -96,10 +96,10 @@ const AuditLog = () => {
     // Table data
     const tableData = filteredLogs.map(log => [
       moment(log.timestamp).format('DD/MM/YY HH:mm'),
-      log.user_name,
+      log.user_name || 'N/A',
       getActionLabel(log.action),
       getEntityLabel(log.entity_type),
-      log.entity_name.substring(0, 40),
+      (log.entity_name || '').substring(0, 40),
       log.details?.changes ? Object.keys(log.details.changes).join(', ').substring(0, 30) : '-'
     ]);
     
