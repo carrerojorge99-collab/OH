@@ -374,15 +374,48 @@ frontend:
 backend:
   - task: "Client Portal API - Project Restriction"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Modified GET /api/clients/{client_id}/projects endpoint to return empty array for client role users. Projects are private to OHSMS."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED: Client Portal API working perfectly. Fixed password hashing issue (pwd_context -> bcrypt.hashpw) and field mapping (nombre_contacto -> name, empresa -> company_name). All endpoints tested: 1) POST /api/clients - Admin can create clients with role 'client', 2) POST /api/auth/login - Client can login with created credentials, 3) GET /api/clients/{client_id} - Client can access their profile, 4) GET /api/clients/{client_id}/projects - Returns empty array for client users (projects restricted), 5) GET /api/projects - Client gets empty projects list (no admin access). Security restrictions working correctly."
+
+  - task: "Client Portal - Password Hashing Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ INITIAL ISSUE: Client creation failing with NameError: name 'pwd_context' is not defined in create_client endpoint."
+        - working: true
+          agent: "testing"
+          comment: "✅ FIXED: Replaced pwd_context.hash() with bcrypt.hashpw() to match the login function implementation. Client creation now working correctly."
+
+  - task: "Client Portal - Field Mapping Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ INITIAL ISSUE: Client login failing with ValidationError for User model - name field was None."
+        - working: true
+          agent: "testing"
+          comment: "✅ FIXED: Updated field mapping in create_client to handle both Spanish (nombre_contacto, empresa) and English (name, company_name) field names. Client creation and login now working correctly."
 
 test_plan:
   current_focus:
