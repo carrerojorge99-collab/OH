@@ -115,9 +115,9 @@ const ClientDetail = () => {
         {/* Tabs */}
         <div className="border-b">
           <div className="flex gap-6">
-            {['profile', 'projects', 'documents'].map(tab => (
+            {['profile', 'documents'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`py-2 text-sm font-medium border-b-2 ${activeTab === tab ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-500'}`}>
-                {tab === 'profile' ? 'Perfil' : tab === 'projects' ? 'Proyectos' : 'Documentos'}
+                {tab === 'profile' ? 'Perfil' : 'Documentos'}
               </button>
             ))}
           </div>
