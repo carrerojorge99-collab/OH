@@ -32,6 +32,7 @@ const Invoices = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
@@ -44,6 +45,21 @@ const Invoices = () => {
     client_email: '',
     tax_rate: 16,
     notes: '',
+    custom_number: ''
+  });
+
+  // Form for manual invoice creation with tasks
+  const [manualForm, setManualForm] = useState({
+    project_id: '',
+    client_name: '',
+    client_email: '',
+    client_phone: '',
+    client_address: '',
+    items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+    tax_rate: 0,
+    discount_percent: 0,
+    notes: '',
+    terms: '',
     custom_number: ''
   });
 
