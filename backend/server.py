@@ -3200,7 +3200,7 @@ async def delete_document(document_id: str, request: Request, session_token: Opt
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role != UserRole.SUPER_ADMIN and project_doc['created_by'] != user.user_id and document_doc['uploaded_by'] != user.user_id:
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and document_doc['uploaded_by'] != user.user_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este documento")
     
     file_path = UPLOAD_DIR / document_doc['filename']
