@@ -133,6 +133,84 @@ const Invoices = () => {
     }
   };
 
+  // Manual invoice handlers
+  const handleManualItemChange = (index, field, value) => {
+    const newItems = [...manualForm.items];
+    newItems[index][field] = value;
+    
+    if (field === 'quantity' || field === 'unit_price') {
+      newItems[index].amount = parseFloat(newItems[index].quantity || 0) * parseFloat(newItems[index].unit_price || 0);
+    }
+    
+    setManualForm({ ...manualForm, items: newItems });
+  };
+
+  const addManualItem = () => {
+    setManualForm({
+      ...manualForm,
+      items: [...manualForm.items, { description: '', quantity: 1, unit_price: 0, amount: 0 }]
+    });
+  };
+
+  const removeManualItem = (index) => {
+    if (manualForm.items.length === 1) return;
+    const newItems = manualForm.items.filter((_, i) => i !== index);
+    setManualForm({ ...manualForm, items: newItems });
+  };
+
+  const calculateManualTotals = () => {
+    const subtotal = manualForm.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    const discountAmount = subtotal * (parseFloat(manualForm.discount_percent) || 0) / 100;
+    const taxableAmount = subtotal - discountAmount;
+    const taxAmount = taxableAmount * (parseFloat(manualForm.tax_rate) || 0) / 100;
+    const total = taxableAmount + taxAmount;
+    return { subtotal, discountAmount, taxAmount, total };
+  };
+
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!manualForm.client_name || manualForm.items.length === 0) {
+      toast.error('Complete los campos requeridos');
+      return;
+    }
+
+    try {
+      const payload = {
+        ...manualForm,
+        project_id: manualForm.project_id || null,
+        items: manualForm.items.map(item => ({
+          ...item,
+          quantity: parseFloat(item.quantity) || 1,
+          unit_price: parseFloat(item.unit_price) || 0,
+          amount: parseFloat(item.amount) || 0
+        })),
+        tax_rate: parseFloat(manualForm.tax_rate) || 0,
+        discount_percent: parseFloat(manualForm.discount_percent) || 0
+      };
+
+      await api.post(`/invoices/manual`, payload, { withCredentials: true });
+      toast.success('Factura creada exitosamente');
+      setManualDialogOpen(false);
+      setManualForm({
+        project_id: '',
+        client_name: '',
+        client_email: '',
+        client_phone: '',
+        client_address: '',
+        items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+        tax_rate: 0,
+        discount_percent: 0,
+        notes: '',
+        terms: '',
+        custom_number: ''
+      });
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al crear factura');
+    }
+  };
+
   const handleUpdateStatus = async (invoiceId, newStatus) => {
     try {
       await api.put(
