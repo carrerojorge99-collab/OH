@@ -60,8 +60,8 @@ const AuditLog = () => {
     if (filterUser !== 'all' && log.user_id !== filterUser) return false;
     if (dateFrom && moment(log.timestamp).isBefore(moment(dateFrom), 'day')) return false;
     if (dateTo && moment(log.timestamp).isAfter(moment(dateTo), 'day')) return false;
-    if (searchTerm && !log.entity_name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !log.user_name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (searchTerm && !(log.entity_name || '').toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !(log.user_name || '').toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
 
