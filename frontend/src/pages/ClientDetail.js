@@ -146,34 +146,6 @@ const ClientDetail = () => {
           </Card>
         )}
 
-        {/* Projects Tab */}
-        {activeTab === 'projects' && (
-          <div className="space-y-4">
-            {projects.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                <FolderKanban className="w-12 h-12 mx-auto text-slate-300 mb-2" />
-                <p className="text-slate-500">No hay proyectos asignados</p>
-              </div>
-            ) : (
-              projects.map(project => (
-                <Card key={project.project_id}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FolderKanban className="w-5 h-5 text-orange-500" />
-                      <div>
-                        <p className="font-medium">{project.name}</p>
-                        <p className="text-sm text-slate-500">{project.project_number}</p>
-                      </div>
-                    </div>
-                    <span className="text-sm text-slate-500">{project.status}</span>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Documents Tab */}
         {activeTab === 'documents' && (
           <div className="space-y-4">
             <div className="flex justify-end">
