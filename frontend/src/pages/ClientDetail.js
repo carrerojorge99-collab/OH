@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import moment from 'moment';
+import { Building2, Upload, Download, Trash2, FileText } from 'lucide-react';
 
 const documentTypes = [
   { value: 'contract', label: 'Contrato' },
