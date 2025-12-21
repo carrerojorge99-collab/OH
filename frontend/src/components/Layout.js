@@ -30,7 +30,8 @@ import {
   Calculator,
   CheckCircle,
   Building2,
-  Send
+  Send,
+  User
 } from 'lucide-react';
 import { toast } from 'sonner';
 
