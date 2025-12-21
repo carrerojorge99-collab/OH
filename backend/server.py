@@ -1823,12 +1823,12 @@ async def get_all_clock_entries(
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Get all clock entries (admin only)"""
+    """Get all clock entries (admin/PM only)"""
     user = await get_current_user(request, session_token)
     
-    # Only admin can see all entries
-    if user.role != UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Solo administradores pueden ver todos los ponches")
+    # Admin and PM can see all entries
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER, UserRole.RRHH]:
+        raise HTTPException(status_code=403, detail="Solo PM, RRHH o administradores pueden ver todos los ponches")
     
     query = {}
     
