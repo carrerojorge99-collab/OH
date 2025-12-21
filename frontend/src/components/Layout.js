@@ -28,7 +28,8 @@ import {
   Clock,
   Package,
   Calculator,
-  CheckCircle
+  CheckCircle,
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
