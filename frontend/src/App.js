@@ -154,6 +154,11 @@ function AppRouter() {
           <MyRequests />
         </ProtectedRoute>
       } />
+      <Route path="/my-profile" element={
+        <ProtectedRoute>
+          <MyProfile />
+        </ProtectedRoute>
+      } />
       <Route path="/clients" element={
         <ProtectedRoute>
           <Clients />
