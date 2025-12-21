@@ -279,7 +279,7 @@ const AuditLog = () => {
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
                     {users.map(u => (
-                      <SelectItem key={u.user_id} value={u.user_id}>{u.name}</SelectItem>
+                      <SelectItem key={u.user_id} value={u.user_id}>{u.name || u.email || 'Sin nombre'}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
