@@ -82,14 +82,17 @@ const Users = () => {
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
+      case 'super_admin':
       case 'admin':
         return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'gestor':
+      case 'project_manager':
         return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'colaborador':
+      case 'rrhh':
         return 'bg-green-100 text-green-700 border-green-200';
       case 'empleado':
         return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'client':
+        return 'bg-orange-100 text-orange-700 border-orange-200';
       default:
         return 'bg-slate-100 text-slate-700 border-slate-200';
     }
@@ -97,14 +100,18 @@ const Users = () => {
 
   const getRoleLabel = (role) => {
     switch (role) {
+      case 'super_admin':
+        return 'Super Admin';
       case 'admin':
-        return 'Administrador';
-      case 'gestor':
-        return 'Gestor';
-      case 'colaborador':
-        return 'Colaborador';
+        return 'Admin';
+      case 'project_manager':
+        return 'Project Manager';
+      case 'rrhh':
+        return 'RRHH';
       case 'empleado':
         return 'Empleado';
+      case 'client':
+        return 'Cliente';
       default:
         return role;
     }
