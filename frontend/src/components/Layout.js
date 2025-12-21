@@ -78,6 +78,7 @@ const Layout = ({ children }) => {
 
     const superAdminNav = [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Mi Perfil', href: '/my-profile', icon: User },
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
