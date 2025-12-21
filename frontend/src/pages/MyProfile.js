@@ -227,23 +227,49 @@ const MyProfile = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-2">
-                {clockHistory.map(entry => (
-                  <Card key={entry.clock_id}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{moment(entry.date).format('dddd, DD MMM YYYY')}</p>
-                        <p className="text-sm text-slate-500">
-                          {entry.clock_in_time} - {entry.clock_out_time || 'Activo'}
-                          {entry.project_name && ` • ${entry.project_name}`}
-                        </p>
-                      </div>
-                      <Badge variant={entry.status === 'active' ? 'default' : 'secondary'}>
-                        {entry.hours_worked?.toFixed(2) || 0}h
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="space-y-3">
+                {/* Group by date */}
+                {Object.entries(
+                  clockHistory.reduce((groups, entry) => {
+                    const date = entry.date;
+                    if (!groups[date]) groups[date] = [];
+                    groups[date].push(entry);
+                    return groups;
+                  }, {})
+                ).map(([date, entries]) => {
+                  const totalHours = entries.reduce((sum, e) => sum + (e.hours_worked || 0), 0);
+                  return (
+                    <Card key={date}>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="font-semibold text-slate-900">
+                            {moment(date).format('dddd, DD MMM YYYY')}
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-700">
+                            {totalHours.toFixed(2)}h total
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 ml-2 border-l-2 border-slate-200 pl-3">
+                          {entries.map((entry, idx) => (
+                            <div key={entry.clock_id || idx} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-slate-700">
+                                  {entry.clock_in_time || '--:--'} - {entry.clock_out_time || 'Activo'}
+                                </span>
+                                {entry.project_name && (
+                                  <span className="text-slate-500 text-xs">• {entry.project_name}</span>
+                                )}
+                              </div>
+                              <span className={`text-xs ${entry.status === 'active' ? 'text-green-600 font-medium' : 'text-slate-500'}`}>
+                                {entry.status === 'active' ? '🟢 Activo' : `${(entry.hours_worked || 0).toFixed(2)}h`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
