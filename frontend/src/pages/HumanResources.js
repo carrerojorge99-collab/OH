@@ -220,7 +220,7 @@ const HumanResources = () => {
                     {getInitials(selectedEmployee.name)}
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-900">{selectedEmployee.name}</h2>
+                    <h2 className="text-xl font-semibold text-slate-900">{selectedEmployee.name || 'Sin nombre'}</h2>
                     <p className="text-slate-500">{profile.position || 'Sin cargo'} • {profile.department || 'Sin departamento'}</p>
                     <div className="flex gap-2 mt-2">
                       <Badge variant="outline" className="text-xs">{selectedEmployee.role}</Badge>
