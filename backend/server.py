@@ -2628,7 +2628,7 @@ async def create_client(data: dict, request: Request, session_token: Optional[st
         raise HTTPException(status_code=400, detail="Email ya registrado")
     
     client_id = f"client_{uuid4().hex[:12]}"
-    password_hash = pwd_context.hash(data.get("password", "client123"))
+    password_hash = bcrypt.hashpw(data.get("password", "client123").encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     client = {
         "user_id": client_id,
