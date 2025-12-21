@@ -51,6 +51,7 @@ const Layout = ({ children }) => {
     { name: 'Facturas', href: '/invoices', icon: DollarSign },
     { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
     { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
+    { name: 'Clientes', href: '/clients', icon: Building2 },
     { name: 'Usuarios', href: '/users', icon: Users },
     { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
     { name: 'Configuración', href: '/settings', icon: Settings },
