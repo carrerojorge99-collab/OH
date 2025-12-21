@@ -356,3 +356,43 @@ agent_communication:
       message: "IMPLEMENTED PDF & EXCEL EXPORT for Cost Estimates. Added two new endpoints: GET /api/cost-estimates/{estimate_id}/export/pdf and GET /api/cost-estimates/{estimate_id}/export/excel. PDF uses reportlab library with professional formatting, Excel uses openpyxl with multiple sheets per category. Both endpoints tested successfully via curl (HTTP 200, correct content types)."
     - agent: "testing"
       message: "✅ COST ESTIMATE EXPORT TESTING COMPLETED - 100% SUCCESS RATE! Comprehensive testing of PDF and Excel export functionality for Cost Estimates: 1) LOGIN: Successfully authenticated with credentials carrerojorge99@gmail.com / Axel52418! as Jorge Carrero. 2) COST ESTIMATES ACCESS: Successfully retrieved cost estimates list and confirmed target estimate 'Estimación Prueba #1' (ID: ce_91fd8f68b8684405) exists. 3) PDF EXPORT: GET /api/cost-estimates/ce_91fd8f68b8684405/export/pdf working perfectly - generates valid PDF (2096 bytes), correct Content-Type (application/pdf), proper filename format (estimacion_ce_91fd8f68b8684405_20251219.pdf). 4) EXCEL EXPORT: GET /api/cost-estimates/ce_91fd8f68b8684405/export/excel working perfectly - generates valid Excel file (5428 bytes), correct Content-Type (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet), proper filename format (.xlsx). Both export endpoints return proper download headers and file content as expected."
+## Current Testing Focus - Client Portal
+
+frontend:
+  - task: "Client Portal - Restricted Access"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/ClientDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented client portal restrictions: 1) Fixed missing lucide-react icon imports in ClientDetail.js, 2) Modified Layout.js to show only 'Mi Perfil' for client users, 3) Modified ProtectedRoute.js to redirect client users to their profile page, 4) Modified backend /clients/{client_id}/projects to return empty array for client users. Clients should only see profile and documents, NO projects."
+
+backend:
+  - task: "Client Portal API - Project Restriction"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Modified GET /api/clients/{client_id}/projects endpoint to return empty array for client role users. Projects are private to OHSMS."
+
+test_plan:
+  current_focus:
+    - "Client Portal - Admin creates client"
+    - "Client Portal - Client login and profile access"
+    - "Client Portal - Client cannot see projects"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Implemented client portal restrictions. Need to test: 1) Admin (carrerojorge99@gmail.com / Axel52418!) can create a new client on /clients page, 2) New client can login with their credentials, 3) Client is redirected to their profile page and only sees 'Mi Perfil' in sidebar, 4) Client can edit their profile and upload documents, 5) Client CANNOT access projects or any other admin pages."
