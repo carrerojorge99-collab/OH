@@ -3126,6 +3126,105 @@ async def generate_invoice_from_timesheet(
     
     return Invoice(**invoice_doc)
 
+# Modelo para crear factura manual con items personalizados
+class ManualInvoiceItem(BaseModel):
+    description: str
+    quantity: float = 1.0
+    unit_price: float
+    amount: float
+
+class ManualInvoiceCreate(BaseModel):
+    project_id: Optional[str] = None
+    client_name: str
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    items: List[ManualInvoiceItem]
+    tax_rate: float = 0.0
+    discount_percent: float = 0.0
+    notes: Optional[str] = None
+    terms: Optional[str] = None
+    custom_number: Optional[str] = None
+
+@api_router.post("/invoices/manual")
+async def create_manual_invoice(
+    invoice_data: ManualInvoiceCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Crear factura manual con items personalizados (formato Task)"""
+    user = await get_current_user(request, session_token)
+    
+    # Get project if provided
+    project_name = ""
+    if invoice_data.project_id:
+        project = await db.projects.find_one({"project_id": invoice_data.project_id}, {"_id": 0})
+        if project:
+            project_name = project.get('name', '')
+    
+    # Calculate totals
+    subtotal = sum(item.amount for item in invoice_data.items)
+    discount_amount = subtotal * (invoice_data.discount_percent / 100)
+    taxable = subtotal - discount_amount
+    tax_amount = round(taxable * (invoice_data.tax_rate / 100), 2)
+    total = taxable + tax_amount
+    
+    # Generate invoice number
+    if invoice_data.custom_number and invoice_data.custom_number.strip():
+        invoice_number = invoice_data.custom_number.strip()
+    else:
+        company_settings = await db.company_settings.find_one({}, {"_id": 0})
+        next_num = company_settings.get("next_invoice_number", 1) if company_settings else 1
+        invoice_number = f"INV-{datetime.now().year}-{str(next_num).zfill(4)}"
+        await db.company_settings.update_one({}, {"$inc": {"next_invoice_number": 1}}, upsert=True)
+    
+    invoice_id = f"inv_{uuid4().hex[:16]}"
+    due_date = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    
+    # Convert items to invoice format (hours=quantity, rate=unit_price)
+    invoice_items = []
+    for item in invoice_data.items:
+        invoice_items.append({
+            "description": item.description,
+            "hours": item.quantity,
+            "rate": item.unit_price,
+            "amount": item.amount
+        })
+    
+    invoice_doc = {
+        "invoice_id": invoice_id,
+        "invoice_number": invoice_number,
+        "project_id": invoice_data.project_id or "",
+        "project_name": project_name,
+        "client_name": invoice_data.client_name,
+        "client_email": invoice_data.client_email,
+        "client_phone": invoice_data.client_phone,
+        "client_address": invoice_data.client_address,
+        "items": invoice_items,
+        "subtotal": subtotal,
+        "discount_percent": invoice_data.discount_percent,
+        "discount_amount": discount_amount,
+        "tax_rate": invoice_data.tax_rate,
+        "tax_amount": tax_amount,
+        "total": total,
+        "amount_paid": 0.0,
+        "balance_due": total,
+        "status": "draft",
+        "notes": invoice_data.notes,
+        "terms": invoice_data.terms,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "due_date": due_date,
+        "sent_date": None,
+        "paid_date": None
+    }
+    
+    await db.invoices.insert_one(invoice_doc)
+    
+    await log_audit(user.user_id, user.name, "create", "invoice", invoice_id, invoice_number, {"client": invoice_data.client_name, "total": total})
+    
+    return invoice_doc
+
 @api_router.get("/invoices", response_model=List[Invoice])
 async def get_invoices(
     project_id: Optional[str] = None,
