@@ -103,8 +103,8 @@ const Layout = ({ children }) => {
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200">
             <div className="flex items-center space-x-3">
-              <img src="/logo.png" alt="OHSMS ProManage" className="w-10 h-10 object-contain" />
-              <span className="text-xl font-bold tracking-tight text-[#0F172A]">OHSMS ProManage</span>
+              <img src="/logo.png" alt="ProManage" className="w-10 h-10 object-contain" />
+              <span className="text-xl font-bold tracking-tight text-[#0F172A]">ProManage</span>
             </div>
             <Button
               variant="ghost"
@@ -182,8 +182,8 @@ const Layout = ({ children }) => {
             <Menu className="w-6 h-6" />
           </Button>
           <div className="flex items-center space-x-2">
-            <img src="/logo.png" alt="OHSMS ProManage" className="w-8 h-8 object-contain" />
-            <span className="text-lg font-bold tracking-tight text-[#0F172A]">OHSMS ProManage</span>
+            <img src="/logo.png" alt="ProManage" className="w-8 h-8 object-contain" />
+            <span className="text-lg font-bold tracking-tight text-[#0F172A]">ProManage</span>
           </div>
           <NotificationCenter />
         </div>

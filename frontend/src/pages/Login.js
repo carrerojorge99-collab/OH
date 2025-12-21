@@ -46,8 +46,8 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
       <div className="w-full max-w-md fade-in">
         <div className="text-center mb-8">
-          <img src="/logo.webp" alt="OHSMS ProManage" className="w-20 h-20 mx-auto mb-4 object-contain" />
-          <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">OHSMS ProManage</h1>
+          <img src="/logo.webp" alt="ProManage" className="w-20 h-20 mx-auto mb-4 object-contain" />
+          <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">ProManage</h1>
           <p className="text-muted-foreground mt-2">Sistema de Gestión de Proyectos</p>
         </div>
 
