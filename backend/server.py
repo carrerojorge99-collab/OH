@@ -114,8 +114,8 @@ class UserUpdate(BaseModel):
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     user_id: str
-    name: str
-    email: str
+    name: Optional[str] = "Sin nombre"
+    email: Optional[str] = ""
     role: UserRole
     picture: Optional[str] = None
     created_at: str
