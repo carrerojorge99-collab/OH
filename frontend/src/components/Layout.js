@@ -181,11 +181,11 @@ const Layout = ({ children }) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {navigation.filter(item => !item.adminOnly || user?.role === 'admin').map((item) => {
+            {navigation.map((item) => {
               const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
               return (
                 <Link
-                  key={item.name}
+                  key={item.name + item.href}
                   to={item.href}
                   data-testid={`nav-link-${item.name.toLowerCase()}`}
                   className={`flex items-center px-4 py-3 text-sm font-medium rounded-md sidebar-link ${
