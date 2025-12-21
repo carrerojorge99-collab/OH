@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+// Define allowed routes per role
+const ROLE_ROUTES = {
+  super_admin: ['*'], // All routes
+  admin: ['*'], // Backward compatibility
+  project_manager: [
+    '/dashboard', '/clock', '/projects', '/calendar', '/reports', '/approvals'
+  ],
+  rrhh: [
+    '/dashboard', '/clock', '/hr', '/payroll', '/users'
+  ],
+  empleado: [
+    '/clock', '/projects'
+  ],
+  client: [] // Handled separately
+};
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
@@ -23,21 +39,39 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Si el usuario es cliente, restringir acceso a solo su perfil
-  if (user?.role === 'client') {
+  const role = user?.role;
+  const currentPath = location.pathname;
+
+  // Cliente: solo su perfil
+  if (role === 'client') {
     const allowedPaths = [`/clients/${user.user_id}`];
-    const currentPath = location.pathname;
-    
-    // Verificar si la ruta actual está permitida para clientes
     const isAllowed = allowedPaths.some(path => currentPath.startsWith(path));
-    
     if (!isAllowed) {
-      // Redirigir al perfil del cliente
       return <Navigate to={`/clients/${user.user_id}`} replace />;
     }
   }
 
-  // User is authenticated, render children
+  // Super admin tiene acceso a todo
+  if (role === 'super_admin' || role === 'admin') {
+    return children;
+  }
+
+  // Verificar acceso por rol
+  const allowedRoutes = ROLE_ROUTES[role] || [];
+  if (allowedRoutes.includes('*')) {
+    return children;
+  }
+
+  const isAllowed = allowedRoutes.some(route => 
+    currentPath === route || currentPath.startsWith(route + '/')
+  );
+
+  if (!isAllowed) {
+    // Redirigir a la primera ruta permitida del rol
+    const defaultRoute = allowedRoutes[0] || '/clock';
+    return <Navigate to={defaultRoute} replace />;
+  }
+
   return children;
 };
 
