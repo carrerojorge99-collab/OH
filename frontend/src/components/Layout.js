@@ -46,6 +46,7 @@ const Layout = ({ children }) => {
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Mi Historial', href: '/clock/history', icon: Clock },
       { name: 'Mis Proyectos', href: '/projects', icon: FolderKanban },
+      { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
     ];
 
     const pmNav = [
@@ -55,6 +56,7 @@ const Layout = ({ children }) => {
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Calendario', href: '/calendar', icon: Calendar },
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
+      { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
       { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
     ];
 
@@ -66,6 +68,8 @@ const Layout = ({ children }) => {
       { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
       { name: 'Nómina', href: '/payroll', icon: DollarSign },
       { name: 'Usuarios', href: '/users', icon: Users },
+      { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
+      { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
     ];
 
     const superAdminNav = [
@@ -80,6 +84,7 @@ const Layout = ({ children }) => {
       { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
       { name: 'Facturas', href: '/invoices', icon: DollarSign },
       { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
+      { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
       { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
       { name: 'Clientes', href: '/clients', icon: Building2 },
       { name: 'Usuarios', href: '/users', icon: Users },
