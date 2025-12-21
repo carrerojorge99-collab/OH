@@ -39,7 +39,8 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navigation = [
+  // Navegación completa para admin/empleados
+  const fullNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Ponchar', href: '/clock', icon: Clock },
     { name: 'Historial Ponches', href: '/clock/history', icon: Clock, adminOnly: true },
@@ -57,6 +58,14 @@ const Layout = ({ children }) => {
     { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];
+
+  // Navegación limitada para clientes (solo perfil y documentos)
+  const clientNavigation = [
+    { name: 'Mi Perfil', href: `/clients/${user?.user_id}`, icon: Building2 },
+  ];
+
+  // Usar navegación según rol del usuario
+  const navigation = user?.role === 'client' ? clientNavigation : fullNavigation;
 
   const handleLogout = async () => {
     try {
