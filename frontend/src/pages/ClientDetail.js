@@ -39,13 +39,11 @@ const ClientDetail = () => {
 
   const loadData = async () => {
     try {
-      const [clientRes, projectsRes, docsRes] = await Promise.all([
+      const [clientRes, docsRes] = await Promise.all([
         api.get(`/clients/${clientId}`),
-        api.get(`/clients/${clientId}/projects`),
         api.get(`/clients/${clientId}/documents`)
       ]);
       setClient(clientRes.data);
-      setProjects(projectsRes.data);
       setDocuments(docsRes.data);
     } catch (error) {
       toast.error('Error al cargar datos');
