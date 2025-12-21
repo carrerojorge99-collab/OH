@@ -183,7 +183,7 @@ const HumanResources = () => {
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium ${
                     selectedEmployee?.user_id === emp.user_id ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-600'
                   }`}>
-                    {emp.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                    {getInitials(emp.name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-slate-900 truncate">{emp.name}</p>
