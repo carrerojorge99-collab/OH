@@ -2632,11 +2632,11 @@ async def create_client(data: dict, request: Request, session_token: Optional[st
     
     client = {
         "user_id": client_id,
-        "name": data.get("name"),
+        "name": data.get("nombre_contacto") or data.get("name", ""),
         "email": data.get("email"),
         "password": password_hash,
         "role": UserRole.CLIENT,
-        "company_name": data.get("company_name", ""),
+        "company_name": data.get("empresa") or data.get("company_name", ""),
         "company_address": data.get("company_address", ""),
         "company_phone": data.get("company_phone", ""),
         "company_email": data.get("company_email", ""),
