@@ -5777,8 +5777,8 @@ async def upload_employee_document(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Solo administradores")
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+        raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
     
     # Create employee folder
     employee_folder = EMPLOYEE_DOCS_DIR / employee_id
@@ -5819,8 +5819,8 @@ async def delete_employee_document(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
-        raise HTTPException(status_code=403, detail="Solo administradores")
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+        raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
     
     doc = await db.employee_documents.find_one({"doc_id": doc_id})
     if doc and Path(doc["file_path"]).exists():
