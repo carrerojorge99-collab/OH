@@ -30,9 +30,28 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   // === LEFT SIDE: Company Info ===
   let leftY = 15;
   
-  // Logo hardcoded
+  // Logo - Try dynamic first, then fallback to hardcoded
   try {
-    doc.addImage(LOGO_BASE64, 'WEBP', 15, 10, 35, 18);
+    let logoToUse = LOGO_BASE64;
+    
+    // Check if company has a logo URL configured
+    if (company.company_logo) {
+      try {
+        // Try to fetch the logo from the URL and convert to base64
+        const response = await fetch(company.company_logo);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        logoToUse = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } catch (fetchError) {
+        console.log('Could not fetch company logo, using default');
+        // Use fallback logo
+      }
+    }
+    
+    doc.addImage(logoToUse, 'WEBP', 15, 10, 35, 18);
     leftY = 32;
   } catch (e) {
     doc.setFontSize(14);
