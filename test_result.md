@@ -431,3 +431,59 @@ agent_communication:
       message: "Implemented client portal restrictions. Need to test: 1) Admin (carrerojorge99@gmail.com / Axel52418!) can create a new client on /clients page, 2) New client can login with their credentials, 3) Client is redirected to their profile page and only sees 'Mi Perfil' in sidebar, 4) Client can edit their profile and upload documents, 5) Client CANNOT access projects or any other admin pages."
     - agent: "testing"
       message: "✅ CLIENT PORTAL TESTING COMPLETED - 100% SUCCESS RATE! Comprehensive testing of Client Portal functionality: 1) ADMIN LOGIN: Successfully authenticated as Jorge Carrero (admin role). 2) CLIENT CREATION: Admin successfully created client with POST /api/clients (fixed password hashing and field mapping issues). 3) CLIENT LOGIN: New client successfully logged in with role 'client'. 4) CLIENT PROFILE ACCESS: Client can access their profile via GET /api/clients/{client_id}. 5) PROJECT RESTRICTIONS: Client correctly receives empty array from GET /api/clients/{client_id}/projects (projects are private to OHSMS). 6) DASHBOARD RESTRICTIONS: Client gets empty projects list from GET /api/projects (no admin access). All security restrictions working correctly - clients can only see their profile and documents, NO access to projects or admin functionality. Fixed backend issues: pwd_context -> bcrypt.hashpw for password hashing, and proper field mapping (nombre_contacto -> name, empresa -> company_name)."
+
+## Issue #2 & #3 Implementation
+
+frontend:
+  - task: "Task Format for Estimates"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Estimates.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Updated Estimates.js to use Task format with textarea for description, same as PurchaseOrders. Each item now has: Task #N header, large textarea for description, quantity/price/total fields."
+
+  - task: "Task Format for Manual Invoices"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Invoices.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added new 'Factura Manual' button and dialog to Invoices.js. Allows creating invoices with custom items using Task format (textarea for description). Also added backend endpoint POST /api/invoices/manual."
+
+  - task: "Dynamic Logo in PDFs"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/utils/pdfGenerator.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Modified pdfGenerator.js to first try fetching company_logo from company settings, then fallback to hardcoded LOGO_BASE64 if not available or fetch fails."
+
+backend:
+  - task: "Manual Invoice API"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added POST /api/invoices/manual endpoint with ManualInvoiceCreate model. Allows creating invoices with custom items (quantity, unit_price, description)."
+
+agent_communication:
+    - agent: "main"
+      message: "Implemented Issue #2 (Task format for Invoices and Estimates) and Issue #3 (Dynamic logo). Need to verify: 1) Estimates form shows Task format with textarea, 2) Manual Invoice form shows Task format with textarea, 3) PDF generation uses dynamic logo from company settings with fallback to hardcoded logo."
