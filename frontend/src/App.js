@@ -147,6 +147,16 @@ function AppRouter() {
           <Approvals />
         </ProtectedRoute>
       } />
+      <Route path="/clients" element={
+        <ProtectedRoute>
+          <Clients />
+        </ProtectedRoute>
+      } />
+      <Route path="/clients/:clientId" element={
+        <ProtectedRoute>
+          <ClientDetail />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
