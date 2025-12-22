@@ -1036,6 +1036,349 @@ class ClientPortalTester:
             "critical_issues": critical_failures
         }
 
+class PDFGenerationTester:
+    def __init__(self, base_url="https://promanage-erp.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.test_invoice_id = None
+        self.test_estimate_id = None
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="j.carrero@ohsmspr.com", password="Axel52418!"):
+        """Test login with Super Admin credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Super Admin Login", True, f"Logged in as {user_name} (ID: {self.user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Super Admin Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Super Admin Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Super Admin Login", False, "", str(e))
+            return False
+
+    def test_get_invoices(self):
+        """Test getting invoices list"""
+        print(f"\n🔍 Testing Get Invoices List...")
+        
+        try:
+            url = f"{self.api_url}/invoices"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                invoices = response.json()
+                if isinstance(invoices, list):
+                    if len(invoices) > 0:
+                        # Use the first invoice for testing
+                        self.test_invoice_id = invoices[0].get('invoice_id') or invoices[0].get('id')
+                        invoice_number = invoices[0].get('invoice_number', 'N/A')
+                        self.log_test("Get Invoices", True, 
+                                    f"Found {len(invoices)} invoices. Using invoice #{invoice_number} (ID: {self.test_invoice_id})")
+                        return True, invoices
+                    else:
+                        self.log_test("Get Invoices", False, "", "No invoices found in the system")
+                        return False, []
+                else:
+                    self.log_test("Get Invoices", False, "", f"Invalid response format: {invoices}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Invoices", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Invoices", False, "", str(e))
+            return False, []
+
+    def test_get_estimates(self):
+        """Test getting estimates list"""
+        print(f"\n🔍 Testing Get Estimates List...")
+        
+        try:
+            url = f"{self.api_url}/estimates"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                estimates = response.json()
+                if isinstance(estimates, list):
+                    if len(estimates) > 0:
+                        # Use the first estimate for testing
+                        self.test_estimate_id = estimates[0].get('estimate_id') or estimates[0].get('id')
+                        estimate_number = estimates[0].get('estimate_number', 'N/A')
+                        self.log_test("Get Estimates", True, 
+                                    f"Found {len(estimates)} estimates. Using estimate #{estimate_number} (ID: {self.test_estimate_id})")
+                        return True, estimates
+                    else:
+                        self.log_test("Get Estimates", False, "", "No estimates found in the system")
+                        return False, []
+                else:
+                    self.log_test("Get Estimates", False, "", f"Invalid response format: {estimates}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Estimates", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Estimates", False, "", str(e))
+            return False, []
+
+    def test_company_endpoint(self):
+        """Test company endpoint for logo data"""
+        print(f"\n🔍 Testing Company Endpoint...")
+        
+        try:
+            url = f"{self.api_url}/company"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                company_data = response.json()
+                print(f"   Response Body: {json.dumps(company_data, indent=2)}")
+                
+                # Check if company data has logo information
+                has_logo = 'company_logo' in company_data or 'logo' in company_data
+                company_name = company_data.get('company_name', 'N/A')
+                
+                self.log_test("Company Endpoint", True, 
+                            f"Company: {company_name}, Has Logo: {has_logo}")
+                return True, company_data
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Company Endpoint", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Company Endpoint", False, "", str(e))
+            return False, {}
+
+    def test_invoice_pdf_generation(self):
+        """Test invoice PDF generation with logo"""
+        print(f"\n🔍 Testing Invoice PDF Generation...")
+        
+        if not self.test_invoice_id:
+            self.log_test("Invoice PDF Generation", False, "", "No invoice ID available for testing")
+            return False
+        
+        try:
+            url = f"{self.api_url}/invoices/{self.test_invoice_id}/pdf"
+            response = self.session.get(url, timeout=60)  # Longer timeout for PDF generation
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                if content_type == 'application/pdf':
+                    # Check if we actually got PDF content
+                    content = response.content
+                    if content and content.startswith(b'%PDF'):
+                        file_size = len(content)
+                        
+                        # Check for logo presence by looking for PNG signature in PDF
+                        has_png_logo = b'PNG' in content and b'IHDR' in content
+                        
+                        self.log_test("Invoice PDF Generation", True, 
+                                    f"PDF generated successfully - Size: {file_size} bytes, Content-Type: {content_type}, Contains PNG Logo: {has_png_logo}")
+                        return True, content
+                    else:
+                        self.log_test("Invoice PDF Generation", False, "", "Response content is not a valid PDF file")
+                        return False, None
+                else:
+                    self.log_test("Invoice PDF Generation", False, "", f"Invalid Content-Type: {content_type} (expected: application/pdf)")
+                    return False, None
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Invoice PDF Generation", False, "", error_msg)
+                return False, None
+                
+        except Exception as e:
+            self.log_test("Invoice PDF Generation", False, "", str(e))
+            return False, None
+
+    def test_estimate_pdf_generation(self):
+        """Test estimate PDF generation with logo"""
+        print(f"\n🔍 Testing Estimate PDF Generation...")
+        
+        if not self.test_estimate_id:
+            self.log_test("Estimate PDF Generation", False, "", "No estimate ID available for testing")
+            return False
+        
+        try:
+            url = f"{self.api_url}/estimates/{self.test_estimate_id}/pdf"
+            response = self.session.get(url, timeout=60)  # Longer timeout for PDF generation
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                if content_type == 'application/pdf':
+                    # Check if we actually got PDF content
+                    content = response.content
+                    if content and content.startswith(b'%PDF'):
+                        file_size = len(content)
+                        
+                        # Check for logo presence by looking for PNG signature in PDF
+                        has_png_logo = b'PNG' in content and b'IHDR' in content
+                        
+                        self.log_test("Estimate PDF Generation", True, 
+                                    f"PDF generated successfully - Size: {file_size} bytes, Content-Type: {content_type}, Contains PNG Logo: {has_png_logo}")
+                        return True, content
+                    else:
+                        self.log_test("Estimate PDF Generation", False, "", "Response content is not a valid PDF file")
+                        return False, None
+                else:
+                    self.log_test("Estimate PDF Generation", False, "", f"Invalid Content-Type: {content_type} (expected: application/pdf)")
+                    return False, None
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Estimate PDF Generation", False, "", error_msg)
+                return False, None
+                
+        except Exception as e:
+            self.log_test("Estimate PDF Generation", False, "", str(e))
+            return False, None
+
+    def run_pdf_generation_tests(self):
+        """Run complete PDF generation test suite"""
+        print("🚀 Starting PDF Generation with Logo Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login with Super Admin credentials
+        if not self.test_login():
+            print("❌ Super Admin login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Test company endpoint
+        company_success, company_data = self.test_company_endpoint()
+        
+        # Step 3: Get invoices list
+        invoices_success, invoices = self.test_get_invoices()
+        
+        # Step 4: Get estimates list  
+        estimates_success, estimates = self.test_get_estimates()
+        
+        # Step 5: Test Invoice PDF generation if invoices exist
+        if invoices_success and self.test_invoice_id:
+            self.test_invoice_pdf_generation()
+        
+        # Step 6: Test Estimate PDF generation if estimates exist
+        if estimates_success and self.test_estimate_id:
+            self.test_estimate_pdf_generation()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 PDF GENERATION TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        pdf_failures = [test for test in failed_tests if "PDF" in test['test']]
+        if pdf_failures:
+            print("\n🚨 PDF GENERATION ISSUES FOUND:")
+            for test in pdf_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "pdf_issues": pdf_failures
+        }
+
 class ProjectManagementAPITester:
     def __init__(self, base_url="https://promanage-erp.preview.emergentagent.com"):
         self.base_url = base_url
