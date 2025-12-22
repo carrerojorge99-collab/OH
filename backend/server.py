@@ -468,6 +468,8 @@ class InvoiceCreate(BaseModel):
     project_id: str
     client_name: str
     client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
     tax_rate: float = 0.0
     notes: Optional[str] = None
     custom_number: Optional[str] = None
@@ -480,6 +482,8 @@ class Invoice(BaseModel):
     project_name: str
     client_name: str
     client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
     items: List[InvoiceItem]
     subtotal: float
     tax_rate: float
