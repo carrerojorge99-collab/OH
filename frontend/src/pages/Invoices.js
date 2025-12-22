@@ -315,8 +315,8 @@ const Invoices = () => {
     // Header: Empresa izquierda, Doc derecha
     let y = await addDocumentHeader(doc, company, 'INVOICE', invoice.invoice_number, invoice.created_at, invoice.total || 0);
     
-    // Client section debajo de empresa
-    y = addPartySection(doc, 'Bill To:', invoice.client_name, '', invoice.client_email, '', y);
+    // Client section debajo de empresa - include all client info
+    y = addPartySection(doc, 'Bill To:', invoice.client_name, invoice.client_address || '', invoice.client_email || '', invoice.client_phone || '', y);
     
     // Project info derecha
     if (invoice.project_name) {
