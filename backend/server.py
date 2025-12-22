@@ -3300,6 +3300,8 @@ async def generate_invoice_from_timesheet(
         "project_name": project.get('name', ''),
         "client_name": invoice_data.client_name,
         "client_email": invoice_data.client_email,
+        "client_phone": invoice_data.client_phone,
+        "client_address": invoice_data.client_address,
         "items": [item.model_dump() for item in items],
         "subtotal": subtotal,
         "tax_rate": invoice_data.tax_rate,
