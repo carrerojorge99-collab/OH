@@ -149,13 +149,16 @@ export const addTasksTable = (doc, tasks, startY) => {
       textColor: COLORS.text,
       fontStyle: 'bold',
       fontSize: 9,
-      cellPadding: 4
+      cellPadding: 4,
+      lineWidth: { bottom: 0.3 },
+      lineColor: COLORS.primary
     },
     bodyStyles: {
       fontSize: 8,
       cellPadding: 5,
       textColor: COLORS.text,
-      lineHeight: 1.4
+      lineHeight: 1.4,
+      lineWidth: 0
     },
     columnStyles: {
       0: { cellWidth: 120 },
@@ -166,8 +169,7 @@ export const addTasksTable = (doc, tasks, startY) => {
     alternateRowStyles: {
       fillColor: [252, 252, 253]
     },
-    tableLineColor: [226, 232, 240],
-    tableLineWidth: 0.1,
+    showHead: 'firstPage',
     didParseCell: (data) => {
       // Allow line breaks in description
       if (data.column.index === 0 && data.cell.raw?.content) {
