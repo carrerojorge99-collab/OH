@@ -1372,15 +1372,20 @@ class PDFGenerationTester:
         # Step 3: Get invoices list
         invoices_success, invoices = self.test_get_invoices()
         
-        # Step 4: Get estimates list  
+        # Step 4: Get regular estimates list  
         estimates_success, estimates = self.test_get_estimates()
         
-        # Step 5: Test Invoice PDF generation if invoices exist
-        if invoices_success and self.test_invoice_id:
-            self.test_invoice_pdf_generation()
+        # Step 5: Get cost estimates list (these have PDF generation)
+        cost_estimates_success, cost_estimates = self.test_get_cost_estimates()
         
-        # Step 6: Test Estimate PDF generation if estimates exist
-        if estimates_success and self.test_estimate_id:
+        # Step 6: Test Invoice PDF generation if invoices exist
+        # Note: Based on backend analysis, there's no PDF endpoint for invoices yet
+        if invoices_success and self.test_invoice_id:
+            print(f"\n⚠️  Note: Invoice PDF generation endpoint not found in backend")
+            self.log_test("Invoice PDF Generation", False, "", "PDF endpoint not implemented for invoices")
+        
+        # Step 7: Test Cost Estimate PDF generation if cost estimates exist
+        if cost_estimates_success and self.test_estimate_id:
             self.test_estimate_pdf_generation()
         
         return self.generate_report()
