@@ -2,59 +2,62 @@
 The user's goal is to build out a comprehensive ERP application, ProManage. In this session, the user requested a wide array of features and fixes, demonstrating a need for rapid, efficient development.
 
 Key requests included:
-1.  **Core Logic Implementation**:
-    *   Complete the payroll processing logic by creating a backend endpoint to save processed payroll runs.
-    *   Generate NACHA files for direct deposit based on payroll data.
-
-2.  **New Feature Development**:
-    *   Implement Smart Alerts on the dashboard for pending approvals.
-    *   Create an Approvals workflow system.
-    *   Develop a Delta Estimado vs Real (Estimated vs. Actual Cost) report.
-    *   Add a Change Orders management system within projects.
-    *   Introduce a Minimum Profit Margin setting and use it for alerts.
-    *   Build a full client portal where clients can be created, log in, manage their company profile, and upload documents.
-
-3.  **UI/UX and Redesign**:
-    *   Redesign all PDFs (Purchase Orders, Invoices, Estimates) to a more professional format, including company/client info and a task-based item list.
-    *   Redesign the Human Resources (RH) page to be more minimalista y profesional.
-    *   Allow for detailed task descriptions in Purchase Order forms.
-    *   Remove the Quick Registry (QuickTimesheet) from the dashboard.
-    *   Change the application name from OHSMS ProManage to just ProManage.
-
-4.  **Bug Fixes & System Improvements**:
-    *   Fix app-wide data staleness issues where changes were not visible without a hard refresh.
-    *   Fix a critical error on the Project Detail page that prevented it from loading.
-    *   Fix the company logo, which was not displaying correctly.
-    *   Implement natural sorting for project numbers (e.g., P-2025-15 appears between P-2025-14 and P-2025-16).
-    *   Expand the Audit Log to cover all major operations and add advanced filtering and PDF export capabilities.
+1.  **Client Portal**: Finalize the client portal to ensure clients cannot see project lists, only their profile and document sections.
+2.  **UI/UX and Redesign**:
+    *   Apply the Task input format (large textarea for descriptions) to Invoices and Estimates to match Purchase Orders.
+    *   The logo in generated PDFs appears pixelated and with a black background, which needs to be fixed.
+    *   Sort user lists alphabetically.
+3.  **Bug Fixes & System Improvements**:
+    *   Fix multiple app-wide loading errors and crashes, particularly on the HR, Users, Clock History, and Audit Log pages.
+    *   Fix an issue preventing PDF downloads from the Cost Estimates page.
+    *   Resolve an issue where an RRHH user could not save changes to an employee profile.
+    *   Give the Super Admin access to the Settings page.
+4.  **New Feature Development**:
+    *   **RBAC Overhaul**: Scrap all existing roles and implement a new, detailed role-based access control system with Super Admin, Project Manager, RRHH, and Empleado roles, each with specific permissions.
+    *   **Consolidate Users**: Merge two user profiles for Jorge Carrero, transferring data from one to the other and hiding the obsolete one.
+    *   **Comprehensive Approvals System**: Build a module for employees to submit requests (vacations, leave, project expenses, material purchases) and for managers (PM/RRHH) to approve or deny them.
+    *   **Payslip Generation**: Implement functionality to generate PDF payslips whenever a payroll run is processed.
+    *   **Employee Profile Page**: Create a My Profile page for employees to view their generated payslips and a revised view of their clock-in/out history, grouped by day.
+    *   **Super Admin Powers**: Ensure the Super Admin can change the roles of other users.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-The application is a significantly enhanced full-stack ERP named **ProManage**. It includes modules for HR, Projects, Clients, Invoicing, Estimates, Purchase Orders, and more.
+The application is a significantly enhanced full-stack ERP named **ProManage**. It has a newly implemented, granular Role-Based Access Control (RBAC) system with four main roles: **Super Admin**, **Project Manager (PM)**, **Human Resources (RRHH)**, and **Empleado (Employee)**, in addition to the existing **Client** role. The UI and backend permissions are now driven by these roles.
 
-Key additions from this session include:
--   **Payroll**: Backend processing and NACHA file generation are functional.
--   **Client Portal**: A complete system for admins to manage clients and for clients to log in, edit their profile, and upload documents.
--   **Reporting & Dashboards**: A Delta vs. Real cost report, an approvals workflow with dashboard alerts, and a vastly improved Audit Log are in place.
--   **Financial Controls**: Change Orders can be managed within projects, and a global Minimum Margin can be set.
--   **UI & UX**: The HR page has been completely redesigned, PDFs have a new professional template, and POs can be created with detailed tasks.
--   **Stability**: A systemic data-caching issue was addressed by centralizing API calls. A critical bug preventing project pages from loading has been fixed.
+Key additions from this session:
+-   **New Approvals System**: A full-featured module allows all employees to submit personal (leave, vacation) or project-related (materials, expenses) requests via a My Requests page. These requests appear in a central Approvals dashboard for authorized managers (PM, RRHH, Super Admin) to review.
+-   **Employee Profile & Payslips**: A My Profile page has been created where employees can view their personal information, clock-in/out history (grouped by day), and download PDF payslips. The backend now automatically generates and saves these payslips whenever payroll is processed.
+-   **UI & Form Consistency**: The multi-line Task input format was successfully applied to the Estimates form. For Invoices, a new manual creation form was added to support this format alongside the existing timesheet-based generation.
+-   **Critical Bug Fixes**: Numerous application-wide crashes on pages like HR, Users, Audit Log, and Clock History, caused by null data, have been resolved by making backend Pydantic models and frontend components more robust. Access control issues for RRHH, PM, and Super Admin roles have been fixed.
 
 **Last working item**:
--   **Last item agent was working**: Fixing the client portal. The user reported that clients should not be able to see a list of projects. The agent removed the project list from the client-facing detail page and restricted the backend endpoint to prevent clients from accessing project data.
--   **Status**: USER VERIFICATION PENDING
--   **Agent Testing Done**: Y (Agent implemented the code changes based on user's direct feedback).
--   **Which testing method agent to use?**: Frontend testing agent. The test should cover two flows: 1) Admin logs in, navigates to the Clients page, and creates a new client. 2) The new client user logs in and confirms they can only see their profile and document upload section, and *cannot* access projects or any other admin-only pages.
+-   **Last item agent was working**: The user reported that the logo in generated PDFs is still appearing pixelated and with an unwanted black background, despite a previous fix. The agent identified that the hardcoded  constant (a WEBP image) is the likely cause and that another PDF generator, , might be using it. The agent was about to investigate all uses of the hardcoded logo to apply a consistent fix.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: Frontend testing agent. The agent should generate a PDF (e.g., an invoice) to verify the logo appears correctly. A screenshot of the downloaded PDF should be used for confirmation.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Nomenclature selector does not display options (P1)
--   Issue 2: The Task input format has not been applied to Invoices and Estimates (P2)
--   Issue 3: Company logo is hardcoded and should be dynamic (P2)
+-   Issue 1: PDF logo is pixelated with a black background (P0)
+-   Issue 2: Nomenclature selector does not display options (P1)
 
 **Issues Detail**:
--   **Issue 1: Nomenclature selector does not display options**
+-   **Issue 1: PDF logo is pixelated with a black background**
+    -   **Description**: The company logo in generated PDFs renders with a black background and appears low quality. This is likely because a hardcoded WEBP base64 string is being used, and the  library has issues rendering transparency for that format.
+    -   **Attempted fixes**: The agent replaced the logo with a text-based company name in . However, the user's report indicates the issue persists, suggesting another file is generating the faulty PDF or the fix was incomplete.
+    -   **Next debug checklist**:
+        1.   for  to find all files using the problematic hardcoded WEBP logo (especially in ).
+        2.   for  to identify which parts of the application might be using a different PDF generator.
+        3.  Modify all identified PDF generation logic to consistently use a text-based header with the company name, which is a more robust solution than embedding an image.
+        4.  Remove the  constant and its import from  and any related files to prevent future use.
+    -   **Why fix this issue and what will be achieved with the fix?**: This will ensure all generated documents have a professional and consistent appearance, resolving a recurring visual bug.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Blocked on other issue**: None
+
+-   **Issue 2: Nomenclature selector does not display options**
     -   **Description**: A carried-over issue. When a user creates a new nomenclature in Settings, it does not appear as an option in dropdown selectors on other forms (e.g., Invoices, Estimates).
     -   **Attempted fixes**: None in this session.
     -   **Next debug checklist**:
@@ -65,30 +68,7 @@ Key additions from this session include:
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
-
--   **Issue 2: The Task input format has not been applied to Invoices and Estimates**
-    -   **Description**: The user requested a new input format for line items with a large textarea for a task description, which was implemented for Purchase Orders. The user also stated this should apply to all PDFs, but the agent only implemented the form change for POs.
-    -   **Attempted fixes**: None.
-    -   **Next debug checklist**:
-        1.  Modify the forms in  and .
-        2.  Replace the current single-line  input with the multi-column layout using a  component, similar to the implementation in .
-        3.  Ensure the data structure for  is consistent.
-    -   **Why fix this issue and what will be achieved with the fix?**: Fulfills a user requirement for consistent data entry across financial documents.
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: frontend
-
--   **Issue 3: Company logo is hardcoded and should be dynamic**
-    -   **Description**: Due to display issues, the agent hardcoded the company logo as a base64 string in  and . The correct implementation should pull the logo from the URL configured in Company Settings. The root cause was likely that the user had not yet configured this setting.
-    -   **Attempted fixes**: The hardcoding was the fix, but it's a workaround.
-    -   **Next debug checklist**:
-        1.  Modify  to attempt fetching the company logo URL from the  endpoint.
-        2.  Use the hardcoded base64 logo as a fallback if the setting is not configured.
-        3.  Instruct the user to upload their logo via the  page for it to appear dynamically.
-    -   **Why fix this issue and what will be achieved with the fix?**: Removes a brittle hardcoded value and makes the application more configurable and robust.
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Blocked on other issue**: None
 
 **In progress Task List**:
 -   There are no tasks currently in progress.
@@ -108,112 +88,102 @@ Key additions from this session include:
     -   Real-time Chat Feature.
 
 **Completed work in this session**
--   **Client Portal (DONE)**: Implemented a full portal for clients to log in, edit profiles, and upload documents.
--   **Payroll Enhancements (DONE)**: Implemented backend processing () and NACHA file generation.
--   **PDF Redesign (DONE)**: Created a new professional PDF template and applied it to Purchase Orders, Invoices, and Estimates.
--   **Advanced Reporting (DONE)**:
-    -   Created Delta Estimado vs Real report with progress bars and sorting.
-    -   Created a comprehensive Audit Log page with advanced filters and PDF export.
--   **New Core Features (DONE)**:
-    -   Implemented a system for Change Orders within projects.
-    -   Implemented Smart Alerts and an Approvals workflow page.
--   **UI/UX Improvements (DONE)**:
-    -   Completely redesigned the Human Resources page with a modern, professional layout.
-    -   Implemented a task-based input form for Purchase Orders with a large textarea.
-    -   Removed the  component from the Dashboard.
-    -   Renamed the application to ProManage.
+-   **New RBAC System (DONE)**: Implemented a new role system (Super Admin, PM, RRHH, Empleado) and updated all backend permissions and frontend UI accordingly.
+-   **New Approvals Workflow (DONE)**: Created a full system for employees to submit requests () and for managers to review them ().
+-   **Payslip Generation and Employee Profile (DONE)**: Implemented automatic payslip generation and a My Profile page () for employees to view payslips and clock history.
+-   **Task Form Parity (DONE)**: Updated  and created a manual form in  to use the multi-line Task input format.
 -   **Critical Bug Fixes (DONE)**:
-    -   Resolved app-wide data refresh issues by refactoring API calls to a central, cache-busting Axios instance.
-    -   Fixed a fatal error on the Project Detail page caused by a missing API route decorator.
-    -   Implemented a fix for the company logo not displaying.
-    -   Implemented natural sorting for project numbers in project lists.
+    -   Resolved crashes on HR, Users, Audit Log, and Clock History pages by adding  checks.
+    -   Fixed backend permissions for RRHH and PM roles to allow them to manage employee profiles and project entities.
+    -   Granted Super Admin access to the Settings page.
+-   **User Management (DONE)**:
+    -   Consolidated two duplicate user accounts, migrating the employee profile and hiding the obsolete account.
+    -   Enabled the Super Admin to change user roles via the UI.
+    -   Sorted user lists alphabetically.
+-   **Client Portal Fixes (DONE)**: Confirmed clients are correctly restricted from viewing project data.
 
 **Earlier issues found/mentioned but not fixed**
--   The Nomenclature selector bug (Issue #1 in the pending list) was carried over and not addressed.
+-   The Nomenclature selector bug (Issue #2 in the pending list) was carried over and not addressed.
 
 **Known issue recurrence from previous fork**
 -   **Nomenclature Selector**: This is a recurring unresolved issue.
--   **Data Refresh/Caching**: This recurring issue was addressed systematically in this session by refactoring all frontend pages to use a centralized Axios helper that applies cache-busting headers.
+-   **PDF Logo Display**: Issues with logo rendering in PDFs are recurrent. The approach has shifted from fixing the image to replacing it with text for better reliability.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Centralized API Helper**: Refactored frontend to use a single Axios instance () with an interceptor to automatically add cache-busting headers to all  requests, solving a major data staleness issue.
--   **Role-Based Access Control (RBAC)**: Extended the user model and backend logic to include a  role with a restricted, separate view of the application.
--   **Dynamic PDF Generation**: Created a sophisticated, reusable PDF generation utility () using  and  to create professionally formatted documents with headers, footers, and complex tables.
--   **NACHA File Generation**: Implemented backend logic to construct a fixed-width NACHA file string for ACH direct deposits, including file/batch headers, entry details, and control records.
--   **Base64 Asset Embedding**: Hardcoded the company logo as a base64 string to ensure its display in both the web UI and generated PDFs, bypassing browser caching and pathing issues.
--   **Natural Sorting**: Implemented a sorting function in the backend to correctly order alphanumeric strings like project numbers (e.g., 'P-2-A' vs 'P-10-B').
+-   **Advanced RBAC Implementation**: A comprehensive role-based access control system was built from scratch, defining permissions for , , , and . This logic was enforced in both backend endpoints and frontend component rendering (, ).
+-   **Data-Driven UI**: The frontend navigation menus and available actions (e.g., edit buttons, page access) are now dynamically generated based on the logged-in user's role, creating a tailored experience for each user type.
+-   **On-the-Fly Database Migration**: A bash script using  commands was executed to transfer data between user profiles and mark an obsolete user as hidden without deleting it, demonstrating live database maintenance.
+-   **Defensive Frontend Programming**: Fixed multiple application crashes by adding checks for  or  data (e.g., ) before calling string methods, making the UI more resilient to incomplete data.
+-   **Backend PDF Generation**: Implemented a new backend feature to generate PDF payslips from payroll data and store them, making them accessible to employees via a new endpoint.
+-   **Composite Feature Design (Approvals)**: Built a full-stack feature combining new backend models, multiple endpoints for creating/viewing/updating requests, and two new frontend pages (, ) to create a complete user workflow.
 
 **key DB schema**
 -   **users**:
-    -    enum updated to include .
--   **employee_profiles**: (Updated)
-    -   Added 
-    -   Added  (e.g., 'checking', 'savings')
--   **company_settings**: (Updated)
-    -   Added 
+    -    (Enum): Replaced with , , , , , .
+    -    (Boolean, Optional): New field to hide users from lists without deleting them.
+-   **approvals** (Schema Overhauled):
+    -   Now stores detailed requests with fields like  ('personal'/'project'), , , , , , , etc.
 -   **New Collections**:
-    -   : {id, period_start, period_end, processed_at, employees: list, totals: dict}
-    -   : {id, type, description, status, requested_by, created_at}
-    -   : {id, project_id, description, amount, status, created_at}
-    -   : {client_id (user_id), company_name, contact_email, phone, address, documents: list}
+    -   : { id, employee_id, user_id, run_id, period_start, period_end, data: dict, pdf_path: str, created_at }
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : Contains all new backend logic and endpoints.
--   : The completely redesigned HR module.
--   : The new centralized PDF creation utility.
--    & : The new client portal pages.
--   : Contains the Delta vs. Real implementation.
--   : The new advanced audit log.
--   : The central Axios helper solving the cache issue.
--   : Reference for the task-based item form.
+-   : The core of all new logic for RBAC, approvals, and payslips.
+-   : Reference for the new role-based navigation.
+-   : Reference for the new access control logic.
+-   : New page for employees to submit requests.
+-   : Overhauled page for managers to approve requests.
+-   : New page for employees to view payslips.
+-   : Reference for role management UI.
+-   : Location of the previous PDF logo fix.
+-   : Contains the problematic hardcoded logo.
 
 **Areas that need refactoring**:
--   **Hardcoded Logo**: The base64-encoded logo in  and  is a workaround. The system should be modified to reliably use the logo URL from company settings, with the base64 as a fallback.
--   **Monolithic Backend**:  has grown substantially and is now over 5,000 lines long. It urgently needs to be broken down into separate routers for each module (e.g., , ).
--   **Monolithic Frontend Components**:  remains a very large and complex file that should be broken into smaller, more manageable sub-components.
+-   **Hardcoded Logo**: The base64-encoded WEBP logo in  is the root of a recurring bug and should be removed entirely. All PDF generation should be standardized to use a text-based header.
+-   **Monolithic Backend**:  continues to grow and urgently needs to be broken down into separate routers for each module (users, projects, approvals, etc.).
 
 **key api endpoints**
--    (POST): Finalizes and saves a payroll run.
--    (POST): Generates a NACHA file from payroll data.
--    (GET, POST): Manage the list of clients.
--    (GET, PUT): Manage a specific client's profile.
--    (GET, POST): Allows clients to manage their own documents.
--    (GET): Fetches active alerts for the dashboard.
--    (GET, POST): Manages approval requests.
--    (PUT): Approve or reject a request.
--    (GET, POST): Manage change orders for a project.
--    (GET): Provides data for the Delta vs. Real report.
--    (GET): New endpoint that returns projects with natural sorting.
+-    (PUT): Now used by Super Admin to update user roles.
+-   ,  (GET): Updated to filter out  users and sort alphabetically.
+-   **New Endpoints (Approvals)**:
+    -    (GET, POST): For users to create and view their own requests.
+    -    (GET): For managers to view pending requests based on their role.
+    -    (PUT): To approve or reject a request.
+-   **New Endpoints (Payslips)**:
+    -    (POST): Updated to generate and save payslips for each employee.
+    -    (GET): For an employee to retrieve their own payslips.
+-   **Permissions Updates**: Numerous endpoints for projects, documents, and employees were updated to include checks for  and  roles.
 
 **Critical Info for New Agent**
--   **User values extreme efficiency.** The user frequently uses the phrases directo y eficiente (direct and efficient). Prioritize clear, concise plans and fast execution. Avoid unnecessary questions or steps.
--   **The user's environment might be the problem.** Be aware that issues the user reports (like the logo not appearing) might be due to their local browser cache or incomplete data entry (e.g., not setting company info in Settings). Always consider this possibility before assuming a code bug.
--   **The codebase is growing complex.** While the user wants speed, be mindful of the growing technical debt, especially in . When adding new features, try to follow the patterns of recently added modular code (like the PDF generator) where possible.
+-   **The new RBAC system is central to the application.** Any new feature or bug fix must carefully consider the permissions for each role (, , , , ). The logic is primarily in , , and .
+-   **User values direct and efficient execution.** Prioritize clear plans and avoid unnecessary questions. The user is also very attentive to UI/UX details and will report visual bugs.
+-   **Be wary of multiple PDF generators.** A fix in  did not solve the logo issue, suggesting other files () might be involved. A global, consistent solution is needed.
+-   **The  flag is used to archive users.** Do not delete users unless explicitly asked. The main admin user was merged by transferring data and hiding the old account.
 
 **documents and test_reports created in this job**
 -   None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  ellos no ven proyectos solo es para perfil y cargar documentos los proyectos son privados de ohsms
-2.  Quiero crear un area para crearle un perfil a nuestros clientes y que los clientes completen el perfil de la empresa y carguen los documentos relacionados a los proyectos y que ellos tengan sus propias credenciales, pueden usar el mismo site de login
-3.  ahora no de ve ahí y por favor elimina ohsms y deja solo ProManage
-4.  nada y lo subi png. lo quieres incluir hard coded? yo lo quiero que salga en todos los pdf
-5.  en la app ya se pudo ayer. (User uploaded new logo)
-6.  el logo de la empresa sale con el signo de pregunta no se ve. RECUERDA SER DIRECTO Y EFICIENTE TU EFICIENCIA ES EL EXITO DE NUESTRO PROYECTO. NO HAGAS COSAS QUE NO DEBES DE HACER.
-7.  CONTINUA RECUERDA SER DIRECTO Y EFICIENTE TU EFICIENCIA ES EL EXITO DE NUESTRO PROYECTO. NO HAGAS COSAS QUE NO DEBES DE HACER.
-8.  Elimina el registry rápido del dashboard. Directo y eficiente en lo que haces
-9.  Haz la página de rh se vea mas bonita minimalista profesional. Necesito eficiencia
-10. Yo no quiero solamente que se vean al descargar un pdf los task yo necesito crearlos en el formulario en el app y luego salgan en el pdf. Directo y eficiente necesito más eficiencia
+1.  ahora? (User uploaded a screenshot showing the PDF logo bug)
+2.  Si soy global admin porque no tengo acceso a los setting dame acceso
+3.  Continua
+4.  El logo que sale en las facturas se ve horrible pixeleado con fondo negro y la foto no tiene fondo negro.
+5.  El pdf en la estimación de costó abre un tab nuevo, pero no se ve el pdf. Se directo y eficiente
+6.  Pon los usuarios en orden alfabético
+7.  El súper admin asígnale poder para cambiar roles de usuarios
+8.  No era eliminarlo era solo ocultarlo
+9.  la tarjeta en usuarios y en rh que dice Jorge Carrero la vas a esconder y toda la información que hay en RH en ese perfil lo vas a pasar al que dice Jorge Carrero Rodirguez
+10. verification el de PM y haz lo mismo
 
 **Project Health Check:**
 -   **Broken**: The Nomenclature selector feature is non-functional.
--   **Mocked**: SMTP credentials are still placeholders and no real email functionality is implemented.
+-   **Partially-Fixed**: PDF Logo Generation. One generator was updated, but the underlying issue with a hardcoded, poor-quality logo persists and affects other parts of the app.
+-   **Mocked**: SMTP credentials are still placeholders; no real email functionality is implemented.
 
 **3rd Party Integrations**
 -   jsPDF & jspdf-autotable
@@ -224,16 +194,16 @@ Key additions from this session include:
 -   reportlab
 
 **Testing status**
--   **Testing agent used after significant changes**: NO
+-   **Testing agent used after significant changes**: YES (once, for the client portal fix).
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: None in this session. Previous major regressions were fixed.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
--   **Admin Email**: 
--   **Admin Password**: 
--   **Client Credentials**: A new client user must be created via the  page to test the client portal flow.
+-   **Admin Email**:  (This user account is now . Use  instead).
+-   **Super Admin Email**: 
+-   **Super Admin Password**: 
+-   **Client Credentials**: Must be created via the  page by an admin.
 
 **What agent forgot to execute**
--   The agent never fixed the long-standing Nomenclature selector bug.
--   The agent implemented the Task input form for Purchase Orders but forgot to apply the same UI change to the Invoices and Estimates forms, despite the user's request for consistency across all PDFs.</analysis>
+-   The agent never fixed the long-standing Nomenclature selector bug. It was on the initial plan but was superseded by other user requests.</analysis>

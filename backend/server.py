@@ -5850,7 +5850,7 @@ async def add_no_cache_headers(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["https://biz-workflow-2.preview.emergentagent.com", "http://localhost:3000"],
+    allow_origins=["https://promanage-erp.preview.emergentagent.com", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
