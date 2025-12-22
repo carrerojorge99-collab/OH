@@ -43,6 +43,8 @@ const Invoices = () => {
     project_id: '',
     client_name: '',
     client_email: '',
+    client_phone: '',
+    client_address: '',
     tax_rate: 16,
     notes: '',
     custom_number: ''
