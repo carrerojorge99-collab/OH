@@ -200,12 +200,15 @@ export const addItemsTable = (doc, items, startY, columns = ['Descripción', 'Ca
       textColor: COLORS.text,
       fontStyle: 'bold',
       fontSize: 9,
-      cellPadding: 4
+      cellPadding: 4,
+      lineWidth: { bottom: 0.3 },
+      lineColor: COLORS.primary
     },
     bodyStyles: {
       fontSize: 9,
       cellPadding: 4,
-      textColor: COLORS.text
+      textColor: COLORS.text,
+      lineWidth: 0
     },
     columnStyles: {
       0: { cellWidth: 100 },
@@ -216,8 +219,7 @@ export const addItemsTable = (doc, items, startY, columns = ['Descripción', 'Ca
     alternateRowStyles: {
       fillColor: [252, 252, 253]
     },
-    tableLineColor: [226, 232, 240],
-    tableLineWidth: 0.1
+    showHead: 'firstPage'
   });
   
   return doc.lastAutoTable.finalY;
