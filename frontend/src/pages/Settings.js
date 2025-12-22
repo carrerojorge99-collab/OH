@@ -544,18 +544,19 @@ const Settings = () => {
                         <img 
                           src={`${API_URL}${company.company_logo}`} 
                           alt="Logo de empresa" 
-                          className="w-32 h-32 object-contain border rounded-lg bg-white p-2"
+                          className="object-contain border rounded-lg bg-white p-2"
+                          style={{ width: '250px', height: '250px' }}
                         />
                       ) : (
-                        <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-white">
-                          <Image className="h-12 w-12 text-slate-300" />
+                        <div className="border-2 border-dashed rounded-lg flex items-center justify-center bg-white" style={{ width: '250px', height: '250px' }}>
+                          <Image className="h-16 w-16 text-slate-300" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1 space-y-2">
                       <Label className="text-base font-medium">Logo de la Empresa</Label>
                       <p className="text-sm text-slate-500">
-                        Sube el logo de tu empresa. Formatos: JPG, PNG, GIF, WebP, SVG. Tamaño recomendado: 200x200px
+                        Sube el logo de tu empresa. Formatos: JPG, PNG, GIF, WebP, SVG. Tamaño recomendado: 250x250px
                       </p>
                       <div className="flex gap-2">
                         <Button
