@@ -1303,15 +1303,15 @@ class PDFGenerationTester:
             return False, None
 
     def test_estimate_pdf_generation(self):
-        """Test estimate PDF generation with logo"""
-        print(f"\n🔍 Testing Estimate PDF Generation...")
+        """Test cost estimate PDF generation with logo"""
+        print(f"\n🔍 Testing Cost Estimate PDF Generation...")
         
         if not self.test_estimate_id:
-            self.log_test("Estimate PDF Generation", False, "", "No estimate ID available for testing")
+            self.log_test("Cost Estimate PDF Generation", False, "", "No cost estimate ID available for testing")
             return False
         
         try:
-            url = f"{self.api_url}/estimates/{self.test_estimate_id}/pdf"
+            url = f"{self.api_url}/cost-estimates/{self.test_estimate_id}/export/pdf"
             response = self.session.get(url, timeout=60)  # Longer timeout for PDF generation
             
             print(f"   Response Status: {response.status_code}")
@@ -1329,14 +1329,17 @@ class PDFGenerationTester:
                         # Check for logo presence by looking for PNG signature in PDF
                         has_png_logo = b'PNG' in content and b'IHDR' in content
                         
-                        self.log_test("Estimate PDF Generation", True, 
-                                    f"PDF generated successfully - Size: {file_size} bytes, Content-Type: {content_type}, Contains PNG Logo: {has_png_logo}")
+                        # Check for OHSMS company name in PDF
+                        has_company_name = b'OCCUPATIONAL HEALTH SAFETY MANAGEMENT SERVICES' in content
+                        
+                        self.log_test("Cost Estimate PDF Generation", True, 
+                                    f"PDF generated successfully - Size: {file_size} bytes, Content-Type: {content_type}, Contains PNG Logo: {has_png_logo}, Contains Company Name: {has_company_name}")
                         return True, content
                     else:
-                        self.log_test("Estimate PDF Generation", False, "", "Response content is not a valid PDF file")
+                        self.log_test("Cost Estimate PDF Generation", False, "", "Response content is not a valid PDF file")
                         return False, None
                 else:
-                    self.log_test("Estimate PDF Generation", False, "", f"Invalid Content-Type: {content_type} (expected: application/pdf)")
+                    self.log_test("Cost Estimate PDF Generation", False, "", f"Invalid Content-Type: {content_type} (expected: application/pdf)")
                     return False, None
             else:
                 try:
@@ -1345,11 +1348,11 @@ class PDFGenerationTester:
                 except:
                     error_msg = f"HTTP {response.status_code}"
                 print(f"   Error Response: {error_msg}")
-                self.log_test("Estimate PDF Generation", False, "", error_msg)
+                self.log_test("Cost Estimate PDF Generation", False, "", error_msg)
                 return False, None
                 
         except Exception as e:
-            self.log_test("Estimate PDF Generation", False, "", str(e))
+            self.log_test("Cost Estimate PDF Generation", False, "", str(e))
             return False, None
 
     def run_pdf_generation_tests(self):
