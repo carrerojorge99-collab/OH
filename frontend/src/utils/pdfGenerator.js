@@ -92,12 +92,13 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   doc.setFont('helvetica', 'bold');
   doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, pageWidth - 35, 48, { align: 'center' });
   
-  // Separator line
+  // Separator line - position based on content height
+  const lineY = Math.max(leftY + 2, 60);
   doc.setDrawColor(...COLORS.primary);
   doc.setLineWidth(0.5);
-  doc.line(15, 58, pageWidth - 15, 58);
+  doc.line(15, lineY, pageWidth - 15, lineY);
   
-  return 64;
+  return lineY + 6;
 };
 
 // Add client/vendor section BELOW company info
