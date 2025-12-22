@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import moment from 'moment';
 import api from './api';
+import { LOGO_BASE64 } from './logoData';
 
 // Colores corporativos
 const COLORS = {
@@ -26,15 +27,21 @@ export const fetchCompanyInfo = async () => {
 export const addDocumentHeader = async (doc, company, docType, docNumber, docDate, total) => {
   const pageWidth = doc.internal.pageSize.width;
   
-  // === LEFT SIDE: Company Info ===
+  // === LEFT SIDE: Company Logo and Info ===
   let leftY = 15;
   
-  // Company Name as header (more reliable than image)
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.primary);
-  doc.text(company.company_name || 'ProManage', 15, 18);
-  leftY = 26;
+  // Add company logo (PNG with white background)
+  try {
+    doc.addImage(LOGO_BASE64, 'PNG', 15, 10, 40, 20);
+    leftY = 35;
+  } catch (e) {
+    // Fallback to company name if logo fails
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text(company.company_name || 'ProManage', 15, 18);
+    leftY = 26;
+  }
   
   // Company details
   doc.setFontSize(8);
