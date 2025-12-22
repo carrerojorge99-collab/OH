@@ -16,7 +16,7 @@ const COLORS = {
 // Fetch company info
 export const fetchCompanyInfo = async () => {
   try {
-    const response = await api.get('/company-settings');
+    const response = await api.get('/company');
     return response.data;
   } catch (error) {
     return {};
