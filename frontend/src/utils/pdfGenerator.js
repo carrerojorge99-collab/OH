@@ -39,12 +39,21 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
     leftY = 15;
   }
   
-  // Always show company name below logo
-  doc.setFontSize(12);
+  // Always show company name below logo (split into 2 lines after "SAFETY")
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.primary);
-  doc.text(company.company_name || 'OHSMS PR', 15, leftY);
-  leftY += 5;
+  const companyName = company.company_name || 'OHSMS PR';
+  if (companyName.includes('SAFETY')) {
+    const parts = companyName.split('SAFETY');
+    doc.text(parts[0].trim() + ' SAFETY', 15, leftY);
+    leftY += 4;
+    doc.text(parts[1].trim(), 15, leftY);
+    leftY += 5;
+  } else {
+    doc.text(companyName, 15, leftY);
+    leftY += 5;
+  }
   
   // Company details
   doc.setFontSize(8);
