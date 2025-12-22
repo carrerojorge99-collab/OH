@@ -487,6 +487,27 @@ const Invoices = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="client_phone">Teléfono del Cliente</Label>
+                    <Input
+                      id="client_phone"
+                      value={formData.client_phone}
+                      onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
+                      placeholder="(787) 123-4567"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="client_address">Dirección del Cliente</Label>
+                    <Textarea
+                      id="client_address"
+                      value={formData.client_address}
+                      onChange={(e) => setFormData({ ...formData, client_address: e.target.value })}
+                      placeholder="Dirección completa del cliente..."
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="tax_rate">Tasa de Impuesto (%)</Label>
                     <Input
                       id="tax_rate"
