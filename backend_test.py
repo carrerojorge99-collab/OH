@@ -1912,8 +1912,12 @@ def main():
             # Run client portal tests
             tester = ClientPortalTester()
             results = tester.run_client_portal_tests()
+        elif sys.argv[1] == "pdf":
+            # Run PDF generation tests
+            tester = PDFGenerationTester()
+            results = tester.run_pdf_generation_tests()
         else:
-            print("Usage: python backend_test.py [clock|export|client]")
+            print("Usage: python backend_test.py [clock|export|client|pdf]")
             return 1
     else:
         # Run full API tests
