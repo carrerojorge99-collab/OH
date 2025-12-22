@@ -33,15 +33,18 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   // Add company logo (PNG with white background)
   try {
     doc.addImage(LOGO_BASE64, 'PNG', 15, 10, 40, 20);
-    leftY = 35;
+    leftY = 33;
   } catch (e) {
-    // Fallback to company name if logo fails
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...COLORS.primary);
-    doc.text(company.company_name || 'ProManage', 15, 18);
-    leftY = 26;
+    // If logo fails, just continue
+    leftY = 15;
   }
+  
+  // Always show company name below logo
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.primary);
+  doc.text(company.company_name || 'OHSMS PR', 15, leftY);
+  leftY += 5;
   
   // Company details
   doc.setFontSize(8);
