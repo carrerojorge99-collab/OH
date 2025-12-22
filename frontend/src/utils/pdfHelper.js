@@ -2,6 +2,8 @@
  * Helper para agregar encabezado de empresa a PDFs
  */
 
+import { LOGO_BASE64 } from './logoData';
+
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Función para cargar la información de la empresa
