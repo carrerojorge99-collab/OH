@@ -47,25 +47,21 @@ export const addCompanyHeader = async (doc, company, startY = 20) => {
   const leftMargin = 20;
   const rightMargin = 190;
 
-  // Logo (si existe)
-  if (company.company_logo) {
-    try {
-      const logoUrl = `${API_URL}${company.company_logo}`;
-      const logoBase64 = await loadImageAsBase64(logoUrl);
-      if (logoBase64) {
-        doc.addImage(logoBase64, 'PNG', leftMargin, currentY, 35, 35);
-      }
-    } catch (e) {
-      console.error('Error loading logo:', e);
-    }
+  // Logo - use embedded base64 logo as primary source
+  try {
+    doc.addImage(LOGO_BASE64, 'PNG', leftMargin, currentY, 35, 18);
+    currentY += 20;
+  } catch (e) {
+    console.error('Error loading logo:', e);
+    currentY += 5;
   }
 
-  // Información de la empresa (a la derecha del logo o desde el inicio)
-  const textStartX = company.company_logo ? 60 : leftMargin;
+  // Información de la empresa (debajo del logo)
+  const textStartX = leftMargin;
   
   // Nombre de la empresa
   if (company.company_name) {
-    doc.setFontSize(16);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text(company.company_name, textStartX, currentY + 8);
     currentY += 6;
