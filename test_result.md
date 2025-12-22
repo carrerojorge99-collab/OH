@@ -532,3 +532,21 @@ The fix mentioned in the request has been implemented correctly for frontend PDF
 Invoices and Estimates use client-side jsPDF with logo support from logoData.js.
 Cost Estimates use server-side ReportLab generation without logo support.
 
+
+# PDF Logo Fix - Mon Dec 22 19:10:00 UTC 2025
+
+## Changes Made
+1. Updated `/app/frontend/src/utils/logoData.js` with new PNG logo (white background) provided by user
+2. Updated `/app/frontend/src/utils/pdfGenerator.js`:
+   - Imports LOGO_BASE64 from logoData.js
+   - Uses doc.addImage() to add PNG logo 
+   - Always shows company name below logo (from Settings)
+3. Updated `/app/frontend/src/utils/pdfHelper.js`:
+   - Imports LOGO_BASE64 as fallback
+   - Uses embedded base64 logo instead of dynamic URL loading
+
+## Testing Required
+- Generate invoice PDF and verify logo + company name visible
+- Generate estimate PDF and verify same
+- Verify company name "OCCUPATIONAL HEALTH SAFETY MANAGEMENT SERVICES LLC" appears
+
