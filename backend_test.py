@@ -1179,6 +1179,43 @@ class PDFGenerationTester:
             self.log_test("Get Estimates", False, "", str(e))
             return False, []
 
+    def test_get_cost_estimates(self):
+        """Test getting cost estimates list"""
+        print(f"\n🔍 Testing Get Cost Estimates List...")
+        
+        try:
+            url = f"{self.api_url}/cost-estimates"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                estimates = response.json()
+                if isinstance(estimates, list):
+                    if len(estimates) > 0:
+                        # Use the first cost estimate for testing
+                        self.test_estimate_id = estimates[0].get('estimate_id') or estimates[0].get('id')
+                        estimate_name = estimates[0].get('estimate_name', 'N/A')
+                        self.log_test("Get Cost Estimates", True, 
+                                    f"Found {len(estimates)} cost estimates. Using estimate '{estimate_name}' (ID: {self.test_estimate_id})")
+                        return True, estimates
+                    else:
+                        self.log_test("Get Cost Estimates", False, "", "No cost estimates found in the system")
+                        return False, []
+                else:
+                    self.log_test("Get Cost Estimates", False, "", f"Invalid response format: {estimates}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Cost Estimates", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Cost Estimates", False, "", str(e))
+            return False, []
+
     def test_company_endpoint(self):
         """Test company endpoint for logo data"""
         print(f"\n🔍 Testing Company Endpoint...")
