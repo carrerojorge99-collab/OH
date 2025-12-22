@@ -468,7 +468,7 @@ const Settings = () => {
     }
   };
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'admin' && user?.role !== 'super_admin') {
     return (
       <Layout>
         <div className="max-w-2xl mx-auto">
