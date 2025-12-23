@@ -551,7 +551,7 @@ Cost Estimates use server-side ReportLab generation without logo support.
 
 ### Test Environment
 - Login: j.carrero@ohsmspr.com / Axel52418!
-- Application URL: https://promanage-erp.preview.emergentagent.com
+- Application URL: https://invoice-upgrade.preview.emergentagent.com
 
 ### Test Results Summary
 
