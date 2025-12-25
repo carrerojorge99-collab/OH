@@ -1993,6 +1993,8 @@ class SafetyModuleTester:
         self.test_observation_id = None
         self.test_toolbox_talk_id = None
         self.test_incident_id = None
+        self.test_media_filename = None
+        self.test_employee_ids = []
 
     def log_test(self, name, success, details="", error=""):
         """Log test result"""
