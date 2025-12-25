@@ -398,10 +398,10 @@ const Safety = () => {
   const handleSaveToolbox = async () => {
     try {
       if (editingToolbox) {
-        await api.put(`/api/safety/toolbox-talks/${editingToolbox.talk_id}`, toolboxForm);
+        await api.put(`/safety/toolbox-talks/${editingToolbox.talk_id}`, toolboxForm);
         toast.success('Toolbox Talk actualizado');
       } else {
-        await api.post('/api/safety/toolbox-talks', toolboxForm);
+        await api.post('/safety/toolbox-talks', toolboxForm);
         toast.success('Toolbox Talk creado');
       }
       setToolboxDialogOpen(false);
