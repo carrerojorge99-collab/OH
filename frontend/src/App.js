@@ -28,6 +28,7 @@ import MyRequests from './pages/MyRequests';
 import MyProfile from './pages/MyProfile';
 import Clients from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
+import Safety from './pages/Safety';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
@@ -170,6 +171,11 @@ function AppRouter() {
       <Route path="/clients/:clientId" element={
         <ProtectedRoute>
           <ClientDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/safety" element={
+        <ProtectedRoute>
+          <Safety />
         </ProtectedRoute>
       } />
     </Routes>
