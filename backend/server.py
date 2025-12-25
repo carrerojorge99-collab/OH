@@ -3415,28 +3415,54 @@ async def get_safety_dashboard(
     
     # Calculate stats
     total_checklists = len(checklists)
-    completed_checklists = len([c for c in checklists if c.get("status") == SafetyChecklistStatus.COMPLETED])
+    completed_checklists = len([c for c in checklists if c.get("status") == "completed"])
     
-    positive_observations = len([o for o in observations if o.get("observation_type") == SafetyObservationType.POSITIVE])
-    negative_observations = len([o for o in observations if o.get("observation_type") == SafetyObservationType.NEGATIVE])
-    open_observations = len([o for o in observations if o.get("status") == SafetyObservationStatus.OPEN])
+    positive_observations = len([o for o in observations if o.get("type") == "positive"])
+    negative_observations = len([o for o in observations if o.get("type") == "negative"])
+    open_observations = len([o for o in observations if o.get("status") != "resolved"])
     
-    scheduled_talks = len([t for t in toolbox_talks if t.get("status") == ToolboxTalkStatus.SCHEDULED])
-    completed_talks = len([t for t in toolbox_talks if t.get("status") == ToolboxTalkStatus.COMPLETED])
+    scheduled_talks = len([t for t in toolbox_talks if t.get("status") == "scheduled"])
+    completed_talks = len([t for t in toolbox_talks if t.get("status") == "completed"])
     
     total_incidents = len(incidents)
-    open_incidents = len([i for i in incidents if i.get("status") != IncidentStatus.CLOSED])
-    critical_incidents = len([i for i in incidents if i.get("severity") == IncidentSeverity.CRITICAL])
+    open_incidents = len([i for i in incidents if i.get("status") != "closed"])
+    critical_incidents = len([i for i in incidents if i.get("severity") == "critical"])
     
     # Days without incidents
     if incidents:
-        last_incident = max(incidents, key=lambda x: x.get("incident_date", ""))
-        last_incident_date = datetime.fromisoformat(last_incident.get("incident_date", "").replace("Z", "+00:00"))
-        days_without_incident = (datetime.now(timezone.utc) - last_incident_date).days
+        try:
+            # Get the most recent incident
+            last_incident = max(incidents, key=lambda x: x.get("incident_date", ""))
+            incident_date_str = last_incident.get("incident_date", "")
+            
+            # Parse the date string - handle different formats
+            if incident_date_str:
+                # Try to parse as date only first (YYYY-MM-DD)
+                try:
+                    last_incident_date = datetime.strptime(incident_date_str, "%Y-%m-%d")
+                    last_incident_date = last_incident_date.replace(tzinfo=timezone.utc)
+                except ValueError:
+                    # Try to parse as ISO format
+                    try:
+                        last_incident_date = datetime.fromisoformat(incident_date_str.replace("Z", "+00:00"))
+                    except ValueError:
+                        # Default to 365 days if parsing fails
+                        last_incident_date = datetime.now(timezone.utc) - timedelta(days=365)
+                
+                days_without_incident = (datetime.now(timezone.utc) - last_incident_date).days
+            else:
+                days_without_incident = 365
+        except Exception:
+            days_without_incident = 365
     else:
         days_without_incident = 365  # Default if no incidents
     
     return {
+        "days_without_incidents": days_without_incident,
+        "total_checklists": total_checklists,
+        "total_observations": len(observations),
+        "total_toolbox_talks": len(toolbox_talks),
+        "total_incidents": total_incidents,
         "checklists": {
             "total": total_checklists,
             "completed": completed_checklists,
@@ -3462,7 +3488,7 @@ async def get_safety_dashboard(
         "recent_checklists": checklists[:5],
         "recent_observations": observations[:5],
         "recent_incidents": incidents[:5],
-        "upcoming_talks": [t for t in toolbox_talks if t.get("status") == ToolboxTalkStatus.SCHEDULED][:5]
+        "upcoming_talks": [t for t in toolbox_talks if t.get("status") == "scheduled"][:5]
     }
 
 # ==================== CLIENT PORTAL ====================
