@@ -1302,13 +1302,14 @@ const Safety = () => {
                   <div>
                     <Label>Asignado a</Label>
                     <Select
-                      value={observationForm.assigned_to}
-                      onValueChange={(value) => setObservationForm({...observationForm, assigned_to: value})}
+                      value={observationForm.assigned_to || "none"}
+                      onValueChange={(value) => setObservationForm({...observationForm, assigned_to: value === "none" ? "" : value})}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar responsable" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Sin asignar</SelectItem>
                         {users.map(u => (
                           <SelectItem key={u.user_id} value={u.user_id}>{u.name}</SelectItem>
                         ))}
