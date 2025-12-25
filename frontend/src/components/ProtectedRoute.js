@@ -49,6 +49,7 @@ const ProtectedRoute = ({ children }) => {
     if (!isAllowed) {
       return <Navigate to={`/clients/${user.user_id}`} replace />;
     }
+    return children; // Client is on allowed path, render children
   }
 
   // Super admin tiene acceso a todo
