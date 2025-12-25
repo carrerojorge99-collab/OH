@@ -1129,6 +1129,30 @@ async def update_change_order(order_id: str, data: dict, request: Request, sessi
     await log_audit(user.user_id, user.name, "approve" if new_status == "approved" else "update", "change_order", order_id, order.get("description", "Change Order"), {"status": new_status})
     return {"message": f"Change Order {new_status}"}
 
+@api_router.delete("/change-orders/{order_id}")
+async def delete_change_order(order_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER]:
+        raise HTTPException(status_code=403, detail="Solo PM o administradores pueden eliminar")
+    
+    order = await db.change_orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Change Order no encontrada")
+    
+    # Si fue aprobada, revertir los cambios en el proyecto
+    if order.get("status") == "approved":
+        await db.projects.update_one(
+            {"project_id": order["project_id"]},
+            {"$inc": {
+                "budget_total": -order.get("budget_change", 0),
+                "project_value": -order.get("value_change", 0)
+            }}
+        )
+    
+    await db.change_orders.delete_one({"id": order_id})
+    await log_audit(user.user_id, user.name, "delete", "change_order", order_id, order.get("description", "Change Order"), {"project_id": order["project_id"]})
+    return {"message": "Change Order eliminada"}
+
 @api_router.post("/tasks", response_model=Task)
 async def create_task(task_data: TaskCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
