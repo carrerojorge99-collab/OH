@@ -3131,6 +3131,7 @@ async def create_safety_observation(data: dict, request: Request, session_token:
         "corrective_action": data.get("corrective_action", ""),
         "due_date": data.get("due_date"),
         "photos": data.get("photos", []),
+        "media": [],  # New field for photos/videos
         "created_by": user.user_id,
         "created_by_name": user.name,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -3226,6 +3227,8 @@ async def create_toolbox_talk(data: dict, request: Request, session_token: Optio
         "status": ToolboxTalkStatus.SCHEDULED,
         "attendees": data.get("attendees", []),
         "attendance_records": [],
+        "external_attendee_count": 0,
+        "media": [],  # New field for photos/videos
         "materials": data.get("materials", []),
         "notes": data.get("notes", ""),
         "created_by": user.user_id,
@@ -3738,6 +3741,7 @@ async def create_incident(data: dict, request: Request, session_token: Optional[
         "preventive_actions": data.get("preventive_actions", []),
         "photos": data.get("photos", []),
         "documents": data.get("documents", []),
+        "media": [],  # New field for photos/videos
         "reported_by": user.user_id,
         "reported_by_name": user.name,
         "assigned_to": data.get("assigned_to"),
