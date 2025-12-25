@@ -30,7 +30,12 @@ const Login = () => {
     
     if (result.success) {
       toast.success('¡Bienvenido!');
-      navigate('/dashboard');
+      // Redirect clients to their profile page, others to dashboard
+      if (result.user?.role === 'client') {
+        navigate(`/clients/${result.user.user_id}`);
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       toast.error(result.error);
     }
