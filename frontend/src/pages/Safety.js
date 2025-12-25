@@ -27,7 +27,7 @@ import {
   Calendar, Shield, TrendingUp, TrendingDown, Search,
   Filter, MoreVertical, ChevronRight, Clock, FileText,
   ThumbsUp, ThumbsDown, AlertCircle, Activity, RefreshCw,
-  BookOpen, HelpCircle, ListChecks
+  BookOpen, HelpCircle, ListChecks, Upload, Camera, Video, X, Image
 } from 'lucide-react';
 import {
   DropdownMenu,
