@@ -460,10 +460,10 @@ const Safety = () => {
   const handleSaveIncident = async () => {
     try {
       if (editingIncident) {
-        await api.put(`/api/safety/incidents/${editingIncident.incident_id}`, incidentForm);
+        await api.put(`/safety/incidents/${editingIncident.incident_id}`, incidentForm);
         toast.success('Incidente actualizado');
       } else {
-        await api.post('/api/safety/incidents', incidentForm);
+        await api.post('/safety/incidents', incidentForm);
         toast.success('Incidente reportado');
       }
       setIncidentDialogOpen(false);
