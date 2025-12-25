@@ -7,7 +7,7 @@ const AuthCallback = ({ onComplete }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser, setIsAuthenticated } = useAuth();
-  const [processed, setProcessed] = React.useState(false);
+  const [processed, setProcessed] = useState(false);
 
   useEffect(() => {
     if (processed) return;
