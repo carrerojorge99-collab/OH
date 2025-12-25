@@ -163,6 +163,13 @@ const Safety = () => {
   const [toolboxTopics, setToolboxTopics] = useState([]);
   const [topicsLibraryOpen, setTopicsLibraryOpen] = useState(false);
   const [selectedTopicCategory, setSelectedTopicCategory] = useState('all');
+  // Attendance management
+  const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [externalCount, setExternalCount] = useState(0);
+  const [externalNames, setExternalNames] = useState(['']);
+  // Media upload
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [toolboxForm, setToolboxForm] = useState({
     title: '',
     topic: '',
