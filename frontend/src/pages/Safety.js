@@ -308,7 +308,7 @@ const Safety = () => {
   const handleDeleteChecklist = async (checklistId) => {
     if (!window.confirm('¿Eliminar este checklist?')) return;
     try {
-      await api.delete(`/api/safety/checklists/${checklistId}`);
+      await api.delete(`/safety/checklists/${checklistId}`);
       toast.success('Checklist eliminado');
       loadChecklists();
     } catch (error) {
