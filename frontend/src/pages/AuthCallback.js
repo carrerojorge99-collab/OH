@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
-const AuthCallback = ({ onComplete }) => {
+const AuthCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser, setIsAuthenticated } = useAuth();
@@ -13,12 +13,14 @@ const AuthCallback = ({ onComplete }) => {
     if (processed) return;
     
     const processSession = async () => {
+      // Get and clear the hash immediately to prevent re-processing
       const hash = location.hash;
+      window.history.replaceState(null, '', window.location.pathname);
+      
       const params = new URLSearchParams(hash.substring(1));
       const sessionId = params.get('session_id');
 
       if (!sessionId) {
-        if (onComplete) onComplete();
         navigate('/login', { replace: true });
         return;
       }
@@ -38,11 +40,7 @@ const AuthCallback = ({ onComplete }) => {
         setIsAuthenticated(true);
         sessionStorage.setItem('just_authenticated', 'true');
         
-        // Clear the hash to prevent re-processing
-        window.history.replaceState(null, '', window.location.pathname);
-        
         setProcessed(true);
-        if (onComplete) onComplete();
         
         navigate('/dashboard', {
           replace: true,
@@ -50,15 +48,12 @@ const AuthCallback = ({ onComplete }) => {
         });
       } catch (error) {
         console.error('Error processing session:', error);
-        // Clear the hash on error too
-        window.history.replaceState(null, '', window.location.pathname);
-        if (onComplete) onComplete();
         navigate('/login', { replace: true });
       }
     };
 
     processSession();
-  }, [processed]);
+  }, [processed, location.hash, navigate, setUser, setIsAuthenticated]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
