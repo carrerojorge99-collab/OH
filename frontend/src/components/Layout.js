@@ -31,7 +31,8 @@ import {
   CheckCircle,
   Building2,
   Send,
-  User
+  User,
+  Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
 
