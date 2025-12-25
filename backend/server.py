@@ -2818,6 +2818,653 @@ def update_env_var(content: str, key: str, value: str) -> str:
     
     return '\n'.join(lines)
 
+# ==================== SAFETY MODULE ====================
+# Safety Checklists
+class SafetyChecklistStatus(str, Enum):
+    DRAFT = "draft"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+class SafetyObservationType(str, Enum):
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+
+class SafetyObservationStatus(str, Enum):
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    RESOLVED = "resolved"
+    CLOSED = "closed"
+
+class IncidentSeverity(str, Enum):
+    MINOR = "minor"
+    MODERATE = "moderate"
+    SERIOUS = "serious"
+    CRITICAL = "critical"
+
+class IncidentStatus(str, Enum):
+    REPORTED = "reported"
+    INVESTIGATING = "investigating"
+    ACTION_TAKEN = "action_taken"
+    CLOSED = "closed"
+
+class ToolboxTalkStatus(str, Enum):
+    SCHEDULED = "scheduled"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+# ==================== SAFETY CHECKLISTS ====================
+@api_router.get("/safety/checklists")
+async def get_safety_checklists(
+    request: Request, 
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None,
+    status: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if status:
+        query["status"] = status
+    
+    checklists = await db.safety_checklists.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return checklists
+
+@api_router.get("/safety/checklists/{checklist_id}")
+async def get_safety_checklist(checklist_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    checklist = await db.safety_checklists.find_one({"checklist_id": checklist_id}, {"_id": 0})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist no encontrado")
+    return checklist
+
+@api_router.post("/safety/checklists")
+async def create_safety_checklist(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    checklist_id = f"checklist_{uuid4().hex[:12]}"
+    
+    # Process items with default values
+    items = []
+    for item in data.get("items", []):
+        items.append({
+            "item_id": f"item_{uuid4().hex[:8]}",
+            "description": item.get("description", ""),
+            "category": item.get("category", "general"),
+            "is_checked": False,
+            "notes": "",
+            "checked_by": None,
+            "checked_at": None
+        })
+    
+    checklist = {
+        "checklist_id": checklist_id,
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "project_id": data.get("project_id"),
+        "template_id": data.get("template_id"),
+        "category": data.get("category", "general"),
+        "items": items,
+        "status": SafetyChecklistStatus.DRAFT,
+        "assigned_to": data.get("assigned_to"),
+        "due_date": data.get("due_date"),
+        "completion_percentage": 0,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "completed_at": None
+    }
+    
+    await db.safety_checklists.insert_one(checklist)
+    del checklist["_id"]
+    
+    await log_audit(user.user_id, user.name, "create", "safety_checklist", checklist_id, data.get("title"), {})
+    return checklist
+
+@api_router.put("/safety/checklists/{checklist_id}")
+async def update_safety_checklist(checklist_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.safety_checklists.find_one({"checklist_id": checklist_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Checklist no encontrado")
+    
+    update_data = {
+        "title": data.get("title", existing.get("title")),
+        "description": data.get("description", existing.get("description")),
+        "project_id": data.get("project_id", existing.get("project_id")),
+        "category": data.get("category", existing.get("category")),
+        "assigned_to": data.get("assigned_to", existing.get("assigned_to")),
+        "due_date": data.get("due_date", existing.get("due_date")),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Handle items update
+    if "items" in data:
+        items = []
+        for item in data["items"]:
+            items.append({
+                "item_id": item.get("item_id") or f"item_{uuid4().hex[:8]}",
+                "description": item.get("description", ""),
+                "category": item.get("category", "general"),
+                "is_checked": item.get("is_checked", False),
+                "notes": item.get("notes", ""),
+                "checked_by": item.get("checked_by"),
+                "checked_at": item.get("checked_at")
+            })
+        update_data["items"] = items
+        
+        # Calculate completion percentage
+        total = len(items)
+        checked = sum(1 for item in items if item.get("is_checked"))
+        update_data["completion_percentage"] = round((checked / total * 100) if total > 0 else 0)
+        
+        # Auto-update status
+        if update_data["completion_percentage"] == 100:
+            update_data["status"] = SafetyChecklistStatus.COMPLETED
+            update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+        elif update_data["completion_percentage"] > 0:
+            update_data["status"] = SafetyChecklistStatus.IN_PROGRESS
+    
+    if "status" in data:
+        update_data["status"] = data["status"]
+        if data["status"] == SafetyChecklistStatus.COMPLETED:
+            update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.safety_checklists.update_one({"checklist_id": checklist_id}, {"$set": update_data})
+    
+    updated = await db.safety_checklists.find_one({"checklist_id": checklist_id}, {"_id": 0})
+    await log_audit(user.user_id, user.name, "update", "safety_checklist", checklist_id, update_data.get("title"), {})
+    return updated
+
+@api_router.delete("/safety/checklists/{checklist_id}")
+async def delete_safety_checklist(checklist_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.safety_checklists.delete_one({"checklist_id": checklist_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Checklist no encontrado")
+    
+    await log_audit(user.user_id, user.name, "delete", "safety_checklist", checklist_id, "", {})
+    return {"message": "Checklist eliminado"}
+
+@api_router.post("/safety/checklists/{checklist_id}/check-item")
+async def check_checklist_item(checklist_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    checklist = await db.safety_checklists.find_one({"checklist_id": checklist_id})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist no encontrado")
+    
+    item_id = data.get("item_id")
+    is_checked = data.get("is_checked", True)
+    notes = data.get("notes", "")
+    
+    items = checklist.get("items", [])
+    for item in items:
+        if item["item_id"] == item_id:
+            item["is_checked"] = is_checked
+            item["notes"] = notes
+            item["checked_by"] = user.user_id if is_checked else None
+            item["checked_at"] = datetime.now(timezone.utc).isoformat() if is_checked else None
+            break
+    
+    # Calculate completion
+    total = len(items)
+    checked = sum(1 for item in items if item.get("is_checked"))
+    completion_percentage = round((checked / total * 100) if total > 0 else 0)
+    
+    # Auto-update status
+    status = checklist.get("status")
+    completed_at = checklist.get("completed_at")
+    if completion_percentage == 100:
+        status = SafetyChecklistStatus.COMPLETED
+        completed_at = datetime.now(timezone.utc).isoformat()
+    elif completion_percentage > 0:
+        status = SafetyChecklistStatus.IN_PROGRESS
+    
+    await db.safety_checklists.update_one(
+        {"checklist_id": checklist_id},
+        {"$set": {
+            "items": items,
+            "completion_percentage": completion_percentage,
+            "status": status,
+            "completed_at": completed_at,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    updated = await db.safety_checklists.find_one({"checklist_id": checklist_id}, {"_id": 0})
+    return updated
+
+# ==================== SAFETY CHECKLIST TEMPLATES ====================
+@api_router.get("/safety/templates")
+async def get_safety_templates(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    templates = await db.safety_templates.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return templates
+
+@api_router.post("/safety/templates")
+async def create_safety_template(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    template_id = f"template_{uuid4().hex[:12]}"
+    
+    template = {
+        "template_id": template_id,
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "category": data.get("category", "general"),
+        "items": data.get("items", []),
+        "is_default": data.get("is_default", False),
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.safety_templates.insert_one(template)
+    del template["_id"]
+    return template
+
+@api_router.delete("/safety/templates/{template_id}")
+async def delete_safety_template(template_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.safety_templates.delete_one({"template_id": template_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Template no encontrado")
+    
+    return {"message": "Template eliminado"}
+
+# ==================== SAFETY OBSERVATIONS ====================
+@api_router.get("/safety/observations")
+async def get_safety_observations(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None,
+    observation_type: Optional[str] = None,
+    status: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if observation_type:
+        query["observation_type"] = observation_type
+    if status:
+        query["status"] = status
+    
+    observations = await db.safety_observations.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return observations
+
+@api_router.get("/safety/observations/{observation_id}")
+async def get_safety_observation(observation_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    observation = await db.safety_observations.find_one({"observation_id": observation_id}, {"_id": 0})
+    if not observation:
+        raise HTTPException(status_code=404, detail="Observación no encontrada")
+    return observation
+
+@api_router.post("/safety/observations")
+async def create_safety_observation(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    observation_id = f"obs_{uuid4().hex[:12]}"
+    
+    observation = {
+        "observation_id": observation_id,
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "project_id": data.get("project_id"),
+        "location": data.get("location", ""),
+        "observation_type": data.get("observation_type", SafetyObservationType.POSITIVE),
+        "category": data.get("category", "general"),
+        "status": SafetyObservationStatus.OPEN,
+        "priority": data.get("priority", Priority.MEDIUM),
+        "assigned_to": data.get("assigned_to"),
+        "corrective_action": data.get("corrective_action", ""),
+        "due_date": data.get("due_date"),
+        "photos": data.get("photos", []),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "resolved_at": None
+    }
+    
+    await db.safety_observations.insert_one(observation)
+    del observation["_id"]
+    
+    await log_audit(user.user_id, user.name, "create", "safety_observation", observation_id, data.get("title"), {})
+    return observation
+
+@api_router.put("/safety/observations/{observation_id}")
+async def update_safety_observation(observation_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.safety_observations.find_one({"observation_id": observation_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Observación no encontrada")
+    
+    update_data = {k: v for k, v in data.items() if v is not None and k != "observation_id"}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    if data.get("status") == SafetyObservationStatus.RESOLVED:
+        update_data["resolved_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.safety_observations.update_one({"observation_id": observation_id}, {"$set": update_data})
+    
+    updated = await db.safety_observations.find_one({"observation_id": observation_id}, {"_id": 0})
+    await log_audit(user.user_id, user.name, "update", "safety_observation", observation_id, data.get("title", ""), {})
+    return updated
+
+@api_router.delete("/safety/observations/{observation_id}")
+async def delete_safety_observation(observation_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.safety_observations.delete_one({"observation_id": observation_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Observación no encontrada")
+    
+    await log_audit(user.user_id, user.name, "delete", "safety_observation", observation_id, "", {})
+    return {"message": "Observación eliminada"}
+
+# ==================== TOOLBOX TALKS ====================
+@api_router.get("/safety/toolbox-talks")
+async def get_toolbox_talks(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None,
+    status: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if status:
+        query["status"] = status
+    
+    talks = await db.toolbox_talks.find(query, {"_id": 0}).sort("scheduled_date", -1).to_list(1000)
+    return talks
+
+@api_router.get("/safety/toolbox-talks/{talk_id}")
+async def get_toolbox_talk(talk_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    talk = await db.toolbox_talks.find_one({"talk_id": talk_id}, {"_id": 0})
+    if not talk:
+        raise HTTPException(status_code=404, detail="Toolbox Talk no encontrado")
+    return talk
+
+@api_router.post("/safety/toolbox-talks")
+async def create_toolbox_talk(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    talk_id = f"talk_{uuid4().hex[:12]}"
+    
+    talk = {
+        "talk_id": talk_id,
+        "title": data.get("title", ""),
+        "topic": data.get("topic", ""),
+        "description": data.get("description", ""),
+        "project_id": data.get("project_id"),
+        "scheduled_date": data.get("scheduled_date"),
+        "duration_minutes": data.get("duration_minutes", 15),
+        "location": data.get("location", ""),
+        "presenter": data.get("presenter") or user.user_id,
+        "presenter_name": data.get("presenter_name") or user.name,
+        "status": ToolboxTalkStatus.SCHEDULED,
+        "attendees": data.get("attendees", []),
+        "attendance_records": [],
+        "materials": data.get("materials", []),
+        "notes": data.get("notes", ""),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "completed_at": None
+    }
+    
+    await db.toolbox_talks.insert_one(talk)
+    del talk["_id"]
+    
+    await log_audit(user.user_id, user.name, "create", "toolbox_talk", talk_id, data.get("title"), {})
+    return talk
+
+@api_router.put("/safety/toolbox-talks/{talk_id}")
+async def update_toolbox_talk(talk_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.toolbox_talks.find_one({"talk_id": talk_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Toolbox Talk no encontrado")
+    
+    update_data = {k: v for k, v in data.items() if v is not None and k != "talk_id"}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    if data.get("status") == ToolboxTalkStatus.COMPLETED:
+        update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.toolbox_talks.update_one({"talk_id": talk_id}, {"$set": update_data})
+    
+    updated = await db.toolbox_talks.find_one({"talk_id": talk_id}, {"_id": 0})
+    await log_audit(user.user_id, user.name, "update", "toolbox_talk", talk_id, data.get("title", ""), {})
+    return updated
+
+@api_router.post("/safety/toolbox-talks/{talk_id}/attendance")
+async def record_toolbox_attendance(talk_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    talk = await db.toolbox_talks.find_one({"talk_id": talk_id})
+    if not talk:
+        raise HTTPException(status_code=404, detail="Toolbox Talk no encontrado")
+    
+    attendance_record = {
+        "user_id": data.get("user_id"),
+        "user_name": data.get("user_name"),
+        "signature": data.get("signature", ""),
+        "attended_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.toolbox_talks.update_one(
+        {"talk_id": talk_id},
+        {"$push": {"attendance_records": attendance_record}}
+    )
+    
+    updated = await db.toolbox_talks.find_one({"talk_id": talk_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/safety/toolbox-talks/{talk_id}")
+async def delete_toolbox_talk(talk_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.toolbox_talks.delete_one({"talk_id": talk_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Toolbox Talk no encontrado")
+    
+    await log_audit(user.user_id, user.name, "delete", "toolbox_talk", talk_id, "", {})
+    return {"message": "Toolbox Talk eliminado"}
+
+# ==================== INCIDENTS ====================
+@api_router.get("/safety/incidents")
+async def get_incidents(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None,
+    status: Optional[str] = None,
+    severity: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if status:
+        query["status"] = status
+    if severity:
+        query["severity"] = severity
+    
+    incidents = await db.safety_incidents.find(query, {"_id": 0}).sort("incident_date", -1).to_list(1000)
+    return incidents
+
+@api_router.get("/safety/incidents/{incident_id}")
+async def get_incident(incident_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    incident = await db.safety_incidents.find_one({"incident_id": incident_id}, {"_id": 0})
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+    return incident
+
+@api_router.post("/safety/incidents")
+async def create_incident(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    incident_id = f"incident_{uuid4().hex[:12]}"
+    
+    incident = {
+        "incident_id": incident_id,
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "project_id": data.get("project_id"),
+        "incident_date": data.get("incident_date", datetime.now(timezone.utc).isoformat()),
+        "incident_time": data.get("incident_time", ""),
+        "location": data.get("location", ""),
+        "incident_type": data.get("incident_type", "other"),
+        "severity": data.get("severity", IncidentSeverity.MINOR),
+        "status": IncidentStatus.REPORTED,
+        "persons_involved": data.get("persons_involved", []),
+        "witnesses": data.get("witnesses", []),
+        "injuries_description": data.get("injuries_description", ""),
+        "property_damage": data.get("property_damage", ""),
+        "immediate_actions": data.get("immediate_actions", ""),
+        "root_cause": data.get("root_cause", ""),
+        "corrective_actions": data.get("corrective_actions", []),
+        "preventive_actions": data.get("preventive_actions", []),
+        "photos": data.get("photos", []),
+        "documents": data.get("documents", []),
+        "reported_by": user.user_id,
+        "reported_by_name": user.name,
+        "assigned_to": data.get("assigned_to"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "closed_at": None
+    }
+    
+    await db.safety_incidents.insert_one(incident)
+    del incident["_id"]
+    
+    await log_audit(user.user_id, user.name, "create", "safety_incident", incident_id, data.get("title"), {})
+    return incident
+
+@api_router.put("/safety/incidents/{incident_id}")
+async def update_incident(incident_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.safety_incidents.find_one({"incident_id": incident_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+    
+    update_data = {k: v for k, v in data.items() if v is not None and k != "incident_id"}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    if data.get("status") == IncidentStatus.CLOSED:
+        update_data["closed_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.safety_incidents.update_one({"incident_id": incident_id}, {"$set": update_data})
+    
+    updated = await db.safety_incidents.find_one({"incident_id": incident_id}, {"_id": 0})
+    await log_audit(user.user_id, user.name, "update", "safety_incident", incident_id, data.get("title", ""), {})
+    return updated
+
+@api_router.delete("/safety/incidents/{incident_id}")
+async def delete_incident(incident_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.safety_incidents.delete_one({"incident_id": incident_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+    
+    await log_audit(user.user_id, user.name, "delete", "safety_incident", incident_id, "", {})
+    return {"message": "Incidente eliminado"}
+
+# ==================== SAFETY DASHBOARD STATS ====================
+@api_router.get("/safety/dashboard")
+async def get_safety_dashboard(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    # Get counts
+    checklists = await db.safety_checklists.find(query, {"_id": 0}).to_list(1000)
+    observations = await db.safety_observations.find(query, {"_id": 0}).to_list(1000)
+    toolbox_talks = await db.toolbox_talks.find(query, {"_id": 0}).to_list(1000)
+    incidents = await db.safety_incidents.find(query, {"_id": 0}).to_list(1000)
+    
+    # Calculate stats
+    total_checklists = len(checklists)
+    completed_checklists = len([c for c in checklists if c.get("status") == SafetyChecklistStatus.COMPLETED])
+    
+    positive_observations = len([o for o in observations if o.get("observation_type") == SafetyObservationType.POSITIVE])
+    negative_observations = len([o for o in observations if o.get("observation_type") == SafetyObservationType.NEGATIVE])
+    open_observations = len([o for o in observations if o.get("status") == SafetyObservationStatus.OPEN])
+    
+    scheduled_talks = len([t for t in toolbox_talks if t.get("status") == ToolboxTalkStatus.SCHEDULED])
+    completed_talks = len([t for t in toolbox_talks if t.get("status") == ToolboxTalkStatus.COMPLETED])
+    
+    total_incidents = len(incidents)
+    open_incidents = len([i for i in incidents if i.get("status") != IncidentStatus.CLOSED])
+    critical_incidents = len([i for i in incidents if i.get("severity") == IncidentSeverity.CRITICAL])
+    
+    # Days without incidents
+    if incidents:
+        last_incident = max(incidents, key=lambda x: x.get("incident_date", ""))
+        last_incident_date = datetime.fromisoformat(last_incident.get("incident_date", "").replace("Z", "+00:00"))
+        days_without_incident = (datetime.now(timezone.utc) - last_incident_date).days
+    else:
+        days_without_incident = 365  # Default if no incidents
+    
+    return {
+        "checklists": {
+            "total": total_checklists,
+            "completed": completed_checklists,
+            "completion_rate": round((completed_checklists / total_checklists * 100) if total_checklists > 0 else 0)
+        },
+        "observations": {
+            "total": len(observations),
+            "positive": positive_observations,
+            "negative": negative_observations,
+            "open": open_observations
+        },
+        "toolbox_talks": {
+            "total": len(toolbox_talks),
+            "scheduled": scheduled_talks,
+            "completed": completed_talks
+        },
+        "incidents": {
+            "total": total_incidents,
+            "open": open_incidents,
+            "critical": critical_incidents,
+            "days_without_incident": days_without_incident
+        },
+        "recent_checklists": checklists[:5],
+        "recent_observations": observations[:5],
+        "recent_incidents": incidents[:5],
+        "upcoming_talks": [t for t in toolbox_talks if t.get("status") == ToolboxTalkStatus.SCHEDULED][:5]
+    }
+
 # ==================== CLIENT PORTAL ====================
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
