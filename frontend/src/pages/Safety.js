@@ -1289,6 +1289,10 @@ const Safety = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setViewingObservation(observation)}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver / Fotos
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => {
                       setEditingObservation(observation);
                       setObservationForm(observation);
