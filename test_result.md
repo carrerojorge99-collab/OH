@@ -176,9 +176,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Safety Module Media Upload"
-    - "Toolbox Talk Bulk Attendance"
-    - "Media File Management"
+    - "Safety Module Login"
+    - "Safety Module Navigation"
+    - "Toolbox Talks Tab"
+    - "Attendance Dialog"
+    - "Observations Tab"
+    - "Incidents Tab"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
