@@ -195,8 +195,8 @@ const Safety = () => {
   const loadInitialData = async () => {
     try {
       const [projectsRes, usersRes] = await Promise.all([
-        api.get('/api/projects'),
-        api.get('/api/users')
+        api.get('/projects'),
+        api.get('/users')
       ]);
       setProjects(projectsRes.data);
       setUsers(usersRes.data);
@@ -211,7 +211,7 @@ const Safety = () => {
     setLoading(true);
     try {
       const params = selectedProject ? `?project_id=${selectedProject}` : '';
-      const response = await api.get(`/api/safety/dashboard${params}`);
+      const response = await api.get(`/safety/dashboard${params}`);
       setDashboardData(response.data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -224,7 +224,7 @@ const Safety = () => {
     setLoading(true);
     try {
       const params = selectedProject ? `?project_id=${selectedProject}` : '';
-      const response = await api.get(`/api/safety/checklists${params}`);
+      const response = await api.get(`/safety/checklists${params}`);
       setChecklists(response.data);
     } catch (error) {
       console.error('Error loading checklists:', error);
@@ -236,7 +236,7 @@ const Safety = () => {
 
   const loadTemplates = async () => {
     try {
-      const response = await api.get('/api/safety/templates');
+      const response = await api.get('/safety/templates');
       setTemplates(response.data);
     } catch (error) {
       console.error('Error loading templates:', error);
@@ -247,7 +247,7 @@ const Safety = () => {
     setLoading(true);
     try {
       const params = selectedProject ? `?project_id=${selectedProject}` : '';
-      const response = await api.get(`/api/safety/observations${params}`);
+      const response = await api.get(`/safety/observations${params}`);
       setObservations(response.data);
     } catch (error) {
       console.error('Error loading observations:', error);
@@ -261,7 +261,7 @@ const Safety = () => {
     setLoading(true);
     try {
       const params = selectedProject ? `?project_id=${selectedProject}` : '';
-      const response = await api.get(`/api/safety/toolbox-talks${params}`);
+      const response = await api.get(`/safety/toolbox-talks${params}`);
       setToolboxTalks(response.data);
     } catch (error) {
       console.error('Error loading toolbox talks:', error);
@@ -275,7 +275,7 @@ const Safety = () => {
     setLoading(true);
     try {
       const params = selectedProject ? `?project_id=${selectedProject}` : '';
-      const response = await api.get(`/api/safety/incidents${params}`);
+      const response = await api.get(`/safety/incidents${params}`);
       setIncidents(response.data);
     } catch (error) {
       console.error('Error loading incidents:', error);
