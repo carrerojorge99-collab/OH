@@ -3,18 +3,22 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
-const AuthCallback = () => {
+const AuthCallback = ({ onComplete }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser, setIsAuthenticated } = useAuth();
+  const [processed, setProcessed] = React.useState(false);
 
   useEffect(() => {
+    if (processed) return;
+    
     const processSession = async () => {
       const hash = location.hash;
       const params = new URLSearchParams(hash.substring(1));
       const sessionId = params.get('session_id');
 
       if (!sessionId) {
+        if (onComplete) onComplete();
         navigate('/login', { replace: true });
         return;
       }
@@ -34,18 +38,27 @@ const AuthCallback = () => {
         setIsAuthenticated(true);
         sessionStorage.setItem('just_authenticated', 'true');
         
+        // Clear the hash to prevent re-processing
+        window.history.replaceState(null, '', window.location.pathname);
+        
+        setProcessed(true);
+        if (onComplete) onComplete();
+        
         navigate('/dashboard', {
           replace: true,
           state: { user: response.data.user }
         });
       } catch (error) {
         console.error('Error processing session:', error);
+        // Clear the hash on error too
+        window.history.replaceState(null, '', window.location.pathname);
+        if (onComplete) onComplete();
         navigate('/login', { replace: true });
       }
     };
 
     processSession();
-  }, []);
+  }, [processed]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
