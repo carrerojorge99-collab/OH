@@ -1788,13 +1788,14 @@ const Safety = () => {
               <div>
                 <Label>Proyecto</Label>
                 <Select
-                  value={incidentForm.project_id}
-                  onValueChange={(value) => setIncidentForm({...incidentForm, project_id: value})}
+                  value={incidentForm.project_id || "none"}
+                  onValueChange={(value) => setIncidentForm({...incidentForm, project_id: value === "none" ? "" : value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar proyecto" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sin proyecto</SelectItem>
                     {projects.map(p => (
                       <SelectItem key={p.project_id} value={p.project_id}>{p.name}</SelectItem>
                     ))}
