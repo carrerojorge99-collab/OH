@@ -176,13 +176,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Safety Module Login"
-    - "Safety Module Navigation"
-    - "Toolbox Talks Tab"
     - "Attendance Dialog"
     - "Observations Tab"
     - "Incidents Tab"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Attendance Dialog"
+    - "Observations Tab" 
+    - "Incidents Tab"
   test_all: false
   test_priority: "high_first"
 
