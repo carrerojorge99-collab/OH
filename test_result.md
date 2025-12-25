@@ -96,17 +96,77 @@ backend:
         comment: "Users endpoint working correctly. Retrieved 24 users for attendance testing. Used 3 users for bulk attendance registration"
 
 frontend:
-  - task: "Frontend Testing"
-    implemented: false
+  - task: "Safety Module Login"
+    implemented: true
     working: "NA"
-    file: "N/A"
+    file: "/app/frontend/src/pages/Login.js"
     stuck_count: 0
-    priority: "low"
-    needs_retesting: false
+    priority: "high"
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "testing"
-        comment: "Frontend testing not performed as per testing agent guidelines. Backend API endpoints are fully functional"
+        comment: "Starting frontend testing for Safety Module functionality"
+
+  - task: "Safety Module Navigation"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Safety.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing navigation to Safety Module and dashboard loading"
+
+  - task: "Toolbox Talks Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Safety.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing Toolbox Talks tab functionality, detail dialogs, and media upload"
+
+  - task: "Attendance Dialog"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Safety.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing attendance registration dialog with employee checkboxes and external attendees"
+
+  - task: "Observations Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Safety.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing Observations tab with view dialog and media upload functionality"
+
+  - task: "Incidents Tab"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Safety.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing Incidents tab with view functionality and media upload section"
 
 metadata:
   created_by: "testing_agent"
