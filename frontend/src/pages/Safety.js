@@ -1709,7 +1709,7 @@ const Safety = () => {
                     </DropdownMenuItem>
                     {incident.status !== 'closed' && (
                       <DropdownMenuItem onClick={async () => {
-                        await api.put(`/api/safety/incidents/${incident.incident_id}`, { status: 'closed' });
+                        await api.put(`/safety/incidents/${incident.incident_id}`, { status: 'closed' });
                         toast.success('Incidente cerrado');
                         loadIncidents();
                       }}>
