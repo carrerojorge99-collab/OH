@@ -32,9 +32,19 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
   const location = useLocation();
+  const [processingAuth, setProcessingAuth] = React.useState(false);
+  const [authChecked, setAuthChecked] = React.useState(false);
 
-  if (location.hash?.includes('session_id=')) {
-    return <AuthCallback />;
+  // Check for session_id in hash only once
+  React.useEffect(() => {
+    if (location.hash?.includes('session_id=') && !authChecked) {
+      setProcessingAuth(true);
+      setAuthChecked(true);
+    }
+  }, [location.hash, authChecked]);
+
+  if (processingAuth && location.hash?.includes('session_id=')) {
+    return <AuthCallback onComplete={() => setProcessingAuth(false)} />;
   }
 
   return (
