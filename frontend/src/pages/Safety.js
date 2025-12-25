@@ -486,6 +486,9 @@ const Safety = () => {
       title: '',
       topic: '',
       description: '',
+      key_points: [],
+      quiz_questions: [],
+      category: 'general',
       project_id: '',
       scheduled_date: '',
       duration_minutes: 15,
@@ -494,6 +497,22 @@ const Safety = () => {
       attendees: [],
       notes: ''
     });
+  };
+
+  const handleSelectTopic = (topic) => {
+    setToolboxForm({
+      ...toolboxForm,
+      title: topic.title,
+      topic: topic.title,
+      description: topic.description,
+      key_points: topic.key_points || [],
+      quiz_questions: topic.quiz_questions || [],
+      category: topic.category,
+      duration_minutes: topic.duration_minutes
+    });
+    setTopicsLibraryOpen(false);
+    setToolboxDialogOpen(true);
+    toast.success(`Tema "${topic.title}" seleccionado`);
   };
 
   // Incident handlers
