@@ -217,6 +217,7 @@ const Safety = () => {
       loadObservations();
     } else if (activeTab === 'toolbox') {
       loadToolboxTalks();
+      loadToolboxTopics();
     } else if (activeTab === 'incidents') {
       loadIncidents();
     }
