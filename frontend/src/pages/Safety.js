@@ -1690,6 +1690,103 @@ const Safety = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Topics Library Dialog */}
+      <Dialog open={topicsLibraryOpen} onOpenChange={setTopicsLibraryOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-purple-600" />
+              Biblioteca de Temas - Toolbox Talks
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Category Filter */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant={selectedTopicCategory === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedTopicCategory('all')}
+              >
+                Todos
+              </Button>
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <Button
+                  key={key}
+                  variant={selectedTopicCategory === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedTopicCategory(key)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Topics List */}
+            <ScrollArea className="h-[500px] pr-4">
+              <div className="grid gap-3">
+                {toolboxTopics
+                  .filter(topic => selectedTopicCategory === 'all' || topic.category === selectedTopicCategory)
+                  .map(topic => (
+                  <Card 
+                    key={topic.topic_id} 
+                    className="cursor-pointer hover:shadow-md hover:border-purple-300 transition-all"
+                    onClick={() => handleSelectTopic(topic)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold">{topic.title}</h3>
+                            <Badge className={categoryColors[topic.category] || 'bg-gray-100 text-gray-800'}>
+                              {categoryLabels[topic.category] || topic.category}
+                            </Badge>
+                            <span className="text-sm text-gray-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {topic.duration_minutes} min
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">{topic.description}</p>
+                          
+                          {/* Key Points Preview */}
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                              <ListChecks className="w-3 h-3" />
+                              Puntos Clave ({topic.key_points?.length || 0})
+                            </p>
+                            <ul className="text-xs text-gray-500 pl-4 space-y-0.5">
+                              {topic.key_points?.slice(0, 3).map((point, idx) => (
+                                <li key={idx} className="list-disc">{point.substring(0, 60)}{point.length > 60 ? '...' : ''}</li>
+                              ))}
+                              {(topic.key_points?.length || 0) > 3 && (
+                                <li className="text-purple-600">+ {topic.key_points.length - 3} más...</li>
+                              )}
+                            </ul>
+                          </div>
+
+                          {/* Quiz Questions Preview */}
+                          {topic.quiz_questions?.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                                <HelpCircle className="w-3 h-3" />
+                                {topic.quiz_questions.length} Preguntas de verificación
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTopicsLibraryOpen(false)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
