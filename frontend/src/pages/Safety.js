@@ -522,6 +522,77 @@ const Safety = () => {
     toast.success(`Tema "${topic.title}" seleccionado`);
   };
 
+  // Media upload handler
+  const handleMediaUpload = async (file, entityType, entityId, refreshFn) => {
+    if (!file) return;
+    
+    setUploadingMedia(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post(
+        `/safety/upload?entity_type=${entityType}&entity_id=${entityId}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      
+      toast.success('Archivo subido correctamente');
+      if (refreshFn) refreshFn();
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      toast.error(error.response?.data?.detail || 'Error al subir archivo');
+      return null;
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  const handleMediaDelete = async (filename, entityType, entityId, refreshFn) => {
+    if (!window.confirm('¿Eliminar este archivo?')) return;
+    
+    try {
+      await api.delete(`/safety/media/${filename}?entity_type=${entityType}&entity_id=${entityId}`);
+      toast.success('Archivo eliminado');
+      if (refreshFn) refreshFn();
+    } catch (error) {
+      console.error('Error deleting media:', error);
+      toast.error('Error al eliminar archivo');
+    }
+  };
+
+  // Attendance handler for Toolbox Talks
+  const handleSaveAttendance = async (talkId) => {
+    try {
+      const payload = {
+        employee_ids: selectedEmployees,
+        external_count: externalCount,
+        external_names: externalNames.filter(n => n.trim() !== '')
+      };
+      
+      await api.post(`/safety/toolbox-talks/${talkId}/attendance-bulk`, payload);
+      toast.success('Asistencia registrada');
+      
+      // Refresh the viewing toolbox
+      const response = await api.get(`/safety/toolbox-talks/${talkId}`);
+      setViewingToolbox(response.data);
+      setAttendanceDialogOpen(false);
+      loadToolboxTalks();
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+      toast.error('Error al guardar asistencia');
+    }
+  };
+
+  const openAttendanceDialog = (talk) => {
+    setSelectedEmployees(talk.attendance_records?.filter(r => r.type === 'employee').map(r => r.user_id) || []);
+    const externals = talk.attendance_records?.filter(r => r.type === 'external') || [];
+    setExternalCount(externals.length || talk.external_attendee_count || 0);
+    setExternalNames(externals.map(e => e.user_name) || ['']);
+    setAttendanceDialogOpen(true);
+  };
+
   // Incident handlers
   const handleSaveIncident = async () => {
     try {
