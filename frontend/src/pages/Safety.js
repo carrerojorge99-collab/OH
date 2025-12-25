@@ -142,6 +142,7 @@ const Safety = () => {
   const [observations, setObservations] = useState([]);
   const [observationDialogOpen, setObservationDialogOpen] = useState(false);
   const [editingObservation, setEditingObservation] = useState(null);
+  const [viewingObservation, setViewingObservation] = useState(null);
   const [observationForm, setObservationForm] = useState({
     title: '',
     description: '',
