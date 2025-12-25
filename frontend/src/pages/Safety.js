@@ -1413,10 +1413,16 @@ const Safety = () => {
             />
           </div>
         </div>
-        <Button onClick={() => { resetToolboxForm(); setToolboxDialogOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Charla
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setTopicsLibraryOpen(true)}>
+            <BookOpen className="w-4 h-4 mr-2" />
+            Biblioteca de Temas
+          </Button>
+          <Button onClick={() => { resetToolboxForm(); setToolboxDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Charla
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4">
