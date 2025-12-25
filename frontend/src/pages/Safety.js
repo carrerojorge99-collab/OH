@@ -2597,6 +2597,72 @@ const Safety = () => {
                   <p className="text-sm bg-yellow-50 p-3 rounded">{viewingIncident.root_cause}</p>
                 </div>
               )}
+
+              {/* Media Gallery */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    Fotos y Videos ({viewingIncident.media?.length || 0})
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          await handleMediaUpload(file, 'incident', viewingIncident.incident_id, async () => {
+                            const response = await api.get(`/safety/incidents/${viewingIncident.incident_id}`);
+                            setViewingIncident(response.data);
+                            loadIncidents();
+                          });
+                        }
+                        e.target.value = '';
+                      }}
+                      disabled={uploadingMedia}
+                    />
+                    <Button variant="outline" size="sm" asChild disabled={uploadingMedia}>
+                      <span>
+                        <Upload className="w-4 h-4 mr-1" />
+                        {uploadingMedia ? 'Subiendo...' : 'Subir'}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+                {viewingIncident.media?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {viewingIncident.media.map((media, idx) => (
+                      <div key={idx} className="relative group">
+                        {media.media_type === 'photo' ? (
+                          <img
+                            src={media.url}
+                            alt={media.original_filename}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <Video className="w-8 h-8 text-gray-400" />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleMediaDelete(media.filename, 'incident', viewingIncident.incident_id, async () => {
+                            const response = await api.get(`/safety/incidents/${viewingIncident.incident_id}`);
+                            setViewingIncident(response.data);
+                            loadIncidents();
+                          })}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-4 text-sm">No hay archivos. Sube fotos o videos del incidente.</p>
+                )}
+              </div>
             </div>
           )}
           <DialogFooter>
