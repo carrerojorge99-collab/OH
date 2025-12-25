@@ -2658,8 +2658,12 @@ def main():
             # Run PDF generation tests
             tester = PDFGenerationTester()
             results = tester.run_pdf_generation_tests()
+        elif sys.argv[1] == "safety":
+            # Run Safety Module tests
+            tester = SafetyModuleTester()
+            results = tester.run_safety_module_tests()
         else:
-            print("Usage: python backend_test.py [clock|export|client|pdf]")
+            print("Usage: python backend_test.py [clock|export|client|pdf|safety]")
             return 1
     else:
         # Run full API tests
