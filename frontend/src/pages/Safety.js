@@ -160,10 +160,16 @@ const Safety = () => {
   const [toolboxDialogOpen, setToolboxDialogOpen] = useState(false);
   const [editingToolbox, setEditingToolbox] = useState(null);
   const [viewingToolbox, setViewingToolbox] = useState(null);
+  const [toolboxTopics, setToolboxTopics] = useState([]);
+  const [topicsLibraryOpen, setTopicsLibraryOpen] = useState(false);
+  const [selectedTopicCategory, setSelectedTopicCategory] = useState('all');
   const [toolboxForm, setToolboxForm] = useState({
     title: '',
     topic: '',
     description: '',
+    key_points: [],
+    quiz_questions: [],
+    category: 'general',
     project_id: '',
     scheduled_date: '',
     duration_minutes: 15,
