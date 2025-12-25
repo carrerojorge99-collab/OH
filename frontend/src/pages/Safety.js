@@ -289,10 +289,10 @@ const Safety = () => {
   const handleSaveChecklist = async () => {
     try {
       if (editingChecklist) {
-        await api.put(`/api/safety/checklists/${editingChecklist.checklist_id}`, checklistForm);
+        await api.put(`/safety/checklists/${editingChecklist.checklist_id}`, checklistForm);
         toast.success('Checklist actualizado');
       } else {
-        await api.post('/api/safety/checklists', checklistForm);
+        await api.post('/safety/checklists', checklistForm);
         toast.success('Checklist creado');
       }
       setChecklistDialogOpen(false);
