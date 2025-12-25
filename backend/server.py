@@ -3783,6 +3783,205 @@ async def delete_incident(incident_id: str, request: Request, session_token: Opt
     await log_audit(user.user_id, user.name, "delete", "safety_incident", incident_id, "", {})
     return {"message": "Incidente eliminado"}
 
+# ==================== SAFETY MEDIA UPLOAD ====================
+SAFETY_UPLOAD_DIR = Path("/app/backend/uploads/safety")
+SAFETY_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@api_router.post("/safety/upload")
+async def upload_safety_media(
+    file: UploadFile = File(...),
+    entity_type: str = Query(...),  # observation, toolbox_talk, incident
+    entity_id: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Upload photos/videos for safety module entities"""
+    user = await get_current_user(request, session_token)
+    
+    # Validate file type
+    allowed_types = [
+        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
+        "video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"
+    ]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Solo imágenes (JPG, PNG, GIF, WEBP) y videos (MP4, MOV, AVI, WEBM)")
+    
+    # Max file size: 50MB
+    MAX_SIZE = 50 * 1024 * 1024
+    content = await file.read()
+    if len(content) > MAX_SIZE:
+        raise HTTPException(status_code=400, detail="El archivo excede el límite de 50MB")
+    
+    # Generate unique filename
+    ext = Path(file.filename).suffix or ".jpg"
+    filename = f"{entity_type}_{entity_id}_{uuid4().hex[:8]}{ext}"
+    file_path = SAFETY_UPLOAD_DIR / filename
+    
+    # Save file
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Create media record
+    media_record = {
+        "media_id": f"media_{uuid4().hex[:12]}",
+        "filename": filename,
+        "original_filename": file.filename,
+        "file_size": len(content),
+        "file_type": file.content_type,
+        "media_type": "photo" if file.content_type.startswith("image/") else "video",
+        "url": f"/api/safety/media/{filename}",
+        "uploaded_by": user.user_id,
+        "uploaded_by_name": user.name,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Update the corresponding entity
+    collection_map = {
+        "observation": "safety_observations",
+        "toolbox_talk": "toolbox_talks",
+        "incident": "safety_incidents"
+    }
+    id_field_map = {
+        "observation": "observation_id",
+        "toolbox_talk": "talk_id",
+        "incident": "incident_id"
+    }
+    
+    collection_name = collection_map.get(entity_type)
+    id_field = id_field_map.get(entity_type)
+    
+    if not collection_name or not id_field:
+        raise HTTPException(status_code=400, detail="Tipo de entidad no válido")
+    
+    collection = db[collection_name]
+    entity = await collection.find_one({id_field: entity_id})
+    
+    if not entity:
+        # Remove uploaded file if entity not found
+        file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=404, detail=f"Entidad {entity_type} no encontrada")
+    
+    # Add media to entity's media list
+    await collection.update_one(
+        {id_field: entity_id},
+        {"$push": {"media": media_record}}
+    )
+    
+    return media_record
+
+@api_router.get("/safety/media/{filename}")
+async def get_safety_media(filename: str):
+    """Serve safety media files"""
+    file_path = SAFETY_UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+    
+    media_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return FileResponse(file_path, media_type=media_type)
+
+@api_router.delete("/safety/media/{filename}")
+async def delete_safety_media(
+    filename: str,
+    entity_type: str = Query(...),
+    entity_id: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a safety media file"""
+    user = await get_current_user(request, session_token)
+    
+    file_path = SAFETY_UPLOAD_DIR / filename
+    if file_path.exists():
+        file_path.unlink()
+    
+    # Remove from entity
+    collection_map = {
+        "observation": "safety_observations",
+        "toolbox_talk": "toolbox_talks",
+        "incident": "safety_incidents"
+    }
+    id_field_map = {
+        "observation": "observation_id",
+        "toolbox_talk": "talk_id",
+        "incident": "incident_id"
+    }
+    
+    collection_name = collection_map.get(entity_type)
+    id_field = id_field_map.get(entity_type)
+    
+    if collection_name and id_field:
+        collection = db[collection_name]
+        await collection.update_one(
+            {id_field: entity_id},
+            {"$pull": {"media": {"filename": filename}}}
+        )
+    
+    return {"message": "Archivo eliminado"}
+
+# ==================== TOOLBOX ATTENDANCE WITH EMPLOYEES ====================
+@api_router.post("/safety/toolbox-talks/{talk_id}/attendance-bulk")
+async def record_toolbox_attendance_bulk(
+    talk_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Record attendance for multiple employees and external attendees"""
+    user = await get_current_user(request, session_token)
+    
+    talk = await db.toolbox_talks.find_one({"talk_id": talk_id})
+    if not talk:
+        raise HTTPException(status_code=404, detail="Toolbox Talk no encontrado")
+    
+    employee_ids = data.get("employee_ids", [])
+    external_count = data.get("external_count", 0)
+    external_names = data.get("external_names", [])
+    
+    attendance_records = []
+    
+    # Add employee attendance
+    for emp_id in employee_ids:
+        emp = await db.users.find_one({"user_id": emp_id}, {"_id": 0})
+        if emp:
+            attendance_records.append({
+                "user_id": emp_id,
+                "user_name": emp.get("name", "Desconocido"),
+                "type": "employee",
+                "attended_at": datetime.now(timezone.utc).isoformat()
+            })
+    
+    # Add external attendees
+    for i, name in enumerate(external_names):
+        attendance_records.append({
+            "user_id": f"external_{i}",
+            "user_name": name,
+            "type": "external",
+            "attended_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Add remaining external count without names
+    for i in range(len(external_names), external_count):
+        attendance_records.append({
+            "user_id": f"external_{i}",
+            "user_name": f"Externo {i + 1}",
+            "type": "external",
+            "attended_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Update talk with new attendance records
+    await db.toolbox_talks.update_one(
+        {"talk_id": talk_id},
+        {
+            "$set": {
+                "attendance_records": attendance_records,
+                "external_attendee_count": external_count
+            }
+        }
+    )
+    
+    updated = await db.toolbox_talks.find_one({"talk_id": talk_id}, {"_id": 0})
+    return updated
+
 # ==================== SAFETY DASHBOARD STATS ====================
 @api_router.get("/safety/dashboard")
 async def get_safety_dashboard(
