@@ -417,7 +417,7 @@ const Safety = () => {
   const handleDeleteToolbox = async (talkId) => {
     if (!window.confirm('¿Eliminar este Toolbox Talk?')) return;
     try {
-      await api.delete(`/api/safety/toolbox-talks/${talkId}`);
+      await api.delete(`/safety/toolbox-talks/${talkId}`);
       toast.success('Toolbox Talk eliminado');
       loadToolboxTalks();
     } catch (error) {
