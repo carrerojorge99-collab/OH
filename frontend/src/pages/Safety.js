@@ -1478,6 +1478,131 @@ const Safety = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Observation Dialog */}
+      <Dialog open={!!viewingObservation} onOpenChange={() => setViewingObservation(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {viewingObservation?.observation_type === 'positive' ? (
+                <ThumbsUp className="w-5 h-5 text-green-600" />
+              ) : (
+                <ThumbsDown className="w-5 h-5 text-red-600" />
+              )}
+              {viewingObservation?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {viewingObservation && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-500">Tipo</p>
+                  <Badge className={viewingObservation.observation_type === 'positive' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                    {viewingObservation.observation_type === 'positive' ? 'Positiva' : 'Negativa'}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Estado</p>
+                  <Badge className={statusColors[viewingObservation.status]}>
+                    {statusLabels[viewingObservation.status]}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Ubicación</p>
+                  <p className="font-medium">{viewingObservation.location || 'No especificada'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Prioridad</p>
+                  <Badge className={priorityColors[viewingObservation.priority]}>
+                    {viewingObservation.priority}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Descripción</p>
+                <p className="text-sm">{viewingObservation.description}</p>
+              </div>
+
+              {viewingObservation.corrective_action && (
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <p className="text-sm font-medium text-yellow-800 mb-1">Acción Correctiva</p>
+                  <p className="text-sm text-yellow-700">{viewingObservation.corrective_action}</p>
+                </div>
+              )}
+
+              {/* Media Gallery */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    Fotos y Videos ({viewingObservation.media?.length || 0})
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          await handleMediaUpload(file, 'observation', viewingObservation.observation_id, async () => {
+                            const response = await api.get(`/safety/observations/${viewingObservation.observation_id}`);
+                            setViewingObservation(response.data);
+                            loadObservations();
+                          });
+                        }
+                        e.target.value = '';
+                      }}
+                      disabled={uploadingMedia}
+                    />
+                    <Button variant="outline" size="sm" asChild disabled={uploadingMedia}>
+                      <span>
+                        <Upload className="w-4 h-4 mr-1" />
+                        {uploadingMedia ? 'Subiendo...' : 'Subir'}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+                {viewingObservation.media?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {viewingObservation.media.map((media, idx) => (
+                      <div key={idx} className="relative group">
+                        {media.media_type === 'photo' ? (
+                          <img
+                            src={media.url}
+                            alt={media.original_filename}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <Video className="w-8 h-8 text-gray-400" />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleMediaDelete(media.filename, 'observation', viewingObservation.observation_id, async () => {
+                            const response = await api.get(`/safety/observations/${viewingObservation.observation_id}`);
+                            setViewingObservation(response.data);
+                            loadObservations();
+                          })}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-4 text-sm">No hay archivos. Sube fotos o videos de la observación.</p>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingObservation(null)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
