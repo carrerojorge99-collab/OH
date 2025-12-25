@@ -273,6 +273,15 @@ const Safety = () => {
     }
   };
 
+  const loadToolboxTopics = async () => {
+    try {
+      const response = await api.get('/safety/toolbox-topics');
+      setToolboxTopics(response.data);
+    } catch (error) {
+      console.error('Error loading toolbox topics:', error);
+    }
+  };
+
   const loadObservations = async () => {
     setLoading(true);
     try {
