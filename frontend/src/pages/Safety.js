@@ -428,11 +428,11 @@ const Safety = () => {
 
   const handleCompleteToolbox = async (talkId) => {
     try {
-      await api.put(`/api/safety/toolbox-talks/${talkId}`, { status: 'completed' });
+      await api.put(`/safety/toolbox-talks/${talkId}`, { status: 'completed' });
       toast.success('Toolbox Talk completado');
       loadToolboxTalks();
       if (viewingToolbox?.talk_id === talkId) {
-        const response = await api.get(`/api/safety/toolbox-talks/${talkId}`);
+        const response = await api.get(`/safety/toolbox-talks/${talkId}`);
         setViewingToolbox(response.data);
       }
     } catch (error) {
