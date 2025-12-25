@@ -2563,6 +2563,270 @@ class SafetyModuleTester:
                     f"Delete results: {', '.join(delete_results)}")
         return success
 
+    def test_get_users_for_attendance(self):
+        """Test getting users list for attendance testing"""
+        print(f"\n🔍 Testing Get Users for Attendance...")
+        
+        try:
+            url = f"{self.api_url}/users"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                users = response.json()
+                if isinstance(users, list) and len(users) > 0:
+                    # Get first few user IDs for testing
+                    self.test_employee_ids = [user['user_id'] for user in users[:3] if user.get('user_id')]
+                    user_names = [user.get('name', 'N/A') for user in users[:3]]
+                    self.log_test("Get Users for Attendance", True, f"Found {len(users)} users. Using {len(self.test_employee_ids)} for testing: {', '.join(user_names)}")
+                    return True, users
+                else:
+                    self.log_test("Get Users for Attendance", False, "", "No users found")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Users for Attendance", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Users for Attendance", False, "", str(e))
+            return False, []
+
+    def test_bulk_attendance_registration(self):
+        """Test bulk attendance registration on existing talk"""
+        print(f"\n🔍 Testing Bulk Attendance Registration...")
+        
+        if not self.test_toolbox_talk_id:
+            self.log_test("Bulk Attendance Registration", False, "", "No talk ID available")
+            return False
+        
+        if not hasattr(self, 'test_employee_ids') or not self.test_employee_ids:
+            self.log_test("Bulk Attendance Registration", False, "", "No employee IDs available")
+            return False
+        
+        try:
+            attendance_data = {
+                "employee_ids": self.test_employee_ids,
+                "external_count": 2,
+                "external_names": ["Juan Pérez", "María González"]
+            }
+            
+            url = f"{self.api_url}/safety/toolbox-talks/{self.test_toolbox_talk_id}/attendance-bulk"
+            response = self.session.post(url, json=attendance_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                attendance_records = response_data.get('attendance_records', [])
+                external_count = response_data.get('external_attendee_count', 0)
+                
+                employee_attendees = [r for r in attendance_records if r.get('type') == 'employee']
+                external_attendees = [r for r in attendance_records if r.get('type') == 'external']
+                
+                self.log_test("Bulk Attendance Registration", True, 
+                            f"Registered {len(employee_attendees)} employees and {len(external_attendees)} external attendees. Total external count: {external_count}")
+                return True, response_data
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Bulk Attendance Registration", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Bulk Attendance Registration", False, "", str(e))
+            return False, {}
+
+    def test_media_upload(self):
+        """Test uploading an image file to toolbox talk"""
+        print(f"\n🔍 Testing Media Upload...")
+        
+        if not self.test_toolbox_talk_id:
+            self.log_test("Media Upload", False, "", "No talk ID available")
+            return False
+        
+        try:
+            # Create a simple test image (1x1 PNG)
+            import base64
+            # Minimal PNG data (1x1 transparent pixel)
+            png_data = base64.b64decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jU8'
+                'IQAAAAABJRU5ErkJggg=='
+            )
+            
+            # Prepare multipart form data
+            files = {
+                'file': ('test_image.png', png_data, 'image/png')
+            }
+            
+            params = {
+                'entity_type': 'toolbox_talk',
+                'entity_id': self.test_toolbox_talk_id
+            }
+            
+            url = f"{self.api_url}/safety/upload"
+            response = self.session.post(url, files=files, params=params, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                self.test_media_filename = response_data.get('filename')
+                media_id = response_data.get('media_id')
+                file_size = response_data.get('file_size')
+                media_type = response_data.get('media_type')
+                
+                self.log_test("Media Upload", True, 
+                            f"Uploaded successfully - Filename: {self.test_media_filename}, Media ID: {media_id}, Size: {file_size} bytes, Type: {media_type}")
+                return True, response_data
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Media Upload", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Media Upload", False, "", str(e))
+            return False, {}
+
+    def test_verify_media_added(self):
+        """Test that media was added to the toolbox talk"""
+        print(f"\n🔍 Testing Verify Media Added to Toolbox Talk...")
+        
+        if not self.test_toolbox_talk_id:
+            self.log_test("Verify Media Added", False, "", "No talk ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/safety/toolbox-talks/{self.test_toolbox_talk_id}"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                talk_data = response.json()
+                media_array = talk_data.get('media', [])
+                
+                if isinstance(media_array, list) and len(media_array) > 0:
+                    # Check if our uploaded file is in the media array
+                    uploaded_media = None
+                    for media in media_array:
+                        if hasattr(self, 'test_media_filename') and media.get('filename') == self.test_media_filename:
+                            uploaded_media = media
+                            break
+                    
+                    if uploaded_media:
+                        self.log_test("Verify Media Added", True, 
+                                    f"Media found in talk - Filename: {uploaded_media.get('filename')}, Type: {uploaded_media.get('media_type')}")
+                        return True, uploaded_media
+                    else:
+                        filename = getattr(self, 'test_media_filename', 'N/A')
+                        self.log_test("Verify Media Added", False, "", f"Uploaded media {filename} not found in talk's media array")
+                        return False, {}
+                else:
+                    self.log_test("Verify Media Added", False, "", "No media found in talk's media array")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Verify Media Added", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Verify Media Added", False, "", str(e))
+            return False, {}
+
+    def test_media_retrieval(self):
+        """Test retrieving the uploaded media file"""
+        print(f"\n🔍 Testing Media Retrieval...")
+        
+        if not hasattr(self, 'test_media_filename') or not self.test_media_filename:
+            self.log_test("Media Retrieval", False, "", "No media filename available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/safety/media/{self.test_media_filename}"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                content_type = response.headers.get('content-type', '')
+                content_length = len(response.content)
+                
+                # Verify it's an image
+                if content_type.startswith('image/'):
+                    self.log_test("Media Retrieval", True, 
+                                f"Media retrieved successfully - Content-Type: {content_type}, Size: {content_length} bytes")
+                    return True, response.content
+                else:
+                    self.log_test("Media Retrieval", False, "", f"Unexpected content type: {content_type}")
+                    return False, None
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Media Retrieval", False, "", error_msg)
+                return False, None
+                
+        except Exception as e:
+            self.log_test("Media Retrieval", False, "", str(e))
+            return False, None
+
+    def test_media_deletion(self):
+        """Test deleting the uploaded media file"""
+        print(f"\n🔍 Testing Media Deletion (Cleanup)...")
+        
+        if not hasattr(self, 'test_media_filename') or not self.test_media_filename or not self.test_toolbox_talk_id:
+            self.log_test("Media Deletion", False, "", "No media filename or talk ID available")
+            return False
+        
+        try:
+            params = {
+                'entity_type': 'toolbox_talk',
+                'entity_id': self.test_toolbox_talk_id
+            }
+            
+            url = f"{self.api_url}/safety/media/{self.test_media_filename}"
+            response = self.session.delete(url, params=params, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                message = response_data.get('message', '')
+                self.log_test("Media Deletion", True, f"Media deleted successfully - {message}")
+                return True
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Media Deletion", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Media Deletion", False, "", str(e))
+            return False
+
     def run_safety_module_tests(self):
         """Run complete safety module test suite"""
         print("🚀 Starting Safety Module Tests")
