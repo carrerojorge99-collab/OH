@@ -1801,13 +1801,92 @@ const Safety = () => {
                 </div>
               )}
 
+              {/* Media Gallery */}
               <div>
-                <p className="text-sm text-gray-500 mb-2">Registro de Asistencia ({viewingToolbox.attendance_records?.length || 0})</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    Fotos y Videos ({viewingToolbox.media?.length || 0})
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          await handleMediaUpload(file, 'toolbox_talk', viewingToolbox.talk_id, async () => {
+                            const response = await api.get(`/safety/toolbox-talks/${viewingToolbox.talk_id}`);
+                            setViewingToolbox(response.data);
+                          });
+                        }
+                        e.target.value = '';
+                      }}
+                      disabled={uploadingMedia}
+                    />
+                    <Button variant="outline" size="sm" asChild disabled={uploadingMedia}>
+                      <span>
+                        <Upload className="w-4 h-4 mr-1" />
+                        {uploadingMedia ? 'Subiendo...' : 'Subir'}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+                {viewingToolbox.media?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {viewingToolbox.media.map((media, idx) => (
+                      <div key={idx} className="relative group">
+                        {media.media_type === 'photo' ? (
+                          <img
+                            src={media.url}
+                            alt={media.original_filename}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <Video className="w-8 h-8 text-gray-400" />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleMediaDelete(media.filename, 'toolbox_talk', viewingToolbox.talk_id, async () => {
+                            const response = await api.get(`/safety/toolbox-talks/${viewingToolbox.talk_id}`);
+                            setViewingToolbox(response.data);
+                          })}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-4 text-sm">No hay archivos</p>
+                )}
+              </div>
+
+              {/* Attendance Section */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Registro de Asistencia ({viewingToolbox.attendance_records?.length || 0})
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => openAttendanceDialog(viewingToolbox)}>
+                    <Users className="w-4 h-4 mr-1" />
+                    Registrar Asistentes
+                  </Button>
+                </div>
                 {viewingToolbox.attendance_records?.length > 0 ? (
                   <div className="space-y-2">
                     {viewingToolbox.attendance_records.map((record, index) => (
                       <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <span>{record.user_name}</span>
+                        <div className="flex items-center gap-2">
+                          <span>{record.user_name}</span>
+                          {record.type === 'external' && (
+                            <Badge variant="outline" className="text-xs">Externo</Badge>
+                          )}
+                        </div>
                         <span className="text-sm text-gray-500">{moment(record.attended_at).format('HH:mm')}</span>
                       </div>
                     ))}
@@ -1826,6 +1905,118 @@ const Safety = () => {
               </Button>
             )}
             <Button variant="outline" onClick={() => setViewingToolbox(null)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Attendance Dialog */}
+      <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Registrar Asistencia
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Employee Selection */}
+            <div>
+              <Label className="mb-2 block">Empleados</Label>
+              <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-2">
+                {users.filter(u => u.role !== 'client').map(user => (
+                  <div key={user.user_id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={user.user_id}
+                      checked={selectedEmployees.includes(user.user_id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedEmployees([...selectedEmployees, user.user_id]);
+                        } else {
+                          setSelectedEmployees(selectedEmployees.filter(id => id !== user.user_id));
+                        }
+                      }}
+                    />
+                    <label htmlFor={user.user_id} className="text-sm cursor-pointer flex-1">
+                      {user.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{selectedEmployees.length} empleados seleccionados</p>
+            </div>
+
+            {/* External Attendees */}
+            <div>
+              <Label className="mb-2 block">Asistentes Externos</Label>
+              <div className="space-y-2">
+                {externalNames.map((name, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      value={name}
+                      onChange={(e) => {
+                        const newNames = [...externalNames];
+                        newNames[idx] = e.target.value;
+                        setExternalNames(newNames);
+                      }}
+                      placeholder={`Nombre externo ${idx + 1}`}
+                      className="flex-1"
+                    />
+                    {idx === externalNames.length - 1 ? (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setExternalNames([...externalNames, ''])}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newNames = externalNames.filter((_, i) => i !== idx);
+                          setExternalNames(newNames.length ? newNames : ['']);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{externalNames.filter(n => n.trim()).length} externos con nombre</p>
+            </div>
+
+            {/* Additional External Count */}
+            <div>
+              <Label>Externos adicionales sin nombre</Label>
+              <Input
+                type="number"
+                min="0"
+                value={externalCount - externalNames.filter(n => n.trim()).length}
+                onChange={(e) => {
+                  const additionalCount = parseInt(e.target.value) || 0;
+                  setExternalCount(externalNames.filter(n => n.trim()).length + additionalCount);
+                }}
+                placeholder="0"
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm font-medium">Resumen de Asistencia</p>
+              <div className="text-sm text-gray-600 mt-1">
+                <p>Empleados: {selectedEmployees.length}</p>
+                <p>Externos: {externalNames.filter(n => n.trim()).length + Math.max(0, externalCount - externalNames.filter(n => n.trim()).length)}</p>
+                <p className="font-medium mt-1">Total: {selectedEmployees.length + externalNames.filter(n => n.trim()).length + Math.max(0, externalCount - externalNames.filter(n => n.trim()).length)}</p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAttendanceDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={() => handleSaveAttendance(viewingToolbox?.talk_id)}>
+              Guardar Asistencia
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
