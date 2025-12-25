@@ -319,13 +319,13 @@ const Safety = () => {
 
   const handleCheckItem = async (checklistId, itemId, isChecked, notes = '') => {
     try {
-      await api.post(`/api/safety/checklists/${checklistId}/check-item`, {
+      await api.post(`/safety/checklists/${checklistId}/check-item`, {
         item_id: itemId,
         is_checked: isChecked,
         notes
       });
       // Reload the viewing checklist
-      const response = await api.get(`/api/safety/checklists/${checklistId}`);
+      const response = await api.get(`/safety/checklists/${checklistId}`);
       setViewingChecklist(response.data);
       loadChecklists();
     } catch (error) {
