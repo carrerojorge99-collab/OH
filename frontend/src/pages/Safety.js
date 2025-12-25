@@ -1693,6 +1693,36 @@ const Safety = () => {
                 </div>
               )}
 
+              {/* Key Points */}
+              {viewingToolbox.key_points?.length > 0 && (
+                <div className="p-3 bg-purple-50 rounded-lg">
+                  <p className="text-sm font-medium text-purple-800 mb-2 flex items-center gap-2">
+                    <ListChecks className="w-4 h-4" />
+                    Puntos Clave ({viewingToolbox.key_points.length})
+                  </p>
+                  <ul className="text-sm text-purple-700 space-y-1 pl-4">
+                    {viewingToolbox.key_points.map((point, idx) => (
+                      <li key={idx} className="list-disc">{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Quiz Questions */}
+              {viewingToolbox.quiz_questions?.length > 0 && (
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4" />
+                    Preguntas de Verificación ({viewingToolbox.quiz_questions.length})
+                  </p>
+                  <ol className="text-sm text-blue-700 space-y-1 pl-4 list-decimal">
+                    {viewingToolbox.quiz_questions.map((question, idx) => (
+                      <li key={idx}>{question}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
               <div>
                 <p className="text-sm text-gray-500 mb-2">Registro de Asistencia ({viewingToolbox.attendance_records?.length || 0})</p>
                 {viewingToolbox.attendance_records?.length > 0 ? (
