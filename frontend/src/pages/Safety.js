@@ -924,13 +924,14 @@ const Safety = () => {
               <div>
                 <Label>Asignado a</Label>
                 <Select
-                  value={checklistForm.assigned_to}
-                  onValueChange={(value) => setChecklistForm({...checklistForm, assigned_to: value})}
+                  value={checklistForm.assigned_to || "none"}
+                  onValueChange={(value) => setChecklistForm({...checklistForm, assigned_to: value === "none" ? "" : value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar usuario" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {users.map(u => (
                       <SelectItem key={u.user_id} value={u.user_id}>{u.name}</SelectItem>
                     ))}
