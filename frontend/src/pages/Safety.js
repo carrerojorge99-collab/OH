@@ -1161,7 +1161,7 @@ const Safety = () => {
                     </DropdownMenuItem>
                     {observation.status === 'open' && (
                       <DropdownMenuItem onClick={async () => {
-                        await api.put(`/api/safety/observations/${observation.observation_id}`, { status: 'resolved' });
+                        await api.put(`/safety/observations/${observation.observation_id}`, { status: 'resolved' });
                         toast.success('Observación resuelta');
                         loadObservations();
                       }}>
