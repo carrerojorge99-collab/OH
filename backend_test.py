@@ -2858,6 +2858,20 @@ class SafetyModuleTester:
         self.test_record_toolbox_talk_attendance()
         self.test_get_toolbox_talks()
         
+        # Step 5.1: Test Media Upload and Bulk Attendance (New Features)
+        users_success, users = self.test_get_users_for_attendance()
+        if users_success and self.test_employee_ids:
+            self.test_bulk_attendance_registration()
+        else:
+            print("⚠️  Skipping bulk attendance test - no employee IDs available")
+        
+        # Test media upload functionality
+        upload_success, upload_data = self.test_media_upload()
+        if upload_success:
+            self.test_verify_media_added()
+            self.test_media_retrieval()
+            self.test_media_deletion()
+        
         # Step 6: Test Safety Incidents
         self.test_create_incident()
         self.test_get_safety_incidents()
