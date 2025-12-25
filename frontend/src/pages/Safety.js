@@ -1490,13 +1490,14 @@ const Safety = () => {
               <div>
                 <Label>Proyecto</Label>
                 <Select
-                  value={toolboxForm.project_id}
-                  onValueChange={(value) => setToolboxForm({...toolboxForm, project_id: value})}
+                  value={toolboxForm.project_id || "none"}
+                  onValueChange={(value) => setToolboxForm({...toolboxForm, project_id: value === "none" ? "" : value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar proyecto" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sin proyecto</SelectItem>
                     {projects.map(p => (
                       <SelectItem key={p.project_id} value={p.project_id}>{p.name}</SelectItem>
                     ))}
