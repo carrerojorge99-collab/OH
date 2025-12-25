@@ -1978,6 +1978,667 @@ class ProjectManagementAPITester:
             "failed_tests": failed_tests
         }
 
+class SafetyModuleTester:
+    def __init__(self, base_url="https://safe-workflow-1.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.test_checklist_id = None
+        self.test_observation_id = None
+        self.test_toolbox_talk_id = None
+        self.test_incident_id = None
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="j.carrero@ohsmspr.com", password="Axel52418!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_safety_dashboard(self):
+        """Test safety dashboard endpoint"""
+        print(f"\n🔍 Testing Safety Dashboard...")
+        
+        try:
+            url = f"{self.api_url}/safety/dashboard"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                dashboard_data = response.json()
+                
+                # Check required fields
+                required_fields = ['days_without_incidents', 'total_checklists', 'total_observations', 'total_toolbox_talks', 'total_incidents']
+                missing_fields = [field for field in required_fields if field not in dashboard_data]
+                
+                if not missing_fields:
+                    days_without = dashboard_data['days_without_incidents']
+                    checklists = dashboard_data['total_checklists']
+                    observations = dashboard_data['total_observations']
+                    talks = dashboard_data['total_toolbox_talks']
+                    incidents = dashboard_data['total_incidents']
+                    
+                    self.log_test("Safety Dashboard", True, 
+                                f"Days without incidents: {days_without}, Checklists: {checklists}, Observations: {observations}, Talks: {talks}, Incidents: {incidents}")
+                    return True, dashboard_data
+                else:
+                    self.log_test("Safety Dashboard", False, "", f"Missing fields: {missing_fields}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Safety Dashboard", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Safety Dashboard", False, "", str(e))
+            return False, {}
+
+    def test_create_safety_checklist(self):
+        """Test creating a safety checklist"""
+        print(f"\n🔍 Testing Create Safety Checklist...")
+        
+        checklist_data = {
+            "title": "Lista de Verificación de Seguridad - Prueba",
+            "description": "Lista de verificación para pruebas del sistema",
+            "items": [
+                {"text": "Verificar uso de EPP", "checked": False},
+                {"text": "Inspeccionar área de trabajo", "checked": False},
+                {"text": "Confirmar procedimientos de emergencia", "checked": False}
+            ]
+        }
+        
+        try:
+            url = f"{self.api_url}/safety/checklists"
+            response = self.session.post(url, json=checklist_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'checklist_id' in response_data:
+                    self.test_checklist_id = response_data['checklist_id']
+                    title = response_data.get('title', 'N/A')
+                    items_count = len(response_data.get('items', []))
+                    self.log_test("Create Safety Checklist", True, 
+                                f"Checklist created - ID: {self.test_checklist_id}, Title: {title}, Items: {items_count}")
+                    return True, response_data
+                else:
+                    self.log_test("Create Safety Checklist", False, "", "No checklist_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Create Safety Checklist", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Safety Checklist", False, "", str(e))
+            return False, {}
+
+    def test_check_checklist_item(self):
+        """Test checking items in a safety checklist"""
+        print(f"\n🔍 Testing Check Checklist Item...")
+        
+        if not self.test_checklist_id:
+            self.log_test("Check Checklist Item", False, "", "No checklist ID available")
+            return False
+        
+        check_data = {
+            "item_index": 0,
+            "checked": True
+        }
+        
+        try:
+            url = f"{self.api_url}/safety/checklists/{self.test_checklist_id}/check-item"
+            response = self.session.post(url, json=check_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                completion_percentage = response_data.get('completion_percentage', 0)
+                self.log_test("Check Checklist Item", True, 
+                            f"Item checked successfully - Completion: {completion_percentage}%")
+                return True, response_data
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Check Checklist Item", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Check Checklist Item", False, "", str(e))
+            return False, {}
+
+    def test_create_safety_observation(self):
+        """Test creating a safety observation"""
+        print(f"\n🔍 Testing Create Safety Observation...")
+        
+        observation_data = {
+            "title": "Observación de Seguridad - Prueba",
+            "description": "Observación positiva de uso correcto de EPP",
+            "type": "positive",
+            "location": "Área de construcción",
+            "corrective_action": ""
+        }
+        
+        try:
+            url = f"{self.api_url}/safety/observations"
+            response = self.session.post(url, json=observation_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'observation_id' in response_data:
+                    self.test_observation_id = response_data['observation_id']
+                    title = response_data.get('title', 'N/A')
+                    obs_type = response_data.get('type', 'N/A')
+                    self.log_test("Create Safety Observation", True, 
+                                f"Observation created - ID: {self.test_observation_id}, Title: {title}, Type: {obs_type}")
+                    return True, response_data
+                else:
+                    self.log_test("Create Safety Observation", False, "", "No observation_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Create Safety Observation", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Safety Observation", False, "", str(e))
+            return False, {}
+
+    def test_create_negative_observation(self):
+        """Test creating a negative safety observation with corrective action"""
+        print(f"\n🔍 Testing Create Negative Safety Observation...")
+        
+        observation_data = {
+            "title": "Observación Negativa - Falta de EPP",
+            "description": "Trabajador sin casco de seguridad en área de construcción",
+            "type": "negative",
+            "location": "Área de construcción - Sector B",
+            "corrective_action": "Proporcionar casco de seguridad y capacitación sobre uso de EPP"
+        }
+        
+        try:
+            url = f"{self.api_url}/safety/observations"
+            response = self.session.post(url, json=observation_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'observation_id' in response_data:
+                    obs_id = response_data['observation_id']
+                    title = response_data.get('title', 'N/A')
+                    obs_type = response_data.get('type', 'N/A')
+                    corrective_action = response_data.get('corrective_action', 'N/A')
+                    self.log_test("Create Negative Safety Observation", True, 
+                                f"Negative observation created - ID: {obs_id}, Type: {obs_type}, Has corrective action: {bool(corrective_action)}")
+                    return True, response_data
+                else:
+                    self.log_test("Create Negative Safety Observation", False, "", "No observation_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Create Negative Safety Observation", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Negative Safety Observation", False, "", str(e))
+            return False, {}
+
+    def test_create_toolbox_talk(self):
+        """Test creating a toolbox talk"""
+        print(f"\n🔍 Testing Create Toolbox Talk...")
+        
+        talk_data = {
+            "title": "Charla de Seguridad - Uso de EPP",
+            "description": "Charla sobre la importancia del uso correcto del equipo de protección personal",
+            "scheduled_date": "2024-12-20",
+            "duration_minutes": 30,
+            "presenter": "Supervisor de Seguridad",
+            "topics": ["EPP", "Seguridad en construcción", "Procedimientos de emergencia"]
+        }
+        
+        try:
+            url = f"{self.api_url}/safety/toolbox-talks"
+            response = self.session.post(url, json=talk_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'talk_id' in response_data:
+                    self.test_toolbox_talk_id = response_data['talk_id']
+                    title = response_data.get('title', 'N/A')
+                    scheduled_date = response_data.get('scheduled_date', 'N/A')
+                    self.log_test("Create Toolbox Talk", True, 
+                                f"Toolbox talk created - ID: {self.test_toolbox_talk_id}, Title: {title}, Date: {scheduled_date}")
+                    return True, response_data
+                else:
+                    self.log_test("Create Toolbox Talk", False, "", "No talk_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Create Toolbox Talk", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Toolbox Talk", False, "", str(e))
+            return False, {}
+
+    def test_record_toolbox_talk_attendance(self):
+        """Test recording attendance for a toolbox talk"""
+        print(f"\n🔍 Testing Record Toolbox Talk Attendance...")
+        
+        if not self.test_toolbox_talk_id:
+            self.log_test("Record Toolbox Talk Attendance", False, "", "No toolbox talk ID available")
+            return False
+        
+        attendance_data = {
+            "attendee_name": "Juan Pérez",
+            "attendee_position": "Operario de construcción",
+            "signature": "JP_signature_data"
+        }
+        
+        try:
+            url = f"{self.api_url}/safety/toolbox-talks/{self.test_toolbox_talk_id}/attendance"
+            response = self.session.post(url, json=attendance_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                attendee_count = len(response_data.get('attendees', []))
+                self.log_test("Record Toolbox Talk Attendance", True, 
+                            f"Attendance recorded successfully - Total attendees: {attendee_count}")
+                return True, response_data
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Record Toolbox Talk Attendance", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Record Toolbox Talk Attendance", False, "", str(e))
+            return False, {}
+
+    def test_create_incident(self):
+        """Test creating a safety incident"""
+        print(f"\n🔍 Testing Create Safety Incident...")
+        
+        incident_data = {
+            "title": "Incidente Menor - Corte en dedo",
+            "description": "Trabajador se cortó el dedo con herramienta manual",
+            "incident_date": "2024-12-19",
+            "location": "Área de carpintería",
+            "severity": "minor",
+            "injured_person": "Carlos Rodríguez",
+            "witness": "María González",
+            "immediate_action": "Primeros auxilios aplicados, herida limpiada y vendada",
+            "root_cause": "Herramienta sin protección adecuada",
+            "corrective_action": "Reemplazar herramienta y capacitar sobre uso seguro"
+        }
+        
+        try:
+            url = f"{self.api_url}/safety/incidents"
+            response = self.session.post(url, json=incident_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'incident_id' in response_data:
+                    self.test_incident_id = response_data['incident_id']
+                    title = response_data.get('title', 'N/A')
+                    severity = response_data.get('severity', 'N/A')
+                    self.log_test("Create Safety Incident", True, 
+                                f"Incident created - ID: {self.test_incident_id}, Title: {title}, Severity: {severity}")
+                    return True, response_data
+                else:
+                    self.log_test("Create Safety Incident", False, "", "No incident_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Create Safety Incident", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Safety Incident", False, "", str(e))
+            return False, {}
+
+    def test_get_safety_checklists(self):
+        """Test getting safety checklists list"""
+        print(f"\n🔍 Testing Get Safety Checklists...")
+        
+        try:
+            url = f"{self.api_url}/safety/checklists"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                checklists = response.json()
+                if isinstance(checklists, list):
+                    self.log_test("Get Safety Checklists", True, 
+                                f"Retrieved {len(checklists)} checklists")
+                    return True, checklists
+                else:
+                    self.log_test("Get Safety Checklists", False, "", f"Invalid response format: {checklists}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Safety Checklists", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Safety Checklists", False, "", str(e))
+            return False, []
+
+    def test_get_safety_observations(self):
+        """Test getting safety observations list"""
+        print(f"\n🔍 Testing Get Safety Observations...")
+        
+        try:
+            url = f"{self.api_url}/safety/observations"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                observations = response.json()
+                if isinstance(observations, list):
+                    positive_count = len([obs for obs in observations if obs.get('type') == 'positive'])
+                    negative_count = len([obs for obs in observations if obs.get('type') == 'negative'])
+                    self.log_test("Get Safety Observations", True, 
+                                f"Retrieved {len(observations)} observations (Positive: {positive_count}, Negative: {negative_count})")
+                    return True, observations
+                else:
+                    self.log_test("Get Safety Observations", False, "", f"Invalid response format: {observations}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Safety Observations", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Safety Observations", False, "", str(e))
+            return False, []
+
+    def test_get_toolbox_talks(self):
+        """Test getting toolbox talks list"""
+        print(f"\n🔍 Testing Get Toolbox Talks...")
+        
+        try:
+            url = f"{self.api_url}/safety/toolbox-talks"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                talks = response.json()
+                if isinstance(talks, list):
+                    completed_count = len([talk for talk in talks if talk.get('status') == 'completed'])
+                    scheduled_count = len([talk for talk in talks if talk.get('status') == 'scheduled'])
+                    self.log_test("Get Toolbox Talks", True, 
+                                f"Retrieved {len(talks)} talks (Completed: {completed_count}, Scheduled: {scheduled_count})")
+                    return True, talks
+                else:
+                    self.log_test("Get Toolbox Talks", False, "", f"Invalid response format: {talks}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Toolbox Talks", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Toolbox Talks", False, "", str(e))
+            return False, []
+
+    def test_get_safety_incidents(self):
+        """Test getting safety incidents list"""
+        print(f"\n🔍 Testing Get Safety Incidents...")
+        
+        try:
+            url = f"{self.api_url}/safety/incidents"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                incidents = response.json()
+                if isinstance(incidents, list):
+                    minor_count = len([inc for inc in incidents if inc.get('severity') == 'minor'])
+                    major_count = len([inc for inc in incidents if inc.get('severity') == 'major'])
+                    critical_count = len([inc for inc in incidents if inc.get('severity') == 'critical'])
+                    self.log_test("Get Safety Incidents", True, 
+                                f"Retrieved {len(incidents)} incidents (Minor: {minor_count}, Major: {major_count}, Critical: {critical_count})")
+                    return True, incidents
+                else:
+                    self.log_test("Get Safety Incidents", False, "", f"Invalid response format: {incidents}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Safety Incidents", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Safety Incidents", False, "", str(e))
+            return False, []
+
+    def test_delete_safety_items(self):
+        """Test deleting created safety items"""
+        print(f"\n🔍 Testing Delete Safety Items...")
+        
+        delete_results = []
+        
+        # Delete checklist
+        if self.test_checklist_id:
+            try:
+                url = f"{self.api_url}/safety/checklists/{self.test_checklist_id}"
+                response = self.session.delete(url, timeout=30)
+                if response.status_code == 200:
+                    delete_results.append("Checklist deleted")
+                else:
+                    delete_results.append(f"Checklist delete failed: {response.status_code}")
+            except Exception as e:
+                delete_results.append(f"Checklist delete error: {str(e)}")
+        
+        # Delete observation
+        if self.test_observation_id:
+            try:
+                url = f"{self.api_url}/safety/observations/{self.test_observation_id}"
+                response = self.session.delete(url, timeout=30)
+                if response.status_code == 200:
+                    delete_results.append("Observation deleted")
+                else:
+                    delete_results.append(f"Observation delete failed: {response.status_code}")
+            except Exception as e:
+                delete_results.append(f"Observation delete error: {str(e)}")
+        
+        # Delete toolbox talk
+        if self.test_toolbox_talk_id:
+            try:
+                url = f"{self.api_url}/safety/toolbox-talks/{self.test_toolbox_talk_id}"
+                response = self.session.delete(url, timeout=30)
+                if response.status_code == 200:
+                    delete_results.append("Toolbox talk deleted")
+                else:
+                    delete_results.append(f"Toolbox talk delete failed: {response.status_code}")
+            except Exception as e:
+                delete_results.append(f"Toolbox talk delete error: {str(e)}")
+        
+        # Delete incident
+        if self.test_incident_id:
+            try:
+                url = f"{self.api_url}/safety/incidents/{self.test_incident_id}"
+                response = self.session.delete(url, timeout=30)
+                if response.status_code == 200:
+                    delete_results.append("Incident deleted")
+                else:
+                    delete_results.append(f"Incident delete failed: {response.status_code}")
+            except Exception as e:
+                delete_results.append(f"Incident delete error: {str(e)}")
+        
+        success = all("deleted" in result for result in delete_results)
+        self.log_test("Delete Safety Items", success, 
+                    f"Delete results: {', '.join(delete_results)}")
+        return success
+
+    def run_safety_module_tests(self):
+        """Run complete safety module test suite"""
+        print("🚀 Starting Safety Module Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Test Safety Dashboard
+        self.test_safety_dashboard()
+        
+        # Step 3: Test Safety Checklists
+        self.test_create_safety_checklist()
+        self.test_check_checklist_item()
+        self.test_get_safety_checklists()
+        
+        # Step 4: Test Safety Observations
+        self.test_create_safety_observation()
+        self.test_create_negative_observation()
+        self.test_get_safety_observations()
+        
+        # Step 5: Test Toolbox Talks
+        self.test_create_toolbox_talk()
+        self.test_record_toolbox_talk_attendance()
+        self.test_get_toolbox_talks()
+        
+        # Step 6: Test Safety Incidents
+        self.test_create_incident()
+        self.test_get_safety_incidents()
+        
+        # Step 7: Test Dashboard again to see updated stats
+        print(f"\n🔍 Testing Safety Dashboard (After Creating Items)...")
+        self.test_safety_dashboard()
+        
+        # Step 8: Clean up - Delete test items
+        self.test_delete_safety_items()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 SAFETY MODULE TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if any(keyword in test['test'] for keyword in ['Dashboard', 'Create', 'Login'])]
+        if critical_failures:
+            print("\n🚨 CRITICAL ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 def main():
     """Main function"""
     if len(sys.argv) > 1:
