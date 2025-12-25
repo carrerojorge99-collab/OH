@@ -1552,6 +1552,37 @@ const Safety = () => {
                   rows={3}
                 />
               </div>
+
+              {/* Show Key Points if from template */}
+              {toolboxForm.key_points?.length > 0 && (
+                <div className="col-span-2 p-3 bg-purple-50 rounded-lg">
+                  <p className="text-sm font-medium text-purple-800 mb-2 flex items-center gap-2">
+                    <ListChecks className="w-4 h-4" />
+                    Puntos Clave a Discutir
+                  </p>
+                  <ul className="text-sm text-purple-700 space-y-1 pl-4">
+                    {toolboxForm.key_points.map((point, idx) => (
+                      <li key={idx} className="list-disc">{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Show Quiz Questions if from template */}
+              {toolboxForm.quiz_questions?.length > 0 && (
+                <div className="col-span-2 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4" />
+                    Preguntas de Verificación
+                  </p>
+                  <ol className="text-sm text-blue-700 space-y-1 pl-4 list-decimal">
+                    {toolboxForm.quiz_questions.map((question, idx) => (
+                      <li key={idx}>{question}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
               <div>
                 <Label>Proyecto</Label>
                 <Select
