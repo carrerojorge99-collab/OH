@@ -12,6 +12,7 @@ import { Progress } from '../components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Checkbox } from '../components/ui/checkbox';
+import { ScrollArea } from '../components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,8 @@ import {
   ClipboardCheck, AlertTriangle, MessageSquare, Users,
   Calendar, Shield, TrendingUp, TrendingDown, Search,
   Filter, MoreVertical, ChevronRight, Clock, FileText,
-  ThumbsUp, ThumbsDown, AlertCircle, Activity, RefreshCw
+  ThumbsUp, ThumbsDown, AlertCircle, Activity, RefreshCw,
+  BookOpen, HelpCircle, ListChecks
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -34,6 +36,28 @@ import {
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { toast } from 'sonner';
+
+const categoryLabels = {
+  general: 'General',
+  altura: 'Trabajo en Alturas',
+  epp: 'EPP',
+  quimicos: 'Materiales Peligrosos',
+  electrico: 'Seguridad Eléctrica',
+  especial: 'Trabajos Especiales',
+  ergonomia: 'Ergonomía',
+  emergencia: 'Emergencias'
+};
+
+const categoryColors = {
+  general: 'bg-gray-100 text-gray-800',
+  altura: 'bg-orange-100 text-orange-800',
+  epp: 'bg-blue-100 text-blue-800',
+  quimicos: 'bg-purple-100 text-purple-800',
+  electrico: 'bg-yellow-100 text-yellow-800',
+  especial: 'bg-red-100 text-red-800',
+  ergonomia: 'bg-green-100 text-green-800',
+  emergencia: 'bg-pink-100 text-pink-800'
+};
 
 const statusColors = {
   draft: 'bg-gray-100 text-gray-800',
