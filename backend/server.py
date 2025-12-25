@@ -3214,6 +3214,9 @@ async def create_toolbox_talk(data: dict, request: Request, session_token: Optio
         "title": data.get("title", ""),
         "topic": data.get("topic", ""),
         "description": data.get("description", ""),
+        "key_points": data.get("key_points", []),
+        "quiz_questions": data.get("quiz_questions", []),
+        "category": data.get("category", "general"),
         "project_id": data.get("project_id"),
         "scheduled_date": data.get("scheduled_date"),
         "duration_minutes": data.get("duration_minutes", 15),
@@ -3236,6 +3239,392 @@ async def create_toolbox_talk(data: dict, request: Request, session_token: Optio
     
     await log_audit(user.user_id, user.name, "create", "toolbox_talk", talk_id, data.get("title"), {})
     return talk
+
+# ==================== TOOLBOX TALK TOPICS LIBRARY ====================
+TOOLBOX_TALK_TOPICS = [
+    {
+        "topic_id": "altura_arnes",
+        "title": "Seguridad en Alturas y Uso de Arnés",
+        "category": "altura",
+        "duration_minutes": 15,
+        "description": "Charla sobre los riesgos de trabajar en alturas y el uso correcto del equipo de protección contra caídas.",
+        "key_points": [
+            "Todo trabajo a más de 1.8 metros requiere protección contra caídas",
+            "Inspeccionar el arnés antes de cada uso: costuras, hebillas, anillos D",
+            "El punto de anclaje debe soportar mínimo 2,268 kg (5,000 lbs)",
+            "Ajustar correctamente las correas: pecho, piernas y hombros",
+            "Nunca usar un arnés que haya detenido una caída",
+            "Mantener el cabo de vida lo más corto posible",
+            "Conocer el factor de caída y la distancia de desaceleración"
+        ],
+        "quiz_questions": [
+            "¿A partir de qué altura se requiere protección contra caídas?",
+            "¿Qué elementos del arnés debemos inspeccionar antes de usarlo?",
+            "¿Cuánto peso mínimo debe soportar un punto de anclaje?",
+            "¿Se puede reutilizar un arnés después de una caída?"
+        ]
+    },
+    {
+        "topic_id": "epp_general",
+        "title": "Uso Correcto del Equipo de Protección Personal (EPP)",
+        "category": "epp",
+        "duration_minutes": 15,
+        "description": "Importancia y uso adecuado de los diferentes tipos de equipo de protección personal en el área de trabajo.",
+        "key_points": [
+            "El EPP es la última línea de defensa, no la primera",
+            "Casco: debe ajustar correctamente, reemplazar si tiene grietas",
+            "Gafas de seguridad: usar siempre que haya riesgo de proyección",
+            "Guantes: seleccionar según el riesgo (cortes, químicos, calor)",
+            "Calzado de seguridad: punta de acero, suela antideslizante",
+            "Protección auditiva: obligatoria en áreas con más de 85 dB",
+            "Inspeccionar el EPP antes de cada uso y reportar defectos"
+        ],
+        "quiz_questions": [
+            "¿Es el EPP la primera o última línea de defensa?",
+            "¿Cuándo debemos reemplazar un casco de seguridad?",
+            "¿A partir de cuántos decibeles es obligatoria la protección auditiva?",
+            "¿Qué tipo de guante usaría para manipular químicos?"
+        ]
+    },
+    {
+        "topic_id": "materiales_peligrosos",
+        "title": "Manejo de Materiales Peligrosos",
+        "category": "quimicos",
+        "duration_minutes": 20,
+        "description": "Procedimientos seguros para el manejo, almacenamiento y disposición de materiales peligrosos.",
+        "key_points": [
+            "Conocer las Hojas de Datos de Seguridad (SDS) de cada producto",
+            "Identificar los pictogramas de peligro en las etiquetas",
+            "Usar el EPP específico indicado en la SDS",
+            "Nunca mezclar productos químicos sin autorización",
+            "Almacenar en áreas ventiladas y separar incompatibles",
+            "Conocer la ubicación de duchas de emergencia y lavaojos",
+            "Reportar inmediatamente cualquier derrame"
+        ],
+        "quiz_questions": [
+            "¿Dónde encontramos información sobre el manejo seguro de un químico?",
+            "¿Qué debemos hacer antes de usar un producto químico nuevo?",
+            "¿Qué hacer en caso de un derrame químico?",
+            "¿Se pueden almacenar todos los químicos juntos?"
+        ]
+    },
+    {
+        "topic_id": "prevencion_caidas",
+        "title": "Prevención de Caídas al Mismo Nivel",
+        "category": "general",
+        "duration_minutes": 10,
+        "description": "Identificación y prevención de riesgos de resbalones, tropiezos y caídas en el área de trabajo.",
+        "key_points": [
+            "Las caídas al mismo nivel son una de las principales causas de lesiones",
+            "Mantener las áreas de trabajo limpias y ordenadas",
+            "Limpiar inmediatamente cualquier derrame de líquidos",
+            "No correr en áreas de trabajo",
+            "Usar calzado apropiado con suela antideslizante",
+            "Mantener cables y mangueras organizados",
+            "Reportar condiciones inseguras: pisos dañados, iluminación deficiente"
+        ],
+        "quiz_questions": [
+            "¿Cuál es una de las principales causas de lesiones en el trabajo?",
+            "¿Qué debemos hacer si vemos un derrame de líquido?",
+            "¿Qué tipo de calzado debemos usar?",
+            "¿Por qué es importante reportar pisos dañados?"
+        ]
+    },
+    {
+        "topic_id": "seguridad_electrica",
+        "title": "Seguridad Eléctrica",
+        "category": "electrico",
+        "duration_minutes": 15,
+        "description": "Riesgos eléctricos y medidas de prevención para evitar accidentes por contacto con electricidad.",
+        "key_points": [
+            "Solo personal calificado puede trabajar en sistemas eléctricos",
+            "Asumir que todo circuito está energizado hasta verificar lo contrario",
+            "Usar procedimientos de bloqueo/etiquetado (LOTO)",
+            "No usar equipos eléctricos con cables dañados",
+            "Mantener distancia de seguridad con líneas aéreas",
+            "No sobrecargar tomacorrientes ni usar extensiones permanentes",
+            "En caso de electrocución: no tocar a la víctima, cortar la energía"
+        ],
+        "quiz_questions": [
+            "¿Quién puede realizar trabajos eléctricos?",
+            "¿Qué es el procedimiento LOTO?",
+            "¿Qué debemos hacer antes de trabajar en un circuito?",
+            "¿Qué hacer si alguien está siendo electrocutado?"
+        ]
+    },
+    {
+        "topic_id": "espacios_confinados",
+        "title": "Trabajo en Espacios Confinados",
+        "category": "especial",
+        "duration_minutes": 20,
+        "description": "Procedimientos y precauciones para trabajar de forma segura en espacios confinados.",
+        "key_points": [
+            "Espacio confinado: entrada limitada, no diseñado para ocupación continua",
+            "Siempre se requiere permiso de trabajo para entrar",
+            "Monitorear atmósfera: oxígeno, gases combustibles, gases tóxicos",
+            "Ventilar adecuadamente antes y durante el trabajo",
+            "Tener un vigía en el exterior en todo momento",
+            "Contar con equipo de rescate disponible",
+            "No entrar si las condiciones no son seguras"
+        ],
+        "quiz_questions": [
+            "¿Qué es un espacio confinado?",
+            "¿Qué se debe monitorear antes de entrar?",
+            "¿Qué función tiene el vigía?",
+            "¿Se puede entrar sin permiso en una emergencia?"
+        ]
+    },
+    {
+        "topic_id": "manejo_cargas",
+        "title": "Manejo Manual de Cargas",
+        "category": "ergonomia",
+        "duration_minutes": 15,
+        "description": "Técnicas correctas de levantamiento y transporte manual de cargas para prevenir lesiones.",
+        "key_points": [
+            "Evaluar el peso antes de levantar: ¿necesito ayuda?",
+            "Planificar la ruta y despejar obstáculos",
+            "Pies separados al ancho de los hombros, uno ligeramente adelante",
+            "Doblar las rodillas, no la espalda",
+            "Mantener la carga cerca del cuerpo",
+            "No girar el tronco mientras se carga",
+            "Usar ayudas mecánicas cuando sea posible"
+        ],
+        "quiz_questions": [
+            "¿Qué parte del cuerpo debemos doblar al levantar?",
+            "¿Dónde debemos mantener la carga al transportarla?",
+            "¿Es correcto girar el tronco mientras cargamos algo pesado?",
+            "¿Cuándo debemos usar ayudas mecánicas?"
+        ]
+    },
+    {
+        "topic_id": "prevencion_incendios",
+        "title": "Prevención y Combate de Incendios",
+        "category": "emergencia",
+        "duration_minutes": 15,
+        "description": "Prevención de incendios, uso de extintores y procedimientos de evacuación.",
+        "key_points": [
+            "Triángulo del fuego: combustible, oxígeno, calor",
+            "Mantener áreas libres de materiales combustibles innecesarios",
+            "Conocer la ubicación de extintores y salidas de emergencia",
+            "Técnica PASS: Tirar seguro, Apuntar, Apretar, Barrer",
+            "Tipos de extintores: A (sólidos), B (líquidos), C (eléctricos)",
+            "Evacuar si el fuego no se puede controlar en 30 segundos",
+            "No usar ascensores durante evacuación"
+        ],
+        "quiz_questions": [
+            "¿Cuáles son los tres elementos del triángulo del fuego?",
+            "¿Qué significa la técnica PASS?",
+            "¿Qué tipo de extintor se usa para fuegos eléctricos?",
+            "¿Cuándo debemos evacuar en lugar de combatir el fuego?"
+        ]
+    },
+    {
+        "topic_id": "primeros_auxilios",
+        "title": "Primeros Auxilios Básicos",
+        "category": "emergencia",
+        "duration_minutes": 15,
+        "description": "Procedimientos básicos de primeros auxilios para responder a emergencias médicas.",
+        "key_points": [
+            "Proteger: asegurar que la escena sea segura",
+            "Avisar: llamar a emergencias y reportar al supervisor",
+            "Socorrer: solo si estás capacitado para hacerlo",
+            "Heridas: lavar con agua limpia, aplicar presión si hay sangrado",
+            "Quemaduras: enfriar con agua corriente por 10-20 minutos",
+            "Conocer ubicación del botiquín y AED",
+            "No mover a víctimas con posibles lesiones de columna"
+        ],
+        "quiz_questions": [
+            "¿Cuál es el primer paso ante una emergencia?",
+            "¿Cómo debemos tratar una quemadura?",
+            "¿Cuándo NO debemos mover a una persona lesionada?",
+            "¿Dónde está el botiquín más cercano a tu área de trabajo?"
+        ]
+    },
+    {
+        "topic_id": "senalizacion",
+        "title": "Señalización de Seguridad",
+        "category": "general",
+        "duration_minutes": 10,
+        "description": "Tipos de señales de seguridad, su significado y la importancia de respetarlas.",
+        "key_points": [
+            "Rojo: prohibición, peligro, equipo contra incendios",
+            "Amarillo: advertencia, precaución",
+            "Verde: seguridad, primeros auxilios, salidas",
+            "Azul: obligación, información",
+            "Las señales deben estar visibles y en buen estado",
+            "Reportar señales dañadas o faltantes",
+            "Respetar todas las señales, incluso las temporales"
+        ],
+        "quiz_questions": [
+            "¿Qué indica una señal de color rojo?",
+            "¿Qué color indica obligación?",
+            "¿De qué color son las señales de salida de emergencia?",
+            "¿Qué hacer si vemos una señal dañada?"
+        ]
+    },
+    {
+        "topic_id": "excavaciones",
+        "title": "Seguridad en Excavaciones y Zanjas",
+        "category": "especial",
+        "duration_minutes": 20,
+        "description": "Riesgos y medidas de seguridad para trabajos en excavaciones y zanjas.",
+        "key_points": [
+            "Excavaciones de más de 1.2m requieren protección contra derrumbes",
+            "Identificar servicios subterráneos antes de excavar",
+            "Inspeccionar diariamente y después de lluvias",
+            "Mantener materiales y equipo alejados del borde (mínimo 60cm)",
+            "Proveer medios de acceso cada 7.5 metros",
+            "No trabajar bajo cargas suspendidas",
+            "Usar sistemas de entibación, talud o escudo"
+        ],
+        "quiz_questions": [
+            "¿A partir de qué profundidad se requiere protección?",
+            "¿Qué debemos hacer antes de empezar a excavar?",
+            "¿A qué distancia del borde deben estar los materiales?",
+            "¿Cada cuántos metros debe haber un acceso a la zanja?"
+        ]
+    },
+    {
+        "topic_id": "trabajo_caliente",
+        "title": "Trabajo en Caliente",
+        "category": "especial",
+        "duration_minutes": 15,
+        "description": "Procedimientos seguros para soldadura, corte y otras operaciones con llama o chispa.",
+        "key_points": [
+            "Trabajo en caliente: cualquier operación que genere llama, chispa o calor",
+            "Requiere permiso de trabajo en caliente",
+            "Retirar o cubrir materiales combustibles en radio de 10 metros",
+            "Tener extintor disponible en el área",
+            "Usar pantallas protectoras para proteger a otros",
+            "Vigía de fuego durante y 30 minutos después del trabajo",
+            "Verificar que cilindros estén asegurados y válvulas cerradas al terminar"
+        ],
+        "quiz_questions": [
+            "¿Qué se considera trabajo en caliente?",
+            "¿Qué radio debe estar libre de combustibles?",
+            "¿Cuánto tiempo debe permanecer el vigía después del trabajo?",
+            "¿Qué equipo de emergencia debe estar disponible?"
+        ]
+    },
+    {
+        "topic_id": "orden_limpieza",
+        "title": "Orden y Limpieza (5S)",
+        "category": "general",
+        "duration_minutes": 10,
+        "description": "Metodología 5S para mantener un área de trabajo segura, limpia y organizada.",
+        "key_points": [
+            "Seiri (Clasificar): separar lo necesario de lo innecesario",
+            "Seiton (Ordenar): un lugar para cada cosa y cada cosa en su lugar",
+            "Seiso (Limpiar): mantener el área de trabajo limpia",
+            "Seiketsu (Estandarizar): crear procedimientos y mantenerlos",
+            "Shitsuke (Disciplina): convertir las 5S en un hábito",
+            "El desorden causa accidentes: tropiezos, golpes, caídas",
+            "Limpiar es inspeccionar: detectar anomalías mientras limpiamos"
+        ],
+        "quiz_questions": [
+            "¿Qué significan las 5S?",
+            "¿Por qué el orden y limpieza previenen accidentes?",
+            "¿Qué hacemos en la etapa de 'Clasificar'?",
+            "¿Qué significa 'limpiar es inspeccionar'?"
+        ]
+    },
+    {
+        "topic_id": "andamios",
+        "title": "Seguridad en Andamios",
+        "category": "altura",
+        "duration_minutes": 15,
+        "description": "Inspección, montaje y uso seguro de andamios en el lugar de trabajo.",
+        "key_points": [
+            "Solo personal competente puede montar/desmontar andamios",
+            "Inspeccionar antes de cada uso: base, marcos, plataformas",
+            "Base firme y nivelada, usar placas base",
+            "Barandillas en los 4 lados si altura supera 2 metros",
+            "Acceso seguro mediante escalera integrada",
+            "Capacidad de carga: nunca exceder el límite",
+            "No usar andamios durante tormentas eléctricas o vientos fuertes"
+        ],
+        "quiz_questions": [
+            "¿Quién puede montar y desmontar andamios?",
+            "¿A partir de qué altura se requieren barandillas?",
+            "¿Qué debemos verificar en la base del andamio?",
+            "¿Cuándo NO debemos usar andamios?"
+        ]
+    },
+    {
+        "topic_id": "ruido_ocupacional",
+        "title": "Protección Contra el Ruido",
+        "category": "epp",
+        "duration_minutes": 10,
+        "description": "Efectos del ruido en la salud y uso correcto de protección auditiva.",
+        "key_points": [
+            "La pérdida auditiva por ruido es permanente e irreversible",
+            "Límite permisible: 85 dB por 8 horas de exposición",
+            "Regla práctica: si hay que gritar para comunicarse, hay exceso de ruido",
+            "Tipos de protección: tapones, orejeras, tapones moldeados",
+            "Insertar tapones correctamente: tirar oreja hacia arriba y atrás",
+            "NRR (Nivel de Reducción de Ruido): verificar en el empaque",
+            "Usar protección doble en ruidos extremos"
+        ],
+        "quiz_questions": [
+            "¿Es reversible la pérdida auditiva por ruido?",
+            "¿Cuál es el límite de ruido permisible?",
+            "¿Cómo sabemos si hay exceso de ruido sin medirlo?",
+            "¿Cómo se insertan correctamente los tapones?"
+        ]
+    }
+]
+
+@api_router.get("/safety/toolbox-topics")
+async def get_toolbox_talk_topics(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    category: Optional[str] = None
+):
+    """Get predefined toolbox talk topics library"""
+    user = await get_current_user(request, session_token)
+    
+    topics = TOOLBOX_TALK_TOPICS.copy()
+    
+    if category:
+        topics = [t for t in topics if t.get("category") == category]
+    
+    return topics
+
+@api_router.get("/safety/toolbox-topics/{topic_id}")
+async def get_toolbox_talk_topic(
+    topic_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get a specific toolbox talk topic by ID"""
+    user = await get_current_user(request, session_token)
+    
+    topic = next((t for t in TOOLBOX_TALK_TOPICS if t["topic_id"] == topic_id), None)
+    if not topic:
+        raise HTTPException(status_code=404, detail="Tema no encontrado")
+    
+    return topic
+
+@api_router.get("/safety/toolbox-categories")
+async def get_toolbox_categories(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get list of toolbox talk categories"""
+    user = await get_current_user(request, session_token)
+    
+    categories = {
+        "general": "General",
+        "altura": "Trabajo en Alturas",
+        "epp": "Equipo de Protección Personal",
+        "quimicos": "Materiales Peligrosos",
+        "electrico": "Seguridad Eléctrica",
+        "especial": "Trabajos Especiales",
+        "ergonomia": "Ergonomía",
+        "emergencia": "Emergencias"
+    }
+    
+    return categories
 
 @api_router.put("/safety/toolbox-talks/{talk_id}")
 async def update_toolbox_talk(talk_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
