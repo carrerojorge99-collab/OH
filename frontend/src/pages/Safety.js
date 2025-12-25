@@ -351,10 +351,10 @@ const Safety = () => {
   const handleSaveObservation = async () => {
     try {
       if (editingObservation) {
-        await api.put(`/api/safety/observations/${editingObservation.observation_id}`, observationForm);
+        await api.put(`/safety/observations/${editingObservation.observation_id}`, observationForm);
         toast.success('Observación actualizada');
       } else {
-        await api.post('/api/safety/observations', observationForm);
+        await api.post('/safety/observations', observationForm);
         toast.success('Observación creada');
       }
       setObservationDialogOpen(false);
