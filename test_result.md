@@ -91,3 +91,31 @@
 ### CONCLUSION:
 The Safety Module (Raken-style) implementation is **FULLY FUNCTIONAL** with all core features working correctly. The backend APIs are robust and handle all CRUD operations properly. The minor display issues identified are cosmetic and do not affect functionality.
 
+
+## New Feature Test - Topics Library for Toolbox Talks
+
+### New Endpoints to Test
+1. GET /api/safety/toolbox-topics - Get predefined topics library (15 topics)
+2. GET /api/safety/toolbox-topics/{topic_id} - Get specific topic details
+3. GET /api/safety/toolbox-categories - Get list of categories
+
+### Test Scenarios
+1. Login and navigate to /safety
+2. Click on "Toolbox Talks" tab
+3. Click "Biblioteca de Temas" button
+4. Verify 15 topics are displayed
+5. Filter by category (e.g., "altura" for height safety)
+6. Select a topic to create a new Toolbox Talk
+7. Verify form is populated with:
+   - Title
+   - Topic 
+   - Description
+   - Key points (array)
+   - Quiz questions (array)
+   - Duration
+8. Fill in required fields (date, location)
+9. Save the Toolbox Talk
+10. Verify it appears in the list with key points and quiz questions
+
+### Categories Available
+- general, altura, epp, quimicos, electrico, especial, ergonomia, emergencia
