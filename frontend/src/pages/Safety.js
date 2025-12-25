@@ -479,7 +479,7 @@ const Safety = () => {
   const handleDeleteIncident = async (incidentId) => {
     if (!window.confirm('¿Eliminar este incidente?')) return;
     try {
-      await api.delete(`/api/safety/incidents/${incidentId}`);
+      await api.delete(`/safety/incidents/${incidentId}`);
       toast.success('Incidente eliminado');
       loadIncidents();
     } catch (error) {
