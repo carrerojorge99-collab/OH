@@ -370,7 +370,7 @@ const Safety = () => {
   const handleDeleteObservation = async (observationId) => {
     if (!window.confirm('¿Eliminar esta observación?')) return;
     try {
-      await api.delete(`/api/safety/observations/${observationId}`);
+      await api.delete(`/safety/observations/${observationId}`);
       toast.success('Observación eliminada');
       loadObservations();
     } catch (error) {
