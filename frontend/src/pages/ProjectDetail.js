@@ -2131,20 +2131,35 @@ const ProjectDetail = () => {
                           </Badge>
                         </div>
                       </div>
-                      {co.status === 'pending' && (
-                        <div className="flex gap-2 mt-3 pt-3 border-t">
-                          <Button size="sm" className="bg-green-600" onClick={async () => {
-                            await api.put(`/change-orders/${co.id}`, { status: 'approved' }, { withCredentials: true });
-                            toast.success('Aprobado');
-                            loadProjectData();
-                          }}>Aprobar</Button>
-                          <Button size="sm" variant="destructive" onClick={async () => {
-                            await api.put(`/change-orders/${co.id}`, { status: 'rejected' }, { withCredentials: true });
-                            toast.success('Rechazado');
-                            loadProjectData();
-                          }}>Rechazar</Button>
-                        </div>
-                      )}
+                      <div className="flex gap-2 mt-3 pt-3 border-t">
+                        {co.status === 'pending' && (
+                          <>
+                            <Button size="sm" className="bg-green-600" onClick={async () => {
+                              await api.put(`/change-orders/${co.id}`, { status: 'approved' }, { withCredentials: true });
+                              toast.success('Aprobado');
+                              loadProjectData();
+                            }}>Aprobar</Button>
+                            <Button size="sm" variant="destructive" onClick={async () => {
+                              await api.put(`/change-orders/${co.id}`, { status: 'rejected' }, { withCredentials: true });
+                              toast.success('Rechazado');
+                              loadProjectData();
+                            }}>Rechazar</Button>
+                          </>
+                        )}
+                        <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50 ml-auto" onClick={async () => {
+                          if (window.confirm('¿Está seguro de eliminar esta Change Order?' + (co.status === 'approved' ? ' Se revertirán los cambios en el presupuesto y valor del proyecto.' : ''))) {
+                            try {
+                              await api.delete(`/change-orders/${co.id}`, { withCredentials: true });
+                              toast.success('Change Order eliminada');
+                              loadProjectData();
+                            } catch (err) {
+                              toast.error(err.response?.data?.detail || 'Error al eliminar');
+                            }
+                          }
+                        }}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
