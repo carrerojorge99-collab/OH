@@ -1991,12 +1991,12 @@ const Safety = () => {
             <p className="text-gray-500">Gestión de seguridad ocupacional y prevención de riesgos</p>
           </div>
           <div className="flex items-center gap-4">
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <Select value={selectedProject || "all"} onValueChange={(value) => setSelectedProject(value === "all" ? "" : value)}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Todos los proyectos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los proyectos</SelectItem>
+                <SelectItem value="all">Todos los proyectos</SelectItem>
                 {projects.map(p => (
                   <SelectItem key={p.project_id} value={p.project_id}>{p.name}</SelectItem>
                 ))}
