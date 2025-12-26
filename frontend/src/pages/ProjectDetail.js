@@ -811,6 +811,134 @@ const ProjectDetail = () => {
     }
   };
 
+  // Invoice handlers
+  const handleInvoiceItemChange = (index, field, value) => {
+    const newItems = [...invoiceForm.items];
+    newItems[index][field] = value;
+    if (field === 'quantity' || field === 'unit_price') {
+      newItems[index].amount = parseFloat(newItems[index].quantity || 0) * parseFloat(newItems[index].unit_price || 0);
+    }
+    setInvoiceForm({ ...invoiceForm, items: newItems });
+  };
+
+  const addInvoiceItem = () => {
+    setInvoiceForm({
+      ...invoiceForm,
+      items: [...invoiceForm.items, { description: '', quantity: 1, unit_price: 0, amount: 0 }]
+    });
+  };
+
+  const removeInvoiceItem = (index) => {
+    if (invoiceForm.items.length === 1) return;
+    const newItems = invoiceForm.items.filter((_, i) => i !== index);
+    setInvoiceForm({ ...invoiceForm, items: newItems });
+  };
+
+  const calculateInvoiceTotals = () => {
+    const subtotal = invoiceForm.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    const discountAmount = subtotal * (parseFloat(invoiceForm.discount_percent) || 0) / 100;
+    const taxableAmount = subtotal - discountAmount;
+    const taxAmount = taxableAmount * (parseFloat(invoiceForm.tax_rate) || 0) / 100;
+    const total = taxableAmount + taxAmount;
+    return { subtotal, discountAmount, taxAmount, total };
+  };
+
+  const handleCreateInvoice = async (e) => {
+    e.preventDefault();
+    if (!invoiceForm.client_name || invoiceForm.items.length === 0) {
+      toast.error('Complete los campos requeridos');
+      return;
+    }
+    try {
+      const payload = {
+        ...invoiceForm,
+        project_id: projectId,
+        items: invoiceForm.items.map(item => ({
+          ...item,
+          quantity: parseFloat(item.quantity) || 1,
+          unit_price: parseFloat(item.unit_price) || 0,
+          amount: parseFloat(item.amount) || 0
+        })),
+        tax_rate: parseFloat(invoiceForm.tax_rate) || 0,
+        discount_percent: parseFloat(invoiceForm.discount_percent) || 0
+      };
+      await api.post('/invoices/manual', payload, { withCredentials: true });
+      toast.success('Factura creada exitosamente');
+      setInvoiceDialogOpen(false);
+      setInvoiceForm({
+        client_name: '',
+        client_email: '',
+        client_phone: '',
+        client_address: '',
+        items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+        tax_rate: 0,
+        discount_percent: 0,
+        notes: '',
+        terms: '',
+        custom_number: ''
+      });
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al crear factura');
+    }
+  };
+
+  const handleOpenPaymentDialog = async (invoice) => {
+    setSelectedInvoiceForPayment(invoice);
+    setPaymentForm({
+      amount: invoice.balance_due || (invoice.total - (invoice.amount_paid || 0)),
+      payment_method: 'transfer',
+      reference: '',
+      notes: ''
+    });
+    try {
+      const response = await api.get(`/invoices/${invoice.invoice_id}/payments`, { withCredentials: true });
+      setInvoicePayments(response.data);
+    } catch (error) {
+      console.error('Error loading payments:', error);
+    }
+    setPaymentDialogOpen(true);
+  };
+
+  const handleAddPayment = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post(`/invoices/${selectedInvoiceForPayment.invoice_id}/payments`, paymentForm, { withCredentials: true });
+      toast.success('Pago registrado exitosamente');
+      setPaymentDialogOpen(false);
+      setPaymentForm({ amount: 0, payment_method: 'transfer', reference: '', notes: '' });
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al registrar pago');
+    }
+  };
+
+  const handleDeleteInvoice = async (invoiceId, invoiceNumber) => {
+    if (!window.confirm(`¿Eliminar factura ${invoiceNumber}?`)) return;
+    try {
+      await api.delete(`/invoices/${invoiceId}`, { withCredentials: true });
+      toast.success('Factura eliminada');
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al eliminar factura');
+    }
+  };
+
+  const getInvoiceStatusBadge = (status) => {
+    const statusConfig = {
+      draft: { label: 'Borrador', variant: 'secondary' },
+      pending: { label: 'Pendiente', variant: 'outline' },
+      sent: { label: 'Enviada', variant: 'default' },
+      paid: { label: 'Pagada', variant: 'success' },
+      partial: { label: 'Pago Parcial', variant: 'warning' },
+      overdue: { label: 'Vencida', variant: 'destructive' }
+    };
+    const config = statusConfig[status] || statusConfig.pending;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
