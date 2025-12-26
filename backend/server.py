@@ -4717,6 +4717,9 @@ async def create_manual_invoice(
     
     await db.invoices.insert_one(invoice_doc)
     
+    # Remove _id if present (added by MongoDB)
+    invoice_doc.pop('_id', None)
+    
     await log_audit(user.user_id, user.name, "create", "invoice", invoice_id, invoice_number, {"client": invoice_data.client_name, "total": total})
     
     return invoice_doc
