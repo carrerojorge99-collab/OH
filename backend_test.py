@@ -1036,6 +1036,422 @@ class ClientPortalTester:
             "critical_issues": critical_failures
         }
 
+class ProjectInvoicesTester:
+    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.test_project_id = None
+        self.test_invoice_id = None
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="j.carrero@ohsmspr.com", password="Axel52418!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_get_projects(self):
+        """Test getting projects to get a project_id"""
+        print(f"\n🔍 Testing Get Projects...")
+        
+        try:
+            url = f"{self.api_url}/projects"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                projects = response.json()
+                if isinstance(projects, list) and len(projects) > 0:
+                    self.test_project_id = projects[0]['project_id']
+                    project_name = projects[0]['name']
+                    self.log_test("Get Projects", True, f"Found {len(projects)} projects. Using: {project_name} (ID: {self.test_project_id})")
+                    return True, projects
+                else:
+                    self.log_test("Get Projects", False, "", "No projects available")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Projects", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Projects", False, "", str(e))
+            return False, []
+
+    def test_financial_summary(self):
+        """Test financial summary endpoint"""
+        print(f"\n🔍 Testing Financial Summary Endpoint...")
+        
+        if not self.test_project_id:
+            self.log_test("Financial Summary", False, "", "No project ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/projects/{self.test_project_id}/financial-summary"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                summary = response.json()
+                print(f"   Response Body: {json.dumps(summary, indent=2)}")
+                
+                # Check required fields
+                required_fields = ['total_invoiced', 'total_paid', 'total_pending', 'invoice_count', 'status_counts']
+                missing_fields = [field for field in required_fields if field not in summary]
+                
+                if not missing_fields:
+                    self.log_test("Financial Summary", True, 
+                                f"Total Invoiced: ${summary['total_invoiced']}, Total Paid: ${summary['total_paid']}, Invoice Count: {summary['invoice_count']}")
+                    return True, summary
+                else:
+                    self.log_test("Financial Summary", False, "", f"Missing required fields: {missing_fields}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Financial Summary", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Financial Summary", False, "", str(e))
+            return False, {}
+
+    def test_get_invoices_by_project(self):
+        """Test getting invoices by project"""
+        print(f"\n🔍 Testing Get Invoices by Project...")
+        
+        if not self.test_project_id:
+            self.log_test("Get Invoices by Project", False, "", "No project ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/invoices"
+            params = {"project_id": self.test_project_id}
+            response = self.session.get(url, params=params, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                invoices = response.json()
+                print(f"   Response Body: {json.dumps(invoices, indent=2)}")
+                
+                if isinstance(invoices, list):
+                    self.log_test("Get Invoices by Project", True, 
+                                f"Found {len(invoices)} invoices for project {self.test_project_id}")
+                    return True, invoices
+                else:
+                    self.log_test("Get Invoices by Project", False, "", f"Invalid response format: {invoices}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Invoices by Project", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Invoices by Project", False, "", str(e))
+            return False, []
+
+    def test_create_manual_invoice(self):
+        """Test creating a manual invoice"""
+        print(f"\n🔍 Testing Create Manual Invoice...")
+        
+        if not self.test_project_id:
+            self.log_test("Create Manual Invoice", False, "", "No project ID available")
+            return False
+        
+        invoice_data = {
+            "project_id": self.test_project_id,
+            "client_name": "Test Client Company",
+            "client_email": "testclient@example.com",
+            "client_phone": "787-555-0123",
+            "client_address": "123 Test Street, San Juan, PR 00901",
+            "items": [
+                {
+                    "description": "Professional Services - Project Management",
+                    "quantity": 1,
+                    "unit_price": 1000.00,
+                    "amount": 1000.00
+                },
+                {
+                    "description": "Technical Consultation",
+                    "quantity": 2,
+                    "unit_price": 500.00,
+                    "amount": 1000.00
+                }
+            ],
+            "tax_rate": 10.5,
+            "discount_percent": 0,
+            "notes": "Test invoice created via API testing",
+            "terms": "Payment due within 30 days",
+            "custom_number": ""
+        }
+        
+        try:
+            url = f"{self.api_url}/invoices/manual"
+            response = self.session.post(url, json=invoice_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                invoice = response.json()
+                print(f"   Response Body: {json.dumps(invoice, indent=2)}")
+                
+                if 'invoice_id' in invoice:
+                    self.test_invoice_id = invoice['invoice_id']
+                    invoice_number = invoice.get('invoice_number', 'N/A')
+                    total = invoice.get('total', 0)
+                    self.log_test("Create Manual Invoice", True, 
+                                f"Invoice created - Number: {invoice_number}, ID: {self.test_invoice_id}, Total: ${total}")
+                    return True, invoice
+                else:
+                    self.log_test("Create Manual Invoice", False, "", "No invoice_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Create Manual Invoice", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Manual Invoice", False, "", str(e))
+            return False, {}
+
+    def test_add_payment_to_invoice(self):
+        """Test adding a payment to an invoice"""
+        print(f"\n🔍 Testing Add Payment to Invoice...")
+        
+        if not self.test_invoice_id:
+            self.log_test("Add Payment to Invoice", False, "", "No invoice ID available")
+            return False
+        
+        payment_data = {
+            "amount": 500.00,
+            "payment_method": "transfer",
+            "reference": "TEST-PAYMENT-123",
+            "notes": "Partial payment via API testing"
+        }
+        
+        try:
+            url = f"{self.api_url}/invoices/{self.test_invoice_id}/payments"
+            response = self.session.post(url, json=payment_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                payment = response.json()
+                print(f"   Response Body: {json.dumps(payment, indent=2)}")
+                
+                if 'payment_id' in payment:
+                    payment_id = payment['payment_id']
+                    amount = payment.get('amount', 0)
+                    method = payment.get('payment_method', 'N/A')
+                    self.log_test("Add Payment to Invoice", True, 
+                                f"Payment added - ID: {payment_id}, Amount: ${amount}, Method: {method}")
+                    return True, payment
+                else:
+                    self.log_test("Add Payment to Invoice", False, "", "No payment_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Add Payment to Invoice", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Add Payment to Invoice", False, "", str(e))
+            return False, {}
+
+    def test_financial_summary_after_payment(self):
+        """Test financial summary after payment to verify updates"""
+        print(f"\n🔍 Testing Financial Summary After Payment...")
+        
+        if not self.test_project_id:
+            self.log_test("Financial Summary After Payment", False, "", "No project ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/projects/{self.test_project_id}/financial-summary"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                summary = response.json()
+                print(f"   Response Body: {json.dumps(summary, indent=2)}")
+                
+                # Check that totals are updated
+                total_paid = summary.get('total_paid', 0)
+                total_pending = summary.get('total_pending', 0)
+                invoice_count = summary.get('invoice_count', 0)
+                
+                # Verify that we have at least some paid amount and invoice count > 0
+                if total_paid > 0 and invoice_count > 0:
+                    self.log_test("Financial Summary After Payment", True, 
+                                f"Updated summary - Total Paid: ${total_paid}, Total Pending: ${total_pending}, Invoice Count: {invoice_count}")
+                    return True, summary
+                else:
+                    self.log_test("Financial Summary After Payment", False, "", 
+                                f"Summary not updated correctly - Total Paid: ${total_paid}, Invoice Count: {invoice_count}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Financial Summary After Payment", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Financial Summary After Payment", False, "", str(e))
+            return False, {}
+
+    def run_project_invoices_tests(self):
+        """Run complete project invoices test suite"""
+        print("🚀 Starting Project Invoices Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Get projects to get a project_id
+        success, projects = self.test_get_projects()
+        if not success:
+            print("❌ Failed to get projects, stopping tests")
+            return self.generate_report()
+        
+        # Step 3: Test financial summary endpoint (initial state)
+        self.test_financial_summary()
+        
+        # Step 4: Test getting invoices by project (initial state)
+        self.test_get_invoices_by_project()
+        
+        # Step 5: Test creating a manual invoice
+        success, invoice = self.test_create_manual_invoice()
+        if not success:
+            print("❌ Failed to create invoice, continuing with other tests")
+        
+        # Step 6: Test adding payment to invoice
+        if success and self.test_invoice_id:
+            payment_success, payment = self.test_add_payment_to_invoice()
+            
+            # Step 7: Test financial summary after payment
+            if payment_success:
+                self.test_financial_summary_after_payment()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 PROJECT INVOICES TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if any(keyword in test['test'] for keyword in ['Financial Summary', 'Create Manual Invoice', 'Add Payment'])]
+        if critical_failures:
+            print("\n🚨 CRITICAL ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 class PDFGenerationTester:
     def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
         self.base_url = base_url
