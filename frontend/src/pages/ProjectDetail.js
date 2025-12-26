@@ -247,7 +247,7 @@ const ProjectDetail = () => {
     const ts = Date.now();
     const cfg = { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } };
     try {
-      const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, timesheetRes, commentsRes, documentsRes, statsRes, logsRes, changeOrdersRes] = await Promise.all([
+      const [projectRes, tasksRes, categoriesRes, expensesRes, laborRes, timesheetRes, commentsRes, documentsRes, statsRes, logsRes, changeOrdersRes, invoicesRes, financialRes] = await Promise.all([
         api.get(`/projects/${projectId}?_t=${ts}`, cfg),
         api.get(`/tasks?project_id=${projectId}&_t=${ts}`, cfg),
         api.get(`/budget/categories?project_id=${projectId}&_t=${ts}`, cfg),
@@ -258,7 +258,9 @@ const ProjectDetail = () => {
         api.get(`/documents?project_id=${projectId}&_t=${ts}`, cfg),
         api.get(`/projects/${projectId}/stats?_t=${ts}`, cfg),
         api.get(`/project-logs?project_id=${projectId}&_t=${ts}`, cfg),
-        api.get(`/change-orders?project_id=${projectId}&_t=${ts}`, cfg)
+        api.get(`/change-orders?project_id=${projectId}&_t=${ts}`, cfg),
+        api.get(`/invoices?project_id=${projectId}&_t=${ts}`, cfg),
+        api.get(`/projects/${projectId}/financial-summary?_t=${ts}`, cfg)
       ]);
       
       setProject(projectRes.data);
@@ -272,6 +274,8 @@ const ProjectDetail = () => {
       setStats(statsRes.data);
       setProjectLogs(logsRes.data || []);
       setChangeOrders(changeOrdersRes.data || []);
+      setProjectInvoices(invoicesRes.data || []);
+      setFinancialSummary(financialRes.data || { total_invoiced: 0, total_paid: 0, total_pending: 0, invoice_count: 0 });
     } catch (error) {
       toast.error('Error al cargar datos del proyecto');
       console.error(error);
