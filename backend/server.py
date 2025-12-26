@@ -4782,6 +4782,46 @@ async def update_invoice_status(
     
     return Invoice(**invoice)
 
+@api_router.get("/projects/{project_id}/financial-summary")
+async def get_project_financial_summary(
+    project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get financial summary for a project including invoices and payments"""
+    user = await get_current_user(request, session_token)
+    
+    # Get all invoices for the project
+    invoices = await db.invoices.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    
+    # Calculate totals
+    total_invoiced = sum(inv.get('total', 0) for inv in invoices)
+    total_paid = sum(inv.get('amount_paid', 0) for inv in invoices)
+    total_pending = total_invoiced - total_paid
+    
+    # Count by status
+    status_counts = {
+        'paid': 0,
+        'partial': 0,
+        'pending': 0,
+        'sent': 0,
+        'draft': 0,
+        'overdue': 0
+    }
+    
+    for inv in invoices:
+        status = inv.get('status', 'pending')
+        if status in status_counts:
+            status_counts[status] += 1
+    
+    return {
+        "total_invoiced": total_invoiced,
+        "total_paid": total_paid,
+        "total_pending": total_pending,
+        "invoice_count": len(invoices),
+        "status_counts": status_counts
+    }
+
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(
     invoice_id: str,
