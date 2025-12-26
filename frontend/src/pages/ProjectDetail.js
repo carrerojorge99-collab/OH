@@ -2262,6 +2262,360 @@ const ProjectDetail = () => {
             )}
           </TabsContent>
 
+          {/* Invoices Tab */}
+          <TabsContent value="invoices" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold tracking-tight">Facturas del Proyecto</h2>
+              <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-orange-600 hover:bg-orange-700">
+                    <Plus className="w-4 h-4 mr-2" /> Nueva Factura
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Crear Nueva Factura</DialogTitle>
+                    <DialogDescription>Complete los datos de la factura para este proyecto</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateInvoice} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Nombre del Cliente *</Label>
+                        <Input 
+                          value={invoiceForm.client_name} 
+                          onChange={(e) => setInvoiceForm({...invoiceForm, client_name: e.target.value})} 
+                          placeholder="Nombre del cliente"
+                          required 
+                        />
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input 
+                          type="email"
+                          value={invoiceForm.client_email} 
+                          onChange={(e) => setInvoiceForm({...invoiceForm, client_email: e.target.value})} 
+                          placeholder="email@ejemplo.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>Teléfono</Label>
+                        <Input 
+                          value={invoiceForm.client_phone} 
+                          onChange={(e) => setInvoiceForm({...invoiceForm, client_phone: e.target.value})} 
+                          placeholder="Teléfono"
+                        />
+                      </div>
+                      <div>
+                        <Label>Número Personalizado</Label>
+                        <Input 
+                          value={invoiceForm.custom_number} 
+                          onChange={(e) => setInvoiceForm({...invoiceForm, custom_number: e.target.value})} 
+                          placeholder="Ej: FAC-001"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Dirección</Label>
+                      <Textarea 
+                        value={invoiceForm.client_address} 
+                        onChange={(e) => setInvoiceForm({...invoiceForm, client_address: e.target.value})} 
+                        placeholder="Dirección del cliente"
+                        rows={2}
+                      />
+                    </div>
+
+                    {/* Items */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <Label>Conceptos</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={addInvoiceItem}>
+                          <Plus className="w-3 h-3 mr-1" /> Agregar
+                        </Button>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {invoiceForm.items.map((item, index) => (
+                          <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                            <div className="col-span-5">
+                              <Input
+                                value={item.description}
+                                onChange={(e) => handleInvoiceItemChange(index, 'description', e.target.value)}
+                                placeholder="Descripción"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <Input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => handleInvoiceItemChange(index, 'quantity', e.target.value)}
+                                placeholder="Cant."
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <Input
+                                type="number"
+                                value={item.unit_price}
+                                onChange={(e) => handleInvoiceItemChange(index, 'unit_price', e.target.value)}
+                                placeholder="Precio"
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+                            <div className="col-span-2 text-right font-mono text-sm">
+                              ${(item.amount || 0).toFixed(2)}
+                            </div>
+                            <div className="col-span-1">
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => removeInvoiceItem(index)}
+                                disabled={invoiceForm.items.length === 1}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Taxes and Discount */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>% Impuesto</Label>
+                        <Input
+                          type="number"
+                          value={invoiceForm.tax_rate}
+                          onChange={(e) => setInvoiceForm({...invoiceForm, tax_rate: e.target.value})}
+                          min="0"
+                          max="100"
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <Label>% Descuento</Label>
+                        <Input
+                          type="number"
+                          value={invoiceForm.discount_percent}
+                          onChange={(e) => setInvoiceForm({...invoiceForm, discount_percent: e.target.value})}
+                          min="0"
+                          max="100"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Totals */}
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span className="font-mono">${calculateInvoiceTotals().subtotal.toFixed(2)}</span>
+                        </div>
+                        {parseFloat(invoiceForm.discount_percent) > 0 && (
+                          <div className="flex justify-between text-red-600">
+                            <span>Descuento ({invoiceForm.discount_percent}%):</span>
+                            <span className="font-mono">-${calculateInvoiceTotals().discountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {parseFloat(invoiceForm.tax_rate) > 0 && (
+                          <div className="flex justify-between">
+                            <span>Impuesto ({invoiceForm.tax_rate}%):</span>
+                            <span className="font-mono">${calculateInvoiceTotals().taxAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-lg font-bold border-t pt-2">
+                          <span>Total:</span>
+                          <span className="font-mono text-orange-600">${calculateInvoiceTotals().total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Notas</Label>
+                      <Textarea
+                        value={invoiceForm.notes}
+                        onChange={(e) => setInvoiceForm({...invoiceForm, notes: e.target.value})}
+                        placeholder="Notas adicionales"
+                        rows={2}
+                      />
+                    </div>
+
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setInvoiceDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
+                        Crear Factura
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Invoices List */}
+            {projectInvoices.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="p-12 text-center">
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                  <p className="text-lg text-slate-500">No hay facturas para este proyecto</p>
+                  <p className="text-sm text-slate-400 mt-2">Crea la primera factura para comenzar a llevar el control de cobranza</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {projectInvoices.map((invoice) => (
+                  <Card key={invoice.invoice_id} className="border-slate-200 hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-orange-100 rounded-lg">
+                            <FileText className="w-6 h-6 text-orange-600" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-lg">{invoice.invoice_number}</span>
+                              {getInvoiceStatusBadge(invoice.status)}
+                            </div>
+                            <p className="text-sm text-slate-500">{invoice.client_name}</p>
+                            <p className="text-xs text-slate-400">
+                              {moment(invoice.created_at).format('DD/MM/YYYY')} • Vence: {moment(invoice.due_date).format('DD/MM/YYYY')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold font-mono text-slate-800">
+                            ${(invoice.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-green-600">
+                              Pagado: ${(invoice.amount_paid || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-orange-600">
+                              Pendiente: ${((invoice.total || 0) - (invoice.amount_paid || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          {/* Progress bar */}
+                          <div className="w-48 mt-2">
+                            <Progress 
+                              value={invoice.total > 0 ? ((invoice.amount_paid || 0) / invoice.total) * 100 : 0} 
+                              className="h-1.5" 
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleOpenPaymentDialog(invoice)}
+                            disabled={invoice.status === 'paid'}
+                          >
+                            <DollarSign className="w-4 h-4 mr-1" /> Pago
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteInvoice(invoice.invoice_id, invoice.invoice_number)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Payment Dialog */}
+          <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Registrar Pago</DialogTitle>
+                <DialogDescription>
+                  Factura: {selectedInvoiceForPayment?.invoice_number} - 
+                  Total: ${selectedInvoiceForPayment?.total?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </DialogDescription>
+              </DialogHeader>
+              
+              {/* Payment History */}
+              {invoicePayments.length > 0 && (
+                <div className="bg-slate-50 p-3 rounded-lg mb-4">
+                  <p className="text-sm font-medium mb-2">Historial de Pagos:</p>
+                  <div className="space-y-1 text-sm max-h-32 overflow-y-auto">
+                    {invoicePayments.map((p, i) => (
+                      <div key={i} className="flex justify-between text-slate-600">
+                        <span>{moment(p.created_at).format('DD/MM/YY')} - {p.payment_method}</span>
+                        <span className="font-mono text-green-600">${p.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleAddPayment} className="space-y-4">
+                <div>
+                  <Label>Monto *</Label>
+                  <Input
+                    type="number"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm({...paymentForm, amount: parseFloat(e.target.value) || 0})}
+                    min="0.01"
+                    step="0.01"
+                    required
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Balance pendiente: ${((selectedInvoiceForPayment?.total || 0) - (selectedInvoiceForPayment?.amount_paid || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <Label>Método de Pago</Label>
+                  <Select value={paymentForm.payment_method} onValueChange={(v) => setPaymentForm({...paymentForm, payment_method: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="transfer">Transferencia</SelectItem>
+                      <SelectItem value="cash">Efectivo</SelectItem>
+                      <SelectItem value="card">Tarjeta</SelectItem>
+                      <SelectItem value="check">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Referencia</Label>
+                  <Input
+                    value={paymentForm.reference}
+                    onChange={(e) => setPaymentForm({...paymentForm, reference: e.target.value})}
+                    placeholder="Número de referencia o cheque"
+                  />
+                </div>
+                <div>
+                  <Label>Notas</Label>
+                  <Textarea
+                    value={paymentForm.notes}
+                    onChange={(e) => setPaymentForm({...paymentForm, notes: e.target.value})}
+                    placeholder="Notas adicionales"
+                    rows={2}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                    Registrar Pago
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           {/* Change Orders Tab */}
           <TabsContent value="change-orders" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
