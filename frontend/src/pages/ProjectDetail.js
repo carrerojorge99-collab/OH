@@ -90,6 +90,32 @@ const ProjectDetail = () => {
     hours_worked: ''
   });
 
+  // Invoices state
+  const [projectInvoices, setProjectInvoices] = useState([]);
+  const [financialSummary, setFinancialSummary] = useState({ total_invoiced: 0, total_paid: 0, total_pending: 0, invoice_count: 0 });
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
+  const [invoicePayments, setInvoicePayments] = useState([]);
+  const [invoiceForm, setInvoiceForm] = useState({
+    client_name: '',
+    client_email: '',
+    client_phone: '',
+    client_address: '',
+    items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+    tax_rate: 0,
+    discount_percent: 0,
+    notes: '',
+    terms: '',
+    custom_number: ''
+  });
+  const [paymentForm, setPaymentForm] = useState({
+    amount: 0,
+    payment_method: 'transfer',
+    reference: '',
+    notes: ''
+  });
+
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
