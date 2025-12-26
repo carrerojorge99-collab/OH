@@ -936,8 +936,6 @@ const ProjectDetail = () => {
     const config = statusConfig[status] || statusConfig.pending;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
-    }
-  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
