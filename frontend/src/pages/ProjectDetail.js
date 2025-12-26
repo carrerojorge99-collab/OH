@@ -1521,11 +1521,51 @@ const ProjectDetail = () => {
           </Card>
         </div>
 
+        {/* Financial Summary Card */}
+        <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-slate-50 to-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-800">💰 Resumen Financiero del Proyecto</h3>
+              <Badge variant="outline">{financialSummary.invoice_count} Facturas</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-white rounded-lg border border-slate-200">
+                <p className="text-sm text-slate-600 mb-1">Total Facturado</p>
+                <p className="text-2xl font-bold text-blue-600 font-mono">
+                  ${financialSummary.total_invoiced.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg border border-green-200">
+                <p className="text-sm text-slate-600 mb-1">Total Cobrado</p>
+                <p className="text-2xl font-bold text-green-600 font-mono">
+                  ${financialSummary.total_paid.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg border border-orange-200">
+                <p className="text-sm text-slate-600 mb-1">Pendiente por Cobrar</p>
+                <p className="text-2xl font-bold text-orange-600 font-mono">
+                  ${financialSummary.total_pending.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+            {financialSummary.total_invoiced > 0 && (
+              <div className="mt-4">
+                <div className="flex justify-between text-sm text-slate-600 mb-1">
+                  <span>Progreso de cobranza</span>
+                  <span>{Math.round((financialSummary.total_paid / financialSummary.total_invoiced) * 100)}%</span>
+                </div>
+                <Progress value={(financialSummary.total_paid / financialSummary.total_invoiced) * 100} className="h-2" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Tabs */}
         <Tabs defaultValue="tasks" className="space-y-6">
           <TabsList className="bg-white border border-slate-200">
             <TabsTrigger value="tasks" data-testid="tasks-tab">Tareas</TabsTrigger>
             <TabsTrigger value="budget" data-testid="budget-tab">Presupuesto</TabsTrigger>
+            <TabsTrigger value="invoices" data-testid="invoices-tab">Facturas</TabsTrigger>
             <TabsTrigger value="change-orders" data-testid="change-orders-tab">Change Orders</TabsTrigger>
             <TabsTrigger value="labor" data-testid="labor-tab">Salarios</TabsTrigger>
             <TabsTrigger value="timesheet" data-testid="timesheet-tab">Timesheet</TabsTrigger>
