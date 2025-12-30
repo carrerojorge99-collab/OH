@@ -3778,7 +3778,7 @@ class InvoiceManagementTester:
                                 f"Tax type created - ID: {self.test_tax_type_id}, Name: {name}, Percentage: {percentage}%")
                     return True, tax_type
                 else:
-                    self.log_test("Create Tax Type", False, "", "No tax_type_id in response")
+                    self.log_test("Create Tax Type", False, "", "No id in response")
                     return False, {}
             else:
                 try:
