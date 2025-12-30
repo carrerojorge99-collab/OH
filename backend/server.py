@@ -2894,19 +2894,26 @@ async def export_project_report(project_id: str, format: str, request: Request, 
     else:
         raise HTTPException(status_code=400, detail="Formato no soportado")
 
-@api_router.get("/users", response_model=List[User])
+@api_router.get("/users")
 async def get_users(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
     # Filter out hidden users and sort by name alphabetically
     users = await db.users.find({"hidden": {"$ne": True}}, {"_id": 0, "password": 0}).sort("name", 1).to_list(1000)
     
-    # Convert datetime to string
+    # Convert datetime to string and ensure all required fields exist
     for u in users:
         if 'created_at' in u and not isinstance(u['created_at'], str):
             u['created_at'] = u['created_at'].isoformat() if hasattr(u['created_at'], 'isoformat') else str(u['created_at'])
+        # Ensure required fields have defaults
+        u.setdefault('user_id', u.get('id', ''))
+        u.setdefault('name', 'Sin nombre')
+        u.setdefault('email', '')
+        u.setdefault('role', 'empleado')
+        u.setdefault('picture', None)
+        u.setdefault('created_at', '')
     
-    return [User(**u) for u in users]
+    return users
 
 @api_router.delete("/users/{user_id}")
 async def delete_user(user_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
