@@ -587,7 +587,7 @@ const Payroll = () => {
             <CardContent className="p-8 text-center text-slate-500">
               <Calculator className="w-16 h-16 mx-auto mb-4 opacity-30" />
               <p className="font-medium">{employees.length} empleados disponibles</p>
-              <p className="text-sm">Selecciona un período y haz clic en "Calcular Nómina" para ver los resultados</p>
+              <p className="text-sm">Selecciona un período y haz clic en &quot;Calcular Nómina&quot; para ver los resultados</p>
             </CardContent>
           </Card>
         )}
