@@ -189,13 +189,16 @@ const AuditLog = () => {
     if (!window.confirm('⚠️ ¿Estás seguro de eliminar TODO el historial de auditoría? Esta acción no se puede deshacer.')) {
       return;
     }
-    if (!window.confirm('Esta acción eliminará permanentemente todos los registros. ¿Continuar?')) {
+    
+    const password = window.prompt('Por seguridad, ingresa tu contraseña de Super Admin:');
+    if (!password) {
+      toast.error('Operación cancelada - Se requiere contraseña');
       return;
     }
     
     try {
-      await api.delete('/audit-logs/clear', { withCredentials: true });
-      toast.success('Historial de auditoría eliminado');
+      const response = await api.post('/audit-logs/clear', { password }, { withCredentials: true });
+      toast.success(response.data.message || 'Historial de auditoría eliminado');
       setLogs([]);
     } catch (error) {
       console.error('Error clearing audit logs:', error);
