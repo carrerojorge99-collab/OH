@@ -6409,11 +6409,13 @@ async def export_cost_estimate_pdf(
     session_token: Optional[str] = Cookie(None)
 ):
     from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib import colors
     from reportlab.lib.units import inch
+    from reportlab.lib.enums import TA_RIGHT
     import io
+    import base64
     
     user = await get_current_user(request, session_token)
     
@@ -6421,35 +6423,80 @@ async def export_cost_estimate_pdf(
     if not estimate:
         raise HTTPException(status_code=404, detail="Estimación no encontrada")
     
+    # Get company info
+    company = await db.company.find_one({}, {"_id": 0}) or {}
+    
+    # Define corporate colors matching frontend
+    PRIMARY_COLOR = colors.HexColor('#f97316')  # Orange
+    SECONDARY_COLOR = colors.HexColor('#475569')  # Slate
+    TEXT_COLOR = colors.HexColor('#1e293b')  # Dark
+    LIGHT_BG = colors.HexColor('#f8fafc')  # Light gray
+    
     # Create PDF in memory
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=20, alignment=1)
-    heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], fontSize=12, spaceAfter=10, spaceBefore=15)
+    
+    # Custom styles matching invoice CSS
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, textColor=TEXT_COLOR, spaceAfter=5, alignment=2)  # Right aligned
+    company_style = ParagraphStyle('Company', parent=styles['Normal'], fontSize=10, textColor=PRIMARY_COLOR, fontName='Helvetica-Bold')
+    company_detail_style = ParagraphStyle('CompanyDetail', parent=styles['Normal'], fontSize=8, textColor=SECONDARY_COLOR)
+    heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], fontSize=11, textColor=TEXT_COLOR, spaceAfter=8, spaceBefore=15, fontName='Helvetica-Bold')
+    normal_right = ParagraphStyle('NormalRight', parent=styles['Normal'], alignment=2)
     
     elements = []
     
-    # Title
-    elements.append(Paragraph(f"Estimación de Costos: {estimate.get('estimate_name', 'Sin nombre')}", title_style))
-    elements.append(Paragraph(f"Proyecto: {estimate.get('project_name', 'N/A')}", styles['Normal']))
-    elements.append(Paragraph(f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}", styles['Normal']))
-    elements.append(Spacer(1, 20))
+    # Company header section (matching invoice style)
+    company_name = company.get('company_name', 'OHSMS PR')
+    elements.append(Paragraph(company_name, company_style))
     
+    if company.get('address'):
+        elements.append(Paragraph(company.get('address', ''), company_detail_style))
+    if company.get('city') or company.get('state'):
+        elements.append(Paragraph(f"{company.get('city', '')}, {company.get('state', '')} {company.get('zip_code', '')}", company_detail_style))
+    if company.get('phone'):
+        elements.append(Paragraph(f"Tel: {company.get('phone', '')}", company_detail_style))
+    
+    elements.append(Spacer(1, 10))
+    
+    # Document title - right aligned
+    elements.append(Paragraph("ESTIMACIÓN DE COSTOS", title_style))
+    elements.append(Paragraph(f"#{estimate.get('estimate_name', 'Sin nombre')}", normal_right))
+    elements.append(Paragraph(f"Proyecto: {estimate.get('project_name', 'N/A')}", normal_right))
+    elements.append(Paragraph(f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}", normal_right))
+    
+    # Orange separator line
+    elements.append(Spacer(1, 15))
+    
+    # Table style matching invoice CSS
     table_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
+        ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
         ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('TEXTCOLOR', (0, 1), (-1, -1), TEXT_COLOR),
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, PRIMARY_COLOR),
         ('ALIGN', (-1, 1), (-1, -1), 'RIGHT'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fcfcfd')]),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+        ('TOPPADDING', (0, 1), (-1, -1), 5),
+    ])
+    
+    footer_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
+        ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
     ])
     
     # Labor Costs Section
@@ -6464,10 +6511,14 @@ async def export_cost_estimate_pdf(
                 f"${item.get('hourly_rate', 0):,.2f}",
                 f"${item.get('subtotal', 0):,.2f}"
             ])
-        labor_data.append(['', '', 'Total:', f"${estimate.get('total_labor', 0):,.2f}"])
         t = Table(labor_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
+        # Footer row
+        footer_data = [['', '', 'Total:', f"${estimate.get('total_labor', 0):,.2f}"]]
+        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        tf.setStyle(footer_style)
+        elements.append(tf)
     
     # Subcontractors Section
     subcontractors = estimate.get('subcontractors', [])
@@ -6480,10 +6531,13 @@ async def export_cost_estimate_pdf(
                 item.get('description', '')[:40],
                 f"${item.get('cost', 0):,.2f}"
             ])
-        sub_data.append(['', 'Total:', f"${estimate.get('total_subcontractors', 0):,.2f}"])
         t = Table(sub_data, colWidths=[2*inch, 3*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
+        footer_data = [['', 'Total:', f"${estimate.get('total_subcontractors', 0):,.2f}"]]
+        tf = Table(footer_data, colWidths=[2*inch, 3*inch, 1.5*inch])
+        tf.setStyle(footer_style)
+        elements.append(tf)
     
     # Materials Section
     materials = estimate.get('materials', [])
@@ -6497,10 +6551,13 @@ async def export_cost_estimate_pdf(
                 f"${item.get('unit_cost', 0):,.2f}",
                 f"${item.get('total', 0):,.2f}"
             ])
-        mat_data.append(['', '', 'Total:', f"${estimate.get('total_materials', 0):,.2f}"])
         t = Table(mat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
+        footer_data = [['', '', 'Total:', f"${estimate.get('total_materials', 0):,.2f}"]]
+        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        tf.setStyle(footer_style)
+        elements.append(tf)
     
     # Equipment Section
     equipment = estimate.get('equipment', [])
@@ -6515,10 +6572,13 @@ async def export_cost_estimate_pdf(
                 f"${item.get('rate_per_day', 0):,.2f}",
                 f"${item.get('total', 0):,.2f}"
             ])
-        eq_data.append(['', '', '', 'Total:', f"${estimate.get('total_equipment', 0):,.2f}"])
         t = Table(eq_data, colWidths=[2*inch, 1*inch, 0.8*inch, 1.2*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
+        footer_data = [['', '', '', 'Total:', f"${estimate.get('total_equipment', 0):,.2f}"]]
+        tf = Table(footer_data, colWidths=[2*inch, 1*inch, 0.8*inch, 1.2*inch, 1.5*inch])
+        tf.setStyle(footer_style)
+        elements.append(tf)
     
     # Transportation Section
     transportation = estimate.get('transportation', [])
@@ -6532,10 +6592,13 @@ async def export_cost_estimate_pdf(
                 f"${item.get('unit_cost', 0):,.2f}",
                 f"${item.get('total', 0):,.2f}"
             ])
-        trans_data.append(['', '', 'Total:', f"${estimate.get('total_transportation', 0):,.2f}"])
         t = Table(trans_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
+        footer_data = [['', '', 'Total:', f"${estimate.get('total_transportation', 0):,.2f}"]]
+        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        tf.setStyle(footer_style)
+        elements.append(tf)
     
     # General Conditions Section
     general_conditions = estimate.get('general_conditions', [])
@@ -6549,12 +6612,15 @@ async def export_cost_estimate_pdf(
                 f"${item.get('unit_cost', 0):,.2f}",
                 f"${item.get('total', 0):,.2f}"
             ])
-        gc_data.append(['', '', 'Total:', f"${estimate.get('total_general_conditions', 0):,.2f}"])
         t = Table(gc_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
+        footer_data = [['', '', 'Total:', f"${estimate.get('total_general_conditions', 0):,.2f}"]]
+        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        tf.setStyle(footer_style)
+        elements.append(tf)
     
-    # Summary Section
+    # Summary Section with orange accent
     elements.append(Spacer(1, 20))
     elements.append(Paragraph("Resumen", heading_style))
     
@@ -6565,24 +6631,41 @@ async def export_cost_estimate_pdf(
         [f"Utilidad ({estimate.get('profit_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('profit_percentage', 0) / 100:,.2f}"],
         [f"Contingencia ({estimate.get('contingency_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('contingency_percentage', 0) / 100:,.2f}"],
         [f"Impuestos ({estimate.get('tax_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('tax_percentage', 0) / 100:,.2f}"],
-        ['GRAN TOTAL', f"${estimate.get('grand_total', 0):,.2f}"],
     ]
     
     summary_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
+        ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#dbeafe')),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, PRIMARY_COLOR),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fcfcfd')]),
     ])
     
     t = Table(summary_data, colWidths=[4*inch, 2.5*inch])
     t.setStyle(summary_style)
     elements.append(t)
+    
+    # Grand total with orange background
+    total_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('TOPPADDING', (0, 0), (-1, 0), 10),
+    ])
+    
+    total_data = [['GRAN TOTAL', f"${estimate.get('grand_total', 0):,.2f}"]]
+    tt = Table(total_data, colWidths=[4*inch, 2.5*inch])
+    tt.setStyle(total_style)
+    elements.append(tt)
     
     doc.build(elements)
     buffer.seek(0)
