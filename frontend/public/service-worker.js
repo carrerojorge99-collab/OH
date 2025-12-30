@@ -1,9 +1,6 @@
-const CACHE_NAME = 'proyekta-v1';
+const CACHE_NAME = 'proyekta-v2';
 const urlsToCache = [
-  '/',
-  '/static/css/main.css',
-  '/static/js/main.js',
-  '/manifest.json'
+  '/'
 ];
 
 // Install event - cache resources
@@ -12,7 +9,10 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache).catch(() => {
+          // Ignore cache errors during install
+          console.log('Some resources could not be cached');
+        });
       })
       .catch((error) => {
         console.log('Cache failed:', error);
@@ -38,31 +38,36 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests and API calls
+  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        
-        return fetch(event.request).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          // Clone response
+        // Clone and cache successful responses
+        if (response && response.status === 200) {
           const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache).catch(() => {});
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Network failed, try cache
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Return a simple offline page for navigation requests
+          if (event.request.mode === 'navigate') {
+            return caches.match('/');
+          }
+          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
         });
       })
   );
