@@ -5,27 +5,38 @@
 - Frontend E2E tests using Playwright
 
 ## Feature Under Test
-1. Payroll Processing - Create pay stubs in employee profiles
-2. Employee Hours Display - Show clock in/out times with AM/PM format
+1. Invoice Management - Mark as sent, saved clients, tax types
+2. Tax Types Configuration in Settings
 
 ## Test Scenarios
-### Payroll Processing
-1. Calculate payroll with period dates
-2. Save payroll - verify pay stubs are created with correct user_id
-3. Verify pay stubs appear in employee's My Profile page
-4. Test PDF download from pay stub
+### Invoice Features
+1. Mark invoice as "Enviada" (sent)
+2. Create invoice with saved client autocomplete
+3. Create invoice with tax type selection
+4. Display sponsor name on invoices
 
-### Hours Display in My Profile
-1. Verify clock entries show formatted times (e.g., "8:00 AM - 5:00 PM")
-2. Verify project name is displayed with badge
-3. Verify total hours per day
-4. Verify active clock shows "En curso"
+### Tax Types Configuration
+1. Create new tax type in Settings
+2. List tax types
+3. Select tax type in invoice form
 
 ## Incorporate User Feedback
-- User requested: Process payroll to post pay stubs to employee profiles
-- User requested: Show hours breakdown (entry/exit times) not just total
-- Fixed: Payroll now sends user_id to backend for correct pay stub assignment
-- Fixed: Hours display now uses moment.js to format clock_in/clock_out as AM/PM
+- User requested: Mark invoices as sent
+- User requested: Save client names for reuse
+- User requested: Show sponsor name on invoices
+- User requested: Tax types configuration in Settings
+
+## Last Test Run
+Date: 2025-12-30
+Status: **Manual testing PASSED** ✅
+
+### Verified Features:
+1. ✅ Tax Types tab in Settings - Create, Edit, Delete tax types
+2. ✅ Mark Invoice as Sent - Button works, status changes to "Enviada"
+3. ✅ Saved Clients selector in Manual Invoice form
+4. ✅ Sponsor field in Manual Invoice form  
+5. ✅ Tax Type selector in Manual Invoice form
+6. ✅ Backend endpoints working: /api/tax-types, /api/saved-clients, /api/invoices/{id}/mark-sent
 
 ## Backend Test Results (2025-12-30)
 
