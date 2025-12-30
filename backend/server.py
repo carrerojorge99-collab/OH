@@ -142,9 +142,9 @@ class User(BaseModel):
     user_id: str
     name: Optional[str] = "Sin nombre"
     email: Optional[str] = ""
-    role: UserRole
+    role: str  # Changed from UserRole to str for flexibility with legacy data
     picture: Optional[str] = None
-    created_at: str
+    created_at: Optional[str] = None
 
 class EmployeeProfile(BaseModel):
     employee_id: Optional[str] = None
