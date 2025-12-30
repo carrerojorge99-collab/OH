@@ -118,6 +118,71 @@ const Invoices = () => {
     }
   };
 
+  const loadSavedClients = async () => {
+    try {
+      const res = await api.get('/saved-clients', { withCredentials: true });
+      setSavedClients(res.data);
+    } catch (error) {
+      console.error('Error loading saved clients');
+    }
+  };
+
+  const loadTaxTypes = async () => {
+    try {
+      const res = await api.get('/tax-types', { withCredentials: true });
+      setTaxTypes(res.data.filter(t => t.is_active));
+    } catch (error) {
+      console.error('Error loading tax types');
+    }
+  };
+
+  const handleSelectSavedClient = (client, formSetter) => {
+    formSetter(prev => ({
+      ...prev,
+      client_name: client.name,
+      client_email: client.email || '',
+      client_phone: client.phone || '',
+      client_address: client.address || ''
+    }));
+  };
+
+  const handleSelectTaxType = (taxId, formSetter) => {
+    const tax = taxTypes.find(t => t.id === taxId);
+    if (tax) {
+      formSetter(prev => ({
+        ...prev,
+        tax_type_id: tax.id,
+        tax_type_name: tax.name,
+        tax_rate: tax.percentage
+      }));
+    }
+  };
+
+  const handleMarkSent = async (invoiceId) => {
+    try {
+      await api.put(`/invoices/${invoiceId}/mark-sent`, {}, { withCredentials: true });
+      toast.success('Factura marcada como enviada');
+      loadData();
+    } catch (error) {
+      toast.error('Error al marcar factura');
+    }
+  };
+
+  // Auto-populate sponsor when project is selected
+  const handleProjectSelect = (projectId, formSetter) => {
+    const project = projects.find(p => p.project_id === projectId);
+    if (project) {
+      formSetter(prev => ({
+        ...prev,
+        project_id: projectId,
+        sponsor_name: project.sponsor || '',
+        client_name: project.client || prev.client_name
+      }));
+    } else {
+      formSetter(prev => ({ ...prev, project_id: projectId }));
+    }
+  };
+
   const handleGenerateInvoice = async (e) => {
     e.preventDefault();
 
@@ -136,11 +201,15 @@ const Invoices = () => {
         client_email: '',
         client_phone: '',
         client_address: '',
-        tax_rate: 16,
+        sponsor_name: '',
+        tax_rate: 0,
+        tax_type_id: '',
+        tax_type_name: '',
         notes: '',
         custom_number: ''
       });
       loadData();
+      loadSavedClients();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al generar factura');
       console.error(error);
