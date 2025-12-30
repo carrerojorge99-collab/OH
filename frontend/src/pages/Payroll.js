@@ -51,6 +51,52 @@ const Payroll = () => {
     }
   };
 
+  const loadPayrollHistory = async () => {
+    try {
+      const res = await api.get('/payroll/history', { withCredentials: true });
+      setPayrollHistory(res.data || []);
+    } catch (error) {
+      console.error('Error loading payroll history:', error);
+    }
+  };
+
+  // Load saved payroll by period
+  const loadSavedPayroll = (run) => {
+    setPayPeriod({ start: run.period_start, end: run.period_end });
+    // Transform saved employees data back to payrollData format
+    const savedData = (run.employees || []).map(emp => ({
+      employee: {
+        user_id: emp.user_id || emp.employee_id,
+        name: emp.name || emp.employee_name,
+        profile: {
+          position: emp.position || '',
+          hourly_rate: emp.rate || 0,
+          salary: emp.is_hourly ? 0 : emp.rate,
+          payment_method: emp.payment_method || 'check'
+        }
+      },
+      hoursWorked: emp.hours || emp.hours_worked || 0,
+      hourlyRate: emp.is_hourly ? (emp.rate || 0) : 0,
+      fixedSalary: emp.is_hourly ? 0 : (emp.rate || 0),
+      grossPay: emp.grossPay || emp.gross_pay || 0,
+      deductions: {
+        ...(emp.hacienda > 0 ? { 'Hacienda': emp.hacienda } : {}),
+        ...(emp.ss > 0 ? { 'Seguro Social': emp.ss } : {}),
+        ...(emp.medicare > 0 ? { 'Medicare': emp.medicare } : {}),
+        ...(emp.otherDeductions > 0 ? { 'Retención 10%': emp.otherDeductions } : {})
+      },
+      totalDeductions: emp.deductions || emp.total_deductions || 0,
+      netPay: emp.netPay || emp.net_pay || 0,
+      isContractor: emp.is_contractor || emp.type === 'contractor',
+      isExemptFromDeduction: false,
+      isHourly: emp.is_hourly || false,
+      hasPayConfig: (emp.rate || 0) > 0
+    }));
+    setPayrollData(savedData);
+    setShowHistory(false);
+    toast.success(`Nómina del ${run.period_start} al ${run.period_end} cargada`);
+  };
+
   const fetchClockHours = async (userId) => {
     try {
       const response = await api.get(`/clock/all`, {
