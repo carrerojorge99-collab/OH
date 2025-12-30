@@ -6034,17 +6034,68 @@ async def get_audit_logs(
     logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return [AuditLog(**log) for log in logs]
 
-@api_router.delete("/audit-logs/clear")
-async def clear_audit_logs(request: Request, session_token: Optional[str] = Cookie(None)):
+class ClearAuditLogsRequest(BaseModel):
+    password: str
+
+@api_router.post("/audit-logs/clear")
+async def clear_audit_logs(
+    data: ClearAuditLogsRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session_token: Optional[str] = Cookie(None)
+):
     user = await get_current_user(request, session_token)
     
     # Only super admins can clear audit logs
     if user.role != UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail="Solo el Super Admin puede eliminar el historial de auditoría")
     
+    # Verify password
+    user_doc = await db.users.find_one({"id": user.id}, {"_id": 0})
+    if not user_doc or not verify_password(data.password, user_doc.get('password', '')):
+        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+    
+    # Get count before deletion
+    count_before = await db.audit_logs.count_documents({})
+    
+    # Delete all audit logs
     result = await db.audit_logs.delete_many({})
     
-    # Log this critical action in a new audit log
+    # Get all super admins to notify
+    super_admins = await db.users.find(
+        {"role": UserRole.SUPER_ADMIN, "email": {"$exists": True, "$ne": ""}},
+        {"_id": 0, "email": 1, "name": 1}
+    ).to_list(100)
+    
+    # Send notification email to all super admins
+    from email_service import send_email
+    
+    for admin in super_admins:
+        if admin.get('email'):
+            subject = "⚠️ ALERTA: Historial de Auditoría Eliminado"
+            body = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: #dc2626; color: white; padding: 20px; text-align: center;">
+                    <h1 style="margin: 0;">⚠️ Alerta de Seguridad</h1>
+                </div>
+                <div style="padding: 30px; background: #f8fafc;">
+                    <h2 style="color: #1e293b;">Historial de Auditoría Eliminado</h2>
+                    <p style="color: #475569;">Se ha realizado una acción crítica en el sistema:</p>
+                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #dc2626;">
+                        <p><strong>Acción:</strong> Eliminación completa del historial de auditoría</p>
+                        <p><strong>Ejecutado por:</strong> {user.name} ({user.email})</p>
+                        <p><strong>Registros eliminados:</strong> {result.deleted_count}</p>
+                        <p><strong>Fecha y hora:</strong> {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y %H:%M:%S')}</p>
+                    </div>
+                    <p style="color: #64748b; font-size: 12px; margin-top: 20px;">
+                        Este es un mensaje automático de seguridad. Si no autorizaste esta acción, contacta inmediatamente al administrador del sistema.
+                    </p>
+                </div>
+            </div>
+            """
+            background_tasks.add_task(send_email, admin['email'], subject, body)
+    
+    # Log this critical action
     await log_audit(
         user_id=user.id,
         user_name=user.name,
@@ -6052,10 +6103,10 @@ async def clear_audit_logs(request: Request, session_token: Optional[str] = Cook
         entity_type="audit_logs",
         entity_id="all",
         entity_name="Historial de Auditoría",
-        details={"records_deleted": result.deleted_count}
+        details={"records_deleted": result.deleted_count, "notified_admins": len(super_admins)}
     )
     
-    return {"message": f"Se eliminaron {result.deleted_count} registros del historial"}
+    return {"message": f"Se eliminaron {result.deleted_count} registros del historial. Se notificó a {len(super_admins)} administradores."}
 
 @api_router.get("/integrations", response_model=List[IntegrationConfig])
 async def get_integrations(
