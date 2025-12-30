@@ -81,8 +81,8 @@ const Payroll = () => {
         api.get(`/employees`),
         api.get(`/payroll-settings`)
       ]);
-      // Include ALL employees
-      const freshEmployees = empRes.data;
+      // Include ALL employees EXCEPT clients
+      const freshEmployees = empRes.data.filter(e => e.role !== 'client');
       const freshSettings = settingsRes.data;
       setEmployees(freshEmployees);
       setPayrollSettings(freshSettings);
