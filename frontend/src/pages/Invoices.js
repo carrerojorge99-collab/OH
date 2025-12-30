@@ -645,7 +645,7 @@ const Invoices = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label>Proyecto (opcional)</Label>
-                      <Select value={manualForm.project_id || 'none'} onValueChange={(v) => setManualForm({...manualForm, project_id: v === 'none' ? '' : v})}>
+                      <Select value={manualForm.project_id || 'none'} onValueChange={(v) => handleProjectSelect(v === 'none' ? '' : v, setManualForm)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar proyecto" />
                         </SelectTrigger>
@@ -653,6 +653,22 @@ const Invoices = () => {
                           <SelectItem value="none">Sin proyecto</SelectItem>
                           {projects.map(p => (
                             <SelectItem key={p.project_id} value={p.project_id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Cliente Guardado</Label>
+                      <Select onValueChange={(v) => {
+                        const client = savedClients.find(c => c.id === v);
+                        if (client) handleSelectSavedClient(client, setManualForm);
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar cliente guardado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedClients.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -668,6 +684,10 @@ const Invoices = () => {
                     <div>
                       <Label>Teléfono</Label>
                       <Input value={manualForm.client_phone} onChange={(e) => setManualForm({...manualForm, client_phone: e.target.value})} />
+                    </div>
+                    <div>
+                      <Label>Sponsor</Label>
+                      <Input value={manualForm.sponsor_name} onChange={(e) => setManualForm({...manualForm, sponsor_name: e.target.value})} placeholder="Nombre del sponsor" />
                     </div>
                     <div className="md:col-span-2">
                       <Label>Dirección</Label>
