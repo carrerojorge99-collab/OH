@@ -40,7 +40,13 @@ export const fetchCompanyInfo = async () => {
     // If company has a logo URL, convert it to base64
     if (companyData && companyData.company_logo) {
       try {
-        const logoBase64 = await loadImageAsBase64(companyData.company_logo);
+        // Build full URL for the logo
+        const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
+        const logoUrl = companyData.company_logo.startsWith('http') 
+          ? companyData.company_logo 
+          : `${baseUrl}${companyData.company_logo}`;
+        
+        const logoBase64 = await loadImageAsBase64(logoUrl);
         if (logoBase64) {
           companyData.logoBase64 = logoBase64;
         }
