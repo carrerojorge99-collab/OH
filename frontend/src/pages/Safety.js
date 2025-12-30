@@ -2414,6 +2414,13 @@ const Safety = () => {
                       Ver Detalles
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => {
+                      generateIncidentDetailReport(incident, projectName);
+                      toast.success('PDF generado');
+                    }}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
                       setEditingIncident(incident);
                       setIncidentForm(incident);
                       setIncidentDialogOpen(true);
