@@ -3702,8 +3702,12 @@ def main():
             # Run Safety Module tests
             tester = SafetyModuleTester()
             results = tester.run_safety_module_tests()
+        elif sys.argv[1] == "payroll":
+            # Run Payroll tests
+            tester = PayrollTester()
+            results = tester.run_payroll_tests()
         else:
-            print("Usage: python backend_test.py [clock|export|client|pdf|safety]")
+            print("Usage: python backend_test.py [clock|export|client|pdf|safety|payroll]")
             return 1
     else:
         # Run full API tests
