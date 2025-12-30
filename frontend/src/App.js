@@ -49,6 +49,7 @@ function AppRouter() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/setup" element={<Setup />} />
+      <Route path="/emergency-reset" element={<EmergencyReset />} />
       
       <Route path="/dashboard" element={
         <ProtectedRoute>
