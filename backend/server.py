@@ -484,10 +484,12 @@ class Invoice(BaseModel):
     client_email: Optional[str] = None
     client_phone: Optional[str] = None
     client_address: Optional[str] = None
+    sponsor_name: Optional[str] = None
     items: List[InvoiceItem]
     subtotal: float
     tax_rate: float
     tax_amount: float
+    tax_type_name: Optional[str] = None
     total: float
     amount_paid: float = 0.0
     balance_due: float = 0.0
