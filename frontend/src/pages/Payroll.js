@@ -79,7 +79,8 @@ const Payroll = () => {
         api.get(`/employees`),
         api.get(`/payroll-settings`)
       ]);
-      const freshEmployees = empRes.data.filter(e => e.profile?.salary > 0 || e.profile?.hourly_rate > 0);
+      // Include ALL employees
+      const freshEmployees = empRes.data;
       const freshSettings = settingsRes.data;
       setEmployees(freshEmployees);
       setPayrollSettings(freshSettings);
@@ -97,41 +98,48 @@ const Payroll = () => {
         let grossPay = 0;
         let hoursWorked = clockHours;
         
+        // Determine if employee has pay configured
+        const hasPayConfig = hourlyRate > 0 || fixedSalary > 0;
+        
         if (hourlyRate > 0) {
           grossPay = hourlyRate * hoursWorked;
-        } else {
+        } else if (fixedSalary > 0) {
           grossPay = fixedSalary;
         }
         
         let deductions = {};
         let totalDeductions = 0;
 
-        if (isContractor) {
-          const contractorDed = grossPay * (freshSettings.contractor_percent || 10) / 100;
-          deductions = { 'Retención 10%': contractorDed };
-          totalDeductions = contractorDed;
-        } else {
-          const hacienda = grossPay * (freshSettings.hacienda_percent || 0) / 100;
-          const ss = grossPay * (freshSettings.social_security_percent || 6.2) / 100;
-          const medicare = grossPay * (freshSettings.medicare_percent || 1.45) / 100;
-          deductions = {
-            'Hacienda': hacienda,
-            'Seguro Social': ss,
-            'Medicare': medicare
-          };
-          totalDeductions = hacienda + ss + medicare;
+        if (grossPay > 0) {
+          if (isContractor) {
+            const contractorDed = grossPay * (freshSettings.contractor_percent || 10) / 100;
+            deductions = { 'Retención 10%': contractorDed };
+            totalDeductions = contractorDed;
+          } else {
+            const hacienda = grossPay * (freshSettings.hacienda_percent || 0) / 100;
+            const ss = grossPay * (freshSettings.social_security_percent || 6.2) / 100;
+            const medicare = grossPay * (freshSettings.medicare_percent || 1.45) / 100;
+            deductions = {
+              'Hacienda': hacienda,
+              'Seguro Social': ss,
+              'Medicare': medicare
+            };
+            totalDeductions = hacienda + ss + medicare;
+          }
         }
 
         return {
           employee: emp,
           hoursWorked,
           hourlyRate,
+          fixedSalary,
           grossPay,
           deductions,
           totalDeductions,
           netPay: grossPay - totalDeductions,
           isContractor,
-          isHourly: hourlyRate > 0
+          isHourly: hourlyRate > 0,
+          hasPayConfig
         };
       }));
 
