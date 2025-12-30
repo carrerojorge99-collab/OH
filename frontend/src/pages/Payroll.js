@@ -139,7 +139,7 @@ const Payroll = () => {
           totalDeductions,
           netPay: grossPay - totalDeductions,
           isContractor,
-          applyContractorDeduction: isContractor, // Initialize checkbox based on worker classification
+          isExemptFromDeduction: false, // By default, no one is exempt
           isHourly: hourlyRate > 0,
           hasPayConfig
         };
