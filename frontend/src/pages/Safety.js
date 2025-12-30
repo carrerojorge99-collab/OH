@@ -918,7 +918,10 @@ const Safety = () => {
   };
 
   // Render Checklists Tab
-  const renderChecklists = () => (
+  const renderChecklists = () => {
+    const projectName = selectedProject ? projects.find(p => p.project_id === selectedProject)?.name : null;
+    
+    return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
@@ -932,10 +935,22 @@ const Safety = () => {
             />
           </div>
         </div>
-        <Button onClick={() => { resetChecklistForm(); setChecklistDialogOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Checklist
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              generateChecklistsReport(checklists, projectName);
+              toast.success('Reporte PDF generado');
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Descargar Reporte
+          </Button>
+          <Button onClick={() => { resetChecklistForm(); setChecklistDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Checklist
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4">
