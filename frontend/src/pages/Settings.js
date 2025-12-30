@@ -573,7 +573,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="company" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 text-sm">
+          <TabsList className="grid w-full grid-cols-7 text-sm">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Empresa
             </TabsTrigger>
