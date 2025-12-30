@@ -13,11 +13,43 @@ const COLORS = {
   white: [255, 255, 255]
 };
 
-// Fetch company info
+// Helper function to load image as base64
+const loadImageAsBase64 = (url) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+};
+
+// Fetch company info including logo as base64
 export const fetchCompanyInfo = async () => {
   try {
     const response = await api.get('/company');
-    return response.data;
+    const companyData = response.data;
+    
+    // If company has a logo URL, convert it to base64
+    if (companyData && companyData.company_logo) {
+      try {
+        const logoBase64 = await loadImageAsBase64(companyData.company_logo);
+        if (logoBase64) {
+          companyData.logoBase64 = logoBase64;
+        }
+      } catch (e) {
+        console.error('Error loading company logo:', e);
+      }
+    }
+    
+    return companyData;
   } catch (error) {
     return {};
   }
