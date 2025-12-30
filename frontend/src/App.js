@@ -6,6 +6,7 @@ import './App.css';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Setup from './pages/Setup';
+import EmergencyReset from './pages/EmergencyReset';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
