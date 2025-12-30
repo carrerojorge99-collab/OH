@@ -166,7 +166,11 @@ const Payroll = () => {
         
         // Recalculate deductions
         let totalDeductions = 0;
-        if (item.applyContractorDeduction) {
+        if (item.isExemptFromDeduction) {
+          // Exempt: No deductions
+          item.deductions = {};
+          totalDeductions = 0;
+        } else if (item.isContractor) {
           const contractorDed = item.grossPay * (payrollSettings.contractor_percent || 10) / 100;
           item.deductions = { 'Retención 10%': contractorDed };
           totalDeductions = contractorDed;
