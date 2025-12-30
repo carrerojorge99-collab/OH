@@ -251,6 +251,13 @@ const Approvals = () => {
                               >
                                 <XCircle className="w-4 h-4 mr-1" /> Rechazar
                               </Button>
+                              <Button 
+                                onClick={() => handleDeleteApproval(req.id, 'request')}
+                                variant="outline"
+                                className="text-red-600 border-red-300 hover:bg-red-50 ml-auto"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
                         </div>
