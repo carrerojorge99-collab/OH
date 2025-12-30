@@ -502,7 +502,7 @@ const Payroll = () => {
                     <tr>
                       <th className="text-left p-3">Empleado</th>
                       <th className="text-left p-3">Tipo</th>
-                      <th className="text-center p-3">Ded. 10%</th>
+                      <th className="text-center p-3">Exento</th>
                       <th className="text-center p-3">Horas Trabajadas</th>
                       <th className="text-right p-3">Tarifa/Salario</th>
                       <th className="text-right p-3">Salario Bruto</th>
@@ -513,7 +513,7 @@ const Payroll = () => {
                   </thead>
                   <tbody>
                     {payrollData.map((p, idx) => (
-                      <tr key={idx} className={`border-b hover:bg-slate-50 ${!p.hasPayConfig ? 'bg-yellow-50' : ''}`}>
+                      <tr key={idx} className={`border-b hover:bg-slate-50 ${!p.hasPayConfig ? 'bg-yellow-50' : ''} ${p.isExemptFromDeduction ? 'bg-green-50' : ''}`}>
                         <td className="p-3">
                           <p className="font-medium">{p.employee.name}</p>
                           <p className="text-xs text-slate-500">{p.employee.profile?.position || 'Sin posición'}</p>
@@ -530,10 +530,10 @@ const Payroll = () => {
                         </td>
                         <td className="p-3 text-center">
                           <Checkbox 
-                            checked={p.applyContractorDeduction}
-                            onCheckedChange={(checked) => toggleContractorDeduction(idx, checked)}
+                            checked={p.isExemptFromDeduction}
+                            onCheckedChange={(checked) => toggleContractorExemption(idx, checked)}
                             disabled={p.grossPay <= 0}
-                            title={p.applyContractorDeduction ? 'Deducción de contratista aplicada' : 'Sin deducción de contratista'}
+                            title={p.isExemptFromDeduction ? 'Exento de retención' : 'Con retención'}
                           />
                         </td>
                         <td className="p-3 text-center">
