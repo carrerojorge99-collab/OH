@@ -488,7 +488,53 @@ const Payroll = () => {
               <p className="text-slate-600">Calcular pagos y deducciones basado en horas trabajadas</p>
             </div>
           </div>
+          <Button variant="outline" onClick={() => setShowHistory(!showHistory)}>
+            <History className="w-4 h-4 mr-2" /> {showHistory ? 'Ocultar' : 'Ver'} Historial ({payrollHistory.length})
+          </Button>
         </div>
+
+        {/* Payroll History */}
+        {showHistory && payrollHistory.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><History className="w-5 h-5" /> Historial de Nóminas Guardadas</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="text-left p-3">Período</th>
+                      <th className="text-center p-3">Empleados</th>
+                      <th className="text-right p-3">Total Bruto</th>
+                      <th className="text-right p-3">Total Deducciones</th>
+                      <th className="text-right p-3">Total Neto</th>
+                      <th className="text-left p-3">Procesado Por</th>
+                      <th className="text-left p-3">Fecha</th>
+                      <th className="text-center p-3">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payrollHistory.map((run, idx) => (
+                      <tr key={idx} className="border-b hover:bg-slate-50">
+                        <td className="p-3 font-medium">{run.period_start} al {run.period_end}</td>
+                        <td className="p-3 text-center">{run.employees?.length || 0}</td>
+                        <td className="p-3 text-right font-mono">${(run.totals?.gross || 0).toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono text-red-600">-${(run.totals?.deductions || 0).toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono text-green-600 font-bold">${(run.totals?.net || 0).toFixed(2)}</td>
+                        <td className="p-3">{run.processed_by_name || 'N/A'}</td>
+                        <td className="p-3 text-xs text-slate-500">{run.processed_at ? moment(run.processed_at).format('DD/MM/YYYY HH:mm') : 'N/A'}</td>
+                        <td className="p-3 text-center">
+                          <Button size="sm" variant="outline" onClick={() => loadSavedPayroll(run)}>
+                            Cargar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Period Selection */}
         <Card>
