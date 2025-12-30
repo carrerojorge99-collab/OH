@@ -2962,7 +2962,7 @@ async def delete_user(user_id: str, request: Request, session_token: Optional[st
     
     return {"message": f"Usuario {user_to_delete['name']} eliminado exitosamente"}
 
-@api_router.put("/users/{user_id}", response_model=User)
+@api_router.put("/users/{user_id}")
 async def update_user(user_id: str, user_data: UserUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
     current_user = await get_current_user(request, session_token)
     
@@ -3000,7 +3000,7 @@ async def update_user(user_id: str, user_data: UserUpdate, request: Request, ses
     
     updated_user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
     user_without_password = {k: v for k, v in updated_user.items() if k != 'password'}
-    return User(**user_without_password)
+    return user_without_password
 
 @api_router.get("/settings")
 async def get_settings(request: Request, session_token: Optional[str] = Cookie(None)):
