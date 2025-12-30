@@ -1545,6 +1545,79 @@ const Settings = () => {
           </Card>
             </form>
           </TabsContent>
+
+          {/* Data Export/Import Tab */}
+          <TabsContent value="data">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Exportar / Importar Datos
+                </CardTitle>
+                <CardDescription>
+                  Migra tus datos entre entornos (Preview → Producción)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Export Section */}
+                <div className="p-6 border rounded-lg bg-blue-50 border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">📤 Exportar Datos</h3>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Descarga un archivo JSON con todos los datos de la aplicación: usuarios, proyectos, clientes, facturas, empleados, configuración, etc.
+                  </p>
+                  <Button 
+                    onClick={handleExportData} 
+                    disabled={exporting}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {exporting ? 'Exportando...' : 'Exportar Todo'}
+                  </Button>
+                </div>
+
+                {/* Import Section */}
+                <div className="p-6 border rounded-lg bg-green-50 border-green-200">
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">📥 Importar Datos</h3>
+                  <p className="text-sm text-green-700 mb-4">
+                    Carga un archivo de backup previamente exportado. Los datos existentes con el mismo ID serán actualizados.
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImportData}
+                      disabled={importing}
+                      className="hidden"
+                      id="import-file"
+                    />
+                    <label htmlFor="import-file">
+                      <Button 
+                        asChild
+                        disabled={importing}
+                        className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                      >
+                        <span>
+                          <Upload className="h-4 w-4 mr-2" />
+                          {importing ? 'Importando...' : 'Seleccionar Archivo'}
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Instructions */}
+                <div className="p-4 border rounded-lg bg-amber-50 border-amber-200">
+                  <h4 className="font-semibold text-amber-900 mb-2">⚠️ Instrucciones para Migración</h4>
+                  <ol className="text-sm text-amber-800 space-y-1 list-decimal list-inside">
+                    <li><strong>En Preview:</strong> Haz clic en "Exportar Todo" y guarda el archivo</li>
+                    <li><strong>En Producción:</strong> Ve a Configuración → Datos</li>
+                    <li>Haz clic en "Seleccionar Archivo" y sube el archivo exportado</li>
+                    <li>Espera a que se complete la importación</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>
