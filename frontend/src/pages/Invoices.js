@@ -752,13 +752,38 @@ const Invoices = () => {
                       <Input type="number" value={manualForm.discount_percent} onChange={(e) => setManualForm({...manualForm, discount_percent: e.target.value})} />
                     </div>
                     <div>
+                      <Label>Tipo de Impuesto</Label>
+                      <Select value={manualForm.tax_type_id || 'custom'} onValueChange={(v) => {
+                        if (v === 'custom') {
+                          setManualForm({...manualForm, tax_type_id: '', tax_type_name: ''});
+                        } else {
+                          handleSelectTaxType(v, setManualForm);
+                        }
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar tipo de impuesto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="custom">Personalizado</SelectItem>
+                          {taxTypes.map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.name} ({t.percentage}%)</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
                       <Label>Impuesto (%)</Label>
-                      <Input type="number" value={manualForm.tax_rate} onChange={(e) => setManualForm({...manualForm, tax_rate: e.target.value})} />
+                      <Input type="number" value={manualForm.tax_rate} onChange={(e) => setManualForm({...manualForm, tax_rate: e.target.value, tax_type_id: '', tax_type_name: ''})} />
                     </div>
                     <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg">
                       <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${calculateManualTotals().subtotal.toFixed(2)}</span></div>
                       {calculateManualTotals().discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${calculateManualTotals().discountAmount.toFixed(2)}</span></div>}
-                      {calculateManualTotals().taxAmount > 0 && <div className="flex justify-between text-sm"><span>Impuesto:</span><span>${calculateManualTotals().taxAmount.toFixed(2)}</span></div>}
+                      {calculateManualTotals().taxAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>Impuesto {manualForm.tax_type_name ? `(${manualForm.tax_type_name})` : ''}:</span>
+                          <span>${calculateManualTotals().taxAmount.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${calculateManualTotals().total.toFixed(2)}</span></div>
                     </div>
                   </div>
