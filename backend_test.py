@@ -3770,8 +3770,8 @@ class InvoiceManagementTester:
                 tax_type = response.json()
                 print(f"   Response Body: {json.dumps(tax_type, indent=2)}")
                 
-                if 'tax_type_id' in tax_type:
-                    self.test_tax_type_id = tax_type['tax_type_id']
+                if 'id' in tax_type:
+                    self.test_tax_type_id = tax_type['id']
                     name = tax_type.get('name', 'N/A')
                     percentage = tax_type.get('percentage', 0)
                     self.log_test("Create Tax Type", True, 
