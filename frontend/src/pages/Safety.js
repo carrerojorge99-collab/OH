@@ -2771,6 +2771,7 @@ const Safety = () => {
       </Dialog>
     </div>
   );
+  };
 
   return (
     <Layout>
