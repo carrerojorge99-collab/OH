@@ -600,7 +600,7 @@ const Payroll = () => {
                   </tbody>
                   <tfoot className="bg-slate-100 font-bold">
                     <tr>
-                      <td colSpan="2" className="p-3">TOTALES</td>
+                      <td colSpan="3" className="p-3">TOTALES</td>
                       <td className="p-3 text-center font-mono">{payrollData.reduce((a, p) => a + (p.isHourly ? p.hoursWorked : 0), 0).toFixed(2)} hrs</td>
                       <td className="p-3"></td>
                       <td className="p-3 text-right font-mono">${payrollData.reduce((a, p) => a + p.grossPay, 0).toFixed(2)}</td>
