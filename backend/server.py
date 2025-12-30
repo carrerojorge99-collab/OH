@@ -4717,6 +4717,14 @@ async def create_manual_invoice(
             "amount": item.amount
         })
     
+    # Get sponsor from project if available
+    sponsor_name = invoice_data.sponsor_name or ""
+    if invoice_data.project_id and not sponsor_name:
+        project = await db.projects.find_one({"project_id": invoice_data.project_id}, {"_id": 0})
+        if project:
+            project_name = project.get('name', '')
+            sponsor_name = project.get('sponsor', '')
+
     invoice_doc = {
         "invoice_id": invoice_id,
         "invoice_number": invoice_number,
@@ -4726,12 +4734,14 @@ async def create_manual_invoice(
         "client_email": invoice_data.client_email,
         "client_phone": invoice_data.client_phone,
         "client_address": invoice_data.client_address,
+        "sponsor_name": sponsor_name,
         "items": invoice_items,
         "subtotal": subtotal,
         "discount_percent": invoice_data.discount_percent,
         "discount_amount": discount_amount,
         "tax_rate": invoice_data.tax_rate,
         "tax_amount": tax_amount,
+        "tax_type_name": invoice_data.tax_type_name,
         "total": total,
         "amount_paid": 0.0,
         "balance_due": total,
