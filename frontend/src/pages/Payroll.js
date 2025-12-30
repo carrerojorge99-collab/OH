@@ -237,15 +237,26 @@ const Payroll = () => {
         period_end: payPeriod.end,
         employees: payrollData.map(p => ({
           employee_id: p.employee.id,
+          user_id: p.employee.user_id,
+          name: p.employee.name,
           employee_name: p.employee.name,
           type: p.isContractor ? 'contractor' : 'employee',
+          is_contractor: p.isContractor,
           is_hourly: p.isHourly,
+          hours: p.hoursWorked,
           hours_worked: p.hoursWorked,
-          rate: p.rate,
+          rate: p.isHourly ? p.hourlyRate : (p.employee.profile?.salary || 0),
+          grossPay: p.grossPay,
           gross_pay: p.grossPay,
-          deductions: p.deductions,
+          hacienda: p.deductions['Hacienda'] || 0,
+          ss: p.deductions['Seguro Social'] || 0,
+          medicare: p.deductions['Medicare'] || 0,
+          otherDeductions: p.deductions['Retención 10%'] || 0,
+          deductions: p.totalDeductions,
           total_deductions: p.totalDeductions,
-          net_pay: p.netPay
+          netPay: p.netPay,
+          net_pay: p.netPay,
+          payment_method: p.employee.profile?.payment_method || 'check'
         })),
         totals
       };

@@ -249,22 +249,34 @@ const MyProfile = () => {
                             {totalHours.toFixed(2)}h total
                           </Badge>
                         </div>
-                        <div className="space-y-1 ml-2 border-l-2 border-slate-200 pl-3">
-                          {entries.map((entry, idx) => (
-                            <div key={entry.clock_id || idx} className="flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-slate-700">
-                                  {entry.clock_in_time || '--:--'} - {entry.clock_out_time || 'Activo'}
+                        <div className="space-y-2 ml-2 border-l-2 border-slate-200 pl-3">
+                          {entries.map((entry, idx) => {
+                            const clockInTime = entry.clock_in ? moment(entry.clock_in).format('h:mm A') : '--:--';
+                            const clockOutTime = entry.clock_out ? moment(entry.clock_out).format('h:mm A') : null;
+                            return (
+                              <div key={entry.clock_id || idx} className="flex items-center justify-between text-sm py-1">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-mono font-medium text-slate-800">
+                                      {clockInTime}
+                                    </span>
+                                    <span className="text-slate-400">-</span>
+                                    <span className={`font-mono font-medium ${clockOutTime ? 'text-slate-800' : 'text-green-600'}`}>
+                                      {clockOutTime || 'Activo'}
+                                    </span>
+                                  </div>
+                                  {entry.project_name && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {entry.project_name}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className={`text-sm font-medium ${entry.status === 'active' ? 'text-green-600' : 'text-blue-600'}`}>
+                                  {entry.status === 'active' ? '🟢 En curso' : `${(entry.hours_worked || 0).toFixed(2)}h`}
                                 </span>
-                                {entry.project_name && (
-                                  <span className="text-slate-500 text-xs">• {entry.project_name}</span>
-                                )}
                               </div>
-                              <span className={`text-xs ${entry.status === 'active' ? 'text-green-600 font-medium' : 'text-slate-500'}`}>
-                                {entry.status === 'active' ? '🟢 Activo' : `${(entry.hours_worked || 0).toFixed(2)}h`}
-                              </span>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </CardContent>
                     </Card>
