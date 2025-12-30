@@ -165,7 +165,7 @@ const Payroll = () => {
         
         // Recalculate deductions
         let totalDeductions = 0;
-        if (item.isContractor) {
+        if (item.applyContractorDeduction) {
           const contractorDed = item.grossPay * (payrollSettings.contractor_percent || 10) / 100;
           item.deductions = { 'Retención 10%': contractorDed };
           totalDeductions = contractorDed;
@@ -187,6 +187,39 @@ const Payroll = () => {
       return updated;
     });
     setEditingHours(null);
+  };
+
+  // Toggle contractor deduction for an employee
+  const toggleContractorDeduction = (idx, checked) => {
+    setPayrollData(prev => {
+      const updated = [...prev];
+      const item = updated[idx];
+      item.applyContractorDeduction = checked;
+      
+      // Recalculate deductions based on new status
+      if (item.grossPay > 0) {
+        let totalDeductions = 0;
+        if (checked) {
+          const contractorDed = item.grossPay * (payrollSettings.contractor_percent || 10) / 100;
+          item.deductions = { 'Retención 10%': contractorDed };
+          totalDeductions = contractorDed;
+        } else {
+          const hacienda = item.grossPay * (payrollSettings.hacienda_percent || 0) / 100;
+          const ss = item.grossPay * (payrollSettings.social_security_percent || 6.2) / 100;
+          const medicare = item.grossPay * (payrollSettings.medicare_percent || 1.45) / 100;
+          item.deductions = {
+            'Hacienda': hacienda,
+            'Seguro Social': ss,
+            'Medicare': medicare
+          };
+          totalDeductions = hacienda + ss + medicare;
+        }
+        item.totalDeductions = totalDeductions;
+        item.netPay = item.grossPay - totalDeductions;
+      }
+      
+      return updated;
+    });
   };
 
   const exportPDF = async () => {
