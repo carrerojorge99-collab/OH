@@ -492,6 +492,7 @@ const Payroll = () => {
                     <tr>
                       <th className="text-left p-3">Empleado</th>
                       <th className="text-left p-3">Tipo</th>
+                      <th className="text-center p-3">Ded. 10%</th>
                       <th className="text-center p-3">Horas Trabajadas</th>
                       <th className="text-right p-3">Tarifa/Salario</th>
                       <th className="text-right p-3">Salario Bruto</th>
@@ -518,6 +519,13 @@ const Payroll = () => {
                           </Badge>
                         </td>
                         <td className="p-3 text-center">
+                          <Checkbox 
+                            checked={p.applyContractorDeduction}
+                            onCheckedChange={(checked) => toggleContractorDeduction(idx, checked)}
+                            disabled={p.grossPay <= 0}
+                            title={p.applyContractorDeduction ? 'Deducción de contratista aplicada' : 'Sin deducción de contratista'}
+                          />
+                        </td>
                           {p.isHourly || !p.hasPayConfig ? (
                             <div className="flex items-center justify-center gap-2">
                               {editingHours === idx ? (
