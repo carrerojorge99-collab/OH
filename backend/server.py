@@ -6557,7 +6557,7 @@ async def export_cost_estimate_pdf(
     # Get company info
     company = await db.company.find_one({}, {"_id": 0}) or {}
     
-    # Define corporate colors matching frontend
+    # Define corporate colors matching frontend/invoice
     PRIMARY_COLOR = colors.HexColor('#f97316')  # Orange
     SECONDARY_COLOR = colors.HexColor('#475569')  # Slate
     TEXT_COLOR = colors.HexColor('#1e293b')  # Dark
@@ -6575,29 +6575,69 @@ async def export_cost_estimate_pdf(
     company_detail_style = ParagraphStyle('CompanyDetail', parent=styles['Normal'], fontSize=8, textColor=SECONDARY_COLOR)
     heading_style = ParagraphStyle('Heading', parent=styles['Heading2'], fontSize=11, textColor=TEXT_COLOR, spaceAfter=8, spaceBefore=15, fontName='Helvetica-Bold')
     normal_right = ParagraphStyle('NormalRight', parent=styles['Normal'], alignment=2)
+    subtitle_right = ParagraphStyle('SubtitleRight', parent=styles['Normal'], fontSize=9, textColor=SECONDARY_COLOR, alignment=2)
     
     elements = []
     
-    # Company header section (matching invoice style)
+    # Build header table with logo on left, doc info on right (matching invoice style)
+    # Left side: Company logo and info
+    left_elements = []
+    
+    # Try to load company logo
+    logo_path = None
+    if company.get('company_logo'):
+        logo_url = company.get('company_logo', '')
+        if logo_url.startswith('/api/uploads/'):
+            logo_path = ROOT_DIR / logo_url.replace('/api/uploads/', 'uploads/')
+        elif logo_url.startswith('/uploads/'):
+            logo_path = ROOT_DIR / logo_url.lstrip('/')
+    
+    if logo_path and logo_path.exists():
+        try:
+            logo_img = Image(str(logo_path), width=1.5*inch, height=0.75*inch)
+            left_elements.append(logo_img)
+            left_elements.append(Spacer(1, 5))
+        except:
+            pass
+    
+    # Company name and details
     company_name = company.get('company_name', 'OHSMS PR')
-    elements.append(Paragraph(company_name, company_style))
+    left_elements.append(Paragraph(company_name, company_style))
     
     if company.get('address'):
-        elements.append(Paragraph(company.get('address', ''), company_detail_style))
+        left_elements.append(Paragraph(company.get('address', ''), company_detail_style))
     if company.get('city') or company.get('state'):
-        elements.append(Paragraph(f"{company.get('city', '')}, {company.get('state', '')} {company.get('zip_code', '')}", company_detail_style))
+        left_elements.append(Paragraph(f"{company.get('city', '')}, {company.get('state', '')} {company.get('zip_code', '')}", company_detail_style))
     if company.get('phone'):
-        elements.append(Paragraph(f"Tel: {company.get('phone', '')}", company_detail_style))
+        left_elements.append(Paragraph(f"Tel: {company.get('phone', '')}", company_detail_style))
+    if company.get('email'):
+        left_elements.append(Paragraph(company.get('email', ''), company_detail_style))
     
-    elements.append(Spacer(1, 10))
+    # Right side: Document title and info
+    right_elements = []
+    right_elements.append(Paragraph("ESTIMACIÓN DE COSTOS", title_style))
+    right_elements.append(Paragraph(f"#{estimate.get('estimate_name', 'Sin nombre')}", subtitle_right))
+    right_elements.append(Paragraph(f"Proyecto: {estimate.get('project_name', 'N/A')}", subtitle_right))
+    right_elements.append(Paragraph(f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}", subtitle_right))
     
-    # Document title - right aligned
-    elements.append(Paragraph("ESTIMACIÓN DE COSTOS", title_style))
-    elements.append(Paragraph(f"#{estimate.get('estimate_name', 'Sin nombre')}", normal_right))
-    elements.append(Paragraph(f"Proyecto: {estimate.get('project_name', 'N/A')}", normal_right))
-    elements.append(Paragraph(f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}", normal_right))
+    # Create header table with two columns
+    from reportlab.platypus import KeepTogether
+    header_table_data = [[left_elements, right_elements]]
+    header_table = Table(header_table_data, colWidths=[3.5*inch, 3.5*inch])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+    ]))
+    elements.append(header_table)
     
     # Orange separator line
+    elements.append(Spacer(1, 10))
+    line_table = Table([['']], colWidths=[7*inch])
+    line_table.setStyle(TableStyle([
+        ('LINEBELOW', (0, 0), (-1, -1), 1, PRIMARY_COLOR),
+    ]))
+    elements.append(line_table)
     elements.append(Spacer(1, 15))
     
     # Table style matching invoice CSS
