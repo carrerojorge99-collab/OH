@@ -812,6 +812,23 @@ async def login(credentials: UserLogin, response: Response):
     )
     
     user_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
+    
+    # Check if password is temporary
+    is_temp_password = user_doc.get('is_temp_password', False)
+    
+    return {
+        "user": User(**user_without_password), 
+        "token": session_token,
+        "requires_password_change": is_temp_password
+    }
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=ACCESS_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+    
+    user_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
     return {"user": User(**user_without_password), "token": session_token}
 
 @api_router.post("/auth/session")
