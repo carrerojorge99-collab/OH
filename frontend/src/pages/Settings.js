@@ -132,6 +132,66 @@ const Settings = () => {
     setSaving(false);
   };
 
+  // Tax Types functions
+  const fetchTaxTypes = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/tax-types`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setTaxTypes(data);
+      }
+    } catch (error) {
+      console.error('Error fetching tax types');
+    }
+  };
+
+  const handleSaveTaxType = async (e) => {
+    e.preventDefault();
+    if (!taxTypeForm.name || taxTypeForm.percentage < 0) {
+      toast.error('Complete los campos requeridos');
+      return;
+    }
+    
+    try {
+      if (editingTaxType) {
+        await fetch(`${API_URL}/api/tax-types/${editingTaxType.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(taxTypeForm)
+        });
+        toast.success('Tipo de impuesto actualizado');
+      } else {
+        await fetch(`${API_URL}/api/tax-types`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(taxTypeForm)
+        });
+        toast.success('Tipo de impuesto creado');
+      }
+      setTaxTypeForm({ name: '', percentage: 0, description: '', is_active: true });
+      setEditingTaxType(null);
+      fetchTaxTypes();
+    } catch (error) {
+      toast.error('Error al guardar');
+    }
+  };
+
+  const handleDeleteTaxType = async (taxId) => {
+    if (!window.confirm('¿Eliminar este tipo de impuesto?')) return;
+    try {
+      await fetch(`${API_URL}/api/tax-types/${taxId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      toast.success('Tipo de impuesto eliminado');
+      fetchTaxTypes();
+    } catch (error) {
+      toast.error('Error al eliminar');
+    }
+  };
+
   const fetchSettings = async () => {
     try {
       const response = await fetch(`${API_URL}/api/settings?_t=${Date.now()}`, {
