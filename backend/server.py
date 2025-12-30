@@ -808,7 +808,7 @@ async def emergency_password_reset(data: EmergencyResetRequest):
     
     return {"message": f"Contraseña actualizada para {data.email}. Ya puedes iniciar sesión."}
 
-@api_router.post("/auth/register", response_model=User)
+@api_router.post("/auth/register")
 async def register(user_data: UserRegister):
     # Si se proporciona email, verificar que no exista
     if user_data.email:
@@ -853,7 +853,7 @@ async def register(user_data: UserRegister):
             print(f"Error sending welcome email: {e}")
     
     user_doc_without_password = {k: v for k, v in user_doc.items() if k not in ['password', 'is_temp_password']}
-    return User(**user_doc_without_password)
+    return user_doc_without_password
 
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin, response: Response):
