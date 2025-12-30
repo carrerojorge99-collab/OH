@@ -6108,6 +6108,116 @@ async def clear_audit_logs(
     
     return {"message": f"Se eliminaron {result.deleted_count} registros del historial. Se notificó a {len(super_admins)} administradores."}
 
+# ==================== DATA EXPORT/IMPORT ====================
+
+@api_router.get("/data/export")
+async def export_all_data(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Export all application data as JSON for migration"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Solo Super Admin puede exportar datos")
+    
+    # Collections to export
+    collections_to_export = [
+        'users', 'projects', 'tasks', 'clients', 'invoices', 'estimates',
+        'expenses', 'budget_categories', 'labor_entries', 'timesheets',
+        'purchase_orders', 'change_orders', 'clock_entries', 'payroll_runs',
+        'pay_stubs', 'requests', 'approvals', 'safety_checklists',
+        'safety_checklist_templates', 'safety_observations', 'safety_incidents',
+        'toolbox_talks', 'toolbox_topics', 'company', 'settings',
+        'labor_rates', 'nomenclatures', 'tax_types', 'payroll_settings',
+        'documents_from_client', 'documents_to_client', 'notifications'
+    ]
+    
+    export_data = {
+        "export_date": datetime.now(PUERTO_RICO_TZ).isoformat(),
+        "exported_by": user.name,
+        "version": "1.0",
+        "collections": {}
+    }
+    
+    for collection_name in collections_to_export:
+        try:
+            collection = db[collection_name]
+            docs = await collection.find({}, {"_id": 0}).to_list(10000)
+            export_data["collections"][collection_name] = docs
+        except Exception as e:
+            export_data["collections"][collection_name] = []
+    
+    return export_data
+
+@api_router.post("/data/import")
+async def import_all_data(
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Import application data from JSON export"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Solo Super Admin puede importar datos")
+    
+    if "collections" not in data:
+        raise HTTPException(status_code=400, detail="Formato de archivo inválido")
+    
+    results = {}
+    
+    for collection_name, documents in data["collections"].items():
+        if not documents or not isinstance(documents, list):
+            results[collection_name] = {"imported": 0, "skipped": True}
+            continue
+        
+        try:
+            collection = db[collection_name]
+            
+            # For each document, try to insert or update
+            imported_count = 0
+            for doc in documents:
+                if not doc:
+                    continue
+                
+                # Find unique identifier
+                id_field = None
+                for field in ['id', 'user_id', 'project_id', 'task_id', 'invoice_id', 
+                             'estimate_id', 'expense_id', 'clock_id', 'rate_id',
+                             'checklist_id', 'observation_id', 'incident_id', 'talk_id',
+                             'order_id', 'po_id', 'category_id', 'nomenclature_id']:
+                    if field in doc:
+                        id_field = field
+                        break
+                
+                if id_field:
+                    # Upsert: update if exists, insert if not
+                    await collection.update_one(
+                        {id_field: doc[id_field]},
+                        {"$set": doc},
+                        upsert=True
+                    )
+                else:
+                    # Just insert for collections without clear ID
+                    await collection.insert_one(doc)
+                
+                imported_count += 1
+            
+            results[collection_name] = {"imported": imported_count}
+        except Exception as e:
+            results[collection_name] = {"error": str(e)}
+    
+    # Log the import action
+    await log_audit(
+        user_id=user.id,
+        user_name=user.name,
+        action="create",
+        entity_type="data_import",
+        entity_id="bulk",
+        entity_name="Importación de Datos",
+        details={"results": results}
+    )
+    
+    return {"message": "Importación completada", "results": results}
+
 @api_router.get("/integrations", response_model=List[IntegrationConfig])
 async def get_integrations(
     request: Request,
