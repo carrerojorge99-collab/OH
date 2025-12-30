@@ -1876,6 +1876,350 @@ class PDFGenerationTester:
             "pdf_issues": pdf_failures
         }
 
+class PayrollTester:
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="j.carrero@ohsmspr.com", password="Axel52418!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_get_employees(self):
+        """Test getting employees with salary/hourly_rate"""
+        print(f"\n🔍 Testing Get Employees...")
+        
+        try:
+            url = f"{self.api_url}/employees"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                employees = response.json()
+                if isinstance(employees, list):
+                    employees_with_pay = []
+                    for emp in employees:
+                        profile = emp.get('profile', {})
+                        if profile and (profile.get('salary', 0) > 0 or profile.get('hourly_rate', 0) > 0):
+                            employees_with_pay.append(emp)
+                    
+                    self.log_test("Get Employees", True, 
+                                f"Found {len(employees)} total employees, {len(employees_with_pay)} with salary/hourly rate")
+                    return True, employees
+                else:
+                    self.log_test("Get Employees", False, "", f"Invalid response format: {employees}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Employees", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Employees", False, "", str(e))
+            return False, []
+
+    def test_get_payroll_settings(self):
+        """Test getting payroll settings"""
+        print(f"\n🔍 Testing Get Payroll Settings...")
+        
+        try:
+            url = f"{self.api_url}/payroll-settings"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                settings = response.json()
+                print(f"   Response Body: {json.dumps(settings, indent=2)}")
+                
+                self.log_test("Get Payroll Settings", True, 
+                            f"Payroll settings retrieved successfully")
+                return True, settings
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Payroll Settings", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Get Payroll Settings", False, "", str(e))
+            return False, {}
+
+    def test_process_payroll(self):
+        """Test payroll processing creates pay stubs"""
+        print(f"\n🔍 Testing Process Payroll...")
+        
+        payroll_data = {
+            "period_start": "2025-12-15",
+            "period_end": "2025-12-31",
+            "employees": [{
+                "employee_id": "test-id",
+                "user_id": self.user_id,
+                "name": "Test Employee",
+                "is_contractor": False,
+                "is_hourly": True,
+                "hours": 40,
+                "rate": 15.00,
+                "grossPay": 600.00,
+                "hacienda": 0,
+                "ss": 37.20,
+                "medicare": 8.70,
+                "deductions": 45.90,
+                "netPay": 554.10,
+                "payment_method": "check"
+            }],
+            "totals": {"hours": 40, "gross": 600, "deductions": 45.90, "net": 554.10}
+        }
+        
+        try:
+            url = f"{self.api_url}/payroll/process"
+            response = self.session.post(url, json=payroll_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                print(f"   Response Body: {json.dumps(response_data, indent=2)}")
+                
+                if 'stubs_generated' in response_data:
+                    stubs_count = response_data['stubs_generated']
+                    payroll_id = response_data.get('id', 'N/A')
+                    self.log_test("Process Payroll", True, 
+                                f"Payroll processed successfully - ID: {payroll_id}, Stubs generated: {stubs_count}")
+                    return True, response_data
+                else:
+                    self.log_test("Process Payroll", False, "", "No stubs_generated in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Process Payroll", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Process Payroll", False, "", str(e))
+            return False, {}
+
+    def test_get_my_pay_stubs(self):
+        """Test pay stubs retrieval for logged in user"""
+        print(f"\n🔍 Testing Get My Pay Stubs...")
+        
+        try:
+            url = f"{self.api_url}/pay-stubs/my"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                pay_stubs = response.json()
+                print(f"   Response Body: {json.dumps(pay_stubs, indent=2)}")
+                
+                if isinstance(pay_stubs, list):
+                    # Check if pay stubs have required fields
+                    valid_stubs = []
+                    for stub in pay_stubs:
+                        required_fields = ['employee_id', 'period_start', 'period_end', 'hours_worked', 'gross_pay', 'deductions', 'net_pay']
+                        if all(field in stub for field in required_fields):
+                            valid_stubs.append(stub)
+                    
+                    self.log_test("Get My Pay Stubs", True, 
+                                f"Found {len(pay_stubs)} pay stubs, {len(valid_stubs)} with all required fields")
+                    return True, pay_stubs
+                else:
+                    self.log_test("Get My Pay Stubs", False, "", f"Invalid response format: {pay_stubs}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get My Pay Stubs", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get My Pay Stubs", False, "", str(e))
+            return False, []
+
+    def test_get_clock_history(self):
+        """Test clock history for hours display"""
+        print(f"\n🔍 Testing Get Clock History for Hours Display...")
+        
+        try:
+            url = f"{self.api_url}/clock/history"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                history = response.json()
+                print(f"   Response Body: {json.dumps(history, indent=2)}")
+                
+                if isinstance(history, list):
+                    # Check if entries contain clock_in and clock_out timestamps
+                    valid_entries = []
+                    for entry in history:
+                        if 'clock_in' in entry and 'clock_out' in entry:
+                            # Try to parse ISO format
+                            try:
+                                from datetime import datetime
+                                clock_in = datetime.fromisoformat(entry['clock_in'].replace('Z', '+00:00'))
+                                if entry['clock_out']:
+                                    clock_out = datetime.fromisoformat(entry['clock_out'].replace('Z', '+00:00'))
+                                valid_entries.append(entry)
+                            except:
+                                pass
+                    
+                    self.log_test("Get Clock History", True, 
+                                f"Found {len(history)} clock entries, {len(valid_entries)} with valid timestamps for AM/PM display")
+                    return True, history
+                else:
+                    self.log_test("Get Clock History", False, "", f"Invalid response format: {history}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Clock History", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Clock History", False, "", str(e))
+            return False, []
+
+    def run_payroll_tests(self):
+        """Run complete payroll test suite"""
+        print("🚀 Starting Payroll Processing and Pay Stubs Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Test payroll calculation data flow
+        success, employees = self.test_get_employees()
+        if not success:
+            print("❌ Failed to get employees, continuing with other tests")
+        
+        success, settings = self.test_get_payroll_settings()
+        if not success:
+            print("❌ Failed to get payroll settings, continuing with other tests")
+        
+        # Step 3: Test payroll processing creates pay stubs
+        success, payroll_result = self.test_process_payroll()
+        if not success:
+            print("❌ Failed to process payroll, continuing with other tests")
+        
+        # Step 4: Test pay stubs retrieval
+        self.test_get_my_pay_stubs()
+        
+        # Step 5: Test clock history for hours display
+        self.test_get_clock_history()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 PAYROLL PROCESSING AND PAY STUBS TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if any(keyword in test['test'] for keyword in ['Process Payroll', 'Get My Pay Stubs'])]
+        if critical_failures:
+            print("\n🚨 CRITICAL ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 class ProjectManagementAPITester:
     def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
