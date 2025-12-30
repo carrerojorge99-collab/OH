@@ -36,8 +36,8 @@ const Payroll = () => {
         api.get(`/employees?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
         api.get(`/payroll-settings?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
-      // Include employees with salary OR hourly_rate
-      setEmployees(empRes.data.filter(e => e.profile?.salary > 0 || e.profile?.hourly_rate > 0));
+      // Include ALL employees - show everyone regardless of salary/hourly_rate configuration
+      setEmployees(empRes.data);
       setPayrollSettings(settingsRes.data);
       setLoading(false);
     } catch (error) {
