@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import moment from 'moment';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { fetchCompanyInfo, addReportHeader, addReportTable, addFooter } from '../utils/pdfGenerator';
 
 
 const Payroll = () => {
