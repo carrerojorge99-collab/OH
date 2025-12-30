@@ -1,71 +1,67 @@
 <analysis>**original_problem_statement:**
-During the previous session, the user requested several high-priority features related to payroll, employee profiles, and a significant overhaul of the invoicing system (adding statuses, reusable clients, sponsors, and configurable taxes).
+The user initiated the session with a request to unify all PDF styles to match the invoice's CSS and to ensure the company logo appears on pay stubs. Following the successful implementation of the PDF styling, the user made several new feature requests and bug reports in succession:
 
-In the current session, the user provided a new, superseding high-priority request:
-1.  **Unified PDF Styling:** QUE TODOS LOS PDF DEL SISTEMA TENGAN EL MISMO CSS DE LAS FACTURAS. (All PDFs in the system should have the same CSS as the invoices).
-2.  **Logo on Pay Stubs:** A follow-up clarification: en el pdf de los talonarios debe salir la informacion de la empresa con el logo (the company information with the logo must appear on the pay stub PDF).
+1.  **Payroll Page Enhancements:**
+    *   Show all employees on the payroll page, even those with no registered hours.
+    *   Allow HR to generate and print individual pay stubs directly from the payroll list.
+    *   Add a checkbox for each employee to mark them as exempt from the 10% contractor tax deduction.
+2.  **Payroll History Bug:**
+    *   Reported that saved payrolls were not appearing when searching by date.
+    *   Reported that users with the 'client' role were incorrectly appearing in the employee list for payroll.
+3.  **User Onboarding & Security:**
+    *   When a new user/employee account is created, automatically send a welcome email with their temporary credentials.
+    *   Force users who log in with a temporary password to change it immediately.
+4.  **System Settings:**
+    *   Enable customization of the SMTP Sender Email and Sender Name from the application's settings page.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-The agent has successfully refactored the PDF generation logic across the entire application to use a unified style based on the invoice PDF. This includes updates to both frontend () and backend () generated documents. All major PDF generation points (Invoices, Estimates, Purchase Orders, Pay Stubs, Payroll Reports, Audit Logs, Timesheets) have been modified.
-
-However, a new issue surfaced from this work: the company logo and information are not appearing correctly on the generated pay stub (talonario) PDF, which is the agent's current focus.
+The agent has successfully implemented all the user's requests from this session.
+- The PDF logo issue is resolved.
+- The Payroll page now includes all requested enhancements: a complete employee list, individual pay stub generation, and an exemption checkbox for deductions.
+- The payroll history bug was fixed by adding a Saved Payrolls section to the UI, allowing users to view and load past payrolls. Clients are now filtered out from the list.
+- A complete user onboarding flow is now in place, which sends a welcome email and forces a password change for new users with temporary passwords.
+- The SMTP sender details are now fully configurable through the Settings UI.
 
 **Last working item**:
--   Last item agent was working: Debugging why the company logo and information are not being displayed on the pay stub PDF. The agent has confirmed that the company information exists in the database but suspects the PDF generation logic is incorrectly using a hardcoded placeholder logo from  instead of fetching the company's actual logo from the backend.
--   Status: IN PROGRESS
--   Agent Testing Done: N
--   Which testing method agent to use? Manual testing. The agent needs to navigate to the My Profile page, download a pay stub PDF, and visually inspect it to confirm the logo and company information are present and correct.
+-   Last item agent was working: The agent's final task was to enable the customization of the SMTP sender email and name. The agent identified that the UI fields already existed in  but the backend was not correctly saving these values. The agent modified the settings update endpoint in  to persist  and  to the environment configuration.
+-   Status: USER VERIFICATION PENDING
+-   Agent Testing Done: Y
+-   Which testing method agent to use? Manual testing by user. The user needs to go to Settings, change the SMTP sender details, save, and confirm the changes are applied in subsequent emails.
 -   User Testing Done: N
 
-**All Pending/Inprogress Issue list**:
--   Issue 1: Company logo and information missing from pay stub PDF (P0)
--   Issue 2: Conflicting test results for Payroll feature (P1)
--   Issue 3: Blank screen on preview (P2)
--   Issue 4: Nomenclature selector does not display options (P3)
+**All Pending/In progress Issue list**:
+-   Issue 1: Conflicting test results for Payroll feature (P1)
+-   Issue 2: Blank screen on preview (P2)
+-   Issue 3: Nomenclature selector does not display options (P3)
 
 **Issues Detail**:
--   **Issue 1: Company logo and information missing from pay stub PDF**
-    -   **Description**: Following the user's request, the agent is trying to ensure the company logo and info appear on the pay stub () PDF. The feature is currently not working.
-    -   **Attempted fixes**: The agent investigated  and . It confirmed company data is available via the  endpoint but identified that the PDF function  uses a hardcoded  from .
-    -   **Next debug checklist**:
-        1.  In , fetch the company profile data (including the  URL) before generating the PDF.
-        2.  Use a helper function (like  which already exists in ) to convert the fetched company logo URL into a base64 string.
-        3.  Pass the fetched company info and the new logo base64 string to the PDF generation utility.
-        4.  Remove the dependency on the hardcoded  in  for pay stubs.
-        5.  Manually test by downloading a pay stub and verifying the correct logo and company name appear.
-    -   **Why fix this issue and what will be achieved with the fix?**: Fulfills a direct user request and ensures brand consistency on official documents.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: frontend
-    -   **Blocked on other issue**: None
-
--   **Issue 2: Conflicting test results for Payroll feature**
-    -   **Description**: Manual screenshot testing confirmed the payroll calculation feature works, but an automated frontend test reported a critical failure. This discrepancy needs to be resolved.
-    -   **Attempted fixes**: Manual re-verification.
-    -   **Next debug checklist**: Re-run the frontend testing subagent specifically for payroll. If it fails, analyze test logs to find the root cause.
-    -   **Why fix this issue and what will be achieved with the fix?**: Ensures the payroll feature is robust and automated tests are reliable.
+-   **Issue 1: Conflicting test results for Payroll feature**
+    -   **Description**: An automated frontend test for payroll reported a failure in a previous session, but manual testing showed it worked. The payroll feature has been significantly overhauled in this session, making the old test results obsolete.
+    -   **Attempted fixes**: None in this session.
+    -   **Next debug checklist**: Run the frontend testing subagent specifically on the new payroll page to create an up-to-date test baseline and identify any new regressions.
+    -   **Why fix this issue and what will be achieved with the fix?**: Ensures the critical payroll feature is robust and that automated tests are reliable for future development.
     -   **Status**: TESTING PENDING
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None
 
--   **Issue 3: Blank screen on preview**
-    -   **Description**: A potential critical startup issue reported in a past session but was deprioritized by the user. It has not been investigated.
+-   **Issue 2: Blank screen on preview**
+    -   **Description**: A potential critical startup issue reported in a past session but was deprioritized. It has not been investigated.
     -   **Attempted fixes**: None.
-    -   **Next debug checklist**: Try to reproduce. Check browser console and backend supervisor logs for errors.
-    -   **Why fix this issue and what will be achieved with the fix?**: Solves a potential critical application failure.
+    -   **Next debug checklist**: Attempt to reproduce the issue. Check browser console and backend supervisor logs for startup errors.
+    -   **Why fix this issue and what will be achieved with the fix?**: Solves a potential critical application failure, ensuring basic stability.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: both
     -   **Blocked on other issue**: None
 
--   **Issue 4: Nomenclature selector does not display options**
-    -   **Description**: A high-priority, recurring bug where new nomenclatures from Settings don't appear in dropdowns.
+-   **Issue 3: Nomenclature selector does not display options**
+    -   **Description**: A high-priority, recurring bug where new nomenclatures created in Settings do not appear in dropdowns across the application.
     -   **Attempted fixes**: None in this session.
-    -   **Next debug checklist**: Inspect the  endpoint response and debug the frontend state management for the dropdown.
-    -   **Why fix this issue and what will be achieved with the fix?**: Restores essential application functionality.
+    -   **Next debug checklist**: Inspect the  endpoint response. Debug the frontend state management responsible for populating the nomenclature dropdowns.
+    -   **Why fix this issue and what will be achieved with the fix?**: Restores essential categorization functionality required for many workflows.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
@@ -74,11 +70,11 @@ However, a new issue surfaced from this work: the company logo and information a
 **In progress Task List**:
 -   **Task 1: Unify PDF Styling**
     -   **Description**: Make all PDFs in the system have the same style as the invoice PDFs.
-    -   **Where to resume**: The main refactoring is complete. The task is currently blocked pending the fix for the Company logo on pay stub issue. Once fixed, this entire task will be ready for final user verification across all PDF types.
+    -   **Where to resume**: The initial implementation is complete, and the blocking logo issue has been fixed. The task is now pending final user verification across all relevant PDF types (Invoices, Estimates, Pay Stubs, etc.).
     -   **What will be achieved with this?**: A consistent, professional look and feel for all documents generated by the application.
-    -   **Status**: BLOCKED
+    -   **Status**: USER VERIFICATION PENDING
     -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on something**: Issue 1: Company logo and information missing from pay stub PDF.
+    -   **Blocked on something**: None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
@@ -98,13 +94,17 @@ However, a new issue surfaced from this work: the company logo and information a
     -   Real-time Chat Feature.
 
 **Completed work in this session**
--   **Unified PDF Styling Refactor (DONE - Pending logo fix and final verification)**:
-    -   **Backend ()**:
-        -   Refactored  PDF generation for Project reports and Cost Estimate reports to match the new unified style.
-        -   Fixed a missing  import.
-    -   **Frontend**:
-        -   Enhanced  with more reusable functions for headers, tables, and footers.
-        -   Refactored PDF generation logic in  (Pay Stubs),  (Payroll Report),  (Audit Report), and  (Timesheet/Labor Reports) to use the centralized .
+-   **Payroll Page Overhaul (DONE - Pending User Verification)**:
+    -   Modified  to show all employees, filter out clients, add a button to print individual pay stubs, and include a checkbox to exempt employees from contractor deductions.
+-   **Payroll History Feature (DONE - Pending User Verification)**:
+    -   Resolved a bug where saved payrolls were not visible by adding a Historial de Nóminas Guardadas section to , which fetches and displays historical data from  and allows reloading a saved payroll run.
+-   **User Onboarding & Security Flow (DONE - Pending User Verification)**:
+    -   Created a forced password change mechanism. This involved adding an  field to the user model, creating a new  endpoint, and updating the login flow (, , ).
+    -   Implemented an automated welcome email on user creation by adding a  template to  and calling it from the user creation endpoints in .
+-   **Configurable SMTP Sender (DONE - Pending User Verification)**:
+    -   Enabled customization of the SMTP sender name and email by updating the settings endpoint in  to save  and  to the environment configuration.
+-   **PDF Logo Fix (DONE)**:
+    -   Resolved the issue of a hardcoded logo on pay stubs by updating  to dynamically use the company logo fetched from the  endpoint.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Blank screen on preview**
@@ -119,7 +119,7 @@ However, a new issue surfaced from this work: the company logo and information a
     -   **Is recurring issue?**: Y
 
 **Known issue recurrence from previous fork**
--   **Nomenclature Selector**: This is a recurring unresolved issue from a previous fork.
+-   **Nomenclature Selector**: This is a recurring unresolved issue.
 -   **Recurrence count**: 3+
 -   **Status**: NOT STARTED
 
@@ -127,54 +127,61 @@ However, a new issue surfaced from this work: the company logo and information a
 
 
 **Key Technical Concepts**
--   **Frontend**: Centralized PDF generation using  and . Refactoring multiple React components to consume a shared utility (). Asynchronous data fetching (for company logo) prior to document generation.
--   **Backend**: Refactoring PDF generation using the  library to align styling with frontend-generated documents.
+-   **Frontend**: React (, ), dynamic UI rendering based on state, conditional logic, API integration with , and PDF generation with .
+-   **Backend**: FastAPI, MongoDB (using ), background tasks for sending emails, environment variable management for configuration ().
+-   **Authentication**: Extended JWT-based session management to include a flag for forcing password changes ().
 
 **key DB schema**
--   No changes made to the database schema in this session.
+-   **users** collection: Added a new boolean field  to identify users with temporary passwords who need to change it on their first login.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : Contains backend PDF generation logic that was updated.
--   : The new centralized utility for frontend PDF creation.
--   : The page where the current bug (missing logo on pay stub) is visible.
--   : The file containing the incorrect, hardcoded logo.
--   , , : Other files updated to use the new PDF utility.
+-   : The central file for most features implemented in this session.
+-   : The main backend file, modified to support the new authentication flow and settings.
+-   : Key file for the client-side handling of the forced password change.
+-   : Manages the authentication state, including the new password change requirement.
+-   : Contains the logic for sending system emails.
+-   : The utility used for creating PDFs, which was fixed.
 
 **Areas that need refactoring**:
--    and  remain complex and are candidates for being broken down into smaller components.
--    continues to grow and should be split into multiple router files by domain.
+-    is becoming increasingly large and would benefit from being split into separate FastAPI routers for each domain (auth, payroll, projects, etc.).
+-    has grown significantly in complexity and should be broken down into smaller, more manageable components (e.g., , , ).
 
 **key api endpoints**
--   : **Key for debugging.** The endpoint that provides the company information and logo URL needed to fix the current issue.
+-    (**NEW**): Allows an authenticated user to change their own password.
+-   : Modified to return a  boolean flag.
+-   : Modified to set the  flag and trigger a welcome email.
+-   : The creation endpoint was also modified to trigger the welcome email.
+-   : Used to fetch data for the new Payroll History UI.
+-   : Modified to properly save  and .
 
 **Critical Info for New Agent**
 -   **Language**: All communication with the user must be in **Spanish**.
--   **User-Driven Priority**: The user's most recent request is always the top priority. The agent correctly pivoted from the previous plan to the new PDF styling request.
--   **Immediate Task**: The absolute next step is to fix the missing company logo on the pay stub PDF. This is a blocker for completing the overall Unified PDF Styling task.
--   **Verification**: After fixing the logo, perform a manual check by downloading one of each PDF type to ensure the styling is consistent and correct across the board.
--   **Pending Backlog**: The older, unresolved issues (Payroll test conflict, Blank screen, Nomenclature selector) are still pending and should be addressed after the current PDF work is fully completed and verified by the user.
+-   **User-Driven Development**: The agent successfully pivoted multiple times to address the user's immediate requests. The next agent should be prepared for a similar dynamic workflow.
+-   **Verification is Key**: A large number of features were implemented in this session. The user has stated, yo hago pruebas, tu completa (I'll do the tests, you complete it). The next step should be to present the completed work and explicitly ask the user to verify each new feature before moving on to older, pending issues.
+-   **Do Not Regress**: Be careful not to break the new payroll, authentication, or settings functionality while working on other tasks. The payroll page, in particular, has a lot of new client-side logic.
 
 **documents and test reports created in this job**
--   : Updated and used to run a test suite which verified the PDF downloads were not crashing.
+-   : Updated to test the PDF logo fix.
 
 **Last 10 User Messages and any pending HUMAN messages**
--   : User request. The fix is currently **IN PROGRESS**.
--   : User request. The implementation is **BLOCKED** by the logo issue above.
--   : User confirmation from previous session. **COMPLETE**.
--   : User request from previous session. **IN PROGRESS** (but superseded by PDF task).
--   : User confirmation from previous session. **COMPLETE**.
--   : User request from previous session. **COMPLETE** (but has conflicting test results).
+1.  : Request to make SMTP sender details configurable. (Completed)
+2.  : Request for welcome email and forced password change. (Completed)
+3.  : Bug report about clients in payroll and history not saving. (Completed)
+4.  : Clarification on the exemption checkbox logic. (Completed)
+5.  : Request for the deduction exemption checkbox. (Completed)
+6.  : User confirms they will handle testing. (Acknowledged)
+7.  : Request to show all employees and allow HR to print pay stubs. (Completed)
+8.  : User's go-ahead message. (Handled)
+The agent completed the final task, and there is no pending response from the user.
 
 **Project Health Check:**
 -   **Broken**:
-    -   The Nomenclature selector feature remains non-functional.
-    -   Automated tests for the Payroll feature are considered unreliable.
-    -   Pay stub PDF generation is incorrect (missing company logo/info).
+    -   The Nomenclature selector feature is still non-functional and is a recurring issue.
 -   **Mocked**:
-    -   SMTP credentials are still placeholders.
+    -   SMTP credentials remain as placeholders in the  file, though they are now configurable via the UI. The feature will not work in production until real credentials are provided.
 
 **3rd Party Integrations**
 -   jsPDF & jspdf-autotable
@@ -185,10 +192,10 @@ However, a new issue surfaced from this work: the company logo and information a
 -   reportlab
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (The agent ran a test that confirmed PDF downloads were functional after the refactor).
+-   **Testing agent used after significant changes**: YES, for the initial PDF logo fix.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: The pay stub PDF is now missing company information, which is a regression in the context of the new user requirement.
+-   **Known regressions**: None from this session. All user-reported issues were addressed.
 
 **Credentials to test flow:**
 -   **Super Admin Email**: 
@@ -197,4 +204,4 @@ However, a new issue surfaced from this work: the company logo and information a
 -   **Client Password**: 
 
 **What agent forgot to execute**
--   The agent did not forget any tasks. It correctly reprioritized its work based on the user's new, urgent request to unify PDF styles. It was logically debugging the follow-up issue with the pay stub logo when the session ended.</analysis>
+-   The agent did not forget or miss any requested tasks in this session. It correctly prioritized the user's active requests over the backlog from the previous session.</analysis>
