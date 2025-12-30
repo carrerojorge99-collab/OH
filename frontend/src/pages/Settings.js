@@ -59,6 +59,8 @@ const Settings = () => {
     is_active: true
   });
   const [editingTaxType, setEditingTaxType] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
   
   const [settings, setSettings] = useState({
     smtp_host: '',
