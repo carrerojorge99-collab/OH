@@ -3900,7 +3900,7 @@ class InvoiceManagementTester:
                                 f"Saved client created - ID: {self.test_saved_client_id}, Name: {name}, Email: {email}")
                     return True, client
                 else:
-                    self.log_test("Create Saved Client", False, "", "No client_id in response")
+                    self.log_test("Create Saved Client", False, "", "No id in response")
                     return False, {}
             else:
                 try:
