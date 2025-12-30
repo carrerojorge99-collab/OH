@@ -1,304 +1,124 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to build out a comprehensive ERP application, ProManage.
+The user provided two sets of high-priority feature requests during this session, superseding all previously planned work.
 
-In this session, the user introduced a completely new, high-priority feature request: **to add invoice management and payment tracking capabilities directly within the project detail view.**
+**First Request Set (Payroll & Employee Profile):**
+1.  **Process Payroll:** Implement functionality on the payroll page to process payroll, which should then post pay stubs () to the corresponding employee's profile.
+2.  **Detailed Hours in Profile:** In the employee profile's hours view, display the detailed clock-in/clock-out times (e.g., 8:00 AM - 5:00 PM) in addition to the total hours worked.
 
-This request superseded all previous tasks, including a critical blank screen bug report from the user, fixing the Nomenclature selector, and verifying previously completed work.
-
-PRODUCT REQUIREMENTS:
-1.  Create, view, and manage invoices specific to each project.
-2.  Add a financial summary card to the project view, showing total invoiced, total paid, and outstanding balance.
-3.  Implement functionality to register partial or full payments against invoices.
+**Second Request Set (Invoicing & Estimates):**
+1.  **Invoice Status:** Add the ability to mark invoices with statuses, such as Sent.
+2.  **Reusable Clients:** Client names entered in projects or invoices should be saved and made available for reuse in future forms.
+3.  **Sponsor on Invoice:** The sponsor's name should be included on the invoice document.
+4.  **Configurable Taxes:** Create an area in Settings to configure different tax types (name, percentage). These configured taxes should then be selectable when creating or editing invoices and estimates.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-The application is a full-stack ERP with a React frontend and FastAPI backend. A global invoicing system existed previously. The agent has just implemented a major new feature: a dedicated Invoices tab within the  page. This new section includes a financial summary for the project, a list of associated invoices, and functionality to create new invoices and register payments. The implementation involved adding a new backend endpoint for the financial summary, heavily modifying the  frontend component, and fixing a critical bug in the backend's invoice creation logic.
+The agent successfully implemented two major feature sets requested by the user.
+1.  **Payroll/Profile Enhancements:** The payroll processing now correctly generates and links pay stubs to employee profiles. The employee profile page has been updated to show a detailed breakdown of clock-in/clock-out times. This was verified manually by the agent with screenshots, although a subsequent automated frontend test failed, which the agent believes was an error.
+2.  **Invoicing System Overhaul:** A comprehensive update to the invoicing module was completed. This includes a new Taxes management section in Settings, the ability to mark invoices as Sent, a dropdown for reusing saved client names, and a field for a Sponsor on invoices. These features were verified manually via screenshots, and the backend automated tests passed.
 
 **Last working item**:
--   Last item agent was working: The final step was to conduct a thorough test of the newly implemented Project Invoices feature using the testing subagent. The backend portion of the test was completed, and the user gave approval to proceed with the frontend tests.
+-   Last item agent was working: Completing the implementation of the four new invoicing features. The agent finished the backend and frontend code, performed manual E2E testing, and then successfully ran the backend testing subagent. The final step was to run the frontend tests.
 -   Status: IN PROGRESS
--   Agent Testing Done: Y (Manual E2E and Backend testing via subagent)
+-   Agent Testing Done: Y (Manual E2E and Backend via subagent)
 -   Which testing method agent to use? frontend testing agent
 -   User Testing Done: N
 
-**All Pending/In progress Issue list**:
--   Issue 1: Frontend testing for Project Invoices feature (P0)
--   Issue 2: Blank screen on preview (P1)
--   Issue 3: Nomenclature selector does not display options (P2)
+**All Pending/Inprogress Issue list**:
+-   Issue 1: Frontend testing for new Invoicing features (P0)
+-   Issue 2: Conflicting test results for Payroll feature (P1)
+-   Issue 3: Blank screen on preview (P2)
+-   Issue 4: Nomenclature selector does not display options (P3)
 
 **Issues Detail**:
--   **Issue 1: Frontend testing for Project Invoices feature**
-    -   **Description**: The agent successfully implemented the invoice management feature inside projects and verified it manually. The backend testing subagent passed. The final step is to run the frontend testing subagent to ensure full test coverage and robustness, as per the user's confirmation (I do test).
+-   **Issue 1: Frontend testing for new Invoicing features**
+    -   **Description**: The agent implemented four new features related to invoicing (status, reusable clients, taxes, sponsor). Manual tests and backend automated tests passed. The final step is to run the frontend testing subagent to ensure full test coverage.
     -   **Attempted fixes**: N/A
     -   **Next debug checklist**:
         1.  Read the current .
-        2.  Update the  file with instructions for the frontend testing subagent to test the new invoice functionality on the  page. The test should cover creating an invoice, registering a partial payment, and verifying that all UI elements (summary card, invoice list) update correctly.
+        2.  Update  with instructions for the frontend testing subagent to test the new invoice functionality: create a tax type in settings, create a manual invoice using the new tax type and a saved client, mark the invoice as sent, and verify the status changes.
         3.  Invoke the  subagent.
-    -   **Why fix this issue and what will be achieved with the fix?**: This will formally validate the new feature, catch any potential frontend bugs or regressions, and confirm its completion.
+    -   **Why fix this issue and what will be achieved with the fix?**: This will formally validate the new invoicing features, catch any potential frontend bugs, and confirm the completion of the user's latest request.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None
 
--   **Issue 2: Blank screen on preview**
-    -   **Description**: At the beginning of the session, the user reported, Le doy preview y se queda en blanco (I click preview and it stays blank). The agent confirmed this with a screenshot. However, the user immediately pivoted to a new feature request, and this issue was never investigated. The application started working during subsequent testing, but the root cause was never found.
-    -   **Attempted fixes**: None. The issue was bypassed.
+-   **Issue 2: Conflicting test results for Payroll feature**
+    -   **Description**: The agent implemented the payroll processing and hours display features. Manual screenshot testing confirmed both features were working perfectly. However, the automated frontend test reported a critical failure, stating the payroll calculation did not display any results. The agent immediately re-tested manually and confirmed via screenshot that the feature *was* working, concluding the test agent had a transient error. This discrepancy needs to be definitively resolved.
+    -   **Attempted fixes**: The agent re-verified functionality manually after the failed test.
     -   **Next debug checklist**:
-        1.  Attempt to reproduce the issue by restarting the services and accessing the preview URL.
-        2.  If it occurs, check the browser console logs from the screenshot tool for any frontend errors.
-        3.  Simultaneously, check the backend logs (==> /var/log/supervisor/backend.err.log <==
-    raise exc
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
-    await self.app(scope, receive, _send)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
-    await self.simple_response(scope, receive, send, request_headers=headers)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 148, in simple_response
-    await self.app(scope, receive, send)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 189, in __call__
-    with collapse_excgroups():
-  File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
-    self.gen.throw(typ, value, traceback)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/_utils.py", line 93, in collapse_excgroups
-    raise exc
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
-    response = await self.dispatch_func(request, call_next)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/app/backend/server.py", line 7178, in add_no_cache_headers
-    response = await call_next(request)
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
-    raise app_exc
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
-    await self.app(scope, receive_or_disconnect, send_no_error)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
-    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
-    raise exc
-  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
-    await app(scope, receive, sender)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 756, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 776, in app
-    await route.handle(scope, receive, send)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
-    await self.app(scope, receive, send)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
-    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
-    raise exc
-  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
-    await app(scope, receive, sender)
-  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
-    response = await func(request)
-               ^^^^^^^^^^^^^^^^^^^
-  File "/root/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 296, in app
-    content = await serialize_response(
-              ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 180, in serialize_response
-    return jsonable_encoder(response_content)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/.venv/lib/python3.11/site-packages/fastapi/encoders.py", line 287, in jsonable_encoder
-    encoded_value = jsonable_encoder(
-                    ^^^^^^^^^^^^^^^^^
-  File "/root/.venv/lib/python3.11/site-packages/fastapi/encoders.py", line 330, in jsonable_encoder
-    raise ValueError(errors) from e
-ValueError: [TypeError("'ObjectId' object is not iterable"), TypeError('vars() argument must have __dict__ attribute')]
-WARNING:  WatchFiles detected changes in 'server.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [976]
-INFO:     Started server process [2857]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [48] using WatchFiles
-INFO:     Started server process [77]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [48] using WatchFiles
-INFO:     Started server process [77]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [49] using WatchFiles
-INFO:     Started server process [85]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [48] using WatchFiles
-INFO:     Started server process [85]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [50] using WatchFiles
-INFO:     Started server process [85]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Will watch for changes in these directories: ['/app/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
-INFO:     Started reloader process [48] using WatchFiles
-INFO:     Started server process [79]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
+        1.  Re-run the frontend testing subagent with a specific test case for payroll calculation.
+        2.  If it fails again, analyze the console logs and network requests from the test run to find the root cause.
+        3.  Compare the test environment/data with the manual test to understand the difference.
+    -   **Why fix this issue and what will be achieved with the fix?**: Ensures the payroll feature is robust and that automated tests are reliable. It resolves the ambiguity between manual and automated test results.
+    -   **Status**: TESTING PENDING
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Blocked on other issue**: None
 
-==> /var/log/supervisor/backend.out.log <==
-INFO:     10.64.128.8:49900 - "GET /api/payroll-settings?_t=1767104578542 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:59796 - "GET /api/employees?_t=1767104578542 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:59796 - "GET /api/clock/all?user_id=user_4619340421d2&start_date=2025-12-15&end_date=2025-12-30&_t=1767104578673 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:60570 - "GET /api/clock/history?date=2025-12-30&_t=1767104636010&_t=1767104636031 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:60582 - "GET /api/clock/active?_t=1767104636013&_t=1767104636031 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:36660 - "GET /api/clock/active?_t=1767104636010&_t=1767104636031 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:60584 - "GET /api/clock/projects?_t=1767104636013&_t=1767104636031 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:39640 - "GET /api/clock/history?date=2025-12-30&_t=1767104636013&_t=1767104636031 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:39624 - "GET /api/clock/projects?_t=1767104636010&_t=1767104636031 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:60582 - "GET /api/clock/all?_t=1767104637525&_t=1767104637535 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:39624 - "GET /api/users?_t=1767104637525&_t=1767104637535 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:36660 - "GET /api/projects?_t=1767104637525&_t=1767104637535 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:39624 - "GET /api/pay-stubs/my?_t=1767104637849 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:36660 - "GET /api/clock/history?_t=1767104637849 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:39624 - "GET /api/projects?_t=1767104640117 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:36660 - "GET /api/invoices?_t=1767104640117 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/users?_t=1767104683802&_t=1767104683825 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/projects?_t=1767104683799&_t=1767104683825 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/clock/all?_t=1767104683802&_t=1767104683825 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/projects?_t=1767104683802&_t=1767104683825 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/clock/all?_t=1767104683799&_t=1767104683825 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35622 - "GET /api/users?_t=1767104683799&_t=1767104683825 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/clock/history?date=2025-12-30&_t=1767104684074&_t=1767104684081 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/clock/active?_t=1767104684074&_t=1767104684081 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/clock/projects?_t=1767104684074&_t=1767104684081 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/clock/all?_t=1767104684741&_t=1767104684751 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/projects?_t=1767104684741&_t=1767104684751 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/projects?_t=1767104684742&_t=1767104684751 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/clock/all?_t=1767104684742&_t=1767104684751 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/users?_t=1767104684741&_t=1767104684751 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50732 - "GET /api/users?_t=1767104684742&_t=1767104684751 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/projects?_t=1767104685216 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50732 - "GET /api/users?_t=1767104685216 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50732 - "GET /api/projects?_t=1767104685612 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/tasks?_t=1767104685612 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/projects?_t=1767104686385 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/users?_t=1767104686385 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/safety/dashboard?_t=1767104686385 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/safety/dashboard?_t=1767104686496 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/safety/dashboard?_t=1767104686497 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/tasks?_t=1767104686949 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/projects?_t=1767104686949 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/expenses?project_id=proj_bfc46dbbc812&_t=1767104687105 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/expenses?project_id=proj_bfc46dbbc812&_t=1767104687106 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/expenses?project_id=proj_1ded60488f43&_t=1767104687210 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/expenses?project_id=proj_1ded60488f43&_t=1767104687211 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/expenses?project_id=proj_c174dc6a217b&_t=1767104687312 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/expenses?project_id=proj_c174dc6a217b&_t=1767104687314 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/expenses?project_id=proj_7b2039b45677&_t=1767104687437 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/expenses?project_id=proj_7b2039b45677&_t=1767104687438 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35608 - "GET /api/expenses?project_id=proj_f2692a10d04e&_t=1767104687628 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/expenses?project_id=proj_f2692a10d04e&_t=1767104687630 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/expenses?project_id=proj_e766c3d9e664&_t=1767104687741 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/expenses?project_id=proj_e766c3d9e664&_t=1767104687739 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/expenses?project_id=proj_416b09329cdd&_t=1767104687844 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/expenses?project_id=proj_416b09329cdd&_t=1767104687843 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/expenses?project_id=proj_36d4281cdc0c&_t=1767104687962 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/expenses?project_id=proj_36d4281cdc0c&_t=1767104687963 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/expenses?project_id=proj_a5ef66f804ce&_t=1767104688153 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/expenses?project_id=proj_a5ef66f804ce&_t=1767104688154 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/expenses?project_id=proj_93b4e1da5afd&_t=1767104688272 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/expenses?project_id=proj_93b4e1da5afd&_t=1767104688271 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/expenses?project_id=proj_5fec825c7084&_t=1767104688386 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/expenses?project_id=proj_5fec825c7084&_t=1767104688385 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/expenses?project_id=proj_f5e1e5087e2a&_t=1767104688730 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/expenses?project_id=proj_f5e1e5087e2a&_t=1767104688731 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/projects?_t=1767104690064 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/estimates?_t=1767104690064 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58040 - "GET /api/cost-estimates?_t=1767104691010&_t=1767104691015 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/projects?_t=1767104691015 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/projects?_t=1767104692213 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/purchase-orders?_t=1767104692213 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/invoices?_t=1767104692683 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:49314 - "GET /api/projects?_t=1767104692683 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/users?_t=1767104693913 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/audit-logs?limit=1000&_t=1767104693913 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/requests/my?_t=1767104694862 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/projects?_t=1767104694862 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/requests?_t=1767104695650 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/approvals?_t=1767104695650 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/clients?_t=1767104696414 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/users?_t=1767104696908 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/employees?_t=1767104697760 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/settings?_t=1767104698615 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:58054 - "GET /api/labor-rates?_t=1767104698615 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/company?_t=1767104698615 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:51426 - "GET /api/settings?_t=1767104698616 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:34706 - "GET /api/company?_t=1767104698616 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:34700 - "GET /api/labor-rates?_t=1767104698616 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/employees?_t=1767104699532 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/settings?_t=1767104700276 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:34706 - "GET /api/company?_t=1767104700276 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:35610 - "GET /api/labor-rates?_t=1767104700277 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:48190 - "GET /api/settings?_t=1767104700277 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:48176 - "GET /api/company?_t=1767104700277 HTTP/1.1" 200 OK
-INFO:     10.64.128.6:50722 - "GET /api/labor-rates?_t=1767104700278 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:49644 - "GET /api/projects?_t=1767104707892 HTTP/1.1" 200 OK
-INFO:     10.64.128.8:49652 - "GET /api/dashboard/stats?_t=1767104707892 HTTP/1.1" 200 OK
-INFO:     10.64.128.53:45602 - "GET /api/alerts?_t=1767104708200 HTTP/1.1" 200 OK) for any startup or runtime errors.
-    -   **Why fix this issue and what will be achieved with the fix?**: This could be a critical, intermittent startup issue that could block the user at any time. Identifying the root cause is important for application stability.
+-   **Issue 3: Blank screen on preview**
+    -   **Description**: Originally reported by the user at the start of the previous session. The user immediately pivoted to other features, and this was never investigated. It's a potential critical stability issue.
+    -   **Attempted fixes**: None.
+    -   **Next debug checklist**:
+        1.  Restart services and access the preview URL to check for reproducibility.
+        2.  Check browser console logs via the screenshot tool and backend logs () for errors.
+    -   **Why fix this issue and what will be achieved with the fix?**: Solves a potential critical application startup failure.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: both
     -   **Blocked on other issue**: None
 
--   **Issue 3: Nomenclature selector does not display options**
-    -   **Description**: A recurring, high-priority bug. When a user creates a new nomenclature in Settings, it fails to appear as a selectable option in dropdowns on other forms. This was the top priority from the previous session but was deferred.
+-   **Issue 4: Nomenclature selector does not display options**
+    -   **Description**: A recurring, high-priority bug from a previous fork. New nomenclatures created in Settings do not appear in dropdowns on other forms. This was deferred due to the user's new requests.
     -   **Attempted fixes**: None in this session.
     -   **Next debug checklist**:
-        1.  In  or a similar page, inspect the network request for nomenclatures when the form loads.
-        2.  Verify the  endpoint is being called and returns the correct, updated list using .
-        3.  Debug the data-fetching logic where the state for the dropdown is managed.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a core feature for categorizing financial documents. Fixing it will restore essential application functionality.
+        1.  Inspect the network request for  on a relevant form.
+        2.  Verify the endpoint's response includes newly created items.
+        3.  Debug the frontend state management for the nomenclature dropdown.
+    -   **Why fix this issue and what will be achieved with the fix?**: Restores essential application functionality for categorizing documents.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
-- There are no tasks currently in progress besides the final testing of the last item.
+-   None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
     -   **P0 - User Verification**: Await user confirmation for the **Delete Change Order** feature (from previous job).
     -   **P1 - User Verification**: Await user confirmation for the **Attendee Tracking and Media Upload** features in the Safety Module (from previous job).
-    -   **P2 - User Feature Recommendations**: Implement the remaining features from the previous backlog:
+    -   **P2 - User Feature Recommendations**: Implement remaining features from the previous backlog:
         *   Closure Prediction for projects.
         *   Alerts with blocking actions.
         *   Profitability per employee report.
     -   **P3 - Drill-Down for Delta Report**: Add the v2 feature for the Delta Estimado vs Real report.
 
 -   **Future Tasks**:
-    -   Refactor Monolithic Files: , , and .
+    -   Refactor Monolithic Files: , , , .
     -   Estimate to Invoice Conversion Feature.
     -   Clock History Map View.
     -   Timesheet Reporting by Employee.
     -   Real-time Chat Feature.
 
 **Completed work in this session**
--   **Project-Specific Invoice Management (DONE - Pending Final Test)**:
-    -   **Backend**:
-        -   Added  endpoint to  for real-time financial calculations.
-        -   Fixed a critical  serialization bug in the  endpoint in  by removing the  field before returning the response.
+-   **Payroll & Profile Features (DONE - Pending Test Confirmation)**:
+    -   **Backend**: Logic in  was confirmed to correctly associate pay stubs with .
     -   **Frontend**:
-        -   Heavily modified  to include a new Facturas (Invoices) tab.
-        -   Added a comprehensive Project Financial Summary card.
-        -   Implemented UI and logic for listing invoices, creating new invoices, and registering payments within the project view.
--   **Debugging**:
-    -   Resolved a JavaScript syntax error () in .
+        -   Modified  to correctly send the employee  when processing payroll.
+        -   Modified  to display detailed clock-in/out times with AM/PM formatting.
+-   **Invoice & Settings Features (DONE - Pending Frontend Test)**:
+    -   **Backend ()**:
+        -   Added new  collection and full CRUD endpoints ().
+        -   Added endpoint to get saved clients ().
+        -   Added endpoint to update invoice status: .
+        -   Updated  and  models to include , , and .
+        -   Modified invoice creation endpoints to save new clients and include new fields.
+    -   **Frontend**:
+        -   Created a full CRUD interface for Tax Types in .
+        -   In , added a Mark as Sent button, state and UI for invoice status, and updated the manual creation form with dropdowns for saved clients and tax types, and a field for the sponsor.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Blank screen on preview**
@@ -306,6 +126,11 @@ INFO:     10.64.128.53:45602 - "GET /api/alerts?_t=1767104708200 HTTP/1.1" 200 O
     -   **Why to solve this issue and what will be achieved with this?**: Ensures basic application accessibility and stability.
     -   **Should Test frontend/backend/both after fix**: both
     -   **Is recurring issue?**: N
+-   **Issue 2: Nomenclature selector does not display options**
+    -   **Debug checklist**: Verify  endpoint and debug frontend state management.
+    -   **Why to solve this issue and what will be achieved with this?**: Restores core categorization functionality.
+    -   **Should Test frontend/backend/both after fix**: frontend
+    -   **Is recurring issue?**: Y
 
 **Known issue recurrence from previous fork**
 -   **Nomenclature Selector**: This is a recurring unresolved issue from a previous fork.
@@ -316,52 +141,66 @@ INFO:     10.64.128.53:45602 - "GET /api/alerts?_t=1767104708200 HTTP/1.1" 200 O
 
 
 **Key Technical Concepts**
--   **Backend**: Added a new FastAPI route with a path parameter to serve aggregated data. Fixed a MongoDB  serialization issue by modifying the dictionary before returning it as a JSON response.
--   **Frontend**: Complex state management in React using  and  to handle new UI sections, dialogs (modals), and data fetching. Dynamic UI updates based on API responses (e.g., updating summaries after a payment).
+-   **Backend**: Addition of multiple new RESTful endpoints in FastAPI for new models () and for updating existing resources (). Modification of Pydantic models to expand data structures. Logic to automatically persist related data (saving a new client when creating an invoice).
+-   **Frontend**: Complex multi-feature implementation across different pages. Building a new CRUD management tab within an existing settings page (). Heavy modification of existing forms and data tables to include new fields, dropdowns populated by API calls, and conditional UI elements (). Correcting data formatting () and payloads ().
 
 **key DB schema**
--   No changes were made to the database schema. The work involved reading from the  and  collections and adding new documents.
+-   **invoices**: No structural schema change, but the documents now contain new fields:  (String),  (String),  (String),  (Float).
+-   **clients**: A new collection was implicitly used to store and retrieve client data for reuse. Schema is likely .
+-   **tax_types**: A new collection was created with fields like  (String),  (Float),  (String),  (Boolean).
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : Contains the new financial summary endpoint and the bug fix for invoice creation.
--   : Contains all the new frontend code for the invoice management feature.
+-   : Contains all backend logic for the new payroll, invoice, client, and tax features.
+-   : Contains the fix for processing payroll.
+-   : Contains the fix for displaying detailed hours.
+-   : Contains the new UI for managing tax types.
+-   : Contains the UI for new invoice features (status, sponsor, reusable clients, tax selection).
 
 **Areas that need refactoring**:
--   : This file has grown significantly more complex and is now an even higher priority for refactoring into smaller, reusable components.
--   : The single-file backend continues to grow and should be broken down into separate routers for better organization.
+-    and  have become significantly more complex and are high-priority candidates for being broken down into smaller components.
+-    continues to grow and should be split into multiple router files by domain (e.g., , ).
 
 **key api endpoints**
--   ****: Existing endpoint that was fixed.
--   ****: New endpoint for project financial overview.
--   ****: Existing endpoint that was leveraged for this feature.
--   ****: Existing endpoint used for registering payments.
+-   : Logic verified.
+-   : **New**
+-   : **New**
+-   : **New**
+-   : **New**
+-   : **New**
+-   : **New**
+-   : Modified to save clients and include new fields.
 
 **Critical Info for New Agent**
 -   **Language**: All communication with the user must be in **Spanish**.
--   **User-Driven Priority**: The user has now twice ignored the planned workflow for an urgent request. Be prepared for this pattern. The user's latest request is now the top priority.
--   **Next Priority**:
-    1.  Execute the frontend testing for the new Project Invoices feature as approved by the user.
-    2.  After completion and verification, address the backlog, starting with the Blank screen issue, then the recurring Nomenclature selector bug.
-    3.  Remind the user to verify the two older features (Delete Change Order, Safety Module enhancements).
+-   **User-Driven Priority**: The user has now twice in this session ignored the planned workflow for urgent requests. Be prepared to pivot immediately when the user provides new instructions. The user's latest request is always the top priority.
+-   **Testing Discrepancy**: There's a conflict between manual and automated test results for the payroll feature. This needs resolution.
+-   **Next Steps**:
+    1.  The immediate next action is to run the frontend tests for the newly implemented Invoicing features, as this was the last pending step.
+    2.  After verifying the invoice features, address the payroll test discrepancy (Issue #2).
+    3.  Once current work is fully verified, address the old backlog, starting with the Blank screen and Nomenclature selector bugs.
 
 **documents and test reports created in this job**
--   None.
+-    was updated multiple times to guide the testing subagents.
 
 **Last 10 User Messages and any pending HUMAN messages**
--   : User's confirmation to proceed with frontend testing. (COMPLETE)
--   : User's confirmation of requirements for the invoice feature. (COMPLETE)
--   : User's request for the project invoice feature. (IN PROGRESS)
--   : User's report of a critical blank screen bug. (NOT STARTED)
--   : User request from the previous session. (DONE, PENDING VERIFICATION)
+-   : User confirms to proceed with the invoice feature implementation. (COMPLETE)
+-   : User's second major request, detailing 4 new features for invoicing. (IN PROGRESS)
+-   : The agent successfully implemented the requested functionality for payroll and hours display and was about to finalize the task. (COMPLETE)
+-   : User confirms the plan to fix payroll and hours display. (COMPLETE)
+-   : User's first major request, detailing the payroll processing and hours display requirements. (COMPLETE)
+-   Messages from previous fork regarding blank screen and change order deletion are still pending.
 
 **Project Health Check:**
 -   **Broken**:
     -   The Nomenclature selector feature remains non-functional.
-    -   Potential intermittent blank screen issue on startup.
--   **Mocked**: SMTP credentials are still placeholders.
+    -   Automated tests for the Payroll feature are unreliable, despite manual tests passing.
+-   **Mocked**:
+    -   SMTP credentials are still placeholders.
+-   **Potential Instability**:
+    -   An un-investigated blank screen issue on startup was reported.
 
 **3rd Party Integrations**
 -   jsPDF & jspdf-autotable
@@ -372,10 +211,10 @@ INFO:     10.64.128.53:45602 - "GET /api/alerts?_t=1767104708200 HTTP/1.1" 200 O
 -   reportlab
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (Backend testing passed, Frontend testing is pending).
+-   **Testing agent used after significant changes**: YES (Backend agent passed twice. Frontend agent was used once and failed, though the result is disputed).
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: None identified.
+-   **Known regressions**: None identified, but the payroll frontend test failure could indicate one.
 
 **Credentials to test flow:**
 -   **Super Admin Email**: 
@@ -384,4 +223,4 @@ INFO:     10.64.128.53:45602 - "GET /api/alerts?_t=1767104708200 HTTP/1.1" 200 O
 -   **Client Password**: 
 
 **What agent forgot to execute**
--   The agent did not forget to execute anything. It correctly adapted to the user's high-priority request, postponing all other pending items. The immediate next step is to continue the task the agent was just working on: running the frontend tests.</analysis>
+-   The agent did not forget to execute any tasks. It was consistently and correctly reprioritizing its work based on direct user requests. All pending items from the start of the session were deferred, not forgotten, in favor of the user's new high-priority features. The agent was in the process of completing the final verification step (frontend testing) for the latest request.</analysis>

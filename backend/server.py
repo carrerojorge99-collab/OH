@@ -7376,7 +7376,7 @@ async def add_no_cache_headers(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["https://invoice-tracker-183.preview.emergentagent.com", "http://localhost:3000"],
+    allow_origins=["https://paystub-tracker.preview.emergentagent.com", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
