@@ -6034,6 +6034,29 @@ async def get_audit_logs(
     logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return [AuditLog(**log) for log in logs]
 
+@api_router.delete("/audit-logs/clear")
+async def clear_audit_logs(request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    # Only super admins can clear audit logs
+    if user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(status_code=403, detail="Solo el Super Admin puede eliminar el historial de auditoría")
+    
+    result = await db.audit_logs.delete_many({})
+    
+    # Log this critical action in a new audit log
+    await log_audit(
+        user_id=user.id,
+        user_name=user.name,
+        action="delete",
+        entity_type="audit_logs",
+        entity_id="all",
+        entity_name="Historial de Auditoría",
+        details={"records_deleted": result.deleted_count}
+    )
+    
+    return {"message": f"Se eliminaron {result.deleted_count} registros del historial"}
+
 @api_router.get("/integrations", response_model=List[IntegrationConfig])
 async def get_integrations(
     request: Request,
