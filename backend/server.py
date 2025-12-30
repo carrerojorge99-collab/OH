@@ -902,7 +902,7 @@ async def login(credentials: UserLogin, response: Response):
     is_temp_password = user_doc.get('is_temp_password', False)
     
     return {
-        "user": User(**user_without_password), 
+        "user": user_without_password, 
         "token": session_token,
         "requires_password_change": is_temp_password
     }
