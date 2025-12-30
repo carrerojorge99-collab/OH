@@ -4662,8 +4662,11 @@ class ManualInvoiceCreate(BaseModel):
     client_email: Optional[str] = None
     client_phone: Optional[str] = None
     client_address: Optional[str] = None
+    sponsor_name: Optional[str] = None
     items: List[ManualInvoiceItem]
     tax_rate: float = 0.0
+    tax_type_id: Optional[str] = None
+    tax_type_name: Optional[str] = None
     discount_percent: float = 0.0
     notes: Optional[str] = None
     terms: Optional[str] = None
