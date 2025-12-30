@@ -13,7 +13,7 @@ import moment from 'moment';
 import 'moment/locale/es';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { fetchCompanyInfo } from '../utils/pdfGenerator';
+import { fetchCompanyInfo, addReportHeader, addReportTable, addFooter } from '../utils/pdfGenerator';
 
 moment.locale('es');
 
