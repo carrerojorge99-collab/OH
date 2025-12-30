@@ -60,6 +60,25 @@ const Approvals = () => {
     }
   };
 
+  const handleDeleteApproval = async (id, type) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta aprobación?')) {
+      return;
+    }
+    
+    try {
+      if (type === 'legacy') {
+        await api.delete(`/approvals/${id}`, { withCredentials: true });
+      } else {
+        await api.delete(`/requests/${id}`, { withCredentials: true });
+      }
+      toast.success('Eliminado correctamente');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast.error(error.response?.data?.detail || 'Error al eliminar');
+    }
+  };
+
   const getTypeIcon = (type) => {
     switch (type) {
       case 'vacation': return <Calendar className="w-5 h-5 text-blue-500" />;
