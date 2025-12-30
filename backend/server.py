@@ -125,7 +125,7 @@ class UserRegister(BaseModel):
     name: str
     email: Optional[str] = None
     password: Optional[str] = None
-    role: UserRole = UserRole.EMPLEADO
+    role: UserRole = UserRole.EMPLEADO.value
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -926,7 +926,7 @@ async def create_session_from_emergent(request: Request, response: Response):
                 "user_id": user_id,
                 "name": name,
                 "email": email,
-                "role": UserRole.EMPLEADO,
+                "role": UserRole.EMPLEADO.value,
                 "picture": picture,
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
@@ -1103,7 +1103,7 @@ def extract_project_number(project_number: str) -> tuple:
 async def get_projects(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.SUPER_ADMIN:
+    if user.role == UserRole.SUPER_ADMIN.value:
         projects = await db.projects.find({}, {"_id": 0}).to_list(1000)
     else:
         projects = await db.projects.find(
@@ -1132,7 +1132,7 @@ async def get_project(project_id: str, request: Request, session_token: Optional
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
     # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     # Asegurar que existan los campos y calcular profit
@@ -1152,7 +1152,7 @@ async def update_project(project_id: str, project_data: ProjectUpdate, request: 
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
     # PM puede editar proyectos, Admin puede editar todos
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para editar este proyecto")
     
     update_data = project_data.model_dump(exclude_unset=True)
@@ -1179,7 +1179,7 @@ async def delete_project(project_id: str, request: Request, session_token: Optio
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role != UserRole.SUPER_ADMIN and project_doc['created_by'] != user.user_id:
+    if user.role != UserRole.SUPER_ADMIN.value and project_doc['created_by'] != user.user_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este proyecto")
     
     documents = await db.documents.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
@@ -1234,7 +1234,7 @@ async def get_change_orders(project_id: str = None, request: Request = None, ses
 @api_router.put("/change-orders/{order_id}")
 async def update_change_order(order_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
         raise HTTPException(status_code=403, detail="Solo PM o administradores pueden aprobar")
     
     order = await db.change_orders.find_one({"id": order_id})
@@ -1270,7 +1270,7 @@ async def update_change_order(order_id: str, data: dict, request: Request, sessi
 @api_router.delete("/change-orders/{order_id}")
 async def delete_change_order(order_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
         raise HTTPException(status_code=403, detail="Solo PM o administradores pueden eliminar")
     
     order = await db.change_orders.find_one({"id": order_id})
@@ -1813,7 +1813,7 @@ async def clock_in(
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
     # Check if user is assigned to project
-    if user.user_id not in project.get('team_members', []) and user.role != UserRole.SUPER_ADMIN:
+    if user.user_id not in project.get('team_members', []) and user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No estás asignado a este proyecto")
     
     # ========== GEOFENCING VALIDATION ==========
@@ -1995,7 +1995,7 @@ async def get_all_clock_entries(
     user = await get_current_user(request, session_token)
     
     # Admin and PM can see all entries
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER, UserRole.RRHH]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="Solo PM, RRHH o administradores pueden ver todos los ponches")
     
     query = {}
@@ -2029,7 +2029,7 @@ async def get_assigned_projects(
     user = await get_current_user(request, session_token)
     
     # Admins can see all active projects
-    if user.role == UserRole.SUPER_ADMIN:
+    if user.role == UserRole.SUPER_ADMIN.value:
         projects = await db.projects.find(
             {"status": {"$ne": "completed"}},
             {"_id": 0, "project_id": 1, "name": 1, "status": 1}
@@ -2056,7 +2056,7 @@ async def delete_clock_entry(
     user = await get_current_user(request, session_token)
     
     # Only admins can delete clock entries
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo los administradores pueden eliminar ponches")
     
     # Find the clock entry
@@ -2231,7 +2231,7 @@ async def update_project_log(
         raise HTTPException(status_code=404, detail="Log no encontrado")
     
     # Only creator or admin can edit
-    if log.get('user_id') != user.user_id and user.role != UserRole.SUPER_ADMIN:
+    if log.get('user_id') != user.user_id and user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No tienes permiso para editar este log")
     
     update_data = {
@@ -2261,7 +2261,7 @@ async def delete_project_log(
         raise HTTPException(status_code=404, detail="Log no encontrado")
     
     # Only creator or admin can delete
-    if log.get('user_id') != user.user_id and user.role != UserRole.SUPER_ADMIN:
+    if log.get('user_id') != user.user_id and user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No tienes permiso para eliminar este log")
     
     await db.project_logs.delete_one({"log_id": log_id})
@@ -2303,7 +2303,7 @@ async def mark_all_notifications_read(request: Request, session_token: Optional[
 async def get_dashboard_stats(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.SUPER_ADMIN:
+    if user.role == UserRole.SUPER_ADMIN.value:
         projects_query = {}
     else:
         projects_query = {"$or": [{"created_by": user.user_id}, {"team_members": user.user_id}]}
@@ -2378,7 +2378,7 @@ async def get_alerts(request: Request, session_token: Optional[str] = Cookie(Non
                 pass
     
     # 3. Aprobaciones pendientes (solo admin)
-    if user.role == UserRole.SUPER_ADMIN:
+    if user.role == UserRole.SUPER_ADMIN.value:
         pending_approvals = await db.approvals.count_documents({"status": "pending"})
         if pending_approvals > 0:
             alerts.append({
@@ -2480,16 +2480,16 @@ async def get_requests(
         query["status"] = status
     
     # Super Admin ve todo
-    if user.role == UserRole.SUPER_ADMIN:
+    if user.role == UserRole.SUPER_ADMIN.value:
         pass
     # RRHH ve solicitudes de empleados + las propias
-    elif user.role == UserRole.RRHH:
+    elif user.role == UserRole.RRHH.value:
         query["$or"] = [
             {"category": "employee"},
             {"requested_by": user.user_id}
         ]
     # Project Manager ve solicitudes de proyectos + las propias
-    elif user.role == UserRole.PROJECT_MANAGER:
+    elif user.role == UserRole.PROJECT_MANAGER.value:
         query["$or"] = [
             {"category": "project"},
             {"requested_by": user.user_id}
@@ -2522,11 +2522,11 @@ async def update_request(request_id: str, data: dict, request: Request, session_
     category = req.get("category")
     can_approve = False
     
-    if user.role == UserRole.SUPER_ADMIN:
+    if user.role == UserRole.SUPER_ADMIN.value:
         can_approve = True
-    elif user.role == UserRole.RRHH and category == "employee":
+    elif user.role == UserRole.RRHH.value and category == "employee":
         can_approve = True
-    elif user.role == UserRole.PROJECT_MANAGER and category == "project":
+    elif user.role == UserRole.PROJECT_MANAGER.value and category == "project":
         can_approve = True
     
     if not can_approve:
@@ -2555,7 +2555,7 @@ async def delete_request(request_id: str, request: Request, session_token: Optio
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     
     # Solo el creador puede cancelar y solo si está pendiente
-    if req["requested_by"] != user.user_id and user.role != UserRole.SUPER_ADMIN:
+    if req["requested_by"] != user.user_id and user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No puede cancelar esta solicitud")
     
     if req["status"] != "pending":
@@ -2590,7 +2590,7 @@ async def create_approval(data: dict, request: Request, session_token: Optional[
 async def get_approvals(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER, UserRole.RRHH]:
+    if user.role in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.RRHH.value]:
         approvals = await db.approvals.find({}, {"_id": 0}).sort("requested_at", -1).to_list(100)
     else:
         approvals = await db.approvals.find({"requested_by": user.user_id}, {"_id": 0}).sort("requested_at", -1).to_list(100)
@@ -2600,7 +2600,7 @@ async def get_approvals(request: Request, session_token: Optional[str] = Cookie(
 @api_router.put("/approvals/{approval_id}")
 async def update_approval(approval_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER, UserRole.RRHH]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="No tiene permisos para aprobar")
     
     update_data = {
@@ -2621,7 +2621,7 @@ async def update_approval(approval_id: str, data: dict, request: Request, sessio
 async def delete_approval(approval_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar aprobaciones")
     
     result = await db.approvals.delete_one({"id": approval_id})
@@ -2913,7 +2913,7 @@ async def delete_user(user_id: str, request: Request, session_token: Optional[st
     current_user = await get_current_user(request, session_token)
     
     # Only admins can delete users
-    if current_user.role != UserRole.SUPER_ADMIN:
+    if current_user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar usuarios")
     
     # Cannot delete yourself
@@ -2952,7 +2952,7 @@ async def update_user(user_id: str, user_data: UserUpdate, request: Request, ses
     current_user = await get_current_user(request, session_token)
     
     # Only admins can update users
-    if current_user.role != UserRole.SUPER_ADMIN:
+    if current_user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No tienes permisos para actualizar usuarios")
     
     user_to_update = await db.users.find_one({"user_id": user_id}, {"_id": 0})
@@ -2992,7 +2992,7 @@ async def get_settings(request: Request, session_token: Optional[str] = Cookie(N
     user = await get_current_user(request, session_token)
     
     # Only admins can view settings
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No tienes permisos para ver la configuración")
     
     return {
@@ -3009,7 +3009,7 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
     user = await get_current_user(request, session_token)
     
     # Only admins can update settings
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No tienes permisos para actualizar la configuración")
     
     # Update .env file
@@ -4334,7 +4334,7 @@ async def get_safety_dashboard(
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
         raise HTTPException(status_code=403, detail="No autorizado")
     
     # Check if email exists
@@ -4350,7 +4350,7 @@ async def create_client(data: dict, request: Request, session_token: Optional[st
         "name": data.get("nombre_contacto") or data.get("name", ""),
         "email": data.get("email"),
         "password": password_hash,
-        "role": UserRole.CLIENT,
+        "role": UserRole.CLIENT.value,
         "company_name": data.get("empresa") or data.get("company_name", ""),
         "company_address": data.get("company_address", ""),
         "company_phone": data.get("company_phone", ""),
@@ -4370,22 +4370,22 @@ async def create_client(data: dict, request: Request, session_token: Optional[st
 async def get_clients(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT:
+    if user.role == UserRole.CLIENT.value:
         # Client can only see their own profile
         client = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "password": 0})
         return [client] if client else []
     
-    clients = await db.users.find({"role": UserRole.CLIENT}, {"_id": 0, "password": 0}).to_list(1000)
+    clients = await db.users.find({"role": UserRole.CLIENT.value}, {"_id": 0, "password": 0}).to_list(1000)
     return clients
 
 @api_router.get("/clients/{client_id}")
 async def get_client(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT and user.user_id != client_id:
+    if user.role == UserRole.CLIENT.value and user.user_id != client_id:
         raise HTTPException(status_code=403, detail="No autorizado")
     
-    client = await db.users.find_one({"user_id": client_id, "role": UserRole.CLIENT}, {"_id": 0, "password": 0})
+    client = await db.users.find_one({"user_id": client_id, "role": UserRole.CLIENT.value}, {"_id": 0, "password": 0})
     if not client:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return client
@@ -4394,7 +4394,7 @@ async def get_client(client_id: str, request: Request, session_token: Optional[s
 async def update_client(client_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT and user.user_id != client_id:
+    if user.role == UserRole.CLIENT.value and user.user_id != client_id:
         raise HTTPException(status_code=403, detail="No autorizado")
     
     update_data = {
@@ -4417,7 +4417,7 @@ async def get_client_projects(client_id: str, request: Request, session_token: O
     user = await get_current_user(request, session_token)
     
     # Clientes NO pueden ver proyectos - los proyectos son privados de OHSMS
-    if user.role == UserRole.CLIENT:
+    if user.role == UserRole.CLIENT.value:
         return []
     
     projects = await db.projects.find({"client_id": client_id}, {"_id": 0}).to_list(100)
@@ -4427,7 +4427,7 @@ async def get_client_projects(client_id: str, request: Request, session_token: O
 async def upload_client_document(client_id: str, document_type: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT and user.user_id != client_id:
+    if user.role == UserRole.CLIENT.value and user.user_id != client_id:
         raise HTTPException(status_code=403, detail="No autorizado")
     
     form = await request.form()
@@ -4455,7 +4455,7 @@ async def upload_client_document(client_id: str, document_type: str, request: Re
 async def get_client_documents(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT and user.user_id != client_id:
+    if user.role == UserRole.CLIENT.value and user.user_id != client_id:
         raise HTTPException(status_code=403, detail="No autorizado")
     
     docs = await db.client_documents.find({"client_id": client_id}, {"_id": 0, "file_data": 0}).to_list(100)
@@ -4466,7 +4466,7 @@ async def download_client_document(client_id: str, doc_id: str, request: Request
     from fastapi.responses import Response
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT and user.user_id != client_id:
+    if user.role == UserRole.CLIENT.value and user.user_id != client_id:
         raise HTTPException(status_code=403, detail="No autorizado")
     
     doc = await db.client_documents.find_one({"document_id": doc_id, "client_id": client_id})
@@ -4480,7 +4480,7 @@ async def download_client_document(client_id: str, doc_id: str, request: Request
 async def delete_client_document(client_id: str, doc_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.CLIENT and user.user_id != client_id:
+    if user.role == UserRole.CLIENT.value and user.user_id != client_id:
         raise HTTPException(status_code=403, detail="No autorizado")
     
     await db.client_documents.delete_one({"document_id": doc_id, "client_id": client_id})
@@ -4530,7 +4530,7 @@ async def update_company_settings(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo los administradores pueden modificar la configuración de empresa")
     
     existing = await db.company_settings.find_one({})
@@ -4583,7 +4583,7 @@ async def upload_company_logo(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo los administradores pueden subir el logo")
     
     # Validar tipo de archivo
@@ -4632,7 +4632,7 @@ async def upload_document(
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
     # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     max_size = 10 * 1024 * 1024
@@ -4674,7 +4674,7 @@ async def get_documents(project_id: str, request: Request, session_token: Option
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
     # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     documents = await db.documents.find({"project_id": project_id}, {"_id": 0}).sort("uploaded_at", -1).to_list(1000)
@@ -4692,7 +4692,7 @@ async def download_document(document_id: str, request: Request, session_token: O
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este documento")
     
     file_path = UPLOAD_DIR / document_doc['filename']
@@ -4717,7 +4717,7 @@ async def delete_document(document_id: str, request: Request, session_token: Opt
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER] and project_doc['created_by'] != user.user_id and document_doc['uploaded_by'] != user.user_id:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and document_doc['uploaded_by'] != user.user_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este documento")
     
     file_path = UPLOAD_DIR / document_doc['filename']
@@ -6098,7 +6098,7 @@ async def get_audit_logs(
     user = await get_current_user(request, session_token)
     
     # Only admins can view audit logs
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="No tienes permisos para ver el historial")
     
     query = {}
@@ -6121,7 +6121,7 @@ async def clear_audit_logs(
     user = await get_current_user(request, session_token)
     
     # Only super admins can clear audit logs
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo el Super Admin puede eliminar el historial de auditoría")
     
     # Verify password
@@ -6137,7 +6137,7 @@ async def clear_audit_logs(
     
     # Get all super admins to notify
     super_admins = await db.users.find(
-        {"role": UserRole.SUPER_ADMIN, "email": {"$exists": True, "$ne": ""}},
+        {"role": UserRole.SUPER_ADMIN.value, "email": {"$exists": True, "$ne": ""}},
         {"_id": 0, "email": 1, "name": 1}
     ).to_list(100)
     
@@ -6189,7 +6189,7 @@ async def export_all_data(request: Request, session_token: Optional[str] = Cooki
     """Export all application data as JSON for migration"""
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo Super Admin puede exportar datos")
     
     # Collections to export
@@ -6230,7 +6230,7 @@ async def import_all_data(
     """Import application data from JSON export"""
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo Super Admin puede importar datos")
     
     if "collections" not in data:
@@ -6299,7 +6299,7 @@ async def get_integrations(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden ver integraciones")
     
     integrations = await db.integrations.find({}, {"_id": 0}).to_list(100)
@@ -6315,7 +6315,7 @@ async def create_or_update_integration(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden configurar integraciones")
     
     # Check if integration already exists
@@ -6378,7 +6378,7 @@ async def delete_integration(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar integraciones")
     
     integration = await db.integrations.find_one({"integration_id": integration_id}, {"_id": 0})
@@ -6408,7 +6408,7 @@ async def test_slack_integration(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden probar integraciones")
     
     try:
@@ -6542,7 +6542,7 @@ async def create_labor_rate(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden crear tarifas")
     
     rate_id = f"lr_{uuid4().hex[:16]}"
@@ -6570,7 +6570,7 @@ async def update_labor_rate(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden actualizar tarifas")
     
     rate = await db.labor_rates.find_one({"rate_id": rate_id}, {"_id": 0})
@@ -6601,7 +6601,7 @@ async def delete_labor_rate(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar tarifas")
     
     result = await db.labor_rates.delete_one({"rate_id": rate_id})
@@ -7372,7 +7372,7 @@ async def add_document_from_client(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores")
     
     doc_id = f"doc_{uuid4().hex[:16]}"
@@ -7400,7 +7400,7 @@ async def add_document_to_client(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores")
     
     doc_id = f"doc_{uuid4().hex[:16]}"
@@ -7428,7 +7428,7 @@ async def delete_required_document(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores")
     
     await db.required_documents.delete_one({"document_id": doc_id})
@@ -7496,7 +7496,7 @@ async def create_nomenclature(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores")
     
     nomenclature_id = f"nom_{uuid4().hex[:16]}"
@@ -7533,7 +7533,7 @@ async def update_nomenclature(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores")
     
     update_data = {
@@ -7553,7 +7553,7 @@ async def delete_nomenclature(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores")
     
     await db.nomenclatures.delete_one({"nomenclature_id": nomenclature_id})
@@ -7609,7 +7609,7 @@ async def get_payroll_settings(request: Request, session_token: Optional[str] = 
 @api_router.put("/payroll-settings")
 async def update_payroll_settings(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role != UserRole.SUPER_ADMIN:
+    if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores")
     
     await db.payroll_settings.update_one({}, {"$set": data}, upsert=True)
@@ -7618,7 +7618,7 @@ async def update_payroll_settings(data: dict, request: Request, session_token: O
 @api_router.post("/payroll/process")
 async def process_payroll(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
     
     payroll_id = str(uuid4())
@@ -7680,7 +7680,7 @@ async def get_my_pay_stubs(request: Request, session_token: Optional[str] = Cook
 async def get_employee_pay_stubs(employee_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     """Obtener talonarios de un empleado (admin/rrhh)"""
     user = await get_current_user(request, session_token)
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH] and user.user_id != employee_id:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value] and user.user_id != employee_id:
         raise HTTPException(status_code=403, detail="No autorizado")
     stubs = await db.pay_stubs.find({"employee_id": employee_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return stubs
@@ -7801,7 +7801,7 @@ async def update_employee_profile(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
     
     profile_dict = profile_data.model_dump()
@@ -7834,7 +7834,7 @@ async def upload_employee_document(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
     
     # Create employee folder
@@ -7876,7 +7876,7 @@ async def delete_employee_document(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role not in [UserRole.SUPER_ADMIN, UserRole.RRHH]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
     
     doc = await db.employee_documents.find_one({"doc_id": doc_id})
