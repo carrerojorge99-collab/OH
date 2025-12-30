@@ -102,6 +102,7 @@ const Settings = () => {
     fetchDocuments();
     fetchNomenclatures();
     fetchPayrollSettings();
+    fetchTaxTypes();
   }, []);
   
   const fetchPayrollSettings = async () => {
