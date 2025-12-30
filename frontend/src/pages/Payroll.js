@@ -576,8 +576,18 @@ const Payroll = () => {
           <Card>
             <CardContent className="p-8 text-center text-slate-500">
               <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p>No hay empleados con salario o tarifa por hora configurados</p>
-              <p className="text-sm">Ve a Recursos Humanos y configura el salario o tarifa por hora en el perfil de cada empleado</p>
+              <p>No hay empleados registrados en el sistema</p>
+              <p className="text-sm">Ve a Recursos Humanos para agregar empleados</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {payrollData.length === 0 && employees.length > 0 && (
+          <Card>
+            <CardContent className="p-8 text-center text-slate-500">
+              <Calculator className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p className="font-medium">{employees.length} empleados disponibles</p>
+              <p className="text-sm">Selecciona un período y haz clic en "Calcular Nómina" para ver los resultados</p>
             </CardContent>
           </Card>
         )}
