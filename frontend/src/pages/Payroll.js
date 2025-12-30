@@ -319,6 +319,66 @@ const Payroll = () => {
     }
   };
 
+  // Generate individual pay stub PDF for an employee
+  const generatePayStubPDF = async (payrollItem) => {
+    const doc = new jsPDF();
+    const company = await fetchCompanyInfo();
+    const p = payrollItem;
+    
+    // Header with company info and document title
+    const period = `${moment(payPeriod.start).format('DD/MM/YYYY')} - ${moment(payPeriod.end).format('DD/MM/YYYY')}`;
+    let y = await addPayStubHeader(doc, company, period);
+    
+    // Employee Info Section
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(249, 115, 22);
+    doc.text('EMPLEADO', 15, y);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(11);
+    doc.text(p.employee.name || 'N/A', 15, y + 6);
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Posición: ${p.employee.profile?.position || 'N/A'}`, 15, y + 12);
+    doc.text(`Tipo: ${p.isContractor ? 'Contratista' : 'Empleado'}`, 15, y + 17);
+    
+    y += 28;
+    
+    // Earnings Section
+    const earnings = [];
+    if (p.isHourly) {
+      earnings.push({ label: `Horas Trabajadas: ${p.hoursWorked?.toFixed(2) || 0}`, value: `$${p.hourlyRate?.toFixed(2) || 0}/hr` });
+    } else {
+      earnings.push({ label: 'Salario Fijo:', value: `$${p.fixedSalary?.toFixed(2) || 0}` });
+    }
+    earnings.push({ label: 'Pago Bruto:', value: `$${p.grossPay?.toFixed(2) || 0}` });
+    y = addPaySection(doc, 'INGRESOS', earnings, y);
+    
+    // Deductions Section
+    const deductions = [];
+    Object.entries(p.deductions || {}).forEach(([key, value]) => {
+      deductions.push({ label: `${key}:`, value: `-$${(value || 0).toFixed(2)}` });
+    });
+    deductions.push({ label: 'Total Deducciones:', value: `-$${p.totalDeductions?.toFixed(2) || 0}` });
+    y = addPaySection(doc, 'DEDUCCIONES', deductions, y);
+    
+    // Net Pay Section (highlighted)
+    y = addPaySection(doc, 'PAGO NETO', [{ label: '', value: `$${p.netPay?.toFixed(2) || 0}` }], y, true);
+    
+    // Payment Method
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Método de Pago: ${p.employee.profile?.payment_method === 'direct_deposit' ? 'Depósito Directo' : 'Cheque'}`, 15, y + 5);
+    
+    // Footer
+    addFooter(doc, company);
+    
+    doc.save(`Talonario_${p.employee.name?.replace(/\s+/g, '_')}_${moment(payPeriod.end).format('YYYYMMDD')}.pdf`);
+    toast.success(`Talonario de ${p.employee.name} generado`);
+  };
+
   if (loading) return <Layout><div className="p-8">Cargando...</div></Layout>;
 
   return (
