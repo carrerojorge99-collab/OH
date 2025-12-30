@@ -281,14 +281,18 @@ const Invoices = () => {
         client_email: '',
         client_phone: '',
         client_address: '',
+        sponsor_name: '',
         items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
         tax_rate: 0,
+        tax_type_id: '',
+        tax_type_name: '',
         discount_percent: 0,
         notes: '',
         terms: '',
         custom_number: ''
       });
       loadData();
+      loadSavedClients();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al crear factura');
     }
