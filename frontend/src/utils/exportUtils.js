@@ -145,15 +145,12 @@ export const exportLaborToExcel = (laborData, projectName) => {
 };
 
 // Export Labor/Salaries to PDF
-export const exportLaborToPDF = (laborData, projectName) => {
+export const exportLaborToPDF = async (laborData, projectName) => {
   const doc = new jsPDF('landscape');
+  const company = await fetchCompanyInfo();
   
-  doc.setFontSize(18);
-  doc.text('REPORTE DE SALARIOS', 14, 22);
-  
-  doc.setFontSize(11);
-  doc.text(`Proyecto: ${projectName}`, 14, 32);
-  doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 14, 38);
+  // Header with company info
+  let y = await addReportHeader(doc, company, 'REPORTE DE SALARIOS', `Proyecto: ${projectName}`, { landscape: true });
 
   const tableData = laborData.map(labor => {
     const consumedHours = labor.consumed_hours || 0;
@@ -191,16 +188,29 @@ export const exportLaborToPDF = (laborData, projectName) => {
            expenses;
   }, 0);
 
-  autoTable(doc, {
-    head: [['Categoría', 'Hrs/Sem', 'Tarifa/Hr', 'Hrs Est.', 'Hrs Cons.', 'Hrs Extra', 'Tarifa Extra', 'Gastos', 'Total']],
-    body: tableData,
-    foot: [['COSTO TOTAL', '', '', '', '', '', '', '', `$${totalCost.toFixed(2)}`]],
-    startY: 45,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [37, 99, 235] },
-    footStyles: { fillColor: [229, 231, 235], textColor: [0, 0, 0], fontStyle: 'bold' }
-  });
+  addReportTable(doc,
+    ['Categoría', 'Hrs/Sem', 'Tarifa/Hr', 'Hrs Est.', 'Hrs Cons.', 'Hrs Extra', 'Tarifa Extra', 'Gastos', 'Total'],
+    tableData,
+    y,
+    {
+      footerRow: ['COSTO TOTAL', '', '', '', '', '', '', '', `$${totalCost.toFixed(2)}`],
+      fontSize: 8,
+      landscape: true,
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 22, halign: 'center' },
+        2: { cellWidth: 28, halign: 'right' },
+        3: { cellWidth: 22, halign: 'center' },
+        4: { cellWidth: 22, halign: 'center' },
+        5: { cellWidth: 22, halign: 'center' },
+        6: { cellWidth: 28, halign: 'right' },
+        7: { cellWidth: 28, halign: 'right' },
+        8: { cellWidth: 30, halign: 'right' }
+      }
+    }
+  );
 
+  addFooter(doc, company);
   const fileName = `Salarios_${projectName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 };
