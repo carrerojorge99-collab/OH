@@ -190,21 +190,27 @@ const Payroll = () => {
     setEditingHours(null);
   };
 
-  // Toggle contractor deduction for an employee
-  const toggleContractorDeduction = (idx, checked) => {
+  // Toggle exemption from contractor deduction for an employee
+  const toggleContractorExemption = (idx, isExempt) => {
     setPayrollData(prev => {
       const updated = [...prev];
       const item = updated[idx];
-      item.applyContractorDeduction = checked;
+      item.isExemptFromDeduction = isExempt;
       
-      // Recalculate deductions based on new status
+      // Recalculate deductions based on exemption status
       if (item.grossPay > 0) {
         let totalDeductions = 0;
-        if (checked) {
+        if (isExempt) {
+          // Exempt: No deductions applied
+          item.deductions = {};
+          totalDeductions = 0;
+        } else if (item.isContractor) {
+          // Contractor not exempt: Apply 10% retention
           const contractorDed = item.grossPay * (payrollSettings.contractor_percent || 10) / 100;
           item.deductions = { 'Retención 10%': contractorDed };
           totalDeductions = contractorDed;
         } else {
+          // Regular employee not exempt: Apply standard deductions
           const hacienda = item.grossPay * (payrollSettings.hacienda_percent || 0) / 100;
           const ss = item.grossPay * (payrollSettings.social_security_percent || 6.2) / 100;
           const medicare = item.grossPay * (payrollSettings.medicare_percent || 1.45) / 100;
