@@ -50,6 +50,16 @@ const Settings = () => {
     contractor_percent: 10
   });
   
+  // Tax types state
+  const [taxTypes, setTaxTypes] = useState([]);
+  const [taxTypeForm, setTaxTypeForm] = useState({
+    name: '',
+    percentage: 0,
+    description: '',
+    is_active: true
+  });
+  const [editingTaxType, setEditingTaxType] = useState(null);
+  
   const [settings, setSettings] = useState({
     smtp_host: '',
     smtp_port: 587,
