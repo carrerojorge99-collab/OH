@@ -651,7 +651,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="company" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 text-sm">
+          <TabsList className="grid w-full grid-cols-8 text-sm">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Empresa
             </TabsTrigger>
@@ -672,6 +672,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" /> Email
+            </TabsTrigger>
+            <TabsTrigger value="data" className="flex items-center gap-2">
+              <Database className="h-4 w-4" /> Datos
             </TabsTrigger>
           </TabsList>
 
