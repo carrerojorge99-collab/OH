@@ -201,3 +201,69 @@ def get_comment_email(user_name: str, project_name: str, commenter_name: str, co
     """
     
     return html, text
+
+def get_welcome_email(user_name: str, email: str, temp_password: str, login_url: str = ""):
+    """Generate HTML email for new user welcome with temporary credentials"""
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: #2563EB; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .credentials {{ background-color: #FEF3C7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F59E0B; }}
+            .credentials p {{ margin: 8px 0; }}
+            .credentials strong {{ color: #92400E; }}
+            .warning {{ background-color: #FEE2E2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EF4444; }}
+            .button {{ display: inline-block; padding: 12px 24px; background-color: #2563EB; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎉 ¡Bienvenido a ProyectHub!</h1>
+            </div>
+            <div class="content">
+                <p>Hola <strong>{user_name}</strong>,</p>
+                <p>Se ha creado una cuenta para ti en ProyectHub. A continuación encontrarás tus credenciales de acceso:</p>
+                
+                <div class="credentials">
+                    <p><strong>📧 Email:</strong> {email}</p>
+                    <p><strong>🔑 Contraseña temporal:</strong> {temp_password}</p>
+                </div>
+                
+                <div class="warning">
+                    <p><strong>⚠️ Importante:</strong> Esta es una contraseña temporal. Por seguridad, se te pedirá cambiarla la primera vez que inicies sesión.</p>
+                </div>
+                
+                <p>Inicia sesión en ProyectHub para comenzar a trabajar con tu equipo.</p>
+            </div>
+            <div class="footer">
+                <p>Este es un correo automático de ProyectHub. Por favor no respondas a este mensaje.</p>
+                <p>Si no solicitaste esta cuenta, puedes ignorar este correo.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text = f"""
+    ¡Bienvenido a ProyectHub!
+    
+    Hola {user_name},
+    
+    Se ha creado una cuenta para ti en ProyectHub.
+    
+    Tus credenciales de acceso:
+    - Email: {email}
+    - Contraseña temporal: {temp_password}
+    
+    IMPORTANTE: Esta es una contraseña temporal. Por seguridad, se te pedirá cambiarla la primera vez que inicies sesión.
+    
+    Inicia sesión en ProyectHub para comenzar.
+    """
+    
+    return html, text
