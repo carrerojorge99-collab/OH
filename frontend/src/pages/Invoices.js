@@ -37,6 +37,8 @@ const Invoices = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [savedClients, setSavedClients] = useState([]);
+  const [taxTypes, setTaxTypes] = useState([]);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -45,7 +47,10 @@ const Invoices = () => {
     client_email: '',
     client_phone: '',
     client_address: '',
-    tax_rate: 16,
+    sponsor_name: '',
+    tax_rate: 0,
+    tax_type_id: '',
+    tax_type_name: '',
     notes: '',
     custom_number: ''
   });
@@ -57,8 +62,11 @@ const Invoices = () => {
     client_email: '',
     client_phone: '',
     client_address: '',
+    sponsor_name: '',
     items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
+    tax_type_id: '',
+    tax_type_name: '',
     discount_percent: 0,
     notes: '',
     terms: '',
@@ -78,6 +86,8 @@ const Invoices = () => {
 
   useEffect(() => {
     loadData();
+    loadSavedClients();
+    loadTaxTypes();
     
     // Auto-refresh cada 30 segundos
     const interval = setInterval(loadData, 30000);
