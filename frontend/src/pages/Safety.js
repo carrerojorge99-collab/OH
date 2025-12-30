@@ -27,8 +27,18 @@ import {
   Calendar, Shield, TrendingUp, TrendingDown, Search,
   Filter, MoreVertical, ChevronRight, Clock, FileText,
   ThumbsUp, ThumbsDown, AlertCircle, Activity, RefreshCw,
-  BookOpen, HelpCircle, ListChecks, Upload, Camera, Video, X, Image
+  BookOpen, HelpCircle, ListChecks, Upload, Camera, Video, X, Image,
+  Download, Printer
 } from 'lucide-react';
+import {
+  generateSafetyDashboardReport,
+  generateIncidentsReport,
+  generateIncidentDetailReport,
+  generateToolboxTalksReport,
+  generateToolboxTalkDetailReport,
+  generateChecklistsReport,
+  generateObservationsReport
+} from '../utils/pdfGenerator';
 import {
   DropdownMenu,
   DropdownMenuContent,
