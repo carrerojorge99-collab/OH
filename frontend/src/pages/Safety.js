@@ -1660,9 +1660,13 @@ const Safety = () => {
       </Dialog>
     </div>
   );
+  };
 
   // Render Toolbox Talks Tab
-  const renderToolboxTalks = () => (
+  const renderToolboxTalks = () => {
+    const projectName = selectedProject ? projects.find(p => p.project_id === selectedProject)?.name : null;
+    
+    return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
@@ -1677,6 +1681,16 @@ const Safety = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              generateToolboxTalksReport(toolboxTalks, projectName);
+              toast.success('Reporte PDF generado');
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Descargar Reporte
+          </Button>
           <Button variant="outline" onClick={() => setTopicsLibraryOpen(true)}>
             <BookOpen className="w-4 h-4 mr-2" />
             Biblioteca de Temas
