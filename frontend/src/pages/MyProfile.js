@@ -42,91 +42,55 @@ const MyProfile = () => {
     }
   };
 
-  const downloadPayStub = (stub) => {
+  const downloadPayStub = async (stub) => {
     const doc = new jsPDF();
+    const company = await fetchCompanyInfo();
     
-    // Header
-    doc.setFillColor(249, 115, 22);
-    doc.rect(0, 0, 220, 35, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TALONARIO DE PAGO', 105, 20, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Período: ${moment(stub.period_start).format('DD/MM/YYYY')} - ${moment(stub.period_end).format('DD/MM/YYYY')}`, 105, 30, { align: 'center' });
+    // Header with company info and document title
+    const period = `${moment(stub.period_start).format('DD/MM/YYYY')} - ${moment(stub.period_end).format('DD/MM/YYYY')}`;
+    let y = await addPayStubHeader(doc, company, period);
     
-    // Employee Info
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(12);
+    // Employee Info Section
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('EMPLEADO', 20, 50);
+    doc.setTextColor(249, 115, 22);
+    doc.text('EMPLEADO', 15, y);
+    
     doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 41, 59);
     doc.setFontSize(11);
-    doc.text(stub.employee_name || 'N/A', 20, 58);
-    doc.text(`ID: ${stub.employee_id?.slice(-8) || 'N/A'}`, 20, 65);
+    doc.text(stub.employee_name || 'N/A', 15, y + 6);
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`ID: ${stub.employee_id?.slice(-8) || 'N/A'}`, 15, y + 12);
     
-    // Earnings
-    let y = 85;
-    doc.setFillColor(240, 240, 240);
-    doc.rect(15, y - 8, 180, 10, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('INGRESOS', 20, y);
+    y += 24;
     
-    y += 12;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Horas Trabajadas: ${stub.hours_worked?.toFixed(2) || 0}`, 20, y);
-    doc.text(`$${stub.hourly_rate?.toFixed(2) || 0}/hr`, 150, y);
+    // Earnings Section
+    const earnings = [
+      { label: `Horas Trabajadas: ${stub.hours_worked?.toFixed(2) || 0}`, value: `$${stub.hourly_rate?.toFixed(2) || 0}/hr` },
+      { label: 'Pago Bruto:', value: `$${stub.gross_pay?.toFixed(2) || 0}` }
+    ];
+    y = addPaySection(doc, 'INGRESOS', earnings, y);
     
-    y += 8;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Pago Bruto:', 20, y);
-    doc.text(`$${stub.gross_pay?.toFixed(2) || 0}`, 150, y);
-    
-    // Deductions
-    y += 20;
-    doc.setFillColor(240, 240, 240);
-    doc.rect(15, y - 8, 180, 10, 'F');
-    doc.text('DEDUCCIONES', 20, y);
-    
-    y += 12;
-    doc.setFont('helvetica', 'normal');
+    // Deductions Section
     const ded = stub.deductions || {};
-    doc.text('Hacienda:', 20, y);
-    doc.text(`-$${(ded.hacienda || 0).toFixed(2)}`, 150, y);
-    
-    y += 8;
-    doc.text('Seguro Social:', 20, y);
-    doc.text(`-$${(ded.social_security || 0).toFixed(2)}`, 150, y);
-    
-    y += 8;
-    doc.text('Medicare:', 20, y);
-    doc.text(`-$${(ded.medicare || 0).toFixed(2)}`, 150, y);
-    
+    const deductions = [
+      { label: 'Hacienda:', value: `-$${(ded.hacienda || 0).toFixed(2)}` },
+      { label: 'Seguro Social:', value: `-$${(ded.social_security || 0).toFixed(2)}` },
+      { label: 'Medicare:', value: `-$${(ded.medicare || 0).toFixed(2)}` }
+    ];
     if (ded.other > 0) {
-      y += 8;
-      doc.text('Otras deducciones:', 20, y);
-      doc.text(`-$${(ded.other || 0).toFixed(2)}`, 150, y);
+      deductions.push({ label: 'Otras deducciones:', value: `-$${(ded.other || 0).toFixed(2)}` });
     }
+    deductions.push({ label: 'Total Deducciones:', value: `-$${stub.total_deductions?.toFixed(2) || 0}` });
+    y = addPaySection(doc, 'DEDUCCIONES', deductions, y);
     
-    y += 8;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total Deducciones:', 20, y);
-    doc.text(`-$${stub.total_deductions?.toFixed(2) || 0}`, 150, y);
-    
-    // Net Pay
-    y += 20;
-    doc.setFillColor(249, 115, 22);
-    doc.rect(15, y - 8, 180, 15, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
-    doc.text('PAGO NETO:', 20, y + 2);
-    doc.text(`$${stub.net_pay?.toFixed(2) || 0}`, 150, y + 2);
+    // Net Pay Section (highlighted)
+    y = addPaySection(doc, 'PAGO NETO', [{ label: '', value: `$${stub.net_pay?.toFixed(2) || 0}` }], y, true);
     
     // Footer
-    doc.setTextColor(128, 128, 128);
-    doc.setFontSize(8);
-    doc.text(`Generado: ${moment().format('DD/MM/YYYY HH:mm')}`, 105, 280, { align: 'center' });
+    addFooter(doc, company);
     
     doc.save(`talonario_${stub.employee_name?.replace(/\s+/g, '_')}_${moment(stub.period_end).format('YYYYMMDD')}.pdf`);
     toast.success('Talonario descargado');
