@@ -139,6 +139,7 @@ const Payroll = () => {
           totalDeductions,
           netPay: grossPay - totalDeductions,
           isContractor,
+          applyContractorDeduction: isContractor, // Initialize checkbox based on worker classification
           isHourly: hourlyRate > 0,
           hasPayConfig
         };
