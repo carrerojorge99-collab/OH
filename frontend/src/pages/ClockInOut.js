@@ -169,6 +169,21 @@ const ClockInOut = () => {
     return 'En turno';
   };
 
+  const handleDeletePunch = async (clockId) => {
+    if (!window.confirm('¿Estás seguro de eliminar este ponche?')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/clock/${clockId}`, { withCredentials: true });
+      toast.success('Ponche eliminado');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting punch:', error);
+      toast.error(error.response?.data?.detail || 'Error al eliminar ponche');
+    }
+  };
+
   // Count individual punch actions (each IN and OUT counts as 1 punch)
   const countPunches = () => {
     let count = 0;
