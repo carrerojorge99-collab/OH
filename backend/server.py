@@ -2933,6 +2933,14 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
         env_content = update_env_var(env_content, 'SMTP_USER', settings['smtp_user'])
     if 'smtp_password' in settings:
         env_content = update_env_var(env_content, 'SMTP_PASSWORD', settings['smtp_password'])
+    if 'smtp_from_email' in settings:
+        env_content = update_env_var(env_content, 'SMTP_FROM_EMAIL', settings['smtp_from_email'])
+    if 'smtp_from_name' in settings:
+        env_content = update_env_var(env_content, 'SMTP_FROM_NAME', settings['smtp_from_name'])
+    if 'smtp_host' in settings:
+        env_content = update_env_var(env_content, 'SMTP_HOST', settings['smtp_host'])
+    if 'smtp_port' in settings:
+        env_content = update_env_var(env_content, 'SMTP_PORT', str(settings['smtp_port']))
     if 'email_notifications_enabled' in settings:
         env_content = update_env_var(env_content, 'EMAIL_NOTIFICATIONS_ENABLED', str(settings['email_notifications_enabled']).lower())
     
@@ -2942,7 +2950,17 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
     from dotenv import load_dotenv
     load_dotenv(env_path, override=True)
     
-    return {"message": "Configuración actualizada exitosamente. Reinicia el backend para aplicar cambios."}
+    # Also reload email service variables
+    import email_service
+    email_service.SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+    email_service.SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+    email_service.SMTP_USER = os.environ.get('SMTP_USER', '')
+    email_service.SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+    email_service.SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', 'noreply@proyecthub.com')
+    email_service.SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'ProyectHub')
+    email_service.EMAIL_NOTIFICATIONS_ENABLED = os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
+    
+    return {"message": "Configuración de email actualizada exitosamente"}
 
 def update_env_var(content: str, key: str, value: str) -> str:
     """Update or add an environment variable in .env content"""
