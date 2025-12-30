@@ -3679,6 +3679,530 @@ class SafetyModuleTester:
             "critical_issues": critical_failures
         }
 
+class InvoiceManagementTester:
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.test_tax_type_id = None
+        self.test_saved_client_id = None
+        self.test_invoice_id = None
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="j.carrero@ohsmspr.com", password="Axel52418!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_create_tax_type(self):
+        """Test creating a new tax type"""
+        print(f"\n🔍 Testing Create Tax Type...")
+        
+        tax_type_data = {
+            "name": "Municipal 1%",
+            "percentage": 1.0,
+            "description": "Impuesto municipal",
+            "is_active": True
+        }
+        
+        try:
+            url = f"{self.api_url}/tax-types"
+            response = self.session.post(url, json=tax_type_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                tax_type = response.json()
+                print(f"   Response Body: {json.dumps(tax_type, indent=2)}")
+                
+                if 'tax_type_id' in tax_type:
+                    self.test_tax_type_id = tax_type['tax_type_id']
+                    name = tax_type.get('name', 'N/A')
+                    percentage = tax_type.get('percentage', 0)
+                    self.log_test("Create Tax Type", True, 
+                                f"Tax type created - ID: {self.test_tax_type_id}, Name: {name}, Percentage: {percentage}%")
+                    return True, tax_type
+                else:
+                    self.log_test("Create Tax Type", False, "", "No tax_type_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Create Tax Type", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Tax Type", False, "", str(e))
+            return False, {}
+
+    def test_get_tax_types(self):
+        """Test getting tax types list"""
+        print(f"\n🔍 Testing Get Tax Types...")
+        
+        try:
+            url = f"{self.api_url}/tax-types"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                tax_types = response.json()
+                print(f"   Response Body: {json.dumps(tax_types, indent=2)}")
+                
+                if isinstance(tax_types, list):
+                    self.log_test("Get Tax Types", True, f"Found {len(tax_types)} tax types")
+                    return True, tax_types
+                else:
+                    self.log_test("Get Tax Types", False, "", f"Invalid response format: {tax_types}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Tax Types", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Tax Types", False, "", str(e))
+            return False, []
+
+    def test_update_tax_type(self):
+        """Test updating a tax type"""
+        print(f"\n🔍 Testing Update Tax Type...")
+        
+        if not self.test_tax_type_id:
+            self.log_test("Update Tax Type", False, "", "No tax type ID available")
+            return False
+        
+        update_data = {
+            "name": "Municipal 1.5%",
+            "percentage": 1.5,
+            "description": "Impuesto municipal actualizado",
+            "is_active": True
+        }
+        
+        try:
+            url = f"{self.api_url}/tax-types/{self.test_tax_type_id}"
+            response = self.session.put(url, json=update_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                tax_type = response.json()
+                print(f"   Response Body: {json.dumps(tax_type, indent=2)}")
+                
+                name = tax_type.get('name', 'N/A')
+                percentage = tax_type.get('percentage', 0)
+                self.log_test("Update Tax Type", True, 
+                            f"Tax type updated - Name: {name}, Percentage: {percentage}%")
+                return True, tax_type
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Update Tax Type", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Update Tax Type", False, "", str(e))
+            return False, {}
+
+    def test_create_saved_client(self):
+        """Test creating a saved client"""
+        print(f"\n🔍 Testing Create Saved Client...")
+        
+        client_data = {
+            "name": "Test Client Corp",
+            "email": "test@client.com",
+            "phone": "787-555-1234",
+            "address": "123 Test St"
+        }
+        
+        try:
+            url = f"{self.api_url}/saved-clients"
+            response = self.session.post(url, json=client_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                client = response.json()
+                print(f"   Response Body: {json.dumps(client, indent=2)}")
+                
+                if 'client_id' in client:
+                    self.test_saved_client_id = client['client_id']
+                    name = client.get('name', 'N/A')
+                    email = client.get('email', 'N/A')
+                    self.log_test("Create Saved Client", True, 
+                                f"Saved client created - ID: {self.test_saved_client_id}, Name: {name}, Email: {email}")
+                    return True, client
+                else:
+                    self.log_test("Create Saved Client", False, "", "No client_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Create Saved Client", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Saved Client", False, "", str(e))
+            return False, {}
+
+    def test_get_saved_clients(self):
+        """Test getting saved clients list"""
+        print(f"\n🔍 Testing Get Saved Clients...")
+        
+        try:
+            url = f"{self.api_url}/saved-clients"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                clients = response.json()
+                print(f"   Response Body: {json.dumps(clients, indent=2)}")
+                
+                if isinstance(clients, list):
+                    self.log_test("Get Saved Clients", True, f"Found {len(clients)} saved clients")
+                    return True, clients
+                else:
+                    self.log_test("Get Saved Clients", False, "", f"Invalid response format: {clients}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Saved Clients", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Saved Clients", False, "", str(e))
+            return False, []
+
+    def test_get_invoices(self):
+        """Test getting invoices list"""
+        print(f"\n🔍 Testing Get Invoices...")
+        
+        try:
+            url = f"{self.api_url}/invoices"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                invoices = response.json()
+                print(f"   Response Body: {json.dumps(invoices, indent=2)}")
+                
+                if isinstance(invoices, list):
+                    if len(invoices) > 0:
+                        self.test_invoice_id = invoices[0].get('invoice_id')
+                    self.log_test("Get Invoices", True, f"Found {len(invoices)} invoices")
+                    return True, invoices
+                else:
+                    self.log_test("Get Invoices", False, "", f"Invalid response format: {invoices}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Invoices", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Invoices", False, "", str(e))
+            return False, []
+
+    def test_mark_invoice_as_sent(self):
+        """Test marking an invoice as sent"""
+        print(f"\n🔍 Testing Mark Invoice as Sent...")
+        
+        if not self.test_invoice_id:
+            self.log_test("Mark Invoice as Sent", False, "", "No invoice ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/invoices/{self.test_invoice_id}/mark-sent"
+            response = self.session.put(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                invoice = response.json()
+                print(f"   Response Body: {json.dumps(invoice, indent=2)}")
+                
+                status = invoice.get('status', 'N/A')
+                sent_date = invoice.get('sent_date', 'N/A')
+                
+                if status == 'sent' and sent_date:
+                    self.log_test("Mark Invoice as Sent", True, 
+                                f"Invoice marked as sent - Status: {status}, Sent Date: {sent_date}")
+                    return True, invoice
+                else:
+                    self.log_test("Mark Invoice as Sent", False, "", 
+                                f"Invoice not properly marked as sent - Status: {status}, Sent Date: {sent_date}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Mark Invoice as Sent", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Mark Invoice as Sent", False, "", str(e))
+            return False, {}
+
+    def test_create_manual_invoice_with_tax_and_sponsor(self):
+        """Test creating a manual invoice with tax type and sponsor"""
+        print(f"\n🔍 Testing Create Manual Invoice with Tax Type and Sponsor...")
+        
+        # Get a project first
+        try:
+            projects_url = f"{self.api_url}/projects"
+            projects_response = self.session.get(projects_url, timeout=30)
+            
+            if projects_response.status_code != 200 or not projects_response.json():
+                self.log_test("Create Manual Invoice with Tax Type and Sponsor", False, "", "No projects available")
+                return False
+            
+            project_id = projects_response.json()[0]['project_id']
+            
+            invoice_data = {
+                "project_id": project_id,
+                "client_name": "Test Client with Tax",
+                "client_email": "taxclient@example.com",
+                "client_phone": "787-555-9999",
+                "client_address": "456 Tax Street, San Juan, PR 00902",
+                "sponsor_name": "Test Sponsor Company",
+                "tax_type_name": "Municipal 1.5%",
+                "items": [
+                    {
+                        "description": "Professional Services with Tax",
+                        "quantity": 1,
+                        "unit_price": 2000.00,
+                        "amount": 2000.00
+                    }
+                ],
+                "tax_rate": 1.5,
+                "notes": "Test invoice with tax type and sponsor",
+                "terms": "Payment due within 30 days"
+            }
+            
+            url = f"{self.api_url}/invoices/manual"
+            response = self.session.post(url, json=invoice_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                invoice = response.json()
+                print(f"   Response Body: {json.dumps(invoice, indent=2)}")
+                
+                if 'invoice_id' in invoice:
+                    invoice_id = invoice['invoice_id']
+                    sponsor_name = invoice.get('sponsor_name', 'N/A')
+                    tax_type_name = invoice.get('tax_type_name', 'N/A')
+                    total = invoice.get('total', 0)
+                    self.log_test("Create Manual Invoice with Tax Type and Sponsor", True, 
+                                f"Invoice created - ID: {invoice_id}, Sponsor: {sponsor_name}, Tax Type: {tax_type_name}, Total: ${total}")
+                    return True, invoice
+                else:
+                    self.log_test("Create Manual Invoice with Tax Type and Sponsor", False, "", "No invoice_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Create Manual Invoice with Tax Type and Sponsor", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Manual Invoice with Tax Type and Sponsor", False, "", str(e))
+            return False, {}
+
+    def test_delete_tax_type(self):
+        """Test deleting a tax type"""
+        print(f"\n🔍 Testing Delete Tax Type...")
+        
+        if not self.test_tax_type_id:
+            self.log_test("Delete Tax Type", False, "", "No tax type ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/tax-types/{self.test_tax_type_id}"
+            response = self.session.delete(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"   Response Body: {json.dumps(result, indent=2)}")
+                
+                self.log_test("Delete Tax Type", True, f"Tax type deleted successfully")
+                return True, result
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Delete Tax Type", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Delete Tax Type", False, "", str(e))
+            return False, {}
+
+    def run_invoice_management_tests(self):
+        """Run complete invoice management test suite"""
+        print("🚀 Starting Invoice Management Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Test Tax Types CRUD
+        print("\n📋 Testing Tax Types CRUD Operations...")
+        self.test_create_tax_type()
+        self.test_get_tax_types()
+        self.test_update_tax_type()
+        
+        # Step 3: Test Saved Clients
+        print("\n👥 Testing Saved Clients...")
+        self.test_create_saved_client()
+        self.test_get_saved_clients()
+        
+        # Step 4: Test Invoice Operations
+        print("\n📄 Testing Invoice Operations...")
+        self.test_get_invoices()
+        if self.test_invoice_id:
+            self.test_mark_invoice_as_sent()
+        
+        # Step 5: Test Manual Invoice with Tax and Sponsor
+        print("\n💰 Testing Manual Invoice with Tax Type and Sponsor...")
+        self.test_create_manual_invoice_with_tax_and_sponsor()
+        
+        # Step 6: Cleanup - Delete test tax type
+        print("\n🧹 Cleanup...")
+        self.test_delete_tax_type()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 INVOICE MANAGEMENT TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if any(keyword in test['test'] for keyword in ['Tax Type', 'Saved Client', 'Mark Invoice', 'Manual Invoice'])]
+        if critical_failures:
+            print("\n🚨 CRITICAL ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 def main():
     """Main function"""
     if len(sys.argv) > 1:
