@@ -2600,22 +2600,72 @@ async def export_project_report(project_id: str, format: str, request: Request, 
         )
     
     elif format == "pdf":
+        # Get company info for consistent styling
+        company = await db.company.find_one({}, {"_id": 0}) or {}
+        
+        # Define corporate colors matching frontend
+        PRIMARY_COLOR = colors.HexColor('#f97316')  # Orange
+        SECONDARY_COLOR = colors.HexColor('#475569')  # Slate
+        TEXT_COLOR = colors.HexColor('#1e293b')  # Dark
+        LIGHT_BG = colors.HexColor('#f8fafc')  # Light gray
+        
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
         elements = []
         styles = getSampleStyleSheet()
         
+        # Custom styles matching invoice CSS
+        company_style = ParagraphStyle(
+            'Company',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=PRIMARY_COLOR,
+            fontName='Helvetica-Bold'
+        )
+        company_detail_style = ParagraphStyle(
+            'CompanyDetail',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=SECONDARY_COLOR
+        )
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=18,
-            textColor=colors.HexColor('#2563EB'),
-            spaceAfter=12
+            textColor=TEXT_COLOR,
+            spaceAfter=5,
+            alignment=2  # Right aligned
         )
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=11,
+            textColor=TEXT_COLOR,
+            fontName='Helvetica-Bold',
+            spaceAfter=8,
+            spaceBefore=15
+        )
+        normal_right = ParagraphStyle('NormalRight', parent=styles['Normal'], alignment=2)
         
-        elements.append(Paragraph(f"Reporte del Proyecto: {project_doc['name']}", title_style))
-        elements.append(Spacer(1, 0.2*inch))
+        # Company header
+        company_name = company.get('company_name', 'OHSMS PR')
+        elements.append(Paragraph(company_name, company_style))
+        if company.get('address'):
+            elements.append(Paragraph(company.get('address', ''), company_detail_style))
+        if company.get('city') or company.get('state'):
+            elements.append(Paragraph(f"{company.get('city', '')}, {company.get('state', '')} {company.get('zip_code', '')}", company_detail_style))
+        if company.get('phone'):
+            elements.append(Paragraph(f"Tel: {company.get('phone', '')}", company_detail_style))
         
+        elements.append(Spacer(1, 10))
+        
+        # Document title
+        elements.append(Paragraph("REPORTE DE PROYECTO", title_style))
+        elements.append(Paragraph(f"#{project_doc['name']}", normal_right))
+        elements.append(Paragraph(f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}", normal_right))
+        elements.append(Spacer(1, 15))
+        
+        # Info table with new style
         info_data = [
             ['Descripción:', project_doc['description']],
             ['Estado:', project_doc['status']],
@@ -2625,18 +2675,38 @@ async def export_project_report(project_id: str, format: str, request: Request, 
         
         info_table = Table(info_data, colWidths=[2*inch, 4*inch])
         info_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#E2E8F0')),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('BACKGROUND', (0, 0), (0, -1), LIGHT_BG),
+            ('TEXTCOLOR', (0, 0), (-1, -1), TEXT_COLOR),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-            ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('LINEBELOW', (0, 0), (-1, -1), 0.3, PRIMARY_COLOR)
         ]))
         elements.append(info_table)
         elements.append(Spacer(1, 0.3*inch))
         
-        elements.append(Paragraph("Tareas", styles['Heading2']))
+        # Table style matching invoice CSS
+        table_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
+            ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('LINEBELOW', (0, 0), (-1, 0), 0.5, PRIMARY_COLOR),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, -1), TEXT_COLOR),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fcfcfd')]),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+            ('TOPPADDING', (0, 1), (-1, -1), 5),
+        ])
+        
+        elements.append(Paragraph("Tareas", heading_style))
         if tasks:
             task_data = [['Título', 'Estado', 'Prioridad', 'Progreso']]
             for task in tasks:
@@ -2648,19 +2718,11 @@ async def export_project_report(project_id: str, format: str, request: Request, 
                 ])
             
             task_table = Table(task_data, colWidths=[2.5*inch, 1.2*inch, 1*inch, 0.8*inch])
-            task_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('GRID', (0, 0), (-1, -1), 1, colors.grey)
-            ]))
+            task_table.setStyle(table_style)
             elements.append(task_table)
         
         elements.append(Spacer(1, 0.3*inch))
-        elements.append(Paragraph("Gastos", styles['Heading2']))
+        elements.append(Paragraph("Gastos", heading_style))
         if expenses:
             expense_data = [['Descripción', 'Monto', 'Fecha']]
             for expense in expenses:
@@ -2671,15 +2733,7 @@ async def export_project_report(project_id: str, format: str, request: Request, 
                 ])
             
             expense_table = Table(expense_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
-            expense_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('GRID', (0, 0), (-1, -1), 1, colors.grey)
-            ]))
+            expense_table.setStyle(table_style)
             elements.append(expense_table)
         
         doc.build(elements)
