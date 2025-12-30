@@ -185,6 +185,24 @@ const AuditLog = () => {
     setSearchTerm('');
   };
 
+  const handleClearAuditLogs = async () => {
+    if (!window.confirm('⚠️ ¿Estás seguro de eliminar TODO el historial de auditoría? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    if (!window.confirm('Esta acción eliminará permanentemente todos los registros. ¿Continuar?')) {
+      return;
+    }
+    
+    try {
+      await api.delete('/audit-logs/clear', { withCredentials: true });
+      toast.success('Historial de auditoría eliminado');
+      setLogs([]);
+    } catch (error) {
+      console.error('Error clearing audit logs:', error);
+      toast.error(error.response?.data?.detail || 'Error al eliminar historial');
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
