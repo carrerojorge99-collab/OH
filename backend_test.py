@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 
 class ClockSystemTester:
-    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
@@ -419,7 +419,7 @@ class ClockSystemTester:
         }
 
 class CostEstimateExportTester:
-    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
@@ -686,7 +686,7 @@ class CostEstimateExportTester:
         }
 
 class ClientPortalTester:
-    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
@@ -1037,7 +1037,7 @@ class ClientPortalTester:
         }
 
 class ProjectInvoicesTester:
-    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
@@ -1453,7 +1453,7 @@ class ProjectInvoicesTester:
         }
 
 class PDFGenerationTester:
-    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
@@ -1877,7 +1877,7 @@ class PDFGenerationTester:
         }
 
 class ProjectManagementAPITester:
-    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None
@@ -2395,7 +2395,7 @@ class ProjectManagementAPITester:
         }
 
 class SafetyModuleTester:
-    def __init__(self, base_url="https://change-order-app.preview.emergentagent.com"):
+    def __init__(self, base_url="https://invoice-tracker-183.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session = requests.Session()
