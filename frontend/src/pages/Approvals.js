@@ -299,6 +299,13 @@ const Approvals = () => {
                               <Button onClick={() => handleLegacyAction(app.id, 'rejected')} variant="destructive">
                                 <XCircle className="w-4 h-4 mr-1" /> Rechazar
                               </Button>
+                              <Button 
+                                onClick={() => handleDeleteApproval(app.id, 'legacy')}
+                                variant="outline"
+                                className="text-red-600 border-red-300 hover:bg-red-50 ml-auto"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
                         </div>
