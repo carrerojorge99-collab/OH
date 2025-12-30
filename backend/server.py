@@ -734,6 +734,44 @@ async def get_current_user(request: Request, session_token: Optional[str] = Cook
     
     return User(**user_doc)
 
+@api_router.post("/auth/setup")
+async def initial_setup(user_data: UserRegister):
+    """
+    Setup inicial - Solo funciona si NO hay super_admins en la base de datos.
+    Esto permite crear el primer admin en una instalación nueva.
+    """
+    # Check if any super_admin exists
+    existing_admin = await db.users.find_one({"role": "super_admin"}, {"_id": 0})
+    if existing_admin:
+        raise HTTPException(status_code=403, detail="El sistema ya tiene un administrador configurado. Use login normal.")
+    
+    if not user_data.email or not user_data.password:
+        raise HTTPException(status_code=400, detail="Email y contraseña son requeridos")
+    
+    # Check if email exists
+    existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email ya registrado")
+    
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    hashed_password = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    user_doc = {
+        "id": user_id,
+        "user_id": user_id,
+        "name": user_data.name,
+        "email": user_data.email,
+        "password": hashed_password,
+        "role": "super_admin",  # Force super_admin for setup
+        "picture": None,
+        "is_temp_password": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.users.insert_one(user_doc)
+    
+    return {"message": "Super Admin creado exitosamente. Ya puedes iniciar sesión."}
+
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserRegister):
     # Si se proporciona email, verificar que no exista
