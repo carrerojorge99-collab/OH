@@ -376,6 +376,7 @@ const Payroll = () => {
 
       await api.post(`/payroll/process`, payload, { withCredentials: true });
       toast.success('Nómina guardada exitosamente');
+      loadPayrollHistory(); // Reload history after saving
     } catch (error) {
       toast.error('Error al guardar nómina');
     } finally {
