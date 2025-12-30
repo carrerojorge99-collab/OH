@@ -276,3 +276,20 @@ Status: **Backend API tests PASSED** ✅
 - Invoice model correctly includes sponsor_name and tax_type_name fields
 - Mark as sent functionality properly updates invoice status and timestamps
 - All endpoints follow proper REST conventions and return expected data structures
+
+## Current Test Focus (2025-12-30)
+### Issue Being Fixed
+- **Company logo and info missing from Pay Stub PDF**
+- Root cause: PDF generator was using hardcoded LOGO_BASE64 from logoData.js instead of fetching company's actual logo
+- Fix applied: Updated `fetchCompanyInfo()` in pdfGenerator.js to fetch company logo and convert to base64, then use it in all PDF headers
+
+### Files Modified
+- `/app/frontend/src/utils/pdfGenerator.js`:
+  - Added `loadImageAsBase64()` helper function
+  - Updated `fetchCompanyInfo()` to fetch company logo and convert to base64
+  - Updated `addDocumentHeader()`, `addReportHeader()`, and `addPayStubHeader()` to use company's logo if available
+
+### Test Required
+- Navigate to My Profile page
+- Download a pay stub PDF
+- Verify company logo and info appear correctly in the PDF header
