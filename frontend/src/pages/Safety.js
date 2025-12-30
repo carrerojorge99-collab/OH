@@ -671,8 +671,24 @@ const Safety = () => {
   const renderDashboard = () => {
     if (!dashboardData) return <div className="text-center py-8">Cargando...</div>;
     
+    const projectName = selectedProject ? projects.find(p => p.project_id === selectedProject)?.name : null;
+    
     return (
       <div className="space-y-6">
+        {/* Report Download Button */}
+        <div className="flex justify-end">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              generateSafetyDashboardReport(dashboardData, projectName);
+              toast.success('Reporte PDF generado');
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Descargar Reporte
+          </Button>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
