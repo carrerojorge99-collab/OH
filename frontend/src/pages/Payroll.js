@@ -37,8 +37,9 @@ const Payroll = () => {
         api.get(`/employees?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
         api.get(`/payroll-settings?_t=${Date.now()}`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
       ]);
-      // Include ALL employees - show everyone regardless of salary/hourly_rate configuration
-      setEmployees(empRes.data);
+      // Include ALL employees EXCEPT clients
+      const nonClientEmployees = empRes.data.filter(e => e.role !== 'client');
+      setEmployees(nonClientEmployees);
       setPayrollSettings(settingsRes.data);
       setLoading(false);
     } catch (error) {
