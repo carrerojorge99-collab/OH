@@ -4785,6 +4785,137 @@ async def update_invoice_status(
     
     return Invoice(**invoice)
 
+@api_router.put("/invoices/{invoice_id}/mark-sent")
+async def mark_invoice_sent(
+    invoice_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Mark invoice as sent and set sent_date"""
+    user = await get_current_user(request, session_token)
+    
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    await db.invoices.update_one(
+        {"invoice_id": invoice_id},
+        {"$set": {
+            "status": "sent",
+            "sent_date": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    updated = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    await log_audit(user.user_id, user.name, "update", "invoice", invoice_id, updated.get('invoice_number', ''), {"action": "marked_sent"})
+    
+    return updated
+
+# ============= SAVED CLIENTS (for autocomplete) =============
+@api_router.get("/saved-clients")
+async def get_saved_clients(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all saved clients for autocomplete"""
+    user = await get_current_user(request, session_token)
+    clients = await db.saved_clients.find({}, {"_id": 0}).sort("name", 1).to_list(500)
+    return clients
+
+@api_router.post("/saved-clients")
+async def create_saved_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Save a new client for future use"""
+    user = await get_current_user(request, session_token)
+    
+    # Check if client already exists by name
+    existing = await db.saved_clients.find_one({"name": data.get("name")})
+    if existing:
+        # Update existing client
+        await db.saved_clients.update_one(
+            {"name": data.get("name")},
+            {"$set": {
+                "email": data.get("email", ""),
+                "phone": data.get("phone", ""),
+                "address": data.get("address", ""),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        updated = await db.saved_clients.find_one({"name": data.get("name")}, {"_id": 0})
+        return updated
+    
+    client_id = f"saved_client_{uuid4().hex[:12]}"
+    client_doc = {
+        "id": client_id,
+        "name": data.get("name", ""),
+        "email": data.get("email", ""),
+        "phone": data.get("phone", ""),
+        "address": data.get("address", ""),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.saved_clients.insert_one(client_doc)
+    client_doc.pop('_id', None)
+    return client_doc
+
+@api_router.delete("/saved-clients/{client_id}")
+async def delete_saved_client(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a saved client"""
+    user = await get_current_user(request, session_token)
+    await db.saved_clients.delete_one({"id": client_id})
+    return {"message": "Cliente eliminado"}
+
+# ============= TAX TYPES CONFIGURATION =============
+@api_router.get("/tax-types")
+async def get_tax_types(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all configured tax types"""
+    user = await get_current_user(request, session_token)
+    tax_types = await db.tax_types.find({}, {"_id": 0}).sort("name", 1).to_list(100)
+    return tax_types
+
+@api_router.post("/tax-types")
+async def create_tax_type(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new tax type"""
+    user = await get_current_user(request, session_token)
+    
+    tax_id = f"tax_{uuid4().hex[:8]}"
+    tax_doc = {
+        "id": tax_id,
+        "name": data.get("name", ""),
+        "percentage": float(data.get("percentage", 0)),
+        "description": data.get("description", ""),
+        "is_active": data.get("is_active", True),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.tax_types.insert_one(tax_doc)
+    tax_doc.pop('_id', None)
+    await log_audit(user.user_id, user.name, "create", "tax_type", tax_id, data.get("name"), {})
+    return tax_doc
+
+@api_router.put("/tax-types/{tax_id}")
+async def update_tax_type(tax_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a tax type"""
+    user = await get_current_user(request, session_token)
+    
+    await db.tax_types.update_one(
+        {"id": tax_id},
+        {"$set": {
+            "name": data.get("name"),
+            "percentage": float(data.get("percentage", 0)),
+            "description": data.get("description", ""),
+            "is_active": data.get("is_active", True)
+        }}
+    )
+    
+    updated = await db.tax_types.find_one({"id": tax_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/tax-types/{tax_id}")
+async def delete_tax_type(tax_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a tax type"""
+    user = await get_current_user(request, session_token)
+    await db.tax_types.delete_one({"id": tax_id})
+    await log_audit(user.user_id, user.name, "delete", "tax_type", tax_id, "", {})
+    return {"message": "Tipo de impuesto eliminado"}
+
 @api_router.get("/projects/{project_id}/financial-summary")
 async def get_project_financial_summary(
     project_id: str,
