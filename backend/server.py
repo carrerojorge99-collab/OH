@@ -2543,6 +2543,19 @@ async def update_approval(approval_id: str, data: dict, request: Request, sessio
     
     return {"message": f"Solicitud {data.get('status')}"}
 
+@api_router.delete("/approvals/{approval_id}")
+async def delete_approval(approval_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    if user.role not in [UserRole.SUPER_ADMIN, UserRole.PROJECT_MANAGER]:
+        raise HTTPException(status_code=403, detail="No tienes permisos para eliminar aprobaciones")
+    
+    result = await db.approvals.delete_one({"id": approval_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Aprobación no encontrada")
+    
+    return {"message": "Aprobación eliminada"}
+
 @api_router.get("/projects/{project_id}/stats")
 async def get_project_stats(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
