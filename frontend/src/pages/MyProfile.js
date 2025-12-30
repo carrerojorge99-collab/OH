@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
 import jsPDF from 'jspdf';
+import { fetchCompanyInfo, addPayStubHeader, addPaySection, addFooter } from '../utils/pdfGenerator';
 
 moment.locale('es');
 
