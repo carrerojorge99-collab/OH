@@ -222,9 +222,14 @@ const AuditLog = () => {
             <h1 className="text-3xl font-bold tracking-tight">Historial de Auditoría</h1>
             <p className="text-muted-foreground mt-1">Registro completo de todas las acciones del sistema</p>
           </div>
-          <Button onClick={exportPDF} className="bg-orange-600 hover:bg-orange-700">
-            <Download className="w-4 h-4 mr-2" /> Exportar PDF
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleClearAuditLogs} variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+              <Trash2 className="w-4 h-4 mr-2" /> Limpiar Historial
+            </Button>
+            <Button onClick={exportPDF} className="bg-orange-600 hover:bg-orange-700">
+              <Download className="w-4 h-4 mr-2" /> Exportar PDF
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
