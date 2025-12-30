@@ -47,15 +47,12 @@ export const exportTimesheetToExcel = (timesheetData, projectName) => {
 };
 
 // Export Timesheet to PDF
-export const exportTimesheetToPDF = (timesheetData, projectName) => {
+export const exportTimesheetToPDF = async (timesheetData, projectName) => {
   const doc = new jsPDF();
+  const company = await fetchCompanyInfo();
   
-  doc.setFontSize(18);
-  doc.text('REPORTE DE TIMESHEET', 14, 22);
-  
-  doc.setFontSize(11);
-  doc.text(`Proyecto: ${projectName}`, 14, 32);
-  doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 14, 38);
+  // Header with company info
+  let y = await addReportHeader(doc, company, 'REPORTE DE TIMESHEET', `Proyecto: ${projectName}`);
 
   const tableData = timesheetData.map(entry => [
     entry.date || 'N/A',
@@ -67,16 +64,23 @@ export const exportTimesheetToPDF = (timesheetData, projectName) => {
 
   const totalHours = timesheetData.reduce((sum, entry) => sum + (entry.hours_worked || entry.hours || 0), 0);
 
-  autoTable(doc, {
-    head: [['Fecha', 'Usuario', 'Tarea', 'Horas', 'Descripción']],
-    body: tableData,
-    foot: [['TOTAL', '', '', totalHours.toString(), '']],
-    startY: 45,
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [37, 99, 235] },
-    footStyles: { fillColor: [229, 231, 235], textColor: [0, 0, 0], fontStyle: 'bold' }
-  });
+  addReportTable(doc,
+    ['Fecha', 'Usuario', 'Tarea', 'Horas', 'Descripción'],
+    tableData,
+    y,
+    {
+      footerRow: ['TOTAL', '', '', totalHours.toString(), ''],
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 20, halign: 'center' },
+        4: { cellWidth: 60 }
+      }
+    }
+  );
 
+  addFooter(doc, company);
   const fileName = `Timesheet_${projectName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
 };
