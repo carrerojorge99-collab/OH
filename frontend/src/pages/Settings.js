@@ -541,6 +541,82 @@ const Settings = () => {
     }
   };
 
+  // Export all data
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch(`${API_URL}/api/data/export`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Error al exportar');
+      }
+      
+      const data = await response.json();
+      
+      // Create and download file
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_ohsms_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Datos exportados correctamente');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(error.message || 'Error al exportar datos');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Import data from file
+  const handleImportData = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!window.confirm('⚠️ ADVERTENCIA: Esto sobrescribirá datos existentes. ¿Deseas continuar?')) {
+      event.target.value = '';
+      return;
+    }
+    
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      const response = await fetch(`${API_URL}/api/data/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Error al importar');
+      }
+      
+      const result = await response.json();
+      toast.success(result.message || 'Datos importados correctamente');
+      
+      // Reload page to show new data
+      window.location.reload();
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error(error.message || 'Error al importar datos');
+    } finally {
+      setImporting(false);
+      event.target.value = '';
+    }
+  };
+
   if (user?.role !== 'admin' && user?.role !== 'super_admin') {
     return (
       <Layout>
