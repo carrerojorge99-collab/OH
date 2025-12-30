@@ -1220,6 +1220,129 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
+          {/* Taxes Tab */}
+          <TabsContent value="taxes">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <CardTitle>Tipos de Impuesto</CardTitle>
+                </div>
+                <CardDescription>
+                  Configure los tipos de impuesto para aplicar en facturas y estimados
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Add/Edit Tax Type Form */}
+                <form onSubmit={handleSaveTaxType} className="p-4 border rounded-lg bg-slate-50">
+                  <h3 className="font-medium mb-4">{editingTaxType ? 'Editar Tipo de Impuesto' : 'Nuevo Tipo de Impuesto'}</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nombre *</Label>
+                      <Input
+                        placeholder="Ej: IVU 11.5%"
+                        value={taxTypeForm.name}
+                        onChange={(e) => setTaxTypeForm({ ...taxTypeForm, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Porcentaje (%) *</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="11.5"
+                        value={taxTypeForm.percentage}
+                        onChange={(e) => setTaxTypeForm({ ...taxTypeForm, percentage: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label>Descripción</Label>
+                      <Input
+                        placeholder="Descripción opcional"
+                        value={taxTypeForm.description}
+                        onChange={(e) => setTaxTypeForm({ ...taxTypeForm, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={taxTypeForm.is_active}
+                        onCheckedChange={(checked) => setTaxTypeForm({ ...taxTypeForm, is_active: checked })}
+                      />
+                      <Label>Activo</Label>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {editingTaxType ? 'Actualizar' : 'Agregar'}
+                    </Button>
+                    {editingTaxType && (
+                      <Button type="button" variant="outline" onClick={() => {
+                        setEditingTaxType(null);
+                        setTaxTypeForm({ name: '', percentage: 0, description: '', is_active: true });
+                      }}>
+                        Cancelar
+                      </Button>
+                    )}
+                  </div>
+                </form>
+
+                {/* Tax Types List */}
+                <div className="space-y-2">
+                  <h3 className="font-medium">Tipos de Impuesto Configurados</h3>
+                  {taxTypes.length === 0 ? (
+                    <p className="text-slate-500 text-sm">No hay tipos de impuesto configurados</p>
+                  ) : (
+                    <div className="border rounded-lg divide-y">
+                      {taxTypes.map((tax) => (
+                        <div key={tax.id} className="flex items-center justify-between p-3 hover:bg-slate-50">
+                          <div className="flex items-center gap-4">
+                            <div>
+                              <p className="font-medium">{tax.name}</p>
+                              {tax.description && <p className="text-sm text-slate-500">{tax.description}</p>}
+                            </div>
+                            <span className="text-lg font-bold text-green-600">{tax.percentage}%</span>
+                            {!tax.is_active && (
+                              <span className="text-xs bg-slate-200 px-2 py-1 rounded">Inactivo</span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingTaxType(tax);
+                                setTaxTypeForm({
+                                  name: tax.name,
+                                  percentage: tax.percentage,
+                                  description: tax.description || '',
+                                  is_active: tax.is_active
+                                });
+                              }}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDeleteTaxType(tax.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Email Tab */}
           <TabsContent value="email">
             <form onSubmit={handleSave}>
