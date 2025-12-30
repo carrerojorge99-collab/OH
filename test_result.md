@@ -81,3 +81,40 @@ Status: **Backend API tests PASSED** ✅
 - Pay stub appears in My Profile with correct data  
 - Hours display shows "6:20 AM - 2:27 PM" format with project badge
 - All backend APIs working correctly for payroll and hours functionality
+
+## Frontend Test Results (2025-12-30)
+
+### Hours Display in My Profile ✅ WORKING
+- **Login**: ✅ Successfully logged in as Jorge Carrero Rodriguez
+- **Navigation**: ✅ Successfully navigated to /my-profile
+- **Mis Horas Tab**: ✅ Successfully clicked and displayed hours tab
+- **AM/PM Format**: ✅ Clock entries show formatted times like "6:20 AM - 2:27 PM" (not ISO timestamps)
+- **Total Hours**: ✅ Total hours are shown (e.g., "8.13h total")
+- **Project Names**: ❌ Project name badges not visible in current UI (minor issue)
+
+### Pay Stubs Display ✅ WORKING  
+- **Pay Stub Cards**: ✅ Found 2 pay stub cards in Talonarios tab
+- **Period Display**: ✅ Period dates show correctly (e.g., "15 dic. - 31 dic. 2025")
+- **Hours/Pay Details**: ✅ Shows hours worked, gross pay, deductions, net pay
+- **PDF Download**: ✅ "Descargar PDF" button works and downloads PDF successfully
+
+### Payroll Processing ❌ CRITICAL ISSUE
+- **Navigation**: ✅ Successfully navigated to /payroll page
+- **Period Input**: ✅ Successfully filled period dates (2025-12-01 to 2025-12-31)
+- **Calculate Button**: ✅ "Calcular Nómina" button found and clicked
+- **Results Table**: ❌ **CRITICAL**: No payroll results table appears after calculation
+- **Backend API**: ✅ Backend payroll processing API works correctly (verified via curl)
+- **Employee Data**: ✅ Employee with hourly rate (11.0) and clock data (8.13 hours) exists
+- **Frontend Logic**: ❌ **CRITICAL**: Frontend payroll calculation logic not displaying results
+
+### Root Cause Analysis
+- Backend APIs are fully functional
+- Employee data exists (Jorge Carrero: hourly_rate=11.0, 8.13 hours worked in period)
+- Frontend payroll calculation logic fails to display results table
+- Issue appears to be in the `calculatePayroll()` function in `/app/frontend/src/pages/Payroll.js`
+
+### Test Summary
+- **Total Frontend Tests**: 4 major areas
+- **Working**: 3 (Hours Display, Pay Stubs, PDF Download)
+- **Critical Issues**: 1 (Payroll Calculation Display)
+- **Success Rate**: 75%
