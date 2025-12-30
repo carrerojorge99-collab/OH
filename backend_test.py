@@ -3892,8 +3892,8 @@ class InvoiceManagementTester:
                 client = response.json()
                 print(f"   Response Body: {json.dumps(client, indent=2)}")
                 
-                if 'client_id' in client:
-                    self.test_saved_client_id = client['client_id']
+                if 'id' in client:
+                    self.test_saved_client_id = client['id']
                     name = client.get('name', 'N/A')
                     email = client.get('email', 'N/A')
                     self.log_test("Create Saved Client", True, 
