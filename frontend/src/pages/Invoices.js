@@ -919,6 +919,18 @@ const Invoices = () => {
                         PDF
                       </Button>
 
+                      {invoice.status === 'draft' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkSent(invoice.invoice_id)}
+                          className="text-blue-600"
+                        >
+                          <Send className="w-4 h-4 mr-1" />
+                          Marcar Enviada
+                        </Button>
+                      )}
+
                       {invoice.status === 'draft' && invoice.client_email && (
                         <Button
                           variant="outline"
@@ -960,6 +972,20 @@ const Invoices = () => {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Sponsor display */}
+                  {invoice.sponsor_name && (
+                    <div className="mt-2 text-sm text-slate-600">
+                      <span className="font-medium">Sponsor:</span> {invoice.sponsor_name}
+                    </div>
+                  )}
+
+                  {/* Tax type display */}
+                  {invoice.tax_type_name && (
+                    <div className="text-sm text-slate-600">
+                      <span className="font-medium">Impuesto:</span> {invoice.tax_type_name} ({invoice.tax_rate}%)
+                    </div>
+                  )}
 
                   {/* Items preview */}
                   {selectedInvoice === invoice.invoice_id && (
