@@ -973,7 +973,7 @@ async def create_session_from_emergent(request: Request, response: Response):
         )
         
         user_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
-        return {"user": User(**user_without_password), "token": session_token}
+        return {"user": user_without_password, "token": session_token}
     
     except Exception as e:
         logging.error(f"Error creating session: {str(e)}")
