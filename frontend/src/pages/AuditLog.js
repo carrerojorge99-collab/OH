@@ -69,29 +69,22 @@ const AuditLog = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
-    // Header
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(249, 115, 22);
-    doc.text('INFORME DE AUDITORÍA', 105, 20, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text(company.company_name || 'OHSMS ProManage', 105, 28, { align: 'center' });
-    doc.text(`Generado: ${moment().format('DD/MM/YYYY HH:mm')}`, 105, 34, { align: 'center' });
-    
-    // Filters applied
-    let filterText = 'Filtros: ';
+    // Build subtitle with filters
+    let filterText = '';
     if (filterType !== 'all') filterText += `Tipo: ${getEntityLabel(filterType)} | `;
     if (filterAction !== 'all') filterText += `Acción: ${filterAction} | `;
     if (dateFrom) filterText += `Desde: ${dateFrom} | `;
-    if (dateTo) filterText += `Hasta: ${dateTo} | `;
-    if (filterText === 'Filtros: ') filterText = 'Filtros: Ninguno';
+    if (dateTo) filterText += `Hasta: ${dateTo}`;
+    if (!filterText) filterText = 'Sin filtros aplicados';
     
+    // Header with company info
+    let y = await addReportHeader(doc, company, 'INFORME DE AUDITORÍA', filterText.replace(/ \| $/, ''));
+    
+    // Record count
     doc.setFontSize(8);
-    doc.text(filterText, 14, 42);
-    doc.text(`Total registros: ${filteredLogs.length}`, 14, 48);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Total registros: ${filteredLogs.length}`, 15, y);
+    y += 8;
     
     // Table data
     const tableData = filteredLogs.map(log => [
@@ -103,29 +96,29 @@ const AuditLog = () => {
       log.details?.changes ? Object.keys(log.details.changes).join(', ').substring(0, 30) : '-'
     ]);
     
-    autoTable(doc, {
-      startY: 54,
-      head: [['Fecha', 'Usuario', 'Acción', 'Tipo', 'Entidad', 'Cambios']],
-      body: tableData,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [249, 115, 22], textColor: 255 },
-      alternateRowStyles: { fillColor: [252, 252, 253] },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 20 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 50 },
-        5: { cellWidth: 40 }
+    addReportTable(doc,
+      ['Fecha', 'Usuario', 'Acción', 'Tipo', 'Entidad', 'Cambios'],
+      tableData,
+      y,
+      {
+        fontSize: 7,
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 22 },
+          4: { cellWidth: 50 },
+          5: { cellWidth: 40 }
+        }
       }
-    });
+    );
     
-    // Footer
+    // Footer with page numbers
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
-      doc.setTextColor(150);
+      doc.setTextColor(150, 150, 150);
       doc.text(`Página ${i} de ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
     }
     
