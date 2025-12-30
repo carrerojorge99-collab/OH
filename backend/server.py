@@ -968,10 +968,18 @@ async def create_session_from_emergent(request: Request, response: Response):
         logging.error(f"Error creating session: {str(e)}")
         raise HTTPException(status_code=500, detail="Error al crear sesión")
 
-@api_router.get("/auth/me", response_model=User)
+@api_router.get("/auth/me")
 async def get_me(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
-    return user
+    # Return as dict to avoid Pydantic validation issues
+    return {
+        "user_id": user.user_id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role,
+        "picture": user.picture,
+        "created_at": user.created_at
+    }
 
 @api_router.post("/auth/logout")
 async def logout(request: Request, response: Response, session_token: Optional[str] = Cookie(None)):
