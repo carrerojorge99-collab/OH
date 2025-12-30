@@ -9,7 +9,7 @@ import { Switch } from '../components/ui/switch';
 import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, Mail, AlertCircle, Building2, Upload, Image, DollarSign, FileText, Hash, Plus, Trash2 } from 'lucide-react';
+import { Save, Mail, AlertCircle, Building2, Upload, Image, DollarSign, FileText, Hash, Plus, Trash2, Download, Database } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const Settings = () => {
