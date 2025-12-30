@@ -462,14 +462,20 @@ const Payroll = () => {
                       <th className="text-right p-3">Salario Bruto</th>
                       <th className="text-right p-3">Deducciones</th>
                       <th className="text-right p-3">Neto a Pagar</th>
+                      <th className="text-center p-3">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {payrollData.map((p, idx) => (
-                      <tr key={idx} className="border-b hover:bg-slate-50">
+                      <tr key={idx} className={`border-b hover:bg-slate-50 ${!p.hasPayConfig ? 'bg-yellow-50' : ''}`}>
                         <td className="p-3">
                           <p className="font-medium">{p.employee.name}</p>
-                          <p className="text-xs text-slate-500">{p.employee.profile?.position}</p>
+                          <p className="text-xs text-slate-500">{p.employee.profile?.position || 'Sin posición'}</p>
+                          {!p.hasPayConfig && (
+                            <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-400 mt-1">
+                              Sin tarifa configurada
+                            </Badge>
+                          )}
                         </td>
                         <td className="p-3">
                           <Badge className={p.isContractor ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
@@ -477,7 +483,7 @@ const Payroll = () => {
                           </Badge>
                         </td>
                         <td className="p-3 text-center">
-                          {p.isHourly ? (
+                          {p.isHourly || !p.hasPayConfig ? (
                             <div className="flex items-center justify-center gap-2">
                               {editingHours === idx ? (
                                 <div className="flex items-center gap-1">
@@ -499,7 +505,9 @@ const Payroll = () => {
                               ) : (
                                 <>
                                   <Clock className="w-4 h-4 text-slate-400" />
-                                  <span className="font-mono">{p.hoursWorked.toFixed(2)} hrs</span>
+                                  <span className={`font-mono ${p.hoursWorked === 0 ? 'text-slate-400' : ''}`}>
+                                    {p.hoursWorked.toFixed(2)} hrs
+                                  </span>
                                   <Button size="sm" variant="ghost" onClick={() => setEditingHours(idx)} title="Editar horas">
                                     <Edit2 className="w-3 h-3 text-slate-400" />
                                   </Button>
@@ -511,18 +519,39 @@ const Payroll = () => {
                           )}
                         </td>
                         <td className="p-3 text-right font-mono text-xs">
-                          {p.isHourly ? `$${p.hourlyRate.toFixed(2)}/hr` : `$${p.employee.profile?.salary?.toFixed(2) || '0.00'}`}
+                          {p.isHourly ? `$${p.hourlyRate.toFixed(2)}/hr` : 
+                           p.fixedSalary > 0 ? `$${p.fixedSalary.toFixed(2)}` : 
+                           <span className="text-yellow-600">$0.00</span>}
                         </td>
-                        <td className="p-3 text-right font-mono">${p.grossPay.toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono">
+                          {p.grossPay > 0 ? `$${p.grossPay.toFixed(2)}` : <span className="text-slate-400">$0.00</span>}
+                        </td>
                         <td className="p-3 text-right">
-                          <p className="font-mono text-red-600">-${p.totalDeductions.toFixed(2)}</p>
-                          <div className="text-xs text-slate-500">
-                            {Object.entries(p.deductions).map(([k, v]) => (
-                              <span key={k} className="mr-2">{k}: ${v.toFixed(2)}</span>
-                            ))}
-                          </div>
+                          <p className={`font-mono ${p.totalDeductions > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                            -${p.totalDeductions.toFixed(2)}
+                          </p>
+                          {p.totalDeductions > 0 && (
+                            <div className="text-xs text-slate-500">
+                              {Object.entries(p.deductions).map(([k, v]) => (
+                                <span key={k} className="mr-2">{k}: ${v.toFixed(2)}</span>
+                              ))}
+                            </div>
+                          )}
                         </td>
-                        <td className="p-3 text-right font-mono font-bold text-green-600">${p.netPay.toFixed(2)}</td>
+                        <td className="p-3 text-right font-mono font-bold text-green-600">
+                          {p.netPay > 0 ? `$${p.netPay.toFixed(2)}` : <span className="text-slate-400">$0.00</span>}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => generatePayStubPDF(p)}
+                            disabled={p.netPay <= 0}
+                            title={p.netPay <= 0 ? 'No hay pago para generar talonario' : 'Imprimir talonario'}
+                          >
+                            <Printer className="w-4 h-4" />
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -534,6 +563,7 @@ const Payroll = () => {
                       <td className="p-3 text-right font-mono">${payrollData.reduce((a, p) => a + p.grossPay, 0).toFixed(2)}</td>
                       <td className="p-3 text-right font-mono text-red-600">-${payrollData.reduce((a, p) => a + p.totalDeductions, 0).toFixed(2)}</td>
                       <td className="p-3 text-right font-mono text-green-600">${payrollData.reduce((a, p) => a + p.netPay, 0).toFixed(2)}</td>
+                      <td className="p-3"></td>
                     </tr>
                   </tfoot>
                 </table>
