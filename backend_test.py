@@ -4230,8 +4230,12 @@ def main():
             # Run Payroll tests
             tester = PayrollTester()
             results = tester.run_payroll_tests()
+        elif sys.argv[1] == "invoice-mgmt":
+            # Run Invoice Management tests
+            tester = InvoiceManagementTester()
+            results = tester.run_invoice_management_tests()
         else:
-            print("Usage: python backend_test.py [clock|export|client|pdf|safety|payroll]")
+            print("Usage: python backend_test.py [clock|export|client|pdf|safety|payroll|invoice-mgmt]")
             return 1
     else:
         # Run full API tests
