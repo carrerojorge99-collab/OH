@@ -526,6 +526,7 @@ const Payroll = () => {
                             title={p.applyContractorDeduction ? 'Deducción de contratista aplicada' : 'Sin deducción de contratista'}
                           />
                         </td>
+                        <td className="p-3 text-center">
                           {p.isHourly || !p.hasPayConfig ? (
                             <div className="flex items-center justify-center gap-2">
                               {editingHours === idx ? (
