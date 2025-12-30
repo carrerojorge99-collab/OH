@@ -62,9 +62,10 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   // === LEFT SIDE: Company Logo and Info ===
   let leftY = 15;
   
-  // Add company logo (PNG with white background)
+  // Add company logo - use company's logo if available, otherwise fallback to default
+  const logoToUse = company?.logoBase64 || LOGO_BASE64;
   try {
-    doc.addImage(LOGO_BASE64, 'PNG', 15, 10, 40, 20);
+    doc.addImage(logoToUse, 'PNG', 15, 10, 40, 20);
     leftY = 33;
   } catch (e) {
     // If logo fails, just continue
