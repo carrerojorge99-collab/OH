@@ -589,6 +589,9 @@ const Settings = () => {
             <TabsTrigger value="nomenclature" className="flex items-center gap-2">
               <Hash className="h-4 w-4" /> Nomenclaturas
             </TabsTrigger>
+            <TabsTrigger value="taxes" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" /> Impuestos
+            </TabsTrigger>
             <TabsTrigger value="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" /> Email
             </TabsTrigger>
