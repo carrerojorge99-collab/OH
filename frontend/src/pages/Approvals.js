@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { CheckCircle, XCircle, Clock, DollarSign, FileText, User, Calendar, Package, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, DollarSign, FileText, User, Calendar, Package, AlertCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
