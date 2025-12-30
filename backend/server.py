@@ -744,6 +744,10 @@ async def register(user_data: UserRegister):
     
     user_id = f"user_{uuid.uuid4().hex[:12]}"
     
+    # Determine if this is a temporary password (created by admin)
+    is_temp_password = False
+    original_password = user_data.password  # Store for email
+    
     # Crear documento de usuario
     user_doc = {
         "user_id": user_id,
@@ -758,11 +762,23 @@ async def register(user_data: UserRegister):
     if user_data.password:
         hashed_password = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         user_doc["password"] = hashed_password
+        user_doc["is_temp_password"] = True  # Mark as temporary
+        is_temp_password = True
     else:
         user_doc["password"] = ""
+        user_doc["is_temp_password"] = False
     
     await db.users.insert_one(user_doc)
-    user_doc_without_password = {k: v for k, v in user_doc.items() if k != 'password'}
+    
+    # Send welcome email with credentials if email is provided
+    if user_data.email and original_password and is_temp_password:
+        try:
+            html, text = get_welcome_email(user_data.name, user_data.email, original_password)
+            await send_email(user_data.email, "🎉 Bienvenido a ProyectHub - Tus credenciales de acceso", html, text)
+        except Exception as e:
+            print(f"Error sending welcome email: {e}")
+    
+    user_doc_without_password = {k: v for k, v in user_doc.items() if k not in ['password', 'is_temp_password']}
     return User(**user_doc_without_password)
 
 @api_router.post("/auth/login")
