@@ -390,7 +390,7 @@ const ClockInOut = () => {
               <div className="text-center py-12 text-slate-500">
                 <Clock className="w-16 h-16 mx-auto mb-4 opacity-50" />
                 <p className="text-lg">No hay ponches registrados hoy</p>
-                <p className="text-sm mt-2">Haz click en "Clock IN" para comenzar</p>
+                <p className="text-sm mt-2">Haz click en Clock IN para comenzar</p>
               </div>
             )}
           </CardContent>
