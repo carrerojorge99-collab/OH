@@ -706,7 +706,7 @@ async def notify_slack_event(event_type: str, details: dict):
     except Exception as e:
         print(f"Error in notify_slack_event: {e}")
 
-async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)) -> User:
+async def get_current_user(request: Request, session_token: Optional[str] = Cookie(None)):
     token = session_token
     if not token:
         auth_header = request.headers.get('Authorization')
@@ -732,7 +732,18 @@ async def get_current_user(request: Request, session_token: Optional[str] = Cook
     if not user_doc:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    return User(**user_doc)
+    # Return a simple object with required attributes instead of Pydantic model
+    class SimpleUser:
+        def __init__(self, doc):
+            self.user_id = doc.get('user_id', doc.get('id', ''))
+            self.name = doc.get('name', 'Sin nombre')
+            self.email = doc.get('email', '')
+            self.role = doc.get('role', 'empleado')
+            self.picture = doc.get('picture')
+            self.created_at = doc.get('created_at', '')
+            self.id = self.user_id  # Alias
+    
+    return SimpleUser(user_doc)
 
 @api_router.post("/auth/setup")
 async def initial_setup(user_data: UserRegister):
