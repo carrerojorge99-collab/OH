@@ -180,13 +180,13 @@ const Payroll = () => {
     setEditingHours(null);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Reporte de Nómina', 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Período: ${moment(payPeriod.start).format('DD/MM/YYYY')} - ${moment(payPeriod.end).format('DD/MM/YYYY')}`, 14, 28);
-    doc.text(`Generado: ${moment().format('DD/MM/YYYY HH:mm')}`, 14, 34);
+    const company = await fetchCompanyInfo();
+    
+    // Header with company info and report title
+    const subtitle = `Período: ${moment(payPeriod.start).format('DD/MM/YYYY')} - ${moment(payPeriod.end).format('DD/MM/YYYY')}`;
+    let y = await addReportHeader(doc, company, 'REPORTE DE NÓMINA', subtitle);
 
     const tableData = payrollData.map(p => [
       p.employee.name,
@@ -204,17 +204,26 @@ const Payroll = () => {
       net: acc.net + p.netPay
     }), { hours: 0, gross: 0, deductions: 0, net: 0 });
 
-    tableData.push(['TOTALES', '', `${totals.hours.toFixed(2)} hrs`, `$${totals.gross.toFixed(2)}`, `$${totals.deductions.toFixed(2)}`, `$${totals.net.toFixed(2)}`]);
+    const footerRow = ['TOTALES', '', `${totals.hours.toFixed(2)} hrs`, `$${totals.gross.toFixed(2)}`, `$${totals.deductions.toFixed(2)}`, `$${totals.net.toFixed(2)}`];
 
-    autoTable(doc, {
-      startY: 42,
-      head: [['Empleado', 'Tipo', 'Horas', 'Salario Bruto', 'Deducciones', 'Neto']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { fillColor: [30, 64, 175] },
-      footStyles: { fillColor: [241, 245, 249], textColor: [0, 0, 0], fontStyle: 'bold' }
-    });
+    addReportTable(doc, 
+      ['Empleado', 'Tipo', 'Horas', 'Salario Bruto', 'Deducciones', 'Neto'],
+      tableData,
+      y,
+      { 
+        footerRow,
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 25, halign: 'center' },
+          2: { cellWidth: 25, halign: 'center' },
+          3: { cellWidth: 30, halign: 'right' },
+          4: { cellWidth: 30, halign: 'right' },
+          5: { cellWidth: 30, halign: 'right' }
+        }
+      }
+    );
 
+    addFooter(doc, company);
     doc.save(`Nomina_${payPeriod.start}_${payPeriod.end}.pdf`);
   };
 
