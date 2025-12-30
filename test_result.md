@@ -7,6 +7,7 @@
 ## Feature Under Test
 1. Invoice Management - Mark as sent, saved clients, tax types
 2. Tax Types Configuration in Settings
+3. **NEW: Unified PDF Styling** - All PDFs use same CSS styling as invoices
 
 ## Test Scenarios
 ### Invoice Features
@@ -20,11 +21,27 @@
 2. List tax types
 3. Select tax type in invoice form
 
+### PDF Styling Unification (NEW)
+1. All PDFs now use consistent styling matching invoice CSS:
+   - Company logo and info on left side
+   - Document title on right side
+   - Orange accent color (#f97316)
+   - Light gray backgrounds (#f8fafc)
+   - Consistent typography and spacing
+2. Updated files:
+   - `/app/frontend/src/utils/pdfGenerator.js` - Added reusable functions: addReportHeader, addReportTable, addPayStubHeader, addPaySection
+   - `/app/frontend/src/pages/MyProfile.js` - Pay stub PDF now uses unified style
+   - `/app/frontend/src/pages/Payroll.js` - Payroll report PDF now uses unified style
+   - `/app/frontend/src/pages/AuditLog.js` - Audit log PDF now uses unified style
+   - `/app/frontend/src/utils/exportUtils.js` - Timesheet and Labor PDFs now use unified style
+   - `/app/backend/server.py` - Project report PDF and Cost Estimate PDF now use unified style
+
 ## Incorporate User Feedback
 - User requested: Mark invoices as sent
 - User requested: Save client names for reuse
 - User requested: Show sponsor name on invoices
 - User requested: Tax types configuration in Settings
+- User requested: **All PDFs should use same CSS as invoices**
 
 ## Last Test Run
 Date: 2025-12-30
