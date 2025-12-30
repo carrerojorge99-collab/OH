@@ -125,7 +125,7 @@ class UserRegister(BaseModel):
     name: str
     email: Optional[str] = None
     password: Optional[str] = None
-    role: UserRole = UserRole.EMPLEADO.value
+    role: str = "empleado"
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -135,7 +135,7 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     password: Optional[str] = None
-    role: Optional[UserRole] = None
+    role: Optional[str] = None
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
