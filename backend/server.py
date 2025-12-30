@@ -772,6 +772,42 @@ async def initial_setup(user_data: UserRegister):
     
     return {"message": "Super Admin creado exitosamente. Ya puedes iniciar sesión."}
 
+class EmergencyResetRequest(BaseModel):
+    email: str
+    new_password: str
+    secret_key: str
+
+@api_router.post("/auth/emergency-reset")
+async def emergency_password_reset(data: EmergencyResetRequest):
+    """
+    Reset de contraseña de emergencia para cuando no puedes acceder.
+    Requiere una clave secreta temporal.
+    """
+    # Clave secreta temporal - CAMBIAR DESPUÉS DE USAR
+    EMERGENCY_KEY = "OHSMS2024RESET"
+    
+    if data.secret_key != EMERGENCY_KEY:
+        raise HTTPException(status_code=403, detail="Clave de emergencia inválida")
+    
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    
+    # Find user by email
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Hash new password
+    hashed_password = bcrypt.hashpw(data.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    # Update password
+    await db.users.update_one(
+        {"email": data.email},
+        {"$set": {"password": hashed_password, "is_temp_password": False}}
+    )
+    
+    return {"message": f"Contraseña actualizada para {data.email}. Ya puedes iniciar sesión."}
+
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserRegister):
     # Si se proporciona email, verificar que no exista
