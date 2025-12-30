@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [requiresPasswordChange, setRequiresPasswordChange] = useState(false);
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
   const API = `${BACKEND_URL}/api`;
@@ -60,9 +61,31 @@ export const AuthProvider = ({ children }) => {
       }, { withCredentials: true });
       setUser(response.data.user);
       setIsAuthenticated(true);
-      return { success: true, user: response.data.user };
+      
+      // Check if password change is required
+      const needsPasswordChange = response.data.requires_password_change || false;
+      setRequiresPasswordChange(needsPasswordChange);
+      
+      return { 
+        success: true, 
+        user: response.data.user,
+        requiresPasswordChange: needsPasswordChange
+      };
     } catch (error) {
       return { success: false, error: error.response?.data?.detail || 'Error al iniciar sesión' };
+    }
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      await axios.post(`${API}/auth/change-password`, {
+        current_password: currentPassword,
+        new_password: newPassword
+      }, { withCredentials: true });
+      setRequiresPasswordChange(false);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.detail || 'Error al cambiar contraseña' };
     }
   };
 
@@ -75,6 +98,7 @@ export const AuthProvider = ({ children }) => {
       // Clear all auth state
       setUser(null);
       setIsAuthenticated(false);
+      setRequiresPasswordChange(false);
       // Clear any session storage
       sessionStorage.clear();
       // Clear any local storage auth data
@@ -88,12 +112,15 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    requiresPasswordChange,
     register,
     login,
     logout,
     checkAuth,
+    changePassword,
     setUser,
-    setIsAuthenticated
+    setIsAuthenticated,
+    setRequiresPasswordChange
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
