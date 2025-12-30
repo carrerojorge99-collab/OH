@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Clock, LogIn, LogOut, Calendar, AlertCircle } from 'lucide-react';
+import { Clock, LogIn, LogOut, Calendar, AlertCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment-timezone';
