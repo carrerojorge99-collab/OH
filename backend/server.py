@@ -4587,6 +4587,9 @@ async def generate_invoice_from_timesheet(
     invoice_id = f"inv_{uuid4().hex[:16]}"
     due_date = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
     
+    # Get sponsor from project
+    sponsor_name = invoice_data.sponsor_name or project.get('sponsor', '')
+    
     invoice_doc = {
         "invoice_id": invoice_id,
         "invoice_number": invoice_number,
@@ -4596,10 +4599,12 @@ async def generate_invoice_from_timesheet(
         "client_email": invoice_data.client_email,
         "client_phone": invoice_data.client_phone,
         "client_address": invoice_data.client_address,
+        "sponsor_name": sponsor_name,
         "items": [item.model_dump() for item in items],
         "subtotal": subtotal,
         "tax_rate": invoice_data.tax_rate,
         "tax_amount": tax_amount,
+        "tax_type_name": invoice_data.tax_type_name,
         "total": total,
         "amount_paid": 0.0,
         "balance_due": total,
@@ -4613,6 +4618,23 @@ async def generate_invoice_from_timesheet(
     }
     
     await db.invoices.insert_one(invoice_doc)
+    
+    # Save client for future autocomplete
+    if invoice_data.client_name:
+        await db.saved_clients.update_one(
+            {"name": invoice_data.client_name},
+            {"$set": {
+                "name": invoice_data.client_name,
+                "email": invoice_data.client_email or "",
+                "phone": invoice_data.client_phone or "",
+                "address": invoice_data.client_address or "",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }, "$setOnInsert": {
+                "id": f"saved_client_{uuid4().hex[:12]}",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
     
     # Log audit
     await log_audit(
