@@ -1751,6 +1751,13 @@ const Safety = () => {
                         <Eye className="w-4 h-4 mr-2" />
                         Ver Detalles
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        generateToolboxTalkDetailReport(talk, projectName, users);
+                        toast.success('PDF generado');
+                      }}>
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar PDF
+                      </DropdownMenuItem>
                       {talk.status === 'scheduled' && (
                         <DropdownMenuItem onClick={() => handleCompleteToolbox(talk.talk_id)}>
                           <CheckCircle className="w-4 h-4 mr-2" />
