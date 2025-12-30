@@ -2325,9 +2325,13 @@ const Safety = () => {
       </Dialog>
     </div>
   );
+  };
 
   // Render Incidents Tab
-  const renderIncidents = () => (
+  const renderIncidents = () => {
+    const projectName = selectedProject ? projects.find(p => p.project_id === selectedProject)?.name : null;
+    
+    return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
@@ -2341,10 +2345,22 @@ const Safety = () => {
             />
           </div>
         </div>
-        <Button onClick={() => { resetIncidentForm(); setIncidentDialogOpen(true); }} className="bg-red-600 hover:bg-red-700">
-          <AlertCircle className="w-4 h-4 mr-2" />
-          Reportar Incidente
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              generateIncidentsReport(incidents, projectName);
+              toast.success('Reporte PDF generado');
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Descargar Reporte
+          </Button>
+          <Button onClick={() => { resetIncidentForm(); setIncidentDialogOpen(true); }} className="bg-red-600 hover:bg-red-700">
+            <AlertCircle className="w-4 h-4 mr-2" />
+            Reportar Incidente
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4">
