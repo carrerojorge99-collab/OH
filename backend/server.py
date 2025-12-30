@@ -4757,6 +4757,23 @@ async def create_manual_invoice(
     
     await db.invoices.insert_one(invoice_doc)
     
+    # Save client for future autocomplete
+    if invoice_data.client_name:
+        await db.saved_clients.update_one(
+            {"name": invoice_data.client_name},
+            {"$set": {
+                "name": invoice_data.client_name,
+                "email": invoice_data.client_email or "",
+                "phone": invoice_data.client_phone or "",
+                "address": invoice_data.client_address or "",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }, "$setOnInsert": {
+                "id": f"saved_client_{uuid4().hex[:12]}",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
+    
     # Remove _id if present (added by MongoDB)
     invoice_doc.pop('_id', None)
     
