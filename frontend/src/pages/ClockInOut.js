@@ -349,6 +349,7 @@ const ClockInOut = () => {
                       <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Hora</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Proyecto</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Horas</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -367,6 +368,18 @@ const ClockInOut = () => {
                         <td className="px-4 py-3 text-sm">{punch.project_name}</td>
                         <td className="px-4 py-3 text-sm font-mono text-right">
                           {punch.hours_worked ? `${punch.hours_worked.toFixed(2)}h` : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeletePunch(punch.clock_id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            disabled={punch.status === 'active'}
+                            title={punch.status === 'active' ? 'No puedes eliminar un ponche activo' : 'Eliminar ponche'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </td>
                       </tr>
                     ))}
