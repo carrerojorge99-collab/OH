@@ -6367,6 +6367,69 @@ async def import_all_data(
     
     return {"message": "Importación completada", "results": results}
 
+@api_router.post("/data/clear-all")
+async def clear_all_data(
+    request: Request,
+    body: dict,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Clear all test data from the application - requires super admin password"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="Solo Super Admin puede limpiar datos")
+    
+    # Verify password for extra security
+    password = body.get("password", "")
+    if not password:
+        raise HTTPException(status_code=400, detail="Se requiere contraseña para confirmar")
+    
+    # Verify the super admin's password
+    db_user = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    if not db_user or not verify_password(password, db_user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+    
+    # Collections to clear (excluding users, company settings, and system config)
+    collections_to_clear = [
+        'projects', 'tasks', 'clients', 'invoices', 'estimates',
+        'expenses', 'budget_categories', 'labor_entries', 'timesheets',
+        'purchase_orders', 'change_orders', 'clock_entries', 'payroll_runs',
+        'pay_stubs', 'requests', 'approvals', 'safety_checklists',
+        'safety_checklist_templates', 'safety_observations', 'safety_incidents',
+        'toolbox_talks', 'toolbox_topics', 'notifications', 'project_logs',
+        'documents', 'comments', 'audit_logs'
+    ]
+    
+    results = {}
+    total_deleted = 0
+    
+    for collection_name in collections_to_clear:
+        try:
+            collection = db[collection_name]
+            result = await collection.delete_many({})
+            deleted = result.deleted_count
+            results[collection_name] = {"deleted": deleted}
+            total_deleted += deleted
+        except Exception as e:
+            results[collection_name] = {"error": str(e)}
+    
+    # Log the action (create new audit log entry after clearing)
+    await log_audit(
+        user_id=user.user_id,
+        user_name=user.name,
+        action="delete",
+        entity_type="data_clear",
+        entity_id="all",
+        entity_name="Limpieza Total de Datos",
+        details={"results": results, "total_deleted": total_deleted}
+    )
+    
+    return {
+        "message": f"Datos limpiados correctamente. {total_deleted} registros eliminados.",
+        "results": results,
+        "total_deleted": total_deleted
+    }
+
 @api_router.get("/integrations", response_model=List[IntegrationConfig])
 async def get_integrations(
     request: Request,
