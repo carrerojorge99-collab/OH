@@ -207,6 +207,9 @@ def get_task_completed_email(user_name: str, task_title: str, project_name: str,
 
 def get_comment_email(user_name: str, project_name: str, commenter_name: str, comment_content: str):
     """Generate HTML email for new comment"""
+    config = get_smtp_config()
+    app_url = config['app_url']
+    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -217,6 +220,7 @@ def get_comment_email(user_name: str, project_name: str, commenter_name: str, co
             .header {{ background-color: #8B5CF6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
             .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
             .comment {{ background-color: white; padding: 15px; border-left: 4px solid #8B5CF6; margin: 20px 0; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: #8B5CF6; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
             .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
         </style>
     </head>
@@ -231,9 +235,13 @@ def get_comment_email(user_name: str, project_name: str, commenter_name: str, co
                 <div class="comment">
                     {comment_content}
                 </div>
+                <p style="text-align: center;">
+                    <a href="{app_url}/dashboard" class="button">🚀 Ir a ProManage</a>
+                </p>
             </div>
             <div class="footer">
                 <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
+                <p><a href="{app_url}" style="color: #8B5CF6;">{app_url}</a></p>
             </div>
         </div>
     </body>
@@ -248,6 +256,8 @@ def get_comment_email(user_name: str, project_name: str, commenter_name: str, co
     {commenter_name} comentó en {project_name}:
     
     {comment_content}
+    
+    Ir a la app: {app_url}
     """
     
     return html, text
