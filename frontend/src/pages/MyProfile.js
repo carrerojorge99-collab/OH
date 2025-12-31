@@ -4,14 +4,23 @@ import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { User, DollarSign, Clock, FileText, Download } from 'lucide-react';
+import { User, DollarSign, Clock, FileText, Download, Edit2, Save, X, CheckSquare, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
 import jsPDF from 'jspdf';
 import { fetchCompanyInfo, addPayStubHeader, addPaySection, addFooter } from '../utils/pdfGenerator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 
 moment.locale('es');
 
@@ -19,7 +28,12 @@ const MyProfile = () => {
   const { user } = useAuth();
   const [payStubs, setPayStubs] = useState([]);
   const [clockHistory, setClockHistory] = useState([]);
+  const [myTasks, setMyTasks] = useState([]);
+  const [profile, setProfile] = useState({});
+  const [editingProfile, setEditingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [activeTab, setActiveTab] = useState('info');
 
   useEffect(() => {
     loadData();
@@ -27,18 +41,57 @@ const MyProfile = () => {
 
   const loadData = async () => {
     try {
-      const [stubsRes, clockRes] = await Promise.all([
+      const requests = [
         api.get('/pay-stubs/my'),
-        api.get('/clock/history')
-      ]);
+        api.get('/clock/history'),
+        api.get('/my-tasks'),
+        api.get(`/employees/${user?.user_id}/profile`)
+      ];
+      
+      const [stubsRes, clockRes, tasksRes, profileRes] = await Promise.all(requests);
       setPayStubs(stubsRes.data);
       // Filter only current user's clock entries
       const myClocks = clockRes.data.filter(c => c.user_id === user?.user_id);
       setClockHistory(myClocks.slice(0, 20));
+      setMyTasks(tasksRes.data || []);
+      setProfile(profileRes.data || {});
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const handleProfileChange = (field, value) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const saveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      await api.put(`/employees/${user?.user_id}/profile/self`, profile);
+      toast.success('Perfil actualizado correctamente');
+      setEditingProfile(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al guardar el perfil');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+  
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      const task = myTasks.find(t => t.task_id === taskId);
+      if (!task) return;
+      
+      await api.put(`/tasks/${taskId}/status`, { status: newStatus });
+      toast.success('Estado de tarea actualizado');
+      
+      // Refresh tasks
+      const tasksRes = await api.get('/my-tasks');
+      setMyTasks(tasksRes.data || []);
+    } catch (error) {
+      toast.error('Error al actualizar el estado');
     }
   };
 
