@@ -620,25 +620,25 @@ const Projects = () => {
                 className="project-card border-slate-200 shadow-sm hover:shadow-md cursor-pointer"
                 onClick={() => navigate(`/projects/${project.project_id}`)}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
+                <CardContent className="p-4 sm:p-5 md:p-6">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <div className="flex-1 min-w-0 mr-2">
                       {project.project_number && (
                         <div className="mb-2">
-                          <span className="inline-flex items-center text-xs font-semibold font-mono bg-slate-100 text-slate-700 px-3 py-1 rounded-md border border-slate-300">
+                          <span className="inline-flex items-center text-xs font-semibold font-mono bg-slate-100 text-slate-700 px-2 sm:px-3 py-1 rounded-md border border-slate-300">
                             📋 {project.project_number}
                           </span>
                         </div>
                       )}
-                      <h3 className="text-xl font-semibold tracking-tight text-[#0F172A] mb-1 line-clamp-1">
+                      <h3 className="text-base sm:text-lg md:text-xl font-semibold tracking-tight text-[#0F172A] mb-1 line-clamp-1">
                         {project.name}
                       </h3>
-                      <p className="text-sm text-slate-600 line-clamp-2">{project.description}</p>
+                      <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">{project.description}</p>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 -mt-1"
+                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 -mt-1 flex-shrink-0"
                       onClick={(e) => handleDeleteProject(e, project.project_id, project.name)}
                       title="Eliminar proyecto"
                     >
@@ -646,29 +646,31 @@ const Projects = () => {
                     </Button>
                   </div>
 
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center text-sm text-slate-600">
-                      <Calendar className="w-4 h-4 mr-2 text-slate-400" />
-                      <span>{project.start_date} - {project.end_date}</span>
+                  <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
+                    <div className="flex items-center text-xs sm:text-sm text-slate-600">
+                      <Calendar className="w-4 h-4 mr-2 text-slate-400 flex-shrink-0" />
+                      <span className="truncate">{project.start_date} - {project.end_date}</span>
                     </div>
                     
-                    <div className="flex items-center text-sm">
-                      <DollarSign className="w-4 h-4 mr-2 text-slate-400" />
-                      <span className="font-mono font-semibold text-[#0F172A]">
-                        ${project.budget_total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </span>
-                      <span className="text-xs text-slate-500 ml-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm">
+                      <div className="flex items-center">
+                        <DollarSign className="w-4 h-4 mr-2 text-slate-400 flex-shrink-0" />
+                        <span className="font-mono font-semibold text-[#0F172A]">
+                          ${project.budget_total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500 ml-6 sm:ml-2">
                         / ${project.budget_spent.toLocaleString('es-MX', { minimumFractionDigits: 2 })} gastado
                       </span>
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                    <div className="flex items-center gap-2">
-                      <Badge className={`${getStatusColor(project.status)} border`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 sm:pt-4 border-t border-slate-200">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                      <Badge className={`${getStatusColor(project.status)} border text-xs`}>
                         {project.status}
                       </Badge>
-                      <Badge className={`border ${
+                      <Badge className={`border text-xs ${
                         project.payment_status === 'paid' ? 'bg-green-100 text-green-700 border-green-300' :
                         project.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
                         'bg-red-100 text-red-700 border-red-300'
