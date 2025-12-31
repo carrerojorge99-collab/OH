@@ -1104,6 +1104,10 @@ async def change_password(data: dict, request: Request, session_token: Optional[
 async def create_project(project_data: ProjectCreate, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
+    # Solo admins y project managers pueden crear proyectos
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="No tienes permiso para crear proyectos")
+    
     project_id = f"proj_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc).isoformat()
     
