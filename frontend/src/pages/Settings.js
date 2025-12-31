@@ -1580,6 +1580,19 @@ const Settings = () => {
                 <p className="text-xs text-slate-500">El nombre que aparecerá como remitente en los correos enviados</p>
               </div>
 
+              {/* App URL */}
+              <div className="space-y-2">
+                <Label htmlFor="app_url">URL de la Aplicación</Label>
+                <Input
+                  id="app_url"
+                  type="url"
+                  placeholder="https://promanage.ohsmspr.com"
+                  value={settings.app_url}
+                  onChange={(e) => setSettings(prev => ({ ...prev, app_url: e.target.value }))}
+                />
+                <p className="text-xs text-slate-500">La URL que aparecerá en los botones de los emails (ej: "Ir a ProManage")</p>
+              </div>
+
               {/* Submit Button */}
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={saving} className="flex items-center space-x-2">
