@@ -513,7 +513,8 @@ const Settings = () => {
         smtp_user: settings.smtp_user,
         smtp_from_email: settings.smtp_from_email,
         smtp_from_name: settings.smtp_from_name,
-        email_notifications_enabled: settings.email_notifications_enabled
+        email_notifications_enabled: settings.email_notifications_enabled,
+        app_url: settings.app_url
       };
 
       if (settings.smtp_password) {
