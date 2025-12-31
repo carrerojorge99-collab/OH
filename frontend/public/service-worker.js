@@ -1,55 +1,82 @@
-const CACHE_NAME = 'proyekta-v2';
+// Version timestamp - change this on each deploy to force cache update
+const CACHE_VERSION = 'v3-' + Date.now();
+const CACHE_NAME = 'proyekta-' + CACHE_VERSION;
+
+// Only cache essential static assets
 const urlsToCache = [
   '/'
 ];
 
-// Install event - cache resources
+// Install event - cache resources and skip waiting
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing new version:', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
+        console.log('[SW] Opened cache');
         return cache.addAll(urlsToCache).catch(() => {
-          // Ignore cache errors during install
-          console.log('Some resources could not be cached');
+          console.log('[SW] Some resources could not be cached');
         });
       })
       .catch((error) => {
-        console.log('Cache failed:', error);
+        console.log('[SW] Cache failed:', error);
       })
   );
+  // Force the waiting service worker to become active immediately
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up ALL old caches and take control
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating new version:', CACHE_NAME);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
+          // Delete ALL old caches
           if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      console.log('[SW] Now ready to handle fetches');
     })
   );
+  // Take control of all pages immediately
   self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event - NETWORK FIRST strategy (always try network, cache as fallback)
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests and API calls
-  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip API calls - they should never be cached
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // Skip chrome-extension and other non-http requests
+  if (!event.request.url.startsWith('http')) {
     return;
   }
 
   event.respondWith(
-    fetch(event.request)
+    // Always try network first
+    fetch(event.request, {
+      // Add cache-busting headers
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    })
       .then((response) => {
-        // Clone and cache successful responses
-        if (response && response.status === 200) {
+        // If network succeeds, cache the response and return it
+        if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache).catch(() => {});
@@ -58,12 +85,12 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Network failed, try cache
+        // Network failed, try cache as fallback
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Return a simple offline page for navigation requests
+          // For navigation requests, return the cached index
           if (event.request.mode === 'navigate') {
             return caches.match('/');
           }
@@ -71,6 +98,22 @@ self.addEventListener('fetch', (event) => {
         });
       })
   );
+});
+
+// Listen for messages from the client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => caches.delete(cacheName))
+      );
+    }).then(() => {
+      console.log('[SW] All caches cleared');
+    });
+  }
 });
 
 // Push notification event
@@ -102,7 +145,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Proyekta', options)
+    self.registration.showNotification(data.title || 'ProManage', options)
   );
 });
 
@@ -125,6 +168,5 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncTimesheet() {
-  // This would sync offline timesheet entries when back online
-  console.log('Syncing timesheet entries...');
+  console.log('[SW] Syncing timesheet entries...');
 }
