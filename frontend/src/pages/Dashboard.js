@@ -181,22 +181,24 @@ const Dashboard = () => {
     <Layout>
       <PWAInstallBanner />
       
-      <div className="space-y-8 fade-in">
+      <div className="space-y-6 md:space-y-8 fade-in">
         {/* Alertas */}
         <AlertsBanner />
 
         {/* Header */}
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Resumen general de tus proyectos y presupuestos</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#0F172A]">Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Resumen general de tus proyectos y presupuestos</p>
           </div>
           <Button 
             variant="outline" 
             onClick={() => { setLoading(true); loadDashboardData(); }}
             title="Refrescar datos"
+            className="self-start"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="ml-2 sm:hidden md:inline">Refrescar</span>
           </Button>
         </div>
 
@@ -205,7 +207,7 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {statCards.map((stat, index) => (
             <Card key={index} data-testid={stat.testId} className="stat-card border-slate-200 shadow-sm hover:shadow-md">
               <CardContent className="p-6">
