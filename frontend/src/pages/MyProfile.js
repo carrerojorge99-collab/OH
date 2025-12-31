@@ -149,31 +149,316 @@ const MyProfile = () => {
     toast.success('Talonario descargado');
   };
 
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'todo': return 'bg-slate-100 text-slate-700';
+      case 'in_progress': return 'bg-blue-100 text-blue-700';
+      case 'review': return 'bg-yellow-100 text-yellow-700';
+      case 'done': return 'bg-green-100 text-green-700';
+      default: return 'bg-slate-100 text-slate-700';
+    }
+  };
+  
+  const getStatusLabel = (status) => {
+    switch(status) {
+      case 'todo': return 'Pendiente';
+      case 'in_progress': return 'En Progreso';
+      case 'review': return 'En Revisión';
+      case 'done': return 'Completada';
+      default: return status;
+    }
+  };
+  
+  const getPriorityColor = (priority) => {
+    switch(priority) {
+      case 'high': return 'bg-red-100 text-red-700';
+      case 'medium': return 'bg-yellow-100 text-yellow-700';
+      case 'low': return 'bg-green-100 text-green-700';
+      default: return 'bg-slate-100 text-slate-700';
+    }
+  };
+
   if (loading) return <Layout><div className="p-8 text-center">Cargando...</div></Layout>;
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
-            <User className="w-8 h-8 text-orange-600" />
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+            <User className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{user?.name || 'Mi Perfil'}</h1>
-            <p className="text-slate-500">{user?.email}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{user?.name || 'Mi Perfil'}</h1>
+            <p className="text-sm sm:text-base text-slate-500 truncate">{user?.email}</p>
           </div>
         </div>
 
-        <Tabs defaultValue="paystubs">
-          <TabsList>
-            <TabsTrigger value="paystubs">
-              <DollarSign className="w-4 h-4 mr-1" /> Talonarios ({payStubs.length})
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full flex flex-wrap gap-1 h-auto p-1 bg-slate-100 rounded-lg">
+            <TabsTrigger value="info" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Info
             </TabsTrigger>
-            <TabsTrigger value="hours">
-              <Clock className="w-4 h-4 mr-1" /> Mis Horas
+            <TabsTrigger value="tasks" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Tareas ({myTasks.length})
+            </TabsTrigger>
+            <TabsTrigger value="paystubs" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Talonarios
+            </TabsTrigger>
+            <TabsTrigger value="hours" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Horas
             </TabsTrigger>
           </TabsList>
+          
+          {/* Personal Info Tab */}
+          <TabsContent value="info" className="mt-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Mi Información</CardTitle>
+                  {!editingProfile ? (
+                    <Button size="sm" variant="outline" onClick={() => setEditingProfile(true)}>
+                      <Edit2 className="w-4 h-4 mr-1" /> Editar
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setEditingProfile(false)}>
+                        <X className="w-4 h-4 mr-1" /> Cancelar
+                      </Button>
+                      <Button size="sm" onClick={saveProfile} disabled={savingProfile}>
+                        <Save className="w-4 h-4 mr-1" /> {savingProfile ? 'Guardando...' : 'Guardar'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Personal Info Section */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 border-b pb-2">Datos Personales</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-slate-500">Teléfono</Label>
+                      {editingProfile ? (
+                        <Input 
+                          value={profile.phone || ''} 
+                          onChange={(e) => handleProfileChange('phone', e.target.value)}
+                          placeholder="(xxx) xxx-xxxx"
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.phone || 'No especificado'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Fecha de Nacimiento</Label>
+                      {editingProfile ? (
+                        <Input 
+                          type="date"
+                          value={profile.date_of_birth || ''} 
+                          onChange={(e) => handleProfileChange('date_of_birth', e.target.value)}
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.date_of_birth ? moment(profile.date_of_birth).format('DD/MM/YYYY') : 'No especificado'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Género</Label>
+                      {editingProfile ? (
+                        <Select value={profile.gender || ''} onValueChange={(v) => handleProfileChange('gender', v)}>
+                          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">Masculino</SelectItem>
+                            <SelectItem value="female">Femenino</SelectItem>
+                            <SelectItem value="other">Otro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm font-medium">{profile.gender === 'male' ? 'Masculino' : profile.gender === 'female' ? 'Femenino' : profile.gender || 'No especificado'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Estado Civil</Label>
+                      {editingProfile ? (
+                        <Select value={profile.marital_status || ''} onValueChange={(v) => handleProfileChange('marital_status', v)}>
+                          <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="single">Soltero/a</SelectItem>
+                            <SelectItem value="married">Casado/a</SelectItem>
+                            <SelectItem value="divorced">Divorciado/a</SelectItem>
+                            <SelectItem value="widowed">Viudo/a</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm font-medium">
+                          {profile.marital_status === 'single' ? 'Soltero/a' : 
+                           profile.marital_status === 'married' ? 'Casado/a' : 
+                           profile.marital_status === 'divorced' ? 'Divorciado/a' : 
+                           profile.marital_status === 'widowed' ? 'Viudo/a' : 'No especificado'}
+                        </p>
+                      )}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs text-slate-500">Dirección</Label>
+                      {editingProfile ? (
+                        <Input 
+                          value={profile.address || ''} 
+                          onChange={(e) => handleProfileChange('address', e.target.value)}
+                          placeholder="Calle, número, etc."
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.address || 'No especificado'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Ciudad</Label>
+                      {editingProfile ? (
+                        <Input 
+                          value={profile.city || ''} 
+                          onChange={(e) => handleProfileChange('city', e.target.value)}
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.city || 'No especificado'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Código Postal</Label>
+                      {editingProfile ? (
+                        <Input 
+                          value={profile.zipcode || ''} 
+                          onChange={(e) => handleProfileChange('zipcode', e.target.value)}
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.zipcode || 'No especificado'}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Emergency Contact Section */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 border-b pb-2">Contacto de Emergencia</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-slate-500">Nombre</Label>
+                      {editingProfile ? (
+                        <Input 
+                          value={profile.emergency_contact_name || ''} 
+                          onChange={(e) => handleProfileChange('emergency_contact_name', e.target.value)}
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.emergency_contact_name || 'No especificado'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Teléfono</Label>
+                      {editingProfile ? (
+                        <Input 
+                          value={profile.emergency_contact_phone || ''} 
+                          onChange={(e) => handleProfileChange('emergency_contact_phone', e.target.value)}
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.emergency_contact_phone || 'No especificado'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Relación</Label>
+                      {editingProfile ? (
+                        <Input 
+                          value={profile.emergency_contact_relationship || ''} 
+                          onChange={(e) => handleProfileChange('emergency_contact_relationship', e.target.value)}
+                          placeholder="Ej: Esposo/a, Padre, Hermano"
+                        />
+                      ) : (
+                        <p className="text-sm font-medium">{profile.emergency_contact_relationship || 'No especificado'}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Employment Info (Read Only) */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 border-b pb-2">Información Laboral</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-slate-500">Departamento</Label>
+                      <p className="text-sm font-medium">{profile.department || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Posición</Label>
+                      <p className="text-sm font-medium">{profile.position || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Fecha de Ingreso</Label>
+                      <p className="text-sm font-medium">{profile.hire_date ? moment(profile.hire_date).format('DD/MM/YYYY') : 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Tipo de Empleo</Label>
+                      <p className="text-sm font-medium">{profile.employment_type || 'No especificado'}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Tasks Tab */}
+          <TabsContent value="tasks" className="mt-4">
+            {myTasks.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-slate-500">
+                  <CheckSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  No tienes tareas asignadas
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {myTasks.map(task => (
+                  <Card key={task.task_id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-slate-900 truncate">{task.title}</h3>
+                          <p className="text-sm text-slate-500 line-clamp-2 mt-1">{task.description}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge className={getPriorityColor(task.priority)}>
+                              {task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Media' : 'Baja'}
+                            </Badge>
+                            {task.project_name && (
+                              <Badge variant="outline" className="text-xs">
+                                {task.project_name}
+                              </Badge>
+                            )}
+                            {task.due_date && (
+                              <Badge variant="outline" className={`text-xs ${moment(task.due_date).isBefore(moment()) && task.status !== 'done' ? 'border-red-300 text-red-600' : ''}`}>
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {moment(task.due_date).format('DD/MM/YYYY')}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Select 
+                            value={task.status} 
+                            onValueChange={(value) => updateTaskStatus(task.task_id, value)}
+                          >
+                            <SelectTrigger className={`w-[140px] text-xs ${getStatusColor(task.status)}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todo">Pendiente</SelectItem>
+                              <SelectItem value="in_progress">En Progreso</SelectItem>
+                              <SelectItem value="review">En Revisión</SelectItem>
+                              <SelectItem value="done">Completada</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           {/* Pay Stubs Tab */}
           <TabsContent value="paystubs" className="mt-4">
