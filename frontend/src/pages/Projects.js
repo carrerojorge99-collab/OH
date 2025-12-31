@@ -20,9 +20,11 @@ import { Card, CardContent, CardFooter } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Plus, Search, Calendar, DollarSign, Users, FolderKanban, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 
 const Projects = () => {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +35,9 @@ const Projects = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
+  
+  // Roles que pueden crear proyectos
+  const canCreateProject = user?.role && ['super_admin', 'admin', 'project_manager'].includes(user.role);
 
   const [formData, setFormData] = useState({
     name: '',
