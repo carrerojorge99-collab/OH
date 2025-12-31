@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { getBackendUrl } from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [requiresPasswordChange, setRequiresPasswordChange] = useState(false);
 
-  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+  const BACKEND_URL = getBackendUrl();
   const API = `${BACKEND_URL}/api`;
 
   useEffect(() => {
