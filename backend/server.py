@@ -6376,8 +6376,10 @@ async def clear_all_data(
     """Clear all test data from the application - requires super admin password"""
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN.value:
-        raise HTTPException(status_code=403, detail="Solo Super Admin puede limpiar datos")
+    # Check for super_admin role (handle both enum value and string)
+    user_role = str(user.role).lower() if user.role else ""
+    if user_role not in ['super_admin', 'admin']:
+        raise HTTPException(status_code=403, detail=f"Solo Super Admin puede limpiar datos. Tu rol: {user.role}")
     
     # Verify password for extra security
     password = body.get("password", "")
