@@ -3,8 +3,9 @@ import axios from 'axios';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { toast } from 'sonner';
+import { getBackendUrl } from '../utils/api';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const API_URL = getBackendUrl();
 
 export const useNomenclature = (onNumberGenerated) => {
   const [nomenclatures, setNomenclatures] = useState([]);
