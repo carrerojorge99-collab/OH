@@ -6397,12 +6397,15 @@ async def clear_all_data(
     # Collections to clear (excluding users, company settings, and system config)
     collections_to_clear = [
         'projects', 'tasks', 'clients', 'invoices', 'estimates',
-        'expenses', 'budget_categories', 'labor_entries', 'timesheets',
+        'expenses', 'budget_categories', 'labor', 'timesheet',
         'purchase_orders', 'change_orders', 'clock_entries', 'payroll_runs',
         'pay_stubs', 'requests', 'approvals', 'safety_checklists',
-        'safety_checklist_templates', 'safety_observations', 'safety_incidents',
-        'toolbox_talks', 'toolbox_topics', 'notifications', 'project_logs',
-        'documents', 'comments', 'audit_logs'
+        'safety_templates', 'safety_observations', 'safety_incidents',
+        'toolbox_talks', 'notifications', 'project_logs',
+        'documents', 'comments', 'audit_logs', 'cost_estimates',
+        'client_documents', 'employee_documents', 'employee_profiles',
+        'project_document_status', 'payments', 'saved_clients',
+        'required_documents'
     ]
     
     results = {}
