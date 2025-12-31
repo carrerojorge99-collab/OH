@@ -509,6 +509,8 @@ const Settings = () => {
     try {
       const payload = {
         smtp_user: settings.smtp_user,
+        smtp_from_email: settings.smtp_from_email,
+        smtp_from_name: settings.smtp_from_name,
         email_notifications_enabled: settings.email_notifications_enabled
       };
 
