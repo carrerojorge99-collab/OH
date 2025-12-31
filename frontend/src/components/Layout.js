@@ -130,13 +130,26 @@ const Layout = ({ children }) => {
 
   const navigation = getNavigationByRole(user?.role);
 
-  // Mobile bottom navigation - most used items
-  const mobileBottomNav = [
-    { name: 'Inicio', href: '/dashboard', icon: Home },
-    { name: 'Proyectos', href: '/projects', icon: FolderKanban },
-    { name: 'Ponchar', href: '/clock', icon: Clock },
-    { name: 'Perfil', href: '/my-profile', icon: User },
-  ];
+  // Mobile bottom navigation - varies by role
+  const getMobileBottomNav = (role) => {
+    if (role === 'empleado') {
+      return [
+        { name: 'Perfil', href: '/my-profile', icon: User },
+        { name: 'Ponchar', href: '/clock', icon: Clock },
+        { name: 'Historial', href: '/clock/history', icon: Clock },
+        { name: 'Solicitudes', href: '/my-requests', icon: Send },
+      ];
+    }
+    // Default for admin, PM, RRHH, etc.
+    return [
+      { name: 'Inicio', href: '/dashboard', icon: Home },
+      { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Perfil', href: '/my-profile', icon: User },
+    ];
+  };
+  
+  const mobileBottomNav = getMobileBottomNav(user?.role);
 
   const roleLabels = {
     'super_admin': 'Super Admin',
