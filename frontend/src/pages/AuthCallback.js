@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { getBackendUrl } from '../utils/api';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const AuthCallback = () => {
       }
 
       try {
-        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+        const BACKEND_URL = getBackendUrl();
         const API = `${BACKEND_URL}/api`;
 
         const response = await axios.post(`${API}/auth/session`, {}, {
