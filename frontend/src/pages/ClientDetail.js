@@ -192,7 +192,7 @@ const ClientDetail = () => {
                       </div>
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => window.open(`${process.env.REACT_APP_BACKEND_URL}/api/clients/${clientId}/documents/${doc.document_id}/download`, '_blank')}>
+                      <Button variant="ghost" size="sm" onClick={() => window.open(`${getBackendUrl()}/api/clients/${clientId}/documents/${doc.document_id}/download`, '_blank')}>
                         <Download className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.document_id)}>
