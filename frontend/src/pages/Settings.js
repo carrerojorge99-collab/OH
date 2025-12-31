@@ -1648,6 +1648,57 @@ const Settings = () => {
                   </div>
                 </div>
 
+                {/* Clear All Data Section */}
+                <div className="p-6 border rounded-lg bg-red-50 border-red-300">
+                  <h3 className="text-lg font-semibold text-red-900 mb-2">🗑️ Limpiar Todos los Datos</h3>
+                  <p className="text-sm text-red-700 mb-4">
+                    <strong>PELIGRO:</strong> Esta acción eliminará TODOS los datos de prueba: proyectos, clientes, facturas, empleados, registros de tiempo, etc. 
+                    Solo se conservarán los usuarios y la configuración del sistema.
+                  </p>
+                  
+                  {!showClearConfirm ? (
+                    <Button 
+                      onClick={() => setShowClearConfirm(true)}
+                      variant="destructive"
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Limpiar Todos los Datos
+                    </Button>
+                  ) : (
+                    <div className="space-y-3 p-4 bg-red-100 rounded-lg">
+                      <p className="text-sm font-medium text-red-900">
+                        ⚠️ Confirma tu identidad ingresando tu contraseña:
+                      </p>
+                      <Input 
+                        type="password"
+                        placeholder="Tu contraseña de Super Admin"
+                        value={clearPassword}
+                        onChange={(e) => setClearPassword(e.target.value)}
+                        className="max-w-xs"
+                      />
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleClearAllData}
+                          disabled={clearing || !clearPassword}
+                          variant="destructive"
+                        >
+                          {clearing ? 'Limpiando...' : 'Confirmar Limpieza'}
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setShowClearConfirm(false);
+                            setClearPassword('');
+                          }}
+                          variant="outline"
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Instructions */}
                 <div className="p-4 border rounded-lg bg-amber-50 border-amber-200">
                   <h4 className="font-semibold text-amber-900 mb-2">⚠️ Instrucciones para Migración</h4>
