@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { toast } from 'sonner';
 import { Save, Mail, AlertCircle, Building2, Upload, Image, DollarSign, FileText, Hash, Plus, Trash2, Download, Database, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { getBackendUrl } from '../utils/api';
 
 const Settings = () => {
   const { user } = useAuth();
