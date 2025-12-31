@@ -42,6 +42,11 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Close sidebar when route changes on mobile
+  React.useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
   // Definir navegación por rol
   const getNavigationByRole = (role) => {
     const baseEmpleado = [
