@@ -708,37 +708,37 @@ const Settings = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#0F172A]">Configuración del Sistema</h1>
-          <p className="text-slate-500 mt-2">Gestiona la información de tu empresa y configuraciones del sistema</p>
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0F172A]">Configuración del Sistema</h1>
+          <p className="text-sm sm:text-base text-slate-500 mt-2">Gestiona la información de tu empresa y configuraciones del sistema</p>
         </div>
 
-        <Tabs defaultValue="company" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8 text-sm">
-            <TabsTrigger value="company" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" /> Empresa
+        <Tabs defaultValue="company" className="space-y-4 sm:space-y-6">
+          <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-slate-100 rounded-lg w-full">
+            <TabsTrigger value="company" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <Building2 className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Empresa</span><span className="sm:hidden">Emp.</span>
             </TabsTrigger>
-            <TabsTrigger value="labor-rates" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Tarifas
+            <TabsTrigger value="labor-rates" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Tarifas</span><span className="sm:hidden">Tar.</span>
             </TabsTrigger>
-            <TabsTrigger value="payroll" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Nómina
+            <TabsTrigger value="payroll" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Nómina</span><span className="sm:hidden">Nóm.</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" /> Documentos
+            <TabsTrigger value="documents" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Documentos</span><span className="sm:hidden">Doc.</span>
             </TabsTrigger>
-            <TabsTrigger value="nomenclature" className="flex items-center gap-2">
-              <Hash className="h-4 w-4" /> Nomenclaturas
+            <TabsTrigger value="nomenclature" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <Hash className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Nomenclaturas</span><span className="sm:hidden">Nom.</span>
             </TabsTrigger>
-            <TabsTrigger value="taxes" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Impuestos
+            <TabsTrigger value="taxes" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Impuestos</span><span className="sm:hidden">Imp.</span>
             </TabsTrigger>
-            <TabsTrigger value="email" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" /> Email
+            <TabsTrigger value="email" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <Mail className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Email</span><span className="sm:hidden">Email</span>
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-2">
-              <Database className="h-4 w-4" /> Datos
+            <TabsTrigger value="data" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 py-2">
+              <Database className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Datos</span><span className="sm:hidden">Dat.</span>
             </TabsTrigger>
           </TabsList>
 
