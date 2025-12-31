@@ -526,8 +526,7 @@ const Settings = () => {
       });
 
       if (response.ok) {
-        toast.success('Configuración guardada exitosamente');
-        toast.info('Se requiere reinicio del backend para aplicar cambios');
+        toast.success('Configuración SMTP guardada exitosamente');
         setSettings(prev => ({ ...prev, smtp_password: '' }));
       } else {
         const error = await response.json();
