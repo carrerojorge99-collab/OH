@@ -96,7 +96,7 @@ const Settings = () => {
     minimum_margin_percent: 15
   });
 
-  const API_URL = process.env.REACT_APP_BACKEND_URL;
+  const API_URL = getBackendUrl();
 
   useEffect(() => {
     fetchSettings();
