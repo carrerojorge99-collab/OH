@@ -542,6 +542,7 @@ const Projects = () => {
               </form>
             </DialogContent>
             </Dialog>
+            )}
           </div>
         </div>
 
