@@ -4234,7 +4234,7 @@ class EmployeeProfileTasksTester:
             "error": error
         })
 
-    def test_login(self, email="j.carrero@ohsmspr.com", password="Admin2024!"):
+    def test_login(self, email="j.carrero@ohsmspr.com", password="Axel52418!"):
         """Test login with provided credentials"""
         print(f"\n🔍 Testing Login with {email}...")
         
