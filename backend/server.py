@@ -3120,6 +3120,8 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
         env_content = update_env_var(env_content, 'SMTP_PORT', str(settings['smtp_port']))
     if 'email_notifications_enabled' in settings:
         env_content = update_env_var(env_content, 'EMAIL_NOTIFICATIONS_ENABLED', str(settings['email_notifications_enabled']).lower())
+    if 'app_url' in settings:
+        env_content = update_env_var(env_content, 'APP_URL', settings['app_url'])
     
     env_path.write_text(env_content)
     
@@ -3138,6 +3140,8 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
         os.environ['SMTP_PORT'] = str(settings['smtp_port'])
     if 'email_notifications_enabled' in settings:
         os.environ['EMAIL_NOTIFICATIONS_ENABLED'] = str(settings['email_notifications_enabled']).lower()
+    if 'app_url' in settings:
+        os.environ['APP_URL'] = settings['app_url']
     
     # Also reload email service variables
     import email_service
