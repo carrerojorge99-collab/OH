@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { KeyRound, AlertTriangle } from 'lucide-react';
+import { getBackendUrl } from '../utils/api';
 
 const EmergencyReset = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const EmergencyReset = () => {
     secret_key: ''
   });
 
-  const API_URL = process.env.REACT_APP_BACKEND_URL;
+  const API_URL = getBackendUrl();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
