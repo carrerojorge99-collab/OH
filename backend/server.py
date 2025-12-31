@@ -6384,8 +6384,11 @@ async def clear_all_data(
     if not password:
         raise HTTPException(status_code=400, detail="Se requiere contraseña para confirmar")
     
-    # Verify the super admin's password
+    # Verify the super admin's password - try both user_id and email for robustness
     db_user = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    if not db_user:
+        # Fallback: try finding by email
+        db_user = await db.users.find_one({"email": user.email}, {"_id": 0})
     if not db_user or not verify_password(password, db_user.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
     
