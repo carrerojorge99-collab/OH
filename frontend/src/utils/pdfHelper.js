@@ -3,8 +3,9 @@
  */
 
 import { LOGO_BASE64 } from './logoData';
+import { getBackendUrl } from './api';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const API_URL = getBackendUrl();
 
 // Función para cargar la información de la empresa
 export const fetchCompanyInfo = async () => {
