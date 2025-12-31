@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { Shield, Check } from 'lucide-react';
+import { getBackendUrl } from '../utils/api';
 
 const Setup = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const Setup = () => {
     confirmPassword: ''
   });
 
-  const API_URL = process.env.REACT_APP_BACKEND_URL;
+  const API_URL = getBackendUrl();
 
   useEffect(() => {
     checkIfSetupNeeded();
