@@ -148,6 +148,9 @@ def get_task_assigned_email(user_name: str, task_title: str, project_name: str, 
 
 def get_task_completed_email(user_name: str, task_title: str, project_name: str, completer_name: str):
     """Generate HTML email for task completion"""
+    config = get_smtp_config()
+    app_url = config['app_url']
+    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -157,6 +160,7 @@ def get_task_completed_email(user_name: str, task_title: str, project_name: str,
             .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
             .header {{ background-color: #10B981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
             .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: #10B981; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
             .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
         </style>
     </head>
@@ -171,9 +175,13 @@ def get_task_completed_email(user_name: str, task_title: str, project_name: str,
                 <h2 style="color: #10B981;">{task_title}</h2>
                 <p><strong>Proyecto:</strong> {project_name}</p>
                 <p>¡Excelente trabajo del equipo!</p>
+                <p style="text-align: center;">
+                    <a href="{app_url}/dashboard" class="button">🚀 Ir a ProManage</a>
+                </p>
             </div>
             <div class="footer">
                 <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
+                <p><a href="{app_url}" style="color: #10B981;">{app_url}</a></p>
             </div>
         </div>
     </body>
@@ -191,6 +199,8 @@ def get_task_completed_email(user_name: str, task_title: str, project_name: str,
     Proyecto: {project_name}
     
     ¡Excelente trabajo del equipo!
+    
+    Ir a la app: {app_url}
     """
     
     return html, text
