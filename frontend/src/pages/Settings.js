@@ -757,32 +757,32 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Logo Section */}
-                  <div className="flex items-start gap-6 p-4 border rounded-lg bg-slate-50">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 p-4 border rounded-lg bg-slate-50">
                     <div className="flex-shrink-0">
                       {company.company_logo ? (
                         <img 
                           src={`${API_URL}${company.company_logo}`} 
                           alt="Logo de empresa" 
-                          className="object-contain border rounded-lg bg-white p-2"
-                          style={{ width: '250px', height: '250px' }}
+                          className="object-contain border rounded-lg bg-white p-2 w-32 h-32 sm:w-40 sm:h-40 md:w-[200px] md:h-[200px]"
                         />
                       ) : (
-                        <div className="border-2 border-dashed rounded-lg flex items-center justify-center bg-white" style={{ width: '250px', height: '250px' }}>
-                          <Image className="h-16 w-16 text-slate-300" />
+                        <div className="border-2 border-dashed rounded-lg flex items-center justify-center bg-white w-32 h-32 sm:w-40 sm:h-40 md:w-[200px] md:h-[200px]">
+                          <Image className="h-12 w-12 sm:h-16 sm:w-16 text-slate-300" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 text-center sm:text-left">
                       <Label className="text-base font-medium">Logo de la Empresa</Label>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-xs sm:text-sm text-slate-500">
                         Sube el logo de tu empresa. Formatos: JPG, PNG, GIF, WebP, SVG. Tamaño recomendado: 250x250px
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex justify-center sm:justify-start gap-2">
                         <Button
                           type="button"
                           variant="outline"
                           disabled={uploadingLogo}
                           onClick={() => document.getElementById('logo-upload').click()}
+                          className="text-sm"
                         >
                           <Upload className="h-4 w-4 mr-2" />
                           {uploadingLogo ? 'Subiendo...' : 'Subir Logo'}
@@ -821,7 +821,7 @@ const Settings = () => {
                   </div>
 
                   {/* City, State, Zip */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">Ciudad</Label>
                       <Input
