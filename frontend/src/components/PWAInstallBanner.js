@@ -58,7 +58,7 @@ const PWAInstallBanner = () => {
         </div>
         
         <div className="flex-1">
-          <h3 className="font-bold text-lg mb-1">Instala Proyekta</h3>
+          <h3 className="font-bold text-lg mb-1">Instala ProManage</h3>
           <p className="text-sm text-blue-100 mb-3">
             Accede más rápido y trabaja sin conexión instalando la app en tu dispositivo
           </p>
