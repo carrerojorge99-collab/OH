@@ -3109,9 +3109,21 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
     
     env_path.write_text(env_content)
     
-    # Reload environment variables
-    from dotenv import load_dotenv
-    load_dotenv(env_path, override=True)
+    # Directly update os.environ with the new values
+    if 'smtp_user' in settings:
+        os.environ['SMTP_USER'] = settings['smtp_user']
+    if 'smtp_password' in settings:
+        os.environ['SMTP_PASSWORD'] = settings['smtp_password']
+    if 'smtp_from_email' in settings:
+        os.environ['SMTP_FROM_EMAIL'] = settings['smtp_from_email']
+    if 'smtp_from_name' in settings:
+        os.environ['SMTP_FROM_NAME'] = settings['smtp_from_name']
+    if 'smtp_host' in settings:
+        os.environ['SMTP_HOST'] = settings['smtp_host']
+    if 'smtp_port' in settings:
+        os.environ['SMTP_PORT'] = str(settings['smtp_port'])
+    if 'email_notifications_enabled' in settings:
+        os.environ['EMAIL_NOTIFICATIONS_ENABLED'] = str(settings['email_notifications_enabled']).lower()
     
     # Also reload email service variables
     import email_service
