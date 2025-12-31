@@ -7997,6 +7997,162 @@ async def update_employee_profile(
     
     return {"message": "Perfil actualizado"}
 
+# Endpoint para que empleados actualicen su propio perfil (sin campos de salario)
+class EmployeeProfileSelfUpdate(BaseModel):
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    zipcode: Optional[str] = None
+    country: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    marital_status: Optional[str] = None
+    nationality: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    emergency_contact_relationship: Optional[str] = None
+
+@api_router.put("/employees/{employee_id}/profile/self")
+async def update_own_profile(
+    employee_id: str,
+    profile_data: EmployeeProfileSelfUpdate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Empleados pueden actualizar su propia información personal (excepto salarios)"""
+    user = await get_current_user(request, session_token)
+    
+    # Solo puede editar su propio perfil
+    if user.user_id != employee_id:
+        raise HTTPException(status_code=403, detail="Solo puedes editar tu propio perfil")
+    
+    # Obtener perfil existente
+    existing = await db.employee_profiles.find_one({"user_id": employee_id})
+    
+    # Campos permitidos para auto-actualización
+    update_data = {k: v for k, v in profile_data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
+    
+    if existing:
+        await db.employee_profiles.update_one({"user_id": employee_id}, {"$set": update_data})
+    else:
+        update_data["user_id"] = employee_id
+        update_data["employee_id"] = f"emp_{uuid4().hex[:16]}"
+        update_data["created_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
+        await db.employee_profiles.insert_one(update_data)
+    
+    return {"message": "Perfil actualizado correctamente"}
+
+# Endpoint para obtener tareas asignadas al usuario actual
+@api_router.get("/my-tasks")
+async def get_my_tasks(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Obtener tareas asignadas al usuario actual"""
+    user = await get_current_user(request, session_token)
+    
+    # Obtener tareas asignadas al usuario
+    tasks = await db.tasks.find({"assigned_to": user.user_id}, {"_id": 0}).to_list(1000)
+    
+    # Añadir nombre del proyecto a cada tarea
+    for task in tasks:
+        project = await db.projects.find_one({"project_id": task.get("project_id")}, {"_id": 0, "name": 1})
+        task["project_name"] = project.get("name", "Sin proyecto") if project else "Sin proyecto"
+    
+    # Ordenar por fecha de vencimiento y prioridad
+    priority_order = {"high": 0, "medium": 1, "low": 2}
+    tasks.sort(key=lambda x: (
+        x.get("status") == "done",  # Completadas al final
+        x.get("due_date") or "9999-99-99",  # Por fecha de vencimiento
+        priority_order.get(x.get("priority", "medium"), 1)  # Por prioridad
+    ))
+    
+    return tasks
+
+# Endpoint para actualizar solo el estado de una tarea (para empleados)
+class TaskStatusUpdate(BaseModel):
+    status: str
+
+@api_router.put("/tasks/{task_id}/status")
+async def update_task_status(
+    task_id: str, 
+    status_data: TaskStatusUpdate, 
+    request: Request, 
+    session_token: Optional[str] = Cookie(None)
+):
+    """Empleados pueden actualizar el estado de sus tareas asignadas"""
+    user = await get_current_user(request, session_token)
+    
+    task = await db.tasks.find_one({"task_id": task_id}, {"_id": 0})
+    if not task:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    
+    # Verificar que la tarea está asignada al usuario (o es admin/PM)
+    if task.get("assigned_to") != user.user_id and user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="No tienes permiso para actualizar esta tarea")
+    
+    old_status = task.get("status")
+    new_status = status_data.status
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.tasks.update_one(
+        {"task_id": task_id}, 
+        {"$set": {"status": new_status, "updated_at": now}}
+    )
+    
+    # Enviar notificación si la tarea se completó
+    if new_status == "done" and old_status != "done":
+        project = await db.projects.find_one({"project_id": task["project_id"]}, {"_id": 0})
+        if project and project.get("created_by"):
+            # Notificación en app
+            notification_doc = {
+                "notification_id": f"notif_{uuid4().hex[:12]}",
+                "user_id": project["created_by"],
+                "type": "task_completed",
+                "message": f"{user.name} completó la tarea: {task['title']}",
+                "read": False,
+                "timestamp": now,
+                "related_id": task_id
+            }
+            await db.notifications.insert_one(notification_doc)
+            
+            # Email al creador del proyecto
+            owner = await db.users.find_one({"user_id": project["created_by"]}, {"_id": 0})
+            if owner:
+                html, text = get_task_completed_email(
+                    owner["name"],
+                    task["title"],
+                    project["name"],
+                    user.name
+                )
+                await send_email(
+                    owner["email"],
+                    f"Tarea completada: {task['title']}",
+                    html,
+                    text
+                )
+    
+    # Notificar cambio de estado (si no es completada)
+    elif new_status != old_status:
+        project = await db.projects.find_one({"project_id": task["project_id"]}, {"_id": 0})
+        if project and project.get("created_by") and project["created_by"] != user.user_id:
+            status_labels = {
+                "todo": "Pendiente",
+                "in_progress": "En Progreso",
+                "review": "En Revisión",
+                "done": "Completada"
+            }
+            notification_doc = {
+                "notification_id": f"notif_{uuid4().hex[:12]}",
+                "user_id": project["created_by"],
+                "type": "task_status_changed",
+                "message": f"{user.name} cambió '{task['title']}' a {status_labels.get(new_status, new_status)}",
+                "read": False,
+                "timestamp": now,
+                "related_id": task_id
+            }
+            await db.notifications.insert_one(notification_doc)
+    
+    return {"message": "Estado actualizado", "status": new_status}
+
 @api_router.get("/employees/{employee_id}/documents")
 async def get_employee_documents(employee_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
