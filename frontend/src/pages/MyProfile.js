@@ -470,16 +470,16 @@ const MyProfile = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                 {payStubs.map(stub => (
                   <Card key={stub.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-lg">
+                          <CardTitle className="text-base sm:text-lg">
                             {moment(stub.period_start).format('DD MMM')} - {moment(stub.period_end).format('DD MMM YYYY')}
                           </CardTitle>
-                          <p className="text-sm text-slate-500">{moment(stub.created_at).fromNow()}</p>
+                          <p className="text-xs sm:text-sm text-slate-500">{moment(stub.created_at).fromNow()}</p>
                         </div>
                         <Badge className="bg-green-100 text-green-700">
                           ${stub.net_pay?.toFixed(2)}
@@ -487,7 +487,7 @@ const MyProfile = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                      <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm mb-3">
                         <div>
                           <span className="text-slate-500">Horas:</span>
                           <span className="ml-1 font-medium">{stub.hours_worked?.toFixed(1)}h</span>
