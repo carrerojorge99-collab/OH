@@ -41,7 +41,7 @@ export const fetchCompanyInfo = async () => {
     if (companyData && companyData.company_logo) {
       try {
         // Build full URL for the logo
-        const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
+        const baseUrl = getBackendUrl();
         const logoUrl = companyData.company_logo.startsWith('http') 
           ? companyData.company_logo 
           : `${baseUrl}${companyData.company_logo}`;
