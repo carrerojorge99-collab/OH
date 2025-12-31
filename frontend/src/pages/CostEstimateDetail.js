@@ -351,14 +351,14 @@ const CostEstimateDetail = () => {
               <>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`${process.env.REACT_APP_BACKEND_URL}/api/cost-estimates/${estimateId}/export/pdf`, '_blank')}
+                  onClick={() => window.open(`${getBackendUrl()}/api/cost-estimates/${estimateId}/export/pdf`, '_blank')}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   PDF
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`${process.env.REACT_APP_BACKEND_URL}/api/cost-estimates/${estimateId}/export/excel`, '_blank')}
+                  onClick={() => window.open(`${getBackendUrl()}/api/cost-estimates/${estimateId}/export/excel`, '_blank')}
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" />
                   Excel
