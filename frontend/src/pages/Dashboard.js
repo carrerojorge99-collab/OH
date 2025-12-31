@@ -234,9 +234,9 @@ const Dashboard = () => {
             <CardHeader className="p-4 md:p-6">
               <CardTitle className="text-base sm:text-lg md:text-xl font-semibold tracking-tight">Distribución de Presupuesto</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6">
               {stats?.total_budget > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
                   <PieChart>
                     <Pie
                       data={budgetData}
@@ -244,7 +244,7 @@ const Dashboard = () => {
                       cy="50%"
                       labelLine={false}
                       label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -256,26 +256,26 @@ const Dashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  <p>No hay datos de presupuesto disponibles</p>
+                <div className="flex items-center justify-center h-[200px] sm:h-[300px] text-muted-foreground">
+                  <p className="text-sm sm:text-base">No hay datos de presupuesto disponibles</p>
                 </div>
               )}
-              <div className="flex items-center justify-around mt-6 pt-6 border-t border-slate-200">
+              <div className="flex flex-col sm:flex-row items-center justify-around mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-200 gap-4 sm:gap-0">
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-2 mb-1">
                     <TrendingDown className="w-4 h-4 text-red-600" />
-                    <p className="text-sm font-medium text-slate-600">Gastado</p>
+                    <p className="text-xs sm:text-sm font-medium text-slate-600">Gastado</p>
                   </div>
-                  <p className="text-2xl font-bold font-mono text-[#0F172A]">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold font-mono text-[#0F172A]">
                     ${(stats?.total_spent || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-2 mb-1">
                     <TrendingUp className="w-4 h-4 text-green-600" />
-                    <p className="text-sm font-medium text-slate-600">Disponible</p>
+                    <p className="text-xs sm:text-sm font-medium text-slate-600">Disponible</p>
                   </div>
-                  <p className="text-2xl font-bold font-mono text-[#0F172A]">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold font-mono text-[#0F172A]">
                     ${(stats?.budget_remaining || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
