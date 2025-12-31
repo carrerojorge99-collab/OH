@@ -3067,16 +3067,29 @@ async def get_settings(request: Request, session_token: Optional[str] = Cookie(N
     user = await get_current_user(request, session_token)
     
     # Only admins can view settings
-    if user.role != UserRole.SUPER_ADMIN.value:
+    user_role = str(user.role).lower() if user.role else ""
+    if user_role not in ['super_admin', 'admin']:
         raise HTTPException(status_code=403, detail="No tienes permisos para ver la configuración")
     
+    # Read directly from .env file to get the latest values
+    env_path = Path("/app/backend/.env")
+    env_values = {}
+    
+    if env_path.exists():
+        for line in env_path.read_text().split('\n'):
+            if '=' in line and not line.startswith('#'):
+                key, value = line.split('=', 1)
+                # Remove quotes from value
+                value = value.strip().strip('"').strip("'")
+                env_values[key] = value
+    
     return {
-        "smtp_host": os.environ.get('SMTP_HOST', 'smtp.gmail.com'),
-        "smtp_port": int(os.environ.get('SMTP_PORT', 587)),
-        "smtp_user": os.environ.get('SMTP_USER', ''),
-        "smtp_from_email": os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com'),
-        "smtp_from_name": os.environ.get('SMTP_FROM_NAME', 'ProManage'),
-        "email_notifications_enabled": os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
+        "smtp_host": env_values.get('SMTP_HOST', os.environ.get('SMTP_HOST', 'smtp.gmail.com')),
+        "smtp_port": int(env_values.get('SMTP_PORT', os.environ.get('SMTP_PORT', 587))),
+        "smtp_user": env_values.get('SMTP_USER', os.environ.get('SMTP_USER', '')),
+        "smtp_from_email": env_values.get('SMTP_FROM_EMAIL', os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com')),
+        "smtp_from_name": env_values.get('SMTP_FROM_NAME', os.environ.get('SMTP_FROM_NAME', 'ProManage')),
+        "email_notifications_enabled": env_values.get('EMAIL_NOTIFICATIONS_ENABLED', os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false')).lower() == 'true'
     }
 
 @api_router.put("/settings")
