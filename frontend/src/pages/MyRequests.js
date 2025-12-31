@@ -375,36 +375,36 @@ const MyRequests = () => {
               <div className="space-y-3">
                 {filteredRequests.map(req => (
                   <Card key={req.id} className={`${req.status === 'pending' ? 'border-yellow-200 bg-yellow-50/30' : ''}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className={req.category === 'employee' ? 'border-blue-300 text-blue-700' : 'border-green-300 text-green-700'}>
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
+                            <Badge variant="outline" className={`text-xs ${req.category === 'employee' ? 'border-blue-300 text-blue-700' : 'border-green-300 text-green-700'}`}>
                               {req.category === 'employee' ? 'Personal' : 'Proyecto'}
                             </Badge>
-                            <Badge variant="secondary">{getTypeLabel(req.type)}</Badge>
+                            <Badge variant="secondary" className="text-xs">{getTypeLabel(req.type)}</Badge>
                             {getStatusBadge(req.status)}
                             {getUrgencyBadge(req.urgency)}
                           </div>
-                          <h3 className="font-semibold text-slate-900">{req.title}</h3>
-                          {req.description && <p className="text-sm text-slate-600 mt-1">{req.description}</p>}
+                          <h3 className="font-semibold text-slate-900 text-sm sm:text-base">{req.title}</h3>
+                          {req.description && <p className="text-xs sm:text-sm text-slate-600 mt-1 line-clamp-2">{req.description}</p>}
                           
-                          <div className="flex flex-wrap gap-4 mt-2 text-sm text-slate-500">
+                          <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-slate-500">
                             {req.start_date && (
-                              <span>📅 {moment(req.start_date).format('DD/MM/YYYY')} {req.end_date && `- ${moment(req.end_date).format('DD/MM/YYYY')}`}</span>
+                              <span>📅 {moment(req.start_date).format('DD/MM/YY')} {req.end_date && `- ${moment(req.end_date).format('DD/MM/YY')}`}</span>
                             )}
-                            {req.hours && <span>⏱️ {req.hours} horas</span>}
+                            {req.hours && <span>⏱️ {req.hours}h</span>}
                             {req.amount > 0 && <span>💰 ${req.amount.toLocaleString()}</span>}
-                            {req.project_name && <span>📁 {req.project_name}</span>}
+                            {req.project_name && <span className="truncate max-w-[120px]">📁 {req.project_name}</span>}
                             <span>🕐 {moment(req.requested_at).fromNow()}</span>
                           </div>
 
                           {req.status !== 'pending' && req.reviewed_by_name && (
-                            <div className="mt-2 text-sm">
+                            <div className="mt-2 text-xs sm:text-sm">
                               <span className={req.status === 'approved' ? 'text-green-600' : 'text-red-600'}>
                                 {req.status === 'approved' ? '✓ Aprobado' : '✗ Rechazado'} por {req.reviewed_by_name}
                               </span>
-                              {req.review_notes && <p className="text-slate-500 italic">"{req.review_notes}"</p>}
+                              {req.review_notes && <p className="text-slate-500 italic truncate">"{req.review_notes}"</p>}
                             </div>
                           )}
                         </div>
@@ -413,7 +413,7 @@ const MyRequests = () => {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 self-end sm:self-start"
                             onClick={() => handleCancel(req.id)}
                           >
                             <Trash2 className="w-4 h-4" />
