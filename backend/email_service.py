@@ -4,9 +4,36 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import aiosmtplib
 from typing import List
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+def get_smtp_config():
+    """Get SMTP configuration from .env file or environment variables"""
+    env_values = {}
+    env_path = Path("/app/backend/.env")
+    
+    if env_path.exists():
+        try:
+            for line in env_path.read_text().split('\n'):
+                if '=' in line and not line.startswith('#'):
+                    key, value = line.split('=', 1)
+                    value = value.strip().strip('"').strip("'")
+                    env_values[key] = value
+        except Exception as e:
+            logger.warning(f"Error reading .env file: {e}")
+    
+    return {
+        'host': env_values.get('SMTP_HOST', os.environ.get('SMTP_HOST', 'smtp.gmail.com')),
+        'port': int(env_values.get('SMTP_PORT', os.environ.get('SMTP_PORT', 587))),
+        'user': env_values.get('SMTP_USER', os.environ.get('SMTP_USER', '')),
+        'password': env_values.get('SMTP_PASSWORD', os.environ.get('SMTP_PASSWORD', '')),
+        'from_email': env_values.get('SMTP_FROM_EMAIL', os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com')),
+        'from_name': env_values.get('SMTP_FROM_NAME', os.environ.get('SMTP_FROM_NAME', 'ProManage')),
+        'enabled': env_values.get('EMAIL_NOTIFICATIONS_ENABLED', os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false')).lower() == 'true'
+    }
+
+# Legacy variables for backward compatibility - these can be updated at runtime
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('SMTP_USER', '')
@@ -18,17 +45,20 @@ EMAIL_NOTIFICATIONS_ENABLED = os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'fal
 async def send_email(to_email: str, subject: str, html_content: str, text_content: str = None):
     """Send an email using SMTP"""
     
-    if not EMAIL_NOTIFICATIONS_ENABLED:
+    # Always read fresh config from .env file
+    config = get_smtp_config()
+    
+    if not config['enabled']:
         logger.info(f"Email notifications disabled. Would send to {to_email}: {subject}")
         return False
     
-    if not SMTP_USER or not SMTP_PASSWORD:
+    if not config['user'] or not config['password']:
         logger.warning("SMTP credentials not configured")
         return False
     
     try:
         message = MIMEMultipart('alternative')
-        message['From'] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+        message['From'] = f"{config['from_name']} <{config['from_email']}>"
         message['To'] = to_email
         message['Subject'] = subject
         
@@ -41,10 +71,10 @@ async def send_email(to_email: str, subject: str, html_content: str, text_conten
         
         await aiosmtplib.send(
             message,
-            hostname=SMTP_HOST,
-            port=SMTP_PORT,
-            username=SMTP_USER,
-            password=SMTP_PASSWORD,
+            hostname=config['host'],
+            port=config['port'],
+            username=config['user'],
+            password=config['password'],
             start_tls=True
         )
         
