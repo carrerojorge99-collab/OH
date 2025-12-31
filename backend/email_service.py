@@ -336,3 +336,148 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
     """
     
     return html, text
+
+def get_task_reminder_email(user_name: str, task_title: str, project_name: str, due_date: str, days_until_due: int):
+    """Generate HTML email for task deadline reminder"""
+    config = get_smtp_config()
+    app_url = config['app_url']
+    
+    urgency_color = "#EF4444" if days_until_due <= 1 else "#F59E0B" if days_until_due <= 3 else "#3B82F6"
+    urgency_text = "¡URGENTE!" if days_until_due <= 1 else "Próxima a vencer" if days_until_due <= 3 else "Recordatorio"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: {urgency_color}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .task-box {{ background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid {urgency_color}; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: {urgency_color}; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>⏰ {urgency_text}: Tarea por vencer</h1>
+            </div>
+            <div class="content">
+                <p>Hola <strong>{user_name}</strong>,</p>
+                <p>Te recordamos que tienes una tarea que vence {'hoy' if days_until_due == 0 else 'mañana' if days_until_due == 1 else f'en {days_until_due} días'}:</p>
+                
+                <div class="task-box">
+                    <h2 style="color: {urgency_color}; margin-top: 0;">{task_title}</h2>
+                    <p><strong>📁 Proyecto:</strong> {project_name}</p>
+                    <p><strong>📅 Fecha límite:</strong> {due_date}</p>
+                </div>
+                
+                <p>Inicia sesión en ProManage para ver los detalles y actualizar el estado de la tarea.</p>
+                
+                <p style="text-align: center;">
+                    <a href="{app_url}/my-profile" class="button">📋 Ver Mis Tareas</a>
+                </p>
+            </div>
+            <div class="footer">
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
+                <p><a href="{app_url}" style="color: {urgency_color};">{app_url}</a></p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text = f"""
+    {urgency_text}: Tarea por vencer
+    
+    Hola {user_name},
+    
+    Te recordamos que tienes una tarea que vence {'hoy' if days_until_due == 0 else 'mañana' if days_until_due == 1 else f'en {days_until_due} días'}:
+    
+    Tarea: {task_title}
+    Proyecto: {project_name}
+    Fecha límite: {due_date}
+    
+    Inicia sesión en ProManage para ver los detalles: {app_url}/my-profile
+    """
+    
+    return html, text
+
+def get_task_status_changed_email(user_name: str, task_title: str, project_name: str, new_status: str, changer_name: str):
+    """Generate HTML email for task status change notification"""
+    config = get_smtp_config()
+    app_url = config['app_url']
+    
+    status_colors = {
+        "todo": "#64748B",
+        "in_progress": "#3B82F6",
+        "review": "#F59E0B",
+        "done": "#10B981"
+    }
+    status_labels = {
+        "todo": "Pendiente",
+        "in_progress": "En Progreso",
+        "review": "En Revisión",
+        "done": "Completada"
+    }
+    
+    color = status_colors.get(new_status, "#64748B")
+    status_label = status_labels.get(new_status, new_status)
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: {color}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .status-badge {{ display: inline-block; padding: 8px 16px; background-color: {color}; color: white; border-radius: 20px; font-weight: bold; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: {color}; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📊 Actualización de Tarea</h1>
+            </div>
+            <div class="content">
+                <p>Hola <strong>{user_name}</strong>,</p>
+                <p><strong>{changer_name}</strong> ha actualizado el estado de una tarea:</p>
+                
+                <h2 style="color: #1e293b;">{task_title}</h2>
+                <p><strong>Proyecto:</strong> {project_name}</p>
+                <p><strong>Nuevo estado:</strong> <span class="status-badge">{status_label}</span></p>
+                
+                <p style="text-align: center;">
+                    <a href="{app_url}/dashboard" class="button">🚀 Ir a ProManage</a>
+                </p>
+            </div>
+            <div class="footer">
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
+                <p><a href="{app_url}" style="color: {color};">{app_url}</a></p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text = f"""
+    Actualización de Tarea
+    
+    Hola {user_name},
+    
+    {changer_name} ha actualizado el estado de una tarea:
+    
+    Tarea: {task_title}
+    Proyecto: {project_name}
+    Nuevo estado: {status_label}
+    
+    Ir a la app: {app_url}
+    """
+    
+    return html, text
