@@ -11,8 +11,9 @@ import {
 import { Button } from './ui/button';
 import { Bell, Check, CheckCheck } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { getBackendUrl } from '../utils/api';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = getBackendUrl();
 const API = `${BACKEND_URL}/api`;
 
 const NotificationCenter = () => {
