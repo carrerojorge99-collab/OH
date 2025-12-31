@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Clock, CheckCircle, Play, Pause } from 'lucide-react';
 import { toast } from 'sonner';
+import { getBackendUrl } from '../utils/api';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = getBackendUrl();
 const API = `${BACKEND_URL}/api`;
 
 const QuickTimesheet = () => {
