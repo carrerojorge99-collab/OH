@@ -225,6 +225,7 @@ const Projects = () => {
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
+            {canCreateProject && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button data-testid="create-project-button" className="rounded-full bg-blue-600 hover:bg-blue-700 font-medium">
