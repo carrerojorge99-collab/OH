@@ -541,7 +541,7 @@ const Projects = () => {
 
         {/* Search and Filters */}
         <div className="space-y-4">
-          <div className="relative max-w-md">
+          <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               data-testid="search-projects-input"
@@ -553,9 +553,9 @@ const Projects = () => {
             />
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[160px] md:w-[180px]">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
@@ -569,7 +569,7 @@ const Projects = () => {
             </Select>
 
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-[160px] md:w-[180px]">
                 <SelectValue placeholder="Prioridad" />
               </SelectTrigger>
               <SelectContent>
@@ -582,7 +582,7 @@ const Projects = () => {
             </Select>
 
             <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-[160px] md:w-[180px]">
                 <SelectValue placeholder="Estado de Pago" />
               </SelectTrigger>
               <SelectContent>
@@ -596,6 +596,7 @@ const Projects = () => {
             {(statusFilter !== 'all' || priorityFilter !== 'all' || paymentFilter !== 'all' || searchTerm) && (
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('all');
@@ -611,7 +612,7 @@ const Projects = () => {
 
         {/* Projects Grid */}
         {filteredProjects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredProjects.map((project) => (
               <Card
                 key={project.project_id}
