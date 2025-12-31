@@ -821,7 +821,7 @@ const Settings = () => {
                   </div>
 
                   {/* City, State, Zip */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">Ciudad</Label>
                       <Input
@@ -863,7 +863,7 @@ const Settings = () => {
                   </div>
 
                   {/* Phone & Email */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Teléfono</Label>
                       <Input
@@ -886,7 +886,7 @@ const Settings = () => {
                   </div>
 
                   {/* Website & Tax ID */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="website">Sitio Web</Label>
                       <Input
@@ -926,7 +926,7 @@ const Settings = () => {
                       <Label className="text-base font-medium">Numeración de Documentos</Label>
                       <p className="text-sm text-slate-500">Configure el próximo número a utilizar para cada tipo de documento</p>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="next_invoice_number">Próxima Factura (INV)</Label>
                         <Input
@@ -978,7 +978,7 @@ const Settings = () => {
                     
                     {company.geofence_enabled && (
                       <div className="space-y-4 pt-2">
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="location_latitude">Latitud</Label>
                             <Input
@@ -1062,7 +1062,7 @@ const Settings = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSaveRate} className="space-y-6">
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="role_name">Nombre del Rol *</Label>
                       <Input
@@ -1200,7 +1200,7 @@ const Settings = () => {
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <h4 className="font-medium text-blue-800 mb-2">Empleados de la Empresa</h4>
                   <p className="text-sm text-blue-600 mb-4">Estos descuentos aplican a empleados en nómina regular</p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Hacienda (%)</Label>
                       <Input type="number" step="0.01" value={payrollSettings.hacienda_percent} onChange={(e) => setPayrollSettings({...payrollSettings, hacienda_percent: parseFloat(e.target.value) || 0})} />
@@ -1302,7 +1302,7 @@ const Settings = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSaveNomenclature} className="space-y-4 mb-6">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Nombre</Label>
                       <Input
@@ -1381,7 +1381,7 @@ const Settings = () => {
                 {/* Add/Edit Tax Type Form */}
                 <form onSubmit={handleSaveTaxType} className="p-4 border rounded-lg bg-slate-50">
                   <h3 className="font-medium mb-4">{editingTaxType ? 'Editar Tipo de Impuesto' : 'Nuevo Tipo de Impuesto'}</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Nombre *</Label>
                       <Input
