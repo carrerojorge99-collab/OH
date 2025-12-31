@@ -264,6 +264,9 @@ def get_comment_email(user_name: str, project_name: str, commenter_name: str, co
 
 def get_welcome_email(user_name: str, email: str, temp_password: str, login_url: str = ""):
     """Generate HTML email for new user welcome with temporary credentials"""
+    config = get_smtp_config()
+    app_url = login_url if login_url else config['app_url']
+    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -277,7 +280,8 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
             .credentials p {{ margin: 8px 0; }}
             .credentials strong {{ color: #92400E; }}
             .warning {{ background-color: #FEE2E2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EF4444; }}
-            .button {{ display: inline-block; padding: 12px 24px; background-color: #2563EB; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: #2563EB; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
+            .button:hover {{ background-color: #1d4ed8; }}
             .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
         </style>
     </head>
@@ -300,10 +304,15 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
                 </div>
                 
                 <p>Inicia sesión en ProManage para comenzar a trabajar con tu equipo.</p>
+                
+                <p style="text-align: center;">
+                    <a href="{app_url}/login" class="button">🚀 Iniciar Sesión</a>
+                </p>
             </div>
             <div class="footer">
                 <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
                 <p>Si no solicitaste esta cuenta, puedes ignorar este correo.</p>
+                <p><a href="{app_url}" style="color: #2563EB;">{app_url}</a></p>
             </div>
         </div>
     </body>
@@ -323,7 +332,7 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
     
     IMPORTANTE: Esta es una contraseña temporal. Por seguridad, se te pedirá cambiarla la primera vez que inicies sesión.
     
-    Inicia sesión en ProManage para comenzar.
+    Inicia sesión en ProManage para comenzar: {app_url}/login
     """
     
     return html, text
