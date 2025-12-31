@@ -341,3 +341,45 @@ Status: **Backend API tests PASSED** ✅
 - PDF generation process is working correctly with no errors
 - File size indicates rich content including logo and formatting
 - API integration is functioning as expected
+
+## Employee Profile and Tasks API Test Results (2025-12-31)
+
+### ✅ COMPREHENSIVE API TESTS PASSED
+**Test Credentials Used**: j.carrero@ohsmspr.com / Axel52418!
+
+#### Test Results Summary:
+1. ✅ **POST /api/auth/login** - Successfully logged in as Jorge Carrero Rodriguez (ID: user_4619340421d2, Role: super_admin)
+2. ✅ **GET /api/my-tasks** - Found 1 tasks, 1 with project_name attached
+3. ✅ **GET /api/employees/{user_id}/profile** - Profile retrieved successfully with fields: ['user_id', 'phone', 'address', 'city']
+4. ✅ **PUT /api/employees/{user_id}/profile/self** - Profile updated successfully, salary fields correctly ignored
+5. ✅ **PUT /api/tasks/{task_id}/status** - Task status updated to 'in_progress' successfully
+
+#### Technical Verification:
+- **Login Authentication**: ✅ Session token obtained and user data retrieved correctly
+- **Task Assignment**: ✅ Tasks include project_name field for proper display
+- **Profile Security**: ✅ Self-update endpoint only allows safe fields (phone, address, city, emergency_contact_name)
+- **Salary Protection**: ✅ Salary and hourly_rate fields correctly ignored in self-update
+- **Task Status Updates**: ✅ Status changes work correctly and send notifications
+- **API Response Format**: ✅ All endpoints return proper JSON responses
+
+#### Test Summary:
+- **Total Tests**: 5
+- **Passed**: 5
+- **Failed**: 0
+- **Success Rate**: 100%
+
+### Critical Functionality Verified:
+1. **Employee Profile Management**: ✅ Employees can view and update their own profiles with proper field restrictions
+2. **Task Management**: ✅ Users can view assigned tasks with project context and update task status
+3. **Security Controls**: ✅ Salary fields are protected from unauthorized updates
+4. **API Integration**: ✅ All endpoints working correctly with proper authentication
+5. **Data Integrity**: ✅ Profile updates and task status changes persist correctly
+
+### Key Findings:
+- All new employee profile and tasks API endpoints are fully functional
+- Security controls properly prevent unauthorized salary field updates
+- Task status updates work correctly and include notification system
+- API responses follow consistent format patterns
+- Authentication and session management working properly
+
+## Last Test Run
