@@ -1726,6 +1726,39 @@ const Settings = () => {
                     <li>Espera a que se complete la importación</li>
                   </ol>
                 </div>
+
+                {/* Clear Browser Cache */}
+                <div className="p-6 border rounded-lg bg-purple-50 border-purple-200">
+                  <h3 className="text-lg font-semibold text-purple-900 mb-2">🔄 Limpiar Caché del Navegador</h3>
+                  <p className="text-sm text-purple-700 mb-4">
+                    Si la aplicación no muestra los cambios más recientes, limpia el caché del navegador.
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      // Clear service worker cache
+                      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+                      }
+                      // Clear browser caches
+                      if ('caches' in window) {
+                        caches.keys().then(names => {
+                          names.forEach(name => caches.delete(name));
+                        });
+                      }
+                      // Clear storage
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      toast.success('Caché limpiado. La página se recargará...');
+                      setTimeout(() => {
+                        window.location.reload(true);
+                      }, 1500);
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Limpiar Caché y Recargar
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
