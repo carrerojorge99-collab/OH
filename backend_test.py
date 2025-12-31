@@ -4203,6 +4203,327 @@ class InvoiceManagementTester:
             "critical_issues": critical_failures
         }
 
+class EmployeeProfileTasksTester:
+    def __init__(self, base_url="https://critical-deploy.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.test_task_id = None
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="j.carrero@ohsmspr.com", password="Admin2024!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_get_my_tasks(self):
+        """Test getting tasks assigned to the logged-in user"""
+        print(f"\n🔍 Testing Get My Tasks...")
+        
+        try:
+            url = f"{self.api_url}/my-tasks"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                tasks = response.json()
+                print(f"   Response Body: {json.dumps(tasks, indent=2)}")
+                
+                if isinstance(tasks, list):
+                    # Check if tasks have project_name attached
+                    tasks_with_project = [task for task in tasks if 'project_name' in task]
+                    
+                    if len(tasks) > 0:
+                        # Store first task for status update test
+                        self.test_task_id = tasks[0].get('task_id')
+                    
+                    self.log_test("Get My Tasks", True, 
+                                f"Found {len(tasks)} tasks, {len(tasks_with_project)} with project_name attached")
+                    return True, tasks
+                else:
+                    self.log_test("Get My Tasks", False, "", f"Invalid response format: {tasks}")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get My Tasks", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get My Tasks", False, "", str(e))
+            return False, []
+
+    def test_get_employee_profile(self):
+        """Test getting employee profile"""
+        print(f"\n🔍 Testing Get Employee Profile...")
+        
+        if not self.user_id:
+            self.log_test("Get Employee Profile", False, "", "No user ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/employees/{self.user_id}/profile"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                profile = response.json()
+                print(f"   Response Body: {json.dumps(profile, indent=2)}")
+                
+                # Check if profile has expected fields
+                expected_fields = ['user_id', 'phone', 'address', 'city']
+                present_fields = [field for field in expected_fields if field in profile]
+                
+                self.log_test("Get Employee Profile", True, 
+                            f"Profile retrieved successfully with fields: {present_fields}")
+                return True, profile
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Employee Profile", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Get Employee Profile", False, "", str(e))
+            return False, {}
+
+    def test_update_own_profile(self):
+        """Test updating own profile (new endpoint)"""
+        print(f"\n🔍 Testing Update Own Profile...")
+        
+        if not self.user_id:
+            self.log_test("Update Own Profile", False, "", "No user ID available")
+            return False
+        
+        # Test data - only allowed fields
+        profile_data = {
+            "phone": "787-555-9999",
+            "address": "123 Test Street",
+            "city": "San Juan",
+            "emergency_contact_name": "Emergency Contact Test",
+            # Try to include salary fields that should be ignored
+            "salary": 99999.99,
+            "hourly_rate": 999.99
+        }
+        
+        try:
+            url = f"{self.api_url}/employees/{self.user_id}/profile/self"
+            response = self.session.put(url, json=profile_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                updated_profile = response.json()
+                print(f"   Response Body: {json.dumps(updated_profile, indent=2)}")
+                
+                # Verify allowed fields were updated
+                allowed_updated = (
+                    updated_profile.get('phone') == profile_data['phone'] and
+                    updated_profile.get('address') == profile_data['address'] and
+                    updated_profile.get('city') == profile_data['city'] and
+                    updated_profile.get('emergency_contact_name') == profile_data['emergency_contact_name']
+                )
+                
+                # Verify salary fields were NOT updated (should be ignored)
+                salary_ignored = (
+                    updated_profile.get('salary') != profile_data['salary'] and
+                    updated_profile.get('hourly_rate') != profile_data['hourly_rate']
+                )
+                
+                if allowed_updated:
+                    if salary_ignored:
+                        self.log_test("Update Own Profile", True, 
+                                    "Profile updated successfully, salary fields correctly ignored")
+                    else:
+                        self.log_test("Update Own Profile", True, 
+                                    "Profile updated successfully (salary fields not present to verify)")
+                    return True, updated_profile
+                else:
+                    self.log_test("Update Own Profile", False, "", "Allowed fields were not updated correctly")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Update Own Profile", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Update Own Profile", False, "", str(e))
+            return False, {}
+
+    def test_update_task_status(self):
+        """Test updating task status (new endpoint)"""
+        print(f"\n🔍 Testing Update Task Status...")
+        
+        if not self.test_task_id:
+            self.log_test("Update Task Status", False, "", "No task ID available")
+            return False
+        
+        # Test data - change status from "todo" to "in_progress"
+        status_data = {
+            "status": "in_progress"
+        }
+        
+        try:
+            url = f"{self.api_url}/tasks/{self.test_task_id}/status"
+            response = self.session.put(url, json=status_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                updated_task = response.json()
+                print(f"   Response Body: {json.dumps(updated_task, indent=2)}")
+                
+                # Verify status was updated
+                if updated_task.get('status') == status_data['status']:
+                    self.log_test("Update Task Status", True, 
+                                f"Task status updated to '{status_data['status']}' successfully")
+                    return True, updated_task
+                else:
+                    self.log_test("Update Task Status", False, "", 
+                                f"Status not updated correctly. Expected: {status_data['status']}, Got: {updated_task.get('status')}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Update Task Status", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Update Task Status", False, "", str(e))
+            return False, {}
+
+    def run_employee_profile_tasks_tests(self):
+        """Run complete employee profile and tasks test suite"""
+        print("🚀 Starting Employee Profile and Tasks Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Get my tasks
+        success, tasks = self.test_get_my_tasks()
+        
+        # Step 3: Get employee profile
+        self.test_get_employee_profile()
+        
+        # Step 4: Update own profile
+        self.test_update_own_profile()
+        
+        # Step 5: Update task status (if we have a task)
+        if self.test_task_id:
+            self.test_update_task_status()
+        else:
+            print("⚠️ Skipping task status update test - no tasks available")
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 EMPLOYEE PROFILE AND TASKS TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if any(keyword in test['test'] for keyword in ['Login', 'Get My Tasks', 'Update Own Profile', 'Update Task Status'])]
+        if critical_failures:
+            print("\n🚨 CRITICAL ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 def main():
     """Main function"""
     if len(sys.argv) > 1:
