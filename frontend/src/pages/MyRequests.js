@@ -177,16 +177,17 @@ const MyRequests = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Mis Solicitudes</h1>
-            <p className="text-slate-500">Gestiona tus solicitudes de permisos, vacaciones y proyectos</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mis Solicitudes</h1>
+            <p className="text-sm sm:text-base text-slate-500">Gestiona tus solicitudes de permisos, vacaciones y proyectos</p>
           </div>
           
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-orange-500 hover:bg-orange-600">
+              <Button className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" /> Nueva Solicitud
               </Button>
             </DialogTrigger>
