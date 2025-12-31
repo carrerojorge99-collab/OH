@@ -4555,8 +4555,12 @@ def main():
             # Run Invoice Management tests
             tester = InvoiceManagementTester()
             results = tester.run_invoice_management_tests()
+        elif sys.argv[1] == "employee-profile":
+            # Run Employee Profile and Tasks tests
+            tester = EmployeeProfileTasksTester()
+            results = tester.run_employee_profile_tasks_tests()
         else:
-            print("Usage: python backend_test.py [clock|export|client|pdf|safety|payroll|invoice-mgmt]")
+            print("Usage: python backend_test.py [clock|export|client|pdf|safety|payroll|invoice-mgmt|employee-profile]")
             return 1
     else:
         # Run full API tests
