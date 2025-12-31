@@ -69,7 +69,8 @@ const Settings = () => {
     smtp_password: '',
     smtp_from_email: '',
     smtp_from_name: '',
-    email_notifications_enabled: false
+    email_notifications_enabled: false,
+    app_url: ''
   });
   const [company, setCompany] = useState({
     company_name: '',
