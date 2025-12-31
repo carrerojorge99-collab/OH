@@ -3084,7 +3084,8 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
     user = await get_current_user(request, session_token)
     
     # Only admins can update settings
-    if user.role != UserRole.SUPER_ADMIN.value:
+    user_role = str(user.role).lower() if user.role else ""
+    if user_role not in ['super_admin', 'admin']:
         raise HTTPException(status_code=403, detail="No tienes permisos para actualizar la configuración")
     
     # Update .env file
