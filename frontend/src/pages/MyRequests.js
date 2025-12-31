@@ -348,12 +348,20 @@ const MyRequests = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="all">Todas ({requests.length})</TabsTrigger>
-            <TabsTrigger value="pending">Pendientes ({requests.filter(r => r.status === 'pending').length})</TabsTrigger>
-            <TabsTrigger value="employee">Personales</TabsTrigger>
-            <TabsTrigger value="project">Proyectos</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full flex flex-wrap gap-1 h-auto p-1 bg-slate-100 rounded-lg">
+            <TabsTrigger value="all" className="flex-1 min-w-[70px] text-xs sm:text-sm py-2 px-2 sm:px-3">
+              Todas ({requests.length})
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="flex-1 min-w-[70px] text-xs sm:text-sm py-2 px-2 sm:px-3">
+              Pendientes ({requests.filter(r => r.status === 'pending').length})
+            </TabsTrigger>
+            <TabsTrigger value="employee" className="flex-1 min-w-[70px] text-xs sm:text-sm py-2 px-2 sm:px-3">
+              Personales
+            </TabsTrigger>
+            <TabsTrigger value="project" className="flex-1 min-w-[70px] text-xs sm:text-sm py-2 px-2 sm:px-3">
+              Proyectos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-4">
