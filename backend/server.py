@@ -4658,7 +4658,9 @@ async def upload_company_logo(
 ):
     user = await get_current_user(request, session_token)
     
-    if user.role != UserRole.SUPER_ADMIN.value:
+    # Check for admin roles (handle both enum value and string)
+    user_role = str(user.role).lower() if user.role else ""
+    if user_role not in ['super_admin', 'admin']:
         raise HTTPException(status_code=403, detail="Solo los administradores pueden subir el logo")
     
     # Validar tipo de archivo
