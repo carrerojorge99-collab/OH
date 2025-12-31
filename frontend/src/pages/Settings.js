@@ -1555,11 +1555,11 @@ const Settings = () => {
                 <Input
                   id="smtp_from_email"
                   type="email"
+                  placeholder="noreply@tuempresa.com"
                   value={settings.smtp_from_email}
                   onChange={(e) => setSettings(prev => ({ ...prev, smtp_from_email: e.target.value }))}
-                  disabled
                 />
-                <p className="text-xs text-slate-500">El email que aparecerá como remitente (configurado en servidor)</p>
+                <p className="text-xs text-slate-500">El email que aparecerá como remitente en los correos enviados</p>
               </div>
 
               {/* From Name */}
@@ -1568,11 +1568,11 @@ const Settings = () => {
                 <Input
                   id="smtp_from_name"
                   type="text"
+                  placeholder="Mi Empresa"
                   value={settings.smtp_from_name}
                   onChange={(e) => setSettings(prev => ({ ...prev, smtp_from_name: e.target.value }))}
-                  disabled
                 />
-                <p className="text-xs text-slate-500">El nombre que aparecerá como remitente (configurado en servidor)</p>
+                <p className="text-xs text-slate-500">El nombre que aparecerá como remitente en los correos enviados</p>
               </div>
 
               {/* Submit Button */}
