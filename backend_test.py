@@ -4376,34 +4376,79 @@ class EmployeeProfileTasksTester:
             print(f"   Response Status: {response.status_code}")
             
             if response.status_code == 200:
-                updated_profile = response.json()
-                print(f"   Response Body: {json.dumps(updated_profile, indent=2)}")
+                response_data = response.json()
+                print(f"   Response Body: {json.dumps(response_data, indent=2)}")
                 
-                # Verify allowed fields were updated
-                allowed_updated = (
-                    updated_profile.get('phone') == profile_data['phone'] and
-                    updated_profile.get('address') == profile_data['address'] and
-                    updated_profile.get('city') == profile_data['city'] and
-                    updated_profile.get('emergency_contact_name') == profile_data['emergency_contact_name']
-                )
-                
-                # Verify salary fields were NOT updated (should be ignored)
-                salary_ignored = (
-                    updated_profile.get('salary') != profile_data['salary'] and
-                    updated_profile.get('hourly_rate') != profile_data['hourly_rate']
-                )
-                
-                if allowed_updated:
-                    if salary_ignored:
-                        self.log_test("Update Own Profile", True, 
-                                    "Profile updated successfully, salary fields correctly ignored")
-                    else:
-                        self.log_test("Update Own Profile", True, 
-                                    "Profile updated successfully (salary fields not present to verify)")
-                    return True, updated_profile
+                # Check if response contains success message
+                if 'message' in response_data and 'actualizado' in response_data['message']:
+                    # The endpoint returns a success message, let's verify by getting the profile again
+                    try:
+                        verify_url = f"{self.api_url}/employees/{self.user_id}/profile"
+                        verify_response = self.session.get(verify_url, timeout=30)
+                        
+                        if verify_response.status_code == 200:
+                            updated_profile = verify_response.json()
+                            
+                            # Verify allowed fields were updated
+                            allowed_updated = (
+                                updated_profile.get('phone') == profile_data['phone'] and
+                                updated_profile.get('address') == profile_data['address'] and
+                                updated_profile.get('city') == profile_data['city'] and
+                                updated_profile.get('emergency_contact_name') == profile_data['emergency_contact_name']
+                            )
+                            
+                            # Verify salary fields were NOT updated (should be ignored)
+                            salary_ignored = (
+                                updated_profile.get('salary') != profile_data['salary'] and
+                                updated_profile.get('hourly_rate') != profile_data['hourly_rate']
+                            )
+                            
+                            if allowed_updated:
+                                if salary_ignored:
+                                    self.log_test("Update Own Profile", True, 
+                                                "Profile updated successfully, salary fields correctly ignored")
+                                else:
+                                    self.log_test("Update Own Profile", True, 
+                                                "Profile updated successfully (salary fields not present to verify)")
+                                return True, updated_profile
+                            else:
+                                self.log_test("Update Own Profile", False, "", "Allowed fields were not updated correctly")
+                                return False, {}
+                        else:
+                            self.log_test("Update Own Profile", False, "", "Could not verify profile update")
+                            return False, {}
+                    except Exception as e:
+                        self.log_test("Update Own Profile", False, "", f"Error verifying profile update: {str(e)}")
+                        return False, {}
                 else:
-                    self.log_test("Update Own Profile", False, "", "Allowed fields were not updated correctly")
-                    return False, {}
+                    # If response contains updated profile data directly
+                    updated_profile = response_data
+                    
+                    # Verify allowed fields were updated
+                    allowed_updated = (
+                        updated_profile.get('phone') == profile_data['phone'] and
+                        updated_profile.get('address') == profile_data['address'] and
+                        updated_profile.get('city') == profile_data['city'] and
+                        updated_profile.get('emergency_contact_name') == profile_data['emergency_contact_name']
+                    )
+                    
+                    # Verify salary fields were NOT updated (should be ignored)
+                    salary_ignored = (
+                        updated_profile.get('salary') != profile_data['salary'] and
+                        updated_profile.get('hourly_rate') != profile_data['hourly_rate']
+                    )
+                    
+                    if allowed_updated:
+                        if salary_ignored:
+                            self.log_test("Update Own Profile", True, 
+                                        "Profile updated successfully, salary fields correctly ignored")
+                        else:
+                            self.log_test("Update Own Profile", True, 
+                                        "Profile updated successfully (salary fields not present to verify)")
+                        return True, updated_profile
+                    else:
+                        self.log_test("Update Own Profile", False, "", "Allowed fields were not updated correctly")
+                        return False, {}
             else:
                 try:
                     error_data = response.json()
