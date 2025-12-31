@@ -88,6 +88,9 @@ async def send_email(to_email: str, subject: str, html_content: str, text_conten
 
 def get_task_assigned_email(user_name: str, task_title: str, project_name: str, assigner_name: str):
     """Generate HTML email for task assignment"""
+    config = get_smtp_config()
+    app_url = config['app_url']
+    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -97,7 +100,8 @@ def get_task_assigned_email(user_name: str, task_title: str, project_name: str, 
             .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
             .header {{ background-color: #2563EB; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
             .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
-            .button {{ display: inline-block; padding: 12px 24px; background-color: #2563EB; color: white; text-decoration: none; border-radius: 6px; margin-top: 20px; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: #2563EB; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
+            .button:hover {{ background-color: #1d4ed8; }}
             .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
         </style>
     </head>
@@ -112,10 +116,13 @@ def get_task_assigned_email(user_name: str, task_title: str, project_name: str, 
                 <h2 style="color: #2563EB;">{task_title}</h2>
                 <p><strong>Proyecto:</strong> {project_name}</p>
                 <p>Inicia sesión en ProManage para ver los detalles y comenzar a trabajar.</p>
-                <a href="#" class="button">Ver Tarea</a>
+                <p style="text-align: center;">
+                    <a href="{app_url}/dashboard" class="button">🚀 Ir a ProManage</a>
+                </p>
             </div>
             <div class="footer">
                 <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
+                <p><a href="{app_url}" style="color: #2563EB;">{app_url}</a></p>
             </div>
         </div>
     </body>
@@ -133,6 +140,8 @@ def get_task_assigned_email(user_name: str, task_title: str, project_name: str, 
     Proyecto: {project_name}
     
     Inicia sesión en ProManage para ver los detalles.
+    
+    Ir a la app: {app_url}
     """
     
     return html, text
