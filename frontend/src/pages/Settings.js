@@ -211,7 +211,8 @@ const Settings = () => {
           smtp_password: '',
           smtp_from_email: data.smtp_from_email || 'noreply@promanage.com',
           smtp_from_name: data.smtp_from_name || 'OHSMS ProManage',
-          email_notifications_enabled: data.email_notifications_enabled || false
+          email_notifications_enabled: data.email_notifications_enabled || false,
+          app_url: data.app_url || 'https://promanage.ohsmspr.com'
         });
       }
     } catch (error) {
