@@ -55,7 +55,6 @@ const Layout = ({ children }) => {
       { name: 'Mi Perfil', href: '/my-profile', icon: User },
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Mi Historial', href: '/clock/history', icon: Clock },
-      { name: 'Mis Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
     ];
 
