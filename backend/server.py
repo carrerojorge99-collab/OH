@@ -49,7 +49,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 import requests
 from enum import Enum
-from email_service import send_email, get_task_assigned_email, get_task_completed_email, get_comment_email, get_welcome_email
+from email_service import send_email, get_task_assigned_email, get_task_completed_email, get_comment_email, get_welcome_email, get_task_reminder_email, get_task_status_changed_email
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
