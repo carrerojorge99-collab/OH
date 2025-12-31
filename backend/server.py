@@ -65,6 +65,39 @@ SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-this')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 
+# ==================== AUTO-CREATE DEFAULT ADMIN ====================
+async def create_default_admin():
+    """Create default admin user if no users exist in database"""
+    try:
+        user_count = await db.users.count_documents({})
+        if user_count == 0:
+            import bcrypt
+            default_password = "Admin2024!"
+            hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            
+            default_admin = {
+                "id": "user_admin_default",
+                "user_id": "user_admin_default",
+                "name": "Jorge Carrero Rodriguez",
+                "email": "j.carrero@ohsmspr.com",
+                "password": hashed_password,
+                "role": "super_admin",
+                "picture": None,
+                "is_temp_password": False,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            
+            await db.users.insert_one(default_admin)
+            print("✅ Default admin created: j.carrero@ohsmspr.com / Admin2024!")
+    except Exception as e:
+        print(f"Error creating default admin: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    await create_default_admin()
+
+# ================================================================
+
 class ProjectStatus(str, Enum):
     PLANNING = "planning"
     IN_PROGRESS = "in_progress"
