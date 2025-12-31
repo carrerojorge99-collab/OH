@@ -617,6 +617,49 @@ const Settings = () => {
     }
   };
 
+  // Clear all data function
+  const [clearing, setClearing] = useState(false);
+  const [clearPassword, setClearPassword] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  
+  const handleClearAllData = async () => {
+    if (!clearPassword) {
+      toast.error('Ingresa tu contraseña para confirmar');
+      return;
+    }
+    
+    setClearing(true);
+    try {
+      const response = await fetch(`${API_URL}/api/data/clear-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password: clearPassword })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Error al limpiar datos');
+      }
+      
+      const result = await response.json();
+      toast.success(result.message);
+      setShowClearConfirm(false);
+      setClearPassword('');
+      
+      // Show details
+      console.log('Clear results:', result.results);
+      
+      // Reload page
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+      console.error('Clear error:', error);
+      toast.error(error.message || 'Error al limpiar datos');
+    } finally {
+      setClearing(false);
+    }
+  };
+
   if (user?.role !== 'admin' && user?.role !== 'super_admin') {
     return (
       <Layout>
