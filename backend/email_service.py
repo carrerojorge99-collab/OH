@@ -11,8 +11,8 @@ SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('SMTP_USER', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
-SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', 'noreply@proyecthub.com')
-SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'ProyectHub')
+SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com')
+SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'ProManage')
 EMAIL_NOTIFICATIONS_ENABLED = os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
 
 async def send_email(to_email: str, subject: str, html_content: str, text_content: str = None):
@@ -80,11 +80,11 @@ def get_task_assigned_email(user_name: str, task_title: str, project_name: str, 
                 <p><strong>{assigner_name}</strong> te ha asignado una nueva tarea:</p>
                 <h2 style="color: #2563EB;">{task_title}</h2>
                 <p><strong>Proyecto:</strong> {project_name}</p>
-                <p>Inicia sesión en ProyectHub para ver los detalles y comenzar a trabajar.</p>
+                <p>Inicia sesión en ProManage para ver los detalles y comenzar a trabajar.</p>
                 <a href="#" class="button">Ver Tarea</a>
             </div>
             <div class="footer">
-                <p>Este es un correo automático de ProyectHub. Por favor no respondas a este mensaje.</p>
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
             </div>
         </div>
     </body>
@@ -101,7 +101,7 @@ def get_task_assigned_email(user_name: str, task_title: str, project_name: str, 
     
     Proyecto: {project_name}
     
-    Inicia sesión en ProyectHub para ver los detalles.
+    Inicia sesión en ProManage para ver los detalles.
     """
     
     return html, text
@@ -133,7 +133,7 @@ def get_task_completed_email(user_name: str, task_title: str, project_name: str,
                 <p>¡Excelente trabajo del equipo!</p>
             </div>
             <div class="footer">
-                <p>Este es un correo automático de ProyectHub. Por favor no respondas a este mensaje.</p>
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
             </div>
         </div>
     </body>
@@ -183,7 +183,7 @@ def get_comment_email(user_name: str, project_name: str, commenter_name: str, co
                 </div>
             </div>
             <div class="footer">
-                <p>Este es un correo automático de ProyectHub. Por favor no respondas a este mensaje.</p>
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
             </div>
         </div>
     </body>
@@ -224,11 +224,11 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
     <body>
         <div class="container">
             <div class="header">
-                <h1>🎉 ¡Bienvenido a ProyectHub!</h1>
+                <h1>🎉 ¡Bienvenido a ProManage!</h1>
             </div>
             <div class="content">
                 <p>Hola <strong>{user_name}</strong>,</p>
-                <p>Se ha creado una cuenta para ti en ProyectHub. A continuación encontrarás tus credenciales de acceso:</p>
+                <p>Se ha creado una cuenta para ti en ProManage. A continuación encontrarás tus credenciales de acceso:</p>
                 
                 <div class="credentials">
                     <p><strong>📧 Email:</strong> {email}</p>
@@ -239,10 +239,10 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
                     <p><strong>⚠️ Importante:</strong> Esta es una contraseña temporal. Por seguridad, se te pedirá cambiarla la primera vez que inicies sesión.</p>
                 </div>
                 
-                <p>Inicia sesión en ProyectHub para comenzar a trabajar con tu equipo.</p>
+                <p>Inicia sesión en ProManage para comenzar a trabajar con tu equipo.</p>
             </div>
             <div class="footer">
-                <p>Este es un correo automático de ProyectHub. Por favor no respondas a este mensaje.</p>
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
                 <p>Si no solicitaste esta cuenta, puedes ignorar este correo.</p>
             </div>
         </div>
@@ -251,11 +251,11 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
     """
     
     text = f"""
-    ¡Bienvenido a ProyectHub!
+    ¡Bienvenido a ProManage!
     
     Hola {user_name},
     
-    Se ha creado una cuenta para ti en ProyectHub.
+    Se ha creado una cuenta para ti en ProManage.
     
     Tus credenciales de acceso:
     - Email: {email}
@@ -263,7 +263,7 @@ def get_welcome_email(user_name: str, email: str, temp_password: str, login_url:
     
     IMPORTANTE: Esta es una contraseña temporal. Por seguridad, se te pedirá cambiarla la primera vez que inicies sesión.
     
-    Inicia sesión en ProyectHub para comenzar.
+    Inicia sesión en ProManage para comenzar.
     """
     
     return html, text

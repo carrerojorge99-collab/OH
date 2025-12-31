@@ -908,7 +908,7 @@ async def register(user_data: UserRegister):
     if user_data.email and original_password and is_temp_password:
         try:
             html, text = get_welcome_email(user_data.name, user_data.email, original_password)
-            await send_email(user_data.email, "🎉 Bienvenido a ProyectHub - Tus credenciales de acceso", html, text)
+            await send_email(user_data.email, "🎉 Bienvenido a ProManage - Tus credenciales de acceso", html, text)
         except Exception as e:
             print(f"Error sending welcome email: {e}")
     
@@ -3074,8 +3074,8 @@ async def get_settings(request: Request, session_token: Optional[str] = Cookie(N
         "smtp_host": os.environ.get('SMTP_HOST', 'smtp.gmail.com'),
         "smtp_port": int(os.environ.get('SMTP_PORT', 587)),
         "smtp_user": os.environ.get('SMTP_USER', ''),
-        "smtp_from_email": os.environ.get('SMTP_FROM_EMAIL', 'noreply@proyecthub.com'),
-        "smtp_from_name": os.environ.get('SMTP_FROM_NAME', 'ProyectHub'),
+        "smtp_from_email": os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com'),
+        "smtp_from_name": os.environ.get('SMTP_FROM_NAME', 'ProManage'),
         "email_notifications_enabled": os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
     }
 
@@ -3119,8 +3119,8 @@ async def update_settings(settings: dict, request: Request, session_token: Optio
     email_service.SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
     email_service.SMTP_USER = os.environ.get('SMTP_USER', '')
     email_service.SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
-    email_service.SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', 'noreply@proyecthub.com')
-    email_service.SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'ProyectHub')
+    email_service.SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com')
+    email_service.SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'ProManage')
     email_service.EMAIL_NOTIFICATIONS_ENABLED = os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
     
     return {"message": "Configuración de email actualizada exitosamente"}

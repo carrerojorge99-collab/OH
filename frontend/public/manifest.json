@@ -1,6 +1,6 @@
 {
-  "name": "Proyekta - Gestión de Proyectos",
-  "short_name": "Proyekta",
+  "name": "ProManage - Gestión de Proyectos",
+  "short_name": "ProManage",
   "description": "Sistema completo de gestión de proyectos, tareas y facturación",
   "start_url": "/",
   "display": "standalone",
