@@ -79,6 +79,205 @@
   background: hsl(var(--primary));
 }
 
+/* ==========================================
+   RESPONSIVE DESIGN - Mobile First Approach
+   ========================================== */
+
+/* Base Mobile Styles (320px - 479px) */
+@media (max-width: 479px) {
+  /* Typography */
+  h1 {
+    font-size: 1.5rem !important;
+    line-height: 1.3;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  h3 {
+    font-size: 1.1rem !important;
+  }
+  
+  /* Cards and containers */
+  .stat-card {
+    min-height: auto;
+  }
+  
+  .stat-card .text-3xl {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Tables - horizontal scroll */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Form elements */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  /* Buttons - full width on mobile */
+  .btn-mobile-full {
+    width: 100%;
+  }
+  
+  /* Grid adjustments */
+  .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Spacing */
+  .p-6 {
+    padding: 1rem !important;
+  }
+  
+  .p-8 {
+    padding: 1rem !important;
+  }
+  
+  .gap-6 {
+    gap: 1rem !important;
+  }
+  
+  /* Charts */
+  .recharts-wrapper {
+    max-width: 100% !important;
+  }
+}
+
+/* Small Mobile (480px - 639px) */
+@media (min-width: 480px) and (max-width: 639px) {
+  h1 {
+    font-size: 1.75rem !important;
+  }
+  
+  .stat-card .text-3xl {
+    font-size: 1.75rem !important;
+  }
+  
+  /* 2 columns for some grids */
+  .grid-mobile-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Tablet Portrait (640px - 767px) */
+@media (min-width: 640px) and (max-width: 767px) {
+  h1 {
+    font-size: 2rem !important;
+  }
+  
+  .p-6 {
+    padding: 1.25rem !important;
+  }
+  
+  /* 2 column layouts */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Tablet Landscape (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  h1 {
+    font-size: 2.25rem !important;
+  }
+  
+  /* 2 or 3 column layouts */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Sidebar adjustments for tablet */
+  .lg\:pl-64 {
+    padding-left: 0 !important;
+  }
+  
+  .lg\:translate-x-0 {
+    transform: translateX(-100%) !important;
+  }
+}
+
+/* Large Tablet / Small Desktop (1024px - 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Mobile optimizations - touch targets */
+@media (max-width: 768px) {
+  .stat-card {
+    min-height: 100px;
+  }
+  
+  /* Larger touch targets for mobile */
+  button, 
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better tap targets for links in nav */
+  .sidebar-link {
+    padding: 0.875rem 1rem !important;
+  }
+  
+  /* Better spacing on mobile */
+  .space-y-8 > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  /* Cards padding */
+  .card-content-mobile {
+    padding: 1rem !important;
+  }
+  
+  /* Hide less important columns on mobile */
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  /* Stack flex items on mobile */
+  .flex-mobile-col {
+    flex-direction: column !important;
+  }
+  
+  /* Full width buttons */
+  .btn-mobile-full {
+    width: 100% !important;
+  }
+}
+
+/* Tablet specific (show some hidden elements) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .hide-mobile.show-tablet {
+    display: block !important;
+  }
+  
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
 /* React Big Calendar Custom Styles */
 .rbc-calendar {
   font-family: inherit;
@@ -106,6 +305,8 @@
   position: relative;
   z-index: 10;
   pointer-events: auto;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .rbc-toolbar button {
@@ -147,6 +348,33 @@
   cursor: pointer !important;
 }
 
+/* Calendar responsive */
+@media (max-width: 640px) {
+  .rbc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .rbc-toolbar-label {
+    text-align: center;
+    padding: 0.5rem 0;
+  }
+  
+  .rbc-btn-group {
+    justify-content: center;
+  }
+  
+  .rbc-header {
+    padding: 8px 2px;
+    font-size: 12px;
+  }
+  
+  .rbc-event {
+    font-size: 10px;
+    padding: 1px 3px;
+  }
+}
+
 /* PWA Install Banner Animation */
 @keyframes slide-up {
   from {
@@ -163,32 +391,134 @@
   animation: slide-up 0.4s ease-out;
 }
 
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  .stat-card {
-    min-height: 120px;
-  }
-  
-  /* Larger touch targets for mobile */
-  button, a {
-    min-height: 44px;
-  }
-  
-  /* Better spacing on mobile */
-  .space-y-8 > * + * {
-    margin-top: 1.5rem;
-  }
-}
-
 /* PWA standalone mode styles */
 @media all and (display-mode: standalone) {
   body {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
   
   /* Hide install banner when already installed */
   .pwa-install-banner {
     display: none;
+  }
+}
+
+/* Responsive table wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .table-responsive table {
+    min-width: 600px;
+  }
+}
+
+/* Card grid responsive */
+.card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .card-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Responsive modal/dialog */
+@media (max-width: 640px) {
+  [role="dialog"] {
+    width: calc(100% - 2rem) !important;
+    max-width: none !important;
+    margin: 1rem !important;
+  }
+}
+
+/* Responsive tabs */
+@media (max-width: 640px) {
+  [role="tablist"] {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  [role="tab"] {
+    flex: 1 1 auto;
+    min-width: calc(50% - 0.25rem);
+    justify-content: center;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Form layout responsive */
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Action buttons responsive */
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons > * {
+    width: 100%;
+  }
+}
+
+/* Chart container responsive */
+.chart-container {
+  width: 100%;
+  min-height: 200px;
+}
+
+@media (min-width: 640px) {
+  .chart-container {
+    min-height: 250px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chart-container {
+    min-height: 300px;
   }
 }
