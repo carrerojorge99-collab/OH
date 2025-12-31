@@ -404,7 +404,7 @@ const MyRequests = () => {
                               <span className={req.status === 'approved' ? 'text-green-600' : 'text-red-600'}>
                                 {req.status === 'approved' ? '✓ Aprobado' : '✗ Rechazado'} por {req.reviewed_by_name}
                               </span>
-                              {req.review_notes && <p className="text-slate-500 italic truncate">"{req.review_notes}"</p>}
+                              {req.review_notes && <p className="text-slate-500 italic truncate">&ldquo;{req.review_notes}&rdquo;</p>}
                             </div>
                           )}
                         </div>
