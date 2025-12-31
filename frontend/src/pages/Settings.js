@@ -643,7 +643,23 @@ const Settings = () => {
       }
       
       const result = await response.json();
-      toast.success(result.message);
+      
+      // Show detailed results
+      const totalDeleted = result.total_deleted || 0;
+      const details = Object.entries(result.results || {})
+        .filter(([_, v]) => v.deleted > 0)
+        .map(([k, v]) => `${k}: ${v.deleted}`)
+        .join(', ');
+      
+      if (totalDeleted > 0) {
+        toast.success(`✅ ${result.message}`);
+        if (details) {
+          console.log('Datos eliminados:', details);
+        }
+      } else {
+        toast.info('No había datos para eliminar');
+      }
+      
       setShowClearConfirm(false);
       setClearPassword('');
       
