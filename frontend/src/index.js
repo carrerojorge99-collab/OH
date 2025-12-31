@@ -9,12 +9,32 @@ axios.defaults.headers.common['Cache-Control'] = 'no-cache, no-store, must-reval
 axios.defaults.headers.common['Pragma'] = 'no-cache';
 axios.defaults.headers.common['Expires'] = '0';
 
-// Register Service Worker for PWA
+// Register Service Worker for PWA with auto-update
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
       .then((registration) => {
         console.log('SW registered: ', registration);
+        
+        // Check for updates periodically (every 5 minutes)
+        setInterval(() => {
+          registration.update();
+        }, 5 * 60 * 1000);
+        
+        // Handle updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('New service worker found, installing...');
+          
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New content is available, show refresh prompt
+              console.log('New content available, reloading...');
+              // Auto-reload to get new content
+              window.location.reload();
+            }
+          });
+        });
         
         // Request notification permission
         if ('Notification' in window && Notification.permission === 'default') {
@@ -26,6 +46,12 @@ if ('serviceWorker' in navigator) {
       .catch((registrationError) => {
         console.log('SW registration failed: ', registrationError);
       });
+  });
+  
+  // When the service worker takes control, reload the page
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('New service worker activated, reloading...');
+    window.location.reload();
   });
 }
 
