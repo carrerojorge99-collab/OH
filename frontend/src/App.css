@@ -395,7 +395,6 @@
 @media all and (display-mode: standalone) {
   body {
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
@@ -404,6 +403,51 @@
   .pwa-install-banner {
     display: none;
   }
+}
+
+/* Safe area for bottom navigation */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Fixed header/footer mobile adjustments */
+@media (max-width: 1023px) {
+  /* Account for fixed header */
+  .pt-safe-header {
+    padding-top: 3.5rem; /* 56px = h-14 */
+  }
+  
+  /* Account for fixed footer */
+  .pb-safe-footer {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0)); /* 64px + safe area */
+  }
+}
+
+/* Smooth scrolling for main content */
+main {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Bottom nav active indicator animation */
+.bottom-nav-item {
+  position: relative;
+}
+
+.bottom-nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background-color: #f97316;
+  transition: width 0.2s ease-out;
+}
+
+.bottom-nav-item.active::after {
+  width: 50%;
 }
 
 /* Responsive table wrapper */
