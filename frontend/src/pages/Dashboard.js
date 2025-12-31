@@ -210,16 +210,16 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {statCards.map((stat, index) => (
             <Card key={index} data-testid={stat.testId} className="stat-card border-slate-200 shadow-sm hover:shadow-md">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
-                    <p className={`text-3xl font-bold tracking-tight ${stat.isCurrency ? 'font-mono' : ''}`}>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1 truncate">{stat.title}</p>
+                    <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight ${stat.isCurrency ? 'font-mono text-sm sm:text-base md:text-xl lg:text-2xl' : ''}`}>
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                  <div className={`p-2 sm:p-3 rounded-full ${stat.bgColor} flex-shrink-0`}>
+                    <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${stat.color}`} />
                   </div>
                 </div>
               </CardContent>
