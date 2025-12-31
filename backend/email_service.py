@@ -30,7 +30,8 @@ def get_smtp_config():
         'password': env_values.get('SMTP_PASSWORD', os.environ.get('SMTP_PASSWORD', '')),
         'from_email': env_values.get('SMTP_FROM_EMAIL', os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com')),
         'from_name': env_values.get('SMTP_FROM_NAME', os.environ.get('SMTP_FROM_NAME', 'ProManage')),
-        'enabled': env_values.get('EMAIL_NOTIFICATIONS_ENABLED', os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false')).lower() == 'true'
+        'enabled': env_values.get('EMAIL_NOTIFICATIONS_ENABLED', os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false')).lower() == 'true',
+        'app_url': env_values.get('APP_URL', os.environ.get('APP_URL', 'https://promanage.ohsmspr.com'))
     }
 
 # Legacy variables for backward compatibility - these can be updated at runtime
