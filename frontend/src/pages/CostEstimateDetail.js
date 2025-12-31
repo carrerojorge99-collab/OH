@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import api, { getBackendUrl } from '../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
