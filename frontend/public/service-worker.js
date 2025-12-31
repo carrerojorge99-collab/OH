@@ -1,6 +1,6 @@
 // Version timestamp - change this on each deploy to force cache update
 const CACHE_VERSION = 'v3-' + Date.now();
-const CACHE_NAME = 'proyekta-' + CACHE_VERSION;
+const CACHE_NAME = 'promanage-' + CACHE_VERSION;
 
 // Only cache essential static assets
 const urlsToCache = [
