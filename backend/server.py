@@ -68,33 +68,49 @@ ACCESS_TOKEN_EXPIRE_DAYS = 7
 # ==================== AUTO-CREATE DEFAULT ADMIN ====================
 async def create_default_admin():
     """Create default admin user if no users exist in database"""
-    try:
-        user_count = await db.users.count_documents({})
-        if user_count == 0:
-            import bcrypt
-            default_password = "Admin2024!"
-            hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            
-            default_admin = {
-                "id": "user_admin_default",
-                "user_id": "user_admin_default",
-                "name": "Jorge Carrero Rodriguez",
-                "email": "j.carrero@ohsmspr.com",
-                "password": hashed_password,
-                "role": "super_admin",
-                "picture": None,
-                "is_temp_password": False,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-            
-            await db.users.insert_one(default_admin)
-            print("✅ Default admin created: j.carrero@ohsmspr.com / Admin2024!")
-    except Exception as e:
-        print(f"Error creating default admin: {e}")
+    import asyncio
+    max_retries = 3
+    
+    for attempt in range(max_retries):
+        try:
+            user_count = await db.users.count_documents({})
+            if user_count == 0:
+                import bcrypt
+                default_password = "Admin2024!"
+                hashed_password = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                
+                default_admin = {
+                    "id": "user_admin_default",
+                    "user_id": "user_admin_default",
+                    "name": "Jorge Carrero Rodriguez",
+                    "email": "j.carrero@ohsmspr.com",
+                    "password": hashed_password,
+                    "role": "super_admin",
+                    "picture": None,
+                    "is_temp_password": False,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                
+                await db.users.insert_one(default_admin)
+                print("✅ Default admin created: j.carrero@ohsmspr.com / Admin2024!")
+            else:
+                print(f"ℹ️ Database has {user_count} users, skipping default admin creation")
+            return  # Success, exit function
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt + 1}/{max_retries} - Error creating default admin: {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(2)  # Wait before retry
+    
+    print("⚠️ Could not create default admin after retries, app will continue without it")
 
 @app.on_event("startup")
 async def startup_event():
-    await create_default_admin()
+    # Run in background to not block app startup
+    try:
+        await create_default_admin()
+    except Exception as e:
+        print(f"⚠️ Startup admin creation skipped: {e}")
+        # Don't crash the app, continue without default admin
 
 # ================================================================
 
