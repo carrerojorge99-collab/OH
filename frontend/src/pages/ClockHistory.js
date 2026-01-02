@@ -310,6 +310,13 @@ const ClockHistory = () => {
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-slate-900">Historial de Ponches</h1>
+          <Button 
+            onClick={() => setManualDialogOpen(true)}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Ponche Manual
+          </Button>
         </div>
 
         {/* Filters */}
