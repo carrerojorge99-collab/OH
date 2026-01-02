@@ -49,6 +49,28 @@ const Estimates = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEstimate, setEditingEstimate] = useState(null);
   const [selectedEstimate, setSelectedEstimate] = useState(null);
+  // Default to current year
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+
+  // Generate available years from estimates
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    estimates.forEach(e => {
+      if (e.created_at) {
+        years.add(new Date(e.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [estimates]);
+
+  // Filter estimates by year
+  const filteredEstimates = useMemo(() => {
+    if (yearFilter === 'all') return estimates;
+    return estimates.filter(e => {
+      const year = e.created_at ? new Date(e.created_at).getFullYear() : new Date().getFullYear();
+      return year === parseInt(yearFilter);
+    });
+  }, [estimates, yearFilter]);
   
   const [form, setForm] = useState({
     project_id: '',
