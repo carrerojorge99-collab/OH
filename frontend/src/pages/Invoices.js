@@ -243,9 +243,17 @@ const Invoices = () => {
     const subtotal = manualForm.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
     const discountAmount = subtotal * (parseFloat(manualForm.discount_percent) || 0) / 100;
     const taxableAmount = subtotal - discountAmount;
-    const taxAmount = taxableAmount * (parseFloat(manualForm.tax_rate) || 0) / 100;
+    // Calculate tax from selected taxes
+    const totalTaxRate = manualForm.selected_taxes.reduce((sum, t) => sum + (t.percentage || 0), 0);
+    const taxAmount = taxableAmount * totalTaxRate / 100;
     const total = taxableAmount + taxAmount;
-    return { subtotal, discountAmount, taxAmount, total };
+    // Calculate individual tax amounts for display
+    const taxDetails = manualForm.selected_taxes.map(t => ({
+      name: t.name,
+      percentage: t.percentage,
+      amount: taxableAmount * t.percentage / 100
+    }));
+    return { subtotal, discountAmount, taxAmount, total, taxDetails };
   };
 
   const handleManualSubmit = async (e) => {
@@ -255,6 +263,9 @@ const Invoices = () => {
       toast.error('Complete los campos requeridos');
       return;
     }
+
+    // Calculate total tax rate from selected taxes
+    const totalTaxRate = manualForm.selected_taxes.reduce((sum, t) => sum + (t.percentage || 0), 0);
 
     try {
       const payload = {
@@ -266,7 +277,8 @@ const Invoices = () => {
           unit_price: parseFloat(item.unit_price) || 0,
           amount: parseFloat(item.amount) || 0
         })),
-        tax_rate: parseFloat(manualForm.tax_rate) || 0,
+        tax_rate: totalTaxRate,
+        selected_taxes: manualForm.selected_taxes,
         discount_percent: parseFloat(manualForm.discount_percent) || 0
       };
 
@@ -282,8 +294,7 @@ const Invoices = () => {
         sponsor_name: '',
         items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
         tax_rate: 0,
-        tax_type_id: '',
-        tax_type_name: '',
+        selected_taxes: [],
         discount_percent: 0,
         notes: '',
         terms: '',
