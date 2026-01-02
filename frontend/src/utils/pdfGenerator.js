@@ -1365,12 +1365,12 @@ const getPriorityLabel = (priority) => {
   return labels[priority] || priority || 'N/A';
 };
 
-export { COLORS };
+export { COLORS, formatCurrency };
 
 export default { 
   fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addItemsTable, 
   addTotalsSection, addNotesSection, addFooter, addReportHeader, addReportTable, 
-  addPayStubHeader, addPaySection, COLORS,
+  addPayStubHeader, addPaySection, COLORS, formatCurrency,
   // Safety Reports
   generateSafetyDashboardReport, generateIncidentsReport, generateIncidentDetailReport,
   generateToolboxTalksReport, generateToolboxTalkDetailReport, generateChecklistsReport,
