@@ -7556,7 +7556,7 @@ async def export_cost_estimate_pdf(
     tax_pct = estimate.get('tax_percentage', 0)
     b2b_pct = estimate.get('b2b_percentage', 0)
     
-    # CASCADING CALCULATION:
+    # CASCADING CALCULATION (Profit → Overhead → CFSE → Liability → Municipal Patent):
     # 1. Subtotal + Profit
     profit_amount = subtotal * profit_pct / 100
     after_profit = subtotal + profit_amount
@@ -7573,7 +7573,7 @@ async def export_cost_estimate_pdf(
     liability_amount = after_cfse * liability_pct / 100
     after_liability = after_cfse + liability_amount
     
-    # 5. After Liability + Patente Municipal
+    # 5. After Liability + Municipal Patent
     municipal_patent_amount = after_liability * municipal_patent_pct / 100
     after_municipal_patent = after_liability + municipal_patent_amount
     
