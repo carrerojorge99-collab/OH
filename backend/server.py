@@ -1112,10 +1112,19 @@ async def change_password(data: dict, request: Request, session_token: Optional[
 
 @api_router.post("/projects", response_model=Project)
 async def create_project(project_data: ProjectCreate, request: Request, session_token: Optional[str] = Cookie(None)):
-    user = await get_current_user(request, session_token)
+    print("=== CREATE PROJECT REQUEST ===")
+    print(f"Project data received: {project_data}")
+    
+    try:
+        user = await get_current_user(request, session_token)
+        print(f"User authenticated: {user.email} (role: {user.role})")
+    except Exception as e:
+        print(f"Authentication error: {e}")
+        raise
     
     # Solo admins y project managers pueden crear proyectos
     if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        print(f"Permission denied for role: {user.role}")
         raise HTTPException(status_code=403, detail="No tienes permiso para crear proyectos")
     
     project_id = f"proj_{uuid.uuid4().hex[:12]}"
@@ -1150,7 +1159,13 @@ async def create_project(project_data: ProjectCreate, request: Request, session_
         "updated_at": now
     }
     
-    await db.projects.insert_one(project_doc)
+    print(f"Inserting project: {project_id}")
+    try:
+        await db.projects.insert_one(project_doc)
+        print(f"Project inserted successfully: {project_id}")
+    except Exception as e:
+        print(f"Database insert error: {e}")
+        raise
     
     # Log audit
     await log_audit(
