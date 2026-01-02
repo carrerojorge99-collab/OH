@@ -31,7 +31,8 @@ const Projects = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
-  const [yearFilter, setYearFilter] = useState('all');
+  // Default to current year so previous years are "historical"
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [users, setUsers] = useState([]);
