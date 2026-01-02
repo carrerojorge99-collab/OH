@@ -49,8 +49,9 @@ const Estimates = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEstimate, setEditingEstimate] = useState(null);
   const [selectedEstimate, setSelectedEstimate] = useState(null);
-  // Default to current year
-  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+  // Start with 'all' and update to current year if data exists
+  const [yearFilter, setYearFilter] = useState('all');
+  const [yearInitialized, setYearInitialized] = useState(false);
 
   // Generate available years from estimates
   const availableYears = useMemo(() => {
@@ -71,6 +72,17 @@ const Estimates = () => {
       return year === parseInt(yearFilter);
     });
   }, [estimates, yearFilter]);
+
+  // Auto-set year filter to current year if available
+  useEffect(() => {
+    if (!yearInitialized && estimates.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setYearFilter(currentYear.toString());
+      }
+      setYearInitialized(true);
+    }
+  }, [estimates, availableYears, yearInitialized]);
   
   const [form, setForm] = useState({
     project_id: '',
