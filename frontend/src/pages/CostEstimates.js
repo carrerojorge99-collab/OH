@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Plus, FileText, DollarSign, ArrowRight, Trash2, Pencil, Download } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Plus, FileText, DollarSign, ArrowRight, Trash2, Pencil, Download, Calendar, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
@@ -18,6 +19,28 @@ const CostEstimates = () => {
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
+  // Default to current year
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+
+  // Generate available years from estimates
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    estimates.forEach(e => {
+      if (e.created_at) {
+        years.add(new Date(e.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [estimates]);
+
+  // Filter estimates by year
+  const filteredEstimates = useMemo(() => {
+    if (yearFilter === 'all') return estimates;
+    return estimates.filter(e => {
+      const year = e.created_at ? new Date(e.created_at).getFullYear() : new Date().getFullYear();
+      return year === parseInt(yearFilter);
+    });
+  }, [estimates, yearFilter]);
 
   useEffect(() => {
     loadData();
