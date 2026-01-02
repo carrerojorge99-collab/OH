@@ -39,7 +39,7 @@ const Settings = () => {
   const [nomenclatureForm, setNomenclatureForm] = useState({
     name: '',
     prefix: '',
-    starting_number: 100
+    department_number: ''
   });
   const [editingNomenclature, setEditingNomenclature] = useState(null);
   
