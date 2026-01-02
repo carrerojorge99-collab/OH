@@ -988,9 +988,9 @@ const Invoices = () => {
         </div>
 
         {/* Invoices List */}
-        {invoices.length > 0 ? (
+        {filteredInvoices.length > 0 ? (
           <div className="grid grid-cols-1 gap-4">
-            {invoices.map((invoice) => (
+            {filteredInvoices.map((invoice) => (
               <Card key={invoice.invoice_id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4">
