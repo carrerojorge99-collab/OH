@@ -638,7 +638,7 @@ const Projects = () => {
               </SelectContent>
             </Select>
 
-            {(statusFilter !== 'all' || priorityFilter !== 'all' || paymentFilter !== 'all' || searchTerm) && (
+            {(statusFilter !== 'all' || priorityFilter !== 'all' || paymentFilter !== 'all' || yearFilter !== 'all' || searchTerm) && (
               <Button
                 variant="outline"
                 className="w-full sm:w-auto"
@@ -647,6 +647,7 @@ const Projects = () => {
                   setStatusFilter('all');
                   setPriorityFilter('all');
                   setPaymentFilter('all');
+                  setYearFilter('all');
                 }}
               >
                 Limpiar Filtros
