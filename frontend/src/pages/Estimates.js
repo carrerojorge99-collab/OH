@@ -304,10 +304,12 @@ const Estimates = () => {
     // Tasks table
     y = addTasksTable(doc, estimate.items, y + 4);
     
-    // Totals
-    y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y);
+    // Totals with tax details if available
+    const taxDetails = estimate.tax_type_name && estimate.tax_percentage ? 
+      [{ name: estimate.tax_type_name, percentage: estimate.tax_percentage, amount: estimate.tax_amount || 0 }] : null;
+    y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y, taxDetails);
     
-    // Notes
+    // Notes - with 2-column terms
     addNotesSection(doc, estimate.notes, estimate.terms, y);
     
     // Footer
