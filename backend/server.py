@@ -4679,6 +4679,10 @@ async def update_company_settings(
         "geofence_radius": company_data.get("geofence_radius", 100),
         "geofence_enabled": company_data.get("geofence_enabled", False),
         "minimum_margin_percent": company_data.get("minimum_margin_percent", 15),
+        "default_b2b_percentage": company_data.get("default_b2b_percentage", 4),
+        "default_cfse_percentage": company_data.get("default_cfse_percentage", 7),
+        "default_liability_percentage": company_data.get("default_liability_percentage", 7),
+        "default_municipal_patent_percentage": company_data.get("default_municipal_patent_percentage", 1),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
