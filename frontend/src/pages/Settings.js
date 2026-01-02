@@ -1387,11 +1387,12 @@ const Settings = () => {
                       />
                     </div>
                     <div>
-                      <Label>Número Inicial</Label>
+                      <Label>Número Departamento</Label>
                       <Input
-                        type="number"
-                        value={nomenclatureForm.starting_number}
-                        onChange={(e) => setNomenclatureForm({...nomenclatureForm, starting_number: parseInt(e.target.value)})}
+                        type="text"
+                        value={nomenclatureForm.department_number}
+                        onChange={(e) => setNomenclatureForm({...nomenclatureForm, department_number: e.target.value})}
+                        placeholder="Ej: 101"
                       />
                     </div>
                   </div>
@@ -1411,10 +1412,10 @@ const Settings = () => {
                           <div>
                             <p className="font-medium">{nom.name} ({nom.prefix})</p>
                             <p className="text-sm text-slate-600">
-                              Formato: {nom.prefix}-{new Date().getFullYear()}-{nom.starting_number}-#
+                              Formato: {nom.prefix}-{new Date().getFullYear()}-{nom.department_number || '###'}-#
                             </p>
                             <p className="text-xs text-slate-500">
-                              Próximo: {nom.prefix}-{new Date().getFullYear()}-{nom.starting_number}-{nom.current_number || 1}
+                              Próximo: {nom.prefix}-{new Date().getFullYear()}-{nom.department_number || '###'}-{nom.current_number || 1}
                             </p>
                           </div>
                           <Button size="sm" variant="ghost" onClick={() => handleDeleteNomenclature(nom.nomenclature_id)}>
