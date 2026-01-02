@@ -506,6 +506,32 @@ const Estimates = () => {
                 )}
 
                 {/* Client Info */}
+                {/* Saved Client Profiles Selector */}
+                {clientProfiles.length > 0 && !editingEstimate && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <Label className="flex items-center gap-2 text-blue-700 mb-2">
+                      <Users className="w-4 h-4" />
+                      Cargar Cliente Guardado
+                    </Label>
+                    <Select onValueChange={(profileId) => {
+                      const profile = clientProfiles.find(p => p.profile_id === profileId);
+                      if (profile) handleSelectClientProfile(profile);
+                    }}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Seleccionar cliente guardado..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clientProfiles.map(profile => (
+                          <SelectItem key={profile.profile_id} value={profile.profile_id}>
+                            {profile.company_name || profile.contact_name} {profile.email && `(${profile.email})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-blue-600 mt-1">Los datos del cliente se cargarán automáticamente</p>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Proyecto (opcional)</Label>
@@ -522,7 +548,10 @@ const Estimates = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label>Nombre de Empresa</Label>
+                    <Label className="flex items-center gap-1">
+                      <Building2 className="w-3 h-3" />
+                      Nombre de Empresa
+                    </Label>
                     <Input 
                       value={form.client_company} 
                       onChange={(e) => setForm({...form, client_company: e.target.value})} 
