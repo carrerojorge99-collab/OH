@@ -2122,6 +2122,75 @@ async def get_assigned_projects(
     
     return projects
 
+class ClockEditRequest(BaseModel):
+    clock_in: Optional[str] = None
+    clock_out: Optional[str] = None
+    notes: Optional[str] = None
+
+@api_router.put("/clock/{clock_id}")
+async def update_clock_entry(
+    clock_id: str,
+    data: ClockEditRequest,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Edit a clock entry (admin/RRHH/PM only)"""
+    user = await get_current_user(request, session_token)
+    
+    # Only admins, RRHH and PM can edit clock entries
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Solo administradores, RRHH o PM pueden editar ponches")
+    
+    # Find the clock entry
+    clock_entry = await db.clock_entries.find_one({"clock_id": clock_id}, {"_id": 0})
+    if not clock_entry:
+        raise HTTPException(status_code=404, detail="Ponche no encontrado")
+    
+    # Build update object
+    update_data = {"updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()}
+    
+    if data.clock_in:
+        update_data["clock_in"] = data.clock_in
+    
+    if data.clock_out:
+        update_data["clock_out"] = data.clock_out
+        # Recalculate hours worked
+        clock_in_time = datetime.fromisoformat(data.clock_in if data.clock_in else clock_entry['clock_in'])
+        clock_out_time = datetime.fromisoformat(data.clock_out)
+        hours_worked = (clock_out_time - clock_in_time).total_seconds() / 3600
+        update_data["hours_worked"] = round(hours_worked, 2)
+        update_data["status"] = "completed"
+    
+    if data.notes is not None:
+        update_data["notes"] = data.notes
+    
+    # Update the clock entry
+    await db.clock_entries.update_one(
+        {"clock_id": clock_id},
+        {"$set": update_data}
+    )
+    
+    # Update associated timesheet if exists
+    if "hours_worked" in update_data:
+        await db.timesheet.update_one(
+            {"clock_id": clock_id},
+            {"$set": {"hours": update_data["hours_worked"]}}
+        )
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "update",
+        "clock_entry",
+        clock_id,
+        {"old": clock_entry, "new": update_data}
+    )
+    
+    # Return updated entry
+    updated_entry = await db.clock_entries.find_one({"clock_id": clock_id}, {"_id": 0})
+    return ClockEntry(**updated_entry)
+
 @api_router.delete("/clock/{clock_id}")
 async def delete_clock_entry(
     clock_id: str,
