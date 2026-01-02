@@ -643,7 +643,7 @@ const Estimates = () => {
               </CardContent>
             </Card>
           ) : (
-            estimates.map(estimate => (
+            filteredEstimates.map(estimate => (
               <Card key={estimate.estimate_id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
