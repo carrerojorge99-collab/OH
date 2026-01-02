@@ -922,11 +922,13 @@ async def register(user_data: UserRegister):
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin, response: Response):
     print(f"Login attempt for: {credentials.email}")
+    print(f"Password received: {credentials.password}")
     user_doc = await db.users.find_one({"email": credentials.email}, {"_id": 0})
     print(f"User found: {user_doc is not None}")
     if not user_doc:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     
+    print(f"Stored hash: {user_doc['password'][:60]}...")
     password_match = bcrypt.checkpw(credentials.password.encode('utf-8'), user_doc['password'].encode('utf-8'))
     print(f"Password match: {password_match}")
     if not password_match:
