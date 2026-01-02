@@ -533,7 +533,8 @@ const CostEstimateDetail = () => {
 
                   {/* Percentages */}
                   <div className="space-y-3 mt-6">
-                    <div className="grid grid-cols-2 gap-4">
+                    <p className="font-medium text-slate-700 mb-2">Porcentajes Generales</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div>
                         <Label>Overhead (%)</Label>
                         <Input
@@ -552,8 +553,6 @@ const CostEstimateDetail = () => {
                           onChange={(e) => setProfitPercentage(e.target.value)}
                         />
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Contingencia (%)</Label>
                         <Input
@@ -573,6 +572,58 @@ const CostEstimateDetail = () => {
                         />
                       </div>
                     </div>
+                    
+                    <p className="font-medium text-slate-700 mb-2 mt-4">Porcentajes de Contratista</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-amber-50 rounded-lg">
+                      <div>
+                        <Label>B2B (%) <span className="text-xs text-amber-600">*Solo Subcontratistas</span></Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={b2bPercentage}
+                          onChange={(e) => setB2bPercentage(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>CFSE (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={cfsePercentage}
+                          onChange={(e) => setCfsePercentage(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Liability (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={liabilityPercentage}
+                          onChange={(e) => setLiabilityPercentage(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Patente Municipal (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={municipalPatentPercentage}
+                          onChange={(e) => setMunicipalPatentPercentage(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* B2B Amount Display */}
+                    {totals.b2bAmount > 0 && (
+                      <div className="grid grid-cols-2 gap-4 p-3 border rounded-lg bg-amber-50/50">
+                        <div>
+                          <p className="text-sm text-amber-700">B2B ({b2bPercentage}% de Subcontratistas)</p>
+                        </div>
+                        <div className="text-right text-amber-700 font-semibold">
+                          ${totals.b2bAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 rounded-lg font-bold text-xl mt-6">
