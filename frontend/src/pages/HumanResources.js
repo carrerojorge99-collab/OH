@@ -56,7 +56,27 @@ const HumanResources = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  useEffect(() => { loadEmployees(); }, []);
+  const loadEmployees = useCallback(async () => {
+    try {
+      const response = await api.get('/employees');
+      setEmployees(response.data);
+      setLoading(false);
+    } catch (error) {
+      toast.error('Error al cargar empleados');
+      setLoading(false);
+    }
+  }, []);
+
+  const loadDocuments = useCallback(async (userId) => {
+    try {
+      const response = await api.get(`/employees/${userId}/documents`);
+      setDocuments(response.data);
+    } catch (error) {
+      setDocuments([]);
+    }
+  }, []);
+
+  useEffect(() => { loadEmployees(); }, [loadEmployees]);
 
   useEffect(() => {
     if (selectedEmployee) {
@@ -75,27 +95,7 @@ const HumanResources = () => {
         notes: emp.notes || ''
       });
     }
-  }, [selectedEmployee]);
-
-  const loadEmployees = async () => {
-    try {
-      const response = await api.get('/employees');
-      setEmployees(response.data);
-      setLoading(false);
-    } catch (error) {
-      toast.error('Error al cargar empleados');
-      setLoading(false);
-    }
-  };
-
-  const loadDocuments = async (userId) => {
-    try {
-      const response = await api.get(`/employees/${userId}/documents`);
-      setDocuments(response.data);
-    } catch (error) {
-      setDocuments([]);
-    }
-  };
+  }, [selectedEmployee, loadDocuments]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
