@@ -682,15 +682,15 @@ const Estimates = () => {
                     )}
                   </div>
                   <div className="bg-slate-50 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${totals.subtotal.toFixed(2)}</span></div>
-                    {totals.discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${totals.discountAmount.toFixed(2)}</span></div>}
+                    <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${formatCurrency(totals.subtotal)}</span></div>
+                    {totals.discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${formatCurrency(totals.discountAmount)}</span></div>}
                     {totals.taxDetails && totals.taxDetails.map((tax, idx) => (
                       <div key={idx} className="flex justify-between text-sm text-slate-600">
                         <span>{tax.name} ({tax.percentage}%):</span>
-                        <span>${tax.amount.toFixed(2)}</span>
+                        <span>${formatCurrency(tax.amount)}</span>
                       </div>
                     ))}
-                    <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${totals.total.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${formatCurrency(totals.total)}</span></div>
                   </div>
                 </div>
 
