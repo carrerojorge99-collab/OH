@@ -244,6 +244,26 @@ const Estimates = () => {
       } else {
         await api.post(`/estimates`, payload, { withCredentials: true });
         toast.success('Estimado creado');
+        
+        // Automatically create/find client profile for reuse
+        if (form.client_email || form.client_company) {
+          try {
+            const profileData = {
+              company_name: form.client_company || '',
+              contact_name: form.client_name,
+              email: form.client_email || '',
+              phone: form.client_phone || '',
+              address: form.client_address || ''
+            };
+            const profileRes = await api.post('/client-profiles/find-or-create', profileData, { withCredentials: true });
+            if (!profileRes.data.found) {
+              toast.info('Perfil de cliente guardado para uso futuro');
+            }
+          } catch (profileErr) {
+            // Silent fail - profile creation is optional
+            console.log('Could not save client profile:', profileErr);
+          }
+        }
       }
       
       setDialogOpen(false);
@@ -252,6 +272,20 @@ const Estimates = () => {
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al guardar estimado');
     }
+  };
+
+  // Function to fill form with saved client profile
+  const handleSelectClientProfile = (profile) => {
+    if (!profile) return;
+    setForm(prev => ({
+      ...prev,
+      client_company: profile.company_name || '',
+      client_name: profile.contact_name || '',
+      client_email: profile.email || '',
+      client_phone: profile.phone || '',
+      client_address: profile.address || ''
+    }));
+    toast.success('Datos del cliente cargados');
   };
 
   const handleEdit = (estimate) => {
