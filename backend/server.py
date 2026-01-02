@@ -591,8 +591,7 @@ class EstimateCreate(BaseModel):
     description: Optional[str] = None
     items: List[EstimateItem]
     tax_rate: float = 0.0
-    tax_type_name: Optional[str] = None
-    tax_percentage: Optional[float] = None
+    selected_taxes: Optional[List[dict]] = []
     discount_percent: float = 0.0
     notes: Optional[str] = None
     terms: Optional[str] = None
