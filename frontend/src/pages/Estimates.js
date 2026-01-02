@@ -493,13 +493,44 @@ const Estimates = () => {
                     <Input type="number" value={form.discount_percent} onChange={(e) => setForm({...form, discount_percent: e.target.value})} />
                   </div>
                   <div>
-                    <Label>Impuesto (%)</Label>
-                    <Input type="number" value={form.tax_rate} onChange={(e) => setForm({...form, tax_rate: e.target.value})} />
+                    <Label>Tipo de Impuesto</Label>
+                    <Select 
+                      value={form.tax_type_name || 'custom'} 
+                      onValueChange={(v) => {
+                        if (v === 'custom') {
+                          setForm({...form, tax_type_name: '', tax_percentage: 0, tax_rate: 0});
+                        } else {
+                          const tax = taxTypes.find(t => t.name === v);
+                          if (tax) {
+                            setForm({...form, tax_type_name: tax.name, tax_percentage: tax.percentage, tax_rate: tax.percentage});
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar impuesto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="custom">Personalizado</SelectItem>
+                        {taxTypes.filter(t => t.is_active).map(tax => (
+                          <SelectItem key={tax.id} value={tax.name}>{tax.name} ({tax.percentage}%)</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg">
+                  <div>
+                    <Label>Impuesto (%)</Label>
+                    <Input 
+                      type="number" 
+                      value={form.tax_rate} 
+                      onChange={(e) => setForm({...form, tax_rate: e.target.value, tax_type_name: '', tax_percentage: parseFloat(e.target.value) || 0})} 
+                      disabled={!!form.tax_type_name}
+                    />
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-lg">
                     <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${totals.subtotal.toFixed(2)}</span></div>
                     {totals.discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${totals.discountAmount.toFixed(2)}</span></div>}
-                    {totals.taxAmount > 0 && <div className="flex justify-between text-sm"><span>Impuesto:</span><span>${totals.taxAmount.toFixed(2)}</span></div>}
+                    {totals.taxAmount > 0 && <div className="flex justify-between text-sm"><span>Impuesto {form.tax_type_name ? `(${form.tax_type_name})` : ''}:</span><span>${totals.taxAmount.toFixed(2)}</span></div>}
                     <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${totals.total.toFixed(2)}</span></div>
                   </div>
                 </div>
