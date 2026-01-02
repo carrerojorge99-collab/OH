@@ -370,8 +370,10 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   const lineHeight = 3.5;
   
   // Prepare all lines for both columns
-  const termsLines = terms ? terms.split('\n').filter(line => line.trim()) : [];
-  const notesLines = notes ? notes.split('\n').filter(line => line.trim()) : [];
+  const termsText = terms || '';
+  const notesText = notes || '';
+  const termsLines = termsText.split('\n').filter(line => line && line.trim());
+  const notesLines = notesText.split('\n').filter(line => line && line.trim());
   
   // Wrap all text into lines that fit column width
   doc.setFontSize(7);
@@ -379,14 +381,31 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   const wrappedNotes = [];
   
   termsLines.forEach(line => {
-    const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
-    wrappedTerms.push(...wrapped);
+    if (line && line.trim()) {
+      const wrapped = doc.splitTextToSize(String(line).trim(), columnWidth);
+      if (Array.isArray(wrapped)) {
+        wrapped.forEach(w => { if (w) wrappedTerms.push(String(w)); });
+      } else if (wrapped) {
+        wrappedTerms.push(String(wrapped));
+      }
+    }
   });
   
   notesLines.forEach(line => {
-    const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
-    wrappedNotes.push(...wrapped);
+    if (line && line.trim()) {
+      const wrapped = doc.splitTextToSize(String(line).trim(), columnWidth);
+      if (Array.isArray(wrapped)) {
+        wrapped.forEach(w => { if (w) wrappedNotes.push(String(w)); });
+      } else if (wrapped) {
+        wrappedNotes.push(String(wrapped));
+      }
+    }
   });
+  
+  // If no content after processing, return early
+  if (wrappedTerms.length === 0 && wrappedNotes.length === 0) {
+    return startY;
+  }
   
   // Calculate how many lines fit per page
   const headerHeight = 15;
@@ -413,10 +432,10 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
     
     const headerSuffix = isFirstPage ? '' : ' (cont.)';
     
-    if (terms && termsIdx < wrappedTerms.length) {
+    if (termsText && termsIdx < wrappedTerms.length) {
       doc.text('Terms & Conditions' + headerSuffix, leftColStart, currentY + 3);
     }
-    if (notes && notesIdx < wrappedNotes.length) {
+    if (notesText && notesIdx < wrappedNotes.length) {
       doc.text('Notes' + headerSuffix, rightColStart, currentY + 3);
     }
     
@@ -435,8 +454,11 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
     let leftY = currentY;
     const termsEndIdx = Math.min(termsIdx + pageLinesCount, wrappedTerms.length);
     for (let i = termsIdx; i < termsEndIdx; i++) {
-      doc.text(wrappedTerms[i], leftColStart, leftY);
-      leftY += lineHeight;
+      const text = wrappedTerms[i];
+      if (text && typeof text === 'string') {
+        doc.text(text, leftColStart, leftY);
+        leftY += lineHeight;
+      }
     }
     termsIdx = termsEndIdx;
     
@@ -444,8 +466,11 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
     let rightY = currentY;
     const notesEndIdx = Math.min(notesIdx + pageLinesCount, wrappedNotes.length);
     for (let i = notesIdx; i < notesEndIdx; i++) {
-      doc.text(wrappedNotes[i], rightColStart, rightY);
-      rightY += lineHeight;
+      const text = wrappedNotes[i];
+      if (text && typeof text === 'string') {
+        doc.text(text, rightColStart, rightY);
+        rightY += lineHeight;
+      }
     }
     notesIdx = notesEndIdx;
     
