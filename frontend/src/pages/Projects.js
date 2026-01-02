@@ -648,7 +648,7 @@ const Projects = () => {
                   setStatusFilter('all');
                   setPriorityFilter('all');
                   setPaymentFilter('all');
-                  setYearFilter('all');
+                  setYearFilter(new Date().getFullYear().toString());
                 }}
               >
                 Limpiar Filtros
