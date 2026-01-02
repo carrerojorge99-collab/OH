@@ -5091,7 +5091,7 @@ async def create_manual_invoice(
         "discount_amount": discount_amount,
         "tax_rate": invoice_data.tax_rate,
         "tax_amount": tax_amount,
-        "tax_type_name": invoice_data.tax_type_name,
+        "selected_taxes": invoice_data.selected_taxes or [],
         "total": total,
         "amount_paid": 0.0,
         "balance_due": total,
