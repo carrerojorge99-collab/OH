@@ -7463,51 +7463,83 @@ async def export_cost_estimate_pdf(
         tf.setStyle(footer_style)
         elements.append(tf)
     
-    # Summary Section with orange accent
+    # Summary Section with orange accent - CASCADING CALCULATION
     elements.append(Spacer(1, 20))
     elements.append(Paragraph("Resumen", heading_style))
     
     subtotal = estimate.get('subtotal', 0)
+    total_subcontractors = estimate.get('total_subcontractors', 0)
+    
+    # Get percentages
+    profit_pct = estimate.get('profit_percentage', 0)
+    overhead_pct = estimate.get('overhead_percentage', 0)
+    cfse_pct = estimate.get('cfse_percentage', 0)
+    liability_pct = estimate.get('liability_percentage', 0)
+    municipal_patent_pct = estimate.get('municipal_patent_percentage', 0)
+    contingency_pct = estimate.get('contingency_percentage', 6)
+    tax_pct = estimate.get('tax_percentage', 0)
+    b2b_pct = estimate.get('b2b_percentage', 0)
+    
+    # CASCADING CALCULATION:
+    # 1. Subtotal + Profit
+    profit_amount = subtotal * profit_pct / 100
+    after_profit = subtotal + profit_amount
+    
+    # 2. After Profit + Overhead
+    overhead_amount = after_profit * overhead_pct / 100
+    after_overhead = after_profit + overhead_amount
+    
+    # 3. After Overhead + CFSE
+    cfse_amount = after_overhead * cfse_pct / 100
+    after_cfse = after_overhead + cfse_amount
+    
+    # 4. After CFSE + Liability
+    liability_amount = after_cfse * liability_pct / 100
+    after_liability = after_cfse + liability_amount
+    
+    # 5. After Liability + Patente Municipal
+    municipal_patent_amount = after_liability * municipal_patent_pct / 100
+    after_municipal_patent = after_liability + municipal_patent_amount
+    
+    # 6. Contingency and tax on subtotal (not cascaded)
+    contingency_amount = subtotal * contingency_pct / 100
+    tax_amount = subtotal * tax_pct / 100
+    
+    # B2B on subcontractors only
+    b2b_amount = total_subcontractors * b2b_pct / 100
+    
+    # Grand Total
+    grand_total = after_municipal_patent + contingency_amount + tax_amount + b2b_amount
     
     summary_data = [
-        ['Concepto', 'Monto'],
-        ['Subtotal', f"${subtotal:,.2f}"],
-        [f"Gastos Generales ({estimate.get('overhead_percentage', 0)}%)", f"${subtotal * estimate.get('overhead_percentage', 0) / 100:,.2f}"],
-        [f"Utilidad ({estimate.get('profit_percentage', 0)}%)", f"${subtotal * estimate.get('profit_percentage', 0) / 100:,.2f}"],
-        [f"Contingencia ({estimate.get('contingency_percentage', 6)}%)", f"${subtotal * estimate.get('contingency_percentage', 6) / 100:,.2f}"],
+        ['Concepto', 'Base', 'Monto'],
+        ['Subtotal', '', f"${subtotal:,.2f}"],
+        [f"Utilidad ({profit_pct}%)", f"${subtotal:,.2f}", f"${profit_amount:,.2f}"],
+        [f"Gastos Generales ({overhead_pct}%)", f"${after_profit:,.2f}", f"${overhead_amount:,.2f}"],
     ]
     
-    # Add tax if present
-    if estimate.get('tax_percentage', 0) > 0:
-        summary_data.append([f"Impuestos ({estimate.get('tax_percentage', 0)}%)", f"${subtotal * estimate.get('tax_percentage', 0) / 100:,.2f}"])
+    if cfse_pct > 0:
+        summary_data.append([f"CFSE ({cfse_pct}%)", f"${after_overhead:,.2f}", f"${cfse_amount:,.2f}"])
     
-    # B2B applies only to subcontractors
-    total_subcontractors = estimate.get('total_subcontractors', 0)
-    b2b_percentage = estimate.get('b2b_percentage', 0)
-    if b2b_percentage > 0 and total_subcontractors > 0:
-        b2b_amount = total_subcontractors * b2b_percentage / 100
-        summary_data.append([f"B2B ({b2b_percentage}%) - Solo Subcontratistas", f"${b2b_amount:,.2f}"])
+    if liability_pct > 0:
+        summary_data.append([f"Responsabilidad ({liability_pct}%)", f"${after_cfse:,.2f}", f"${liability_amount:,.2f}"])
     
-    # CFSE percentage
-    cfse_percentage = estimate.get('cfse_percentage', 0)
-    if cfse_percentage > 0:
-        summary_data.append([f"CFSE ({cfse_percentage}%)", f"${subtotal * cfse_percentage / 100:,.2f}"])
+    if municipal_patent_pct > 0:
+        summary_data.append([f"Patente Municipal ({municipal_patent_pct}%)", f"${after_liability:,.2f}", f"${municipal_patent_amount:,.2f}"])
     
-    # Liability percentage
-    liability_percentage = estimate.get('liability_percentage', 0)
-    if liability_percentage > 0:
-        summary_data.append([f"Responsabilidad ({liability_percentage}%)", f"${subtotal * liability_percentage / 100:,.2f}"])
+    summary_data.append([f"Contingencia ({contingency_pct}%)", f"${subtotal:,.2f}", f"${contingency_amount:,.2f}"])
     
-    # Municipal Patent percentage
-    municipal_patent_percentage = estimate.get('municipal_patent_percentage', 0)
-    if municipal_patent_percentage > 0:
-        summary_data.append([f"Patente Municipal ({municipal_patent_percentage}%)", f"${subtotal * municipal_patent_percentage / 100:,.2f}"])
+    if tax_pct > 0:
+        summary_data.append([f"Impuestos ({tax_pct}%)", f"${subtotal:,.2f}", f"${tax_amount:,.2f}"])
+    
+    if b2b_pct > 0 and total_subcontractors > 0:
+        summary_data.append([f"B2B ({b2b_pct}%) - Solo Subcontratistas", f"${total_subcontractors:,.2f}", f"${b2b_amount:,.2f}"])
     
     summary_style = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
         ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('LINEBELOW', (0, 0), (-1, 0), 0.5, PRIMARY_COLOR),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
@@ -7516,7 +7548,7 @@ async def export_cost_estimate_pdf(
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fcfcfd')]),
     ])
     
-    t = Table(summary_data, colWidths=[4*inch, 2.5*inch])
+    t = Table(summary_data, colWidths=[3*inch, 1.75*inch, 1.75*inch])
     t.setStyle(summary_style)
     elements.append(t)
     
