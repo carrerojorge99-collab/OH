@@ -168,6 +168,9 @@ const Estimates = () => {
       return;
     }
 
+    // Calculate total tax rate from selected taxes
+    const totalTaxRate = form.selected_taxes.reduce((sum, t) => sum + (t.percentage || 0), 0);
+
     try {
       const payload = {
         ...form,
@@ -178,9 +181,8 @@ const Estimates = () => {
           unit_price: parseFloat(item.unit_price) || 0,
           amount: parseFloat(item.amount) || 0
         })),
-        tax_rate: parseFloat(form.tax_rate) || 0,
-        tax_type_name: form.tax_type_name || null,
-        tax_percentage: parseFloat(form.tax_percentage) || parseFloat(form.tax_rate) || 0,
+        tax_rate: totalTaxRate,
+        selected_taxes: form.selected_taxes,
         discount_percent: parseFloat(form.discount_percent) || 0
       };
 
