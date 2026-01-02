@@ -33,6 +33,10 @@ const CostEstimateDetail = () => {
   const [profitPercentage, setProfitPercentage] = useState(0);
   const [contingencyPercentage, setContingencyPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
+  const [b2bPercentage, setB2bPercentage] = useState(0);
+  const [cfsePercentage, setCfsePercentage] = useState(0);
+  const [liabilityPercentage, setLiabilityPercentage] = useState(0);
+  const [municipalPatentPercentage, setMunicipalPatentPercentage] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -41,12 +45,13 @@ const CostEstimateDetail = () => {
   const loadData = async () => {
     const ts = Date.now(); // Prevent cache
     try {
-      const [estimateRes, ratesRes, projectsRes] = await Promise.all([
+      const [estimateRes, ratesRes, projectsRes, companyRes] = await Promise.all([
         estimateId !== 'new' 
           ? api.get(`/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
           : Promise.resolve({ data: null }),
         api.get(`/labor-rates?_t=${ts}`, { withCredentials: true }),
-        api.get(`/projects?_t=${ts}`, { withCredentials: true })
+        api.get(`/projects?_t=${ts}`, { withCredentials: true }),
+        api.get(`/company?_t=${ts}`, { withCredentials: true })
       ]);
 
       setLaborRates(ratesRes.data);
@@ -64,6 +69,17 @@ const CostEstimateDetail = () => {
         setProfitPercentage(estimateRes.data.profit_percentage || 0);
         setContingencyPercentage(estimateRes.data.contingency_percentage || 0);
         setTaxPercentage(estimateRes.data.tax_percentage || 0);
+        setB2bPercentage(estimateRes.data.b2b_percentage || 0);
+        setCfsePercentage(estimateRes.data.cfse_percentage || 0);
+        setLiabilityPercentage(estimateRes.data.liability_percentage || 0);
+        setMunicipalPatentPercentage(estimateRes.data.municipal_patent_percentage || 0);
+      } else {
+        // For new estimates, load default percentages from company settings
+        const companyData = companyRes.data;
+        setB2bPercentage(companyData.default_b2b_percentage || 4);
+        setCfsePercentage(companyData.default_cfse_percentage || 7);
+        setLiabilityPercentage(companyData.default_liability_percentage || 7);
+        setMunicipalPatentPercentage(companyData.default_municipal_patent_percentage || 1);
       }
     } catch (error) {
       console.error('Error loading data:', error);
