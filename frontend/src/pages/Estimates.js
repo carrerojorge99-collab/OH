@@ -202,6 +202,12 @@ const Estimates = () => {
 
   const handleEdit = (estimate) => {
     setEditingEstimate(estimate.estimate_id);
+    // Parse selected_taxes from stored data
+    let selectedTaxes = estimate.selected_taxes || [];
+    // Backward compatibility: if old format with single tax
+    if (selectedTaxes.length === 0 && estimate.tax_type_name) {
+      selectedTaxes = [{ name: estimate.tax_type_name, percentage: estimate.tax_percentage || estimate.tax_rate }];
+    }
     setForm({
       project_id: estimate.project_id || '',
       client_name: estimate.client_name,
@@ -212,8 +218,7 @@ const Estimates = () => {
       description: estimate.description || '',
       items: estimate.items,
       tax_rate: estimate.tax_rate,
-      tax_type_name: estimate.tax_type_name || '',
-      tax_percentage: estimate.tax_percentage || estimate.tax_rate || 0,
+      selected_taxes: selectedTaxes,
       discount_percent: estimate.discount_percent,
       notes: estimate.notes || '',
       terms: estimate.terms || '',
