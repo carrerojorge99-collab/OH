@@ -15,8 +15,9 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Default to current year so previous years are "historical"
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  // Start with 'all' and update to current year if data exists
+  const [selectedYear, setSelectedYear] = useState('all');
+  const [yearInitialized, setYearInitialized] = useState(false);
 
   // Generate list of available years from projects
   const availableYears = useMemo(() => {
@@ -31,6 +32,17 @@ const Dashboard = () => {
     });
     return Array.from(years).sort((a, b) => b - a);
   }, [projects]);
+
+  // Auto-set year filter to current year if available
+  useEffect(() => {
+    if (!yearInitialized && projects.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setSelectedYear(currentYear.toString());
+      }
+      setYearInitialized(true);
+    }
+  }, [projects, availableYears, yearInitialized]);
 
   // Filter projects by selected year
   const filteredProjects = useMemo(() => {
