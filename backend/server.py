@@ -538,16 +538,19 @@ class Invoice(BaseModel):
     client_phone: Optional[str] = None
     client_address: Optional[str] = None
     sponsor_name: Optional[str] = None
+    po_number: Optional[str] = None
     items: List[InvoiceItem]
     subtotal: float
     tax_rate: float
     tax_amount: float
     tax_type_name: Optional[str] = None
+    tax_percentage: Optional[float] = None
     total: float
     amount_paid: float = 0.0
     balance_due: float = 0.0
     status: str  # draft, sent, paid, overdue, partial
     notes: Optional[str] = None
+    terms: Optional[str] = None
     created_by: str
     created_at: str
     due_date: Optional[str] = None
