@@ -6962,13 +6962,19 @@ async def update_cost_estimate(
         total_general_conditions
     )
     
-    # Apply percentages
+    # Apply B2B percentage only to subcontractors
+    b2b_amount = total_subcontractors * (estimate_data.b2b_percentage / 100)
+    
+    # Apply other percentages to subtotal
     grand_total = subtotal * (
         1 + estimate_data.overhead_percentage / 100 +
         estimate_data.profit_percentage / 100 +
         estimate_data.contingency_percentage / 100 +
-        estimate_data.tax_percentage / 100
-    )
+        estimate_data.tax_percentage / 100 +
+        estimate_data.cfse_percentage / 100 +
+        estimate_data.liability_percentage / 100 +
+        estimate_data.municipal_patent_percentage / 100
+    ) + b2b_amount
     
     # Get project name if project_id is provided
     project_name = ""
@@ -6991,6 +6997,10 @@ async def update_cost_estimate(
         "profit_percentage": estimate_data.profit_percentage,
         "contingency_percentage": estimate_data.contingency_percentage,
         "tax_percentage": estimate_data.tax_percentage,
+        "b2b_percentage": estimate_data.b2b_percentage,
+        "cfse_percentage": estimate_data.cfse_percentage,
+        "liability_percentage": estimate_data.liability_percentage,
+        "municipal_patent_percentage": estimate_data.municipal_patent_percentage,
         "total_labor": round(total_labor, 2),
         "total_subcontractors": round(total_subcontractors, 2),
         "total_materials": round(total_materials, 2),
