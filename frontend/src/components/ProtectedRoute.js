@@ -7,7 +7,8 @@ const ROLE_ROUTES = {
   super_admin: ['*'], // All routes
   admin: ['*'], // Backward compatibility
   project_manager: [
-    '/dashboard', '/clock', '/projects', '/calendar', '/reports', '/approvals', '/my-requests', '/my-profile'
+    '/dashboard', '/clock', '/projects', '/calendar', '/reports', '/approvals', '/my-requests', '/my-profile',
+    '/estimates', '/cost-estimates', '/purchase-orders', '/invoices'
   ],
   rrhh: [
     '/dashboard', '/clock', '/hr', '/payroll', '/users', '/approvals', '/my-requests', '/my-profile'
