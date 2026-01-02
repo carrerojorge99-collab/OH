@@ -270,13 +270,13 @@ const HumanResources = () => {
                       </h3>
                       <div className="grid grid-cols-3 gap-4">
                         <Field label="Teléfono" icon={Phone}>
-                          <Input value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="787-555-0000" />
+                          <Input value={profile.phone} onChange={(e) => updateProfile('phone', e.target.value)} placeholder="787-555-0000" />
                         </Field>
                         <Field label="Fecha Nacimiento" icon={Calendar}>
-                          <Input type="date" value={profile.date_of_birth} onChange={(e) => setProfile({...profile, date_of_birth: e.target.value})} />
+                          <Input type="date" value={profile.date_of_birth} onChange={(e) => updateProfile('date_of_birth', e.target.value)} />
                         </Field>
                         <Field label="ID / Cédula">
-                          <Input value={profile.id_number} onChange={(e) => setProfile({...profile, id_number: e.target.value})} />
+                          <Input value={profile.id_number} onChange={(e) => updateProfile('id_number', e.target.value)} />
                         </Field>
                       </div>
                     </div>
@@ -287,13 +287,13 @@ const HumanResources = () => {
                       </h3>
                       <div className="grid grid-cols-4 gap-4">
                         <Field label="Dirección" className="col-span-2">
-                          <Input value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} />
+                          <Input value={profile.address} onChange={(e) => updateProfile('address', e.target.value)} />
                         </Field>
                         <Field label="Ciudad">
-                          <Input value={profile.city} onChange={(e) => setProfile({...profile, city: e.target.value})} />
+                          <Input value={profile.city} onChange={(e) => updateProfile('city', e.target.value)} />
                         </Field>
                         <Field label="Código Postal">
-                          <Input value={profile.zipcode} onChange={(e) => setProfile({...profile, zipcode: e.target.value})} />
+                          <Input value={profile.zipcode} onChange={(e) => updateProfile('zipcode', e.target.value)} />
                         </Field>
                       </div>
                     </div>
@@ -304,16 +304,16 @@ const HumanResources = () => {
                       </h3>
                       <div className="grid grid-cols-3 gap-4">
                         <Field label="Cargo">
-                          <Input value={profile.position} onChange={(e) => setProfile({...profile, position: e.target.value})} />
+                          <Input value={profile.position} onChange={(e) => updateProfile('position', e.target.value)} />
                         </Field>
                         <Field label="Departamento">
-                          <Input value={profile.department} onChange={(e) => setProfile({...profile, department: e.target.value})} />
+                          <Input value={profile.department} onChange={(e) => updateProfile('department', e.target.value)} />
                         </Field>
                         <Field label="Fecha Ingreso" icon={Calendar}>
-                          <Input type="date" value={profile.hire_date} onChange={(e) => setProfile({...profile, hire_date: e.target.value})} />
+                          <Input type="date" value={profile.hire_date} onChange={(e) => updateProfile('hire_date', e.target.value)} />
                         </Field>
                         <Field label="Clasificación">
-                          <Select value={profile.worker_classification} onValueChange={(v) => setProfile({...profile, worker_classification: v})}>
+                          <Select value={profile.worker_classification} onValueChange={(v) => updateProfile('worker_classification', v)}>
                             <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="employee">Empleado W-2</SelectItem>
@@ -322,7 +322,7 @@ const HumanResources = () => {
                           </Select>
                         </Field>
                         <Field label="Tipo">
-                          <Select value={profile.employment_type} onValueChange={(v) => setProfile({...profile, employment_type: v})}>
+                          <Select value={profile.employment_type} onValueChange={(v) => updateProfile('employment_type', v)}>
                             <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="full_time">Tiempo Completo</SelectItem>
@@ -337,13 +337,13 @@ const HumanResources = () => {
                       <h3 className="text-sm font-semibold text-slate-900 mb-3">Contacto de Emergencia</h3>
                       <div className="grid grid-cols-3 gap-4">
                         <Field label="Nombre">
-                          <Input value={profile.emergency_contact_name} onChange={(e) => setProfile({...profile, emergency_contact_name: e.target.value})} />
+                          <Input value={profile.emergency_contact_name} onChange={(e) => updateProfile('emergency_contact_name', e.target.value)} />
                         </Field>
                         <Field label="Teléfono">
-                          <Input value={profile.emergency_contact_phone} onChange={(e) => setProfile({...profile, emergency_contact_phone: e.target.value})} />
+                          <Input value={profile.emergency_contact_phone} onChange={(e) => updateProfile('emergency_contact_phone', e.target.value)} />
                         </Field>
                         <Field label="Relación">
-                          <Input value={profile.emergency_contact_relationship} onChange={(e) => setProfile({...profile, emergency_contact_relationship: e.target.value})} />
+                          <Input value={profile.emergency_contact_relationship} onChange={(e) => updateProfile('emergency_contact_relationship', e.target.value)} />
                         </Field>
                       </div>
                     </div>
@@ -362,13 +362,13 @@ const HumanResources = () => {
                       </h3>
                       <div className="grid grid-cols-3 gap-4">
                         <Field label="Salario Fijo">
-                          <Input type="number" value={profile.salary} onChange={(e) => setProfile({...profile, salary: parseFloat(e.target.value) || 0})} />
+                          <Input type="number" value={profile.salary} onChange={(e) => updateProfile('salary', parseFloat(e.target.value) || 0)} />
                         </Field>
                         <Field label="Tarifa por Hora">
-                          <Input type="number" value={profile.hourly_rate} onChange={(e) => setProfile({...profile, hourly_rate: parseFloat(e.target.value) || 0})} />
+                          <Input type="number" value={profile.hourly_rate} onChange={(e) => updateProfile('hourly_rate', parseFloat(e.target.value) || 0)} />
                         </Field>
                         <Field label="Frecuencia de Pago">
-                          <Select value={profile.pay_frequency} onValueChange={(v) => setProfile({...profile, pay_frequency: v})}>
+                          <Select value={profile.pay_frequency} onValueChange={(v) => updateProfile('pay_frequency', v)}>
                             <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="weekly">Semanal</SelectItem>
@@ -387,16 +387,16 @@ const HumanResources = () => {
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
                         <Field label="Banco">
-                          <Input value={profile.bank_name} onChange={(e) => setProfile({...profile, bank_name: e.target.value})} />
+                          <Input value={profile.bank_name} onChange={(e) => updateProfile('bank_name', e.target.value)} />
                         </Field>
                         <Field label="Número de Cuenta">
-                          <Input value={profile.bank_account} onChange={(e) => setProfile({...profile, bank_account: e.target.value})} />
+                          <Input value={profile.bank_account} onChange={(e) => updateProfile('bank_account', e.target.value)} />
                         </Field>
                         <Field label="Routing Number">
-                          <Input value={profile.routing_number} onChange={(e) => setProfile({...profile, routing_number: e.target.value})} />
+                          <Input value={profile.routing_number} onChange={(e) => updateProfile('routing_number', e.target.value)} />
                         </Field>
                         <Field label="Tipo de Cuenta">
-                          <Select value={profile.account_type} onValueChange={(v) => setProfile({...profile, account_type: v})}>
+                          <Select value={profile.account_type} onValueChange={(v) => updateProfile('account_type', v)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="checking">Checking</SelectItem>
