@@ -60,8 +60,9 @@ const PurchaseOrders = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPO, setEditingPO] = useState(null);
   const [selectedPO, setSelectedPO] = useState(null);
-  // Default to current year
-  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+  // Start with 'all' and update to current year if data exists
+  const [yearFilter, setYearFilter] = useState('all');
+  const [yearInitialized, setYearInitialized] = useState(false);
 
   // Generate available years from purchase orders
   const availableYears = useMemo(() => {
@@ -82,6 +83,17 @@ const PurchaseOrders = () => {
       return year === parseInt(yearFilter);
     });
   }, [purchaseOrders, yearFilter]);
+
+  // Auto-set year filter to current year if available
+  useEffect(() => {
+    if (!yearInitialized && purchaseOrders.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setYearFilter(currentYear.toString());
+      }
+      setYearInitialized(true);
+    }
+  }, [purchaseOrders, availableYears, yearInitialized]);
 
   const [form, setForm] = useState({
     project_id: '',
