@@ -5016,8 +5016,7 @@ class ManualInvoiceCreate(BaseModel):
     sponsor_name: Optional[str] = None
     items: List[ManualInvoiceItem]
     tax_rate: float = 0.0
-    tax_type_id: Optional[str] = None
-    tax_type_name: Optional[str] = None
+    selected_taxes: Optional[List[dict]] = []
     discount_percent: float = 0.0
     notes: Optional[str] = None
     terms: Optional[str] = None
