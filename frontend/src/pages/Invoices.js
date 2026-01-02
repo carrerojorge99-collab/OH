@@ -39,7 +39,33 @@ const Invoices = () => {
   const [payments, setPayments] = useState([]);
   const [savedClients, setSavedClients] = useState([]);
   const [taxTypes, setTaxTypes] = useState([]);
+  const [yearFilter, setYearFilter] = useState('all');
   const navigate = useNavigate();
+
+  // Generate available years from invoices
+  const availableYears = React.useMemo(() => {
+    const years = new Set();
+    invoices.forEach(inv => {
+      if (inv.created_at) {
+        years.add(new Date(inv.created_at).getFullYear());
+      }
+      if (inv.invoice_date) {
+        years.add(new Date(inv.invoice_date).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [invoices]);
+
+  // Filter invoices by year
+  const filteredInvoices = React.useMemo(() => {
+    if (yearFilter === 'all') return invoices;
+    return invoices.filter(inv => {
+      const invoiceYear = inv.invoice_date 
+        ? new Date(inv.invoice_date).getFullYear()
+        : new Date(inv.created_at).getFullYear();
+      return invoiceYear === parseInt(yearFilter);
+    });
+  }, [invoices, yearFilter]);
 
   const [formData, setFormData] = useState({
     project_id: '',
