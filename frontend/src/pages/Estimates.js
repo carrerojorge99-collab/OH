@@ -181,6 +181,8 @@ const Estimates = () => {
           amount: parseFloat(item.amount) || 0
         })),
         tax_rate: parseFloat(form.tax_rate) || 0,
+        tax_type_name: form.tax_type_name || null,
+        tax_percentage: parseFloat(form.tax_percentage) || parseFloat(form.tax_rate) || 0,
         discount_percent: parseFloat(form.discount_percent) || 0
       };
 
