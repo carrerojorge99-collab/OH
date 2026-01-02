@@ -534,6 +534,83 @@ const ClockHistory = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Clock Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="w-5 h-5" />
+              Editar Ponche
+            </DialogTitle>
+          </DialogHeader>
+          
+          {editingEntry && (
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-3 rounded-lg text-sm">
+                <p><strong>Empleado:</strong> {editingEntry.user_name}</p>
+                <p><strong>Fecha:</strong> {moment(editingEntry.date).format('dddd, D [de] MMMM [de] YYYY')}</p>
+                <p><strong>Proyecto:</strong> {editingEntry.project_name || 'Sin proyecto'}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clock_in_time" className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-green-600" />
+                    Hora Entrada
+                  </Label>
+                  <Input
+                    id="clock_in_time"
+                    type="time"
+                    value={editForm.clock_in_time}
+                    onChange={(e) => setEditForm({...editForm, clock_in_time: e.target.value})}
+                    className="font-mono"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="clock_out_time" className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-red-600" />
+                    Hora Salida
+                  </Label>
+                  <Input
+                    id="clock_out_time"
+                    type="time"
+                    value={editForm.clock_out_time}
+                    onChange={(e) => setEditForm({...editForm, clock_out_time: e.target.value})}
+                    className="font-mono"
+                  />
+                </div>
+              </div>
+              
+              {editForm.clock_in_time && editForm.clock_out_time && (
+                <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
+                  <strong>Horas calculadas:</strong>{' '}
+                  {(() => {
+                    const start = moment(editForm.clock_in_time, 'HH:mm');
+                    const end = moment(editForm.clock_out_time, 'HH:mm');
+                    const diff = end.diff(start, 'hours', true);
+                    return diff > 0 ? `${diff.toFixed(2)} horas` : 'Hora inválida';
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSaveEdit} 
+              disabled={saving || !editForm.clock_in_time}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
