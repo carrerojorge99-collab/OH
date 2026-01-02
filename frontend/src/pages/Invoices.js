@@ -395,8 +395,11 @@ const Invoices = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
-    // Header: Empresa izquierda, Doc derecha
-    let y = await addDocumentHeader(doc, company, 'INVOICE', invoice.invoice_number, invoice.created_at, invoice.total || 0);
+    // Header: Empresa izquierda, Doc derecha - with Due Date and PO#
+    let y = await addDocumentHeader(doc, company, 'INVOICE', invoice.invoice_number, invoice.created_at, invoice.total || 0, {
+      dueDate: invoice.due_date,
+      poNumber: invoice.po_number
+    });
     
     // Client section debajo de empresa - include all client info
     y = addPartySection(doc, 'Bill To:', invoice.client_name, invoice.client_address || '', invoice.client_email || '', invoice.client_phone || '', y);
@@ -412,11 +415,6 @@ const Invoices = () => {
       doc.text(invoice.project_name, 120, y - 10);
     }
     
-    // Due date
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    doc.text(`Due: ${moment(invoice.due_date).format('MMM DD, YYYY')}`, 120, y - 4);
-    
     // Tasks table
     const tasks = invoice.items.map(item => ({
       description: item.description,
@@ -426,8 +424,10 @@ const Invoices = () => {
     }));
     y = addTasksTable(doc, tasks, y + 4);
     
-    // Totals
-    y = addTotalsSection(doc, invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y);
+    // Totals with tax details if available
+    const taxDetails = invoice.tax_type_name && invoice.tax_percentage ? 
+      [{ name: invoice.tax_type_name, percentage: invoice.tax_percentage, amount: invoice.tax_amount || 0 }] : null;
+    y = addTotalsSection(doc, invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y, taxDetails);
     
     // Notes
     addNotesSection(doc, invoice.notes, invoice.terms, y);
