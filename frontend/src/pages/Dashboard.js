@@ -15,7 +15,8 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState('all');
+  // Default to current year so previous years are "historical"
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
   // Generate list of available years from projects
   const availableYears = useMemo(() => {
