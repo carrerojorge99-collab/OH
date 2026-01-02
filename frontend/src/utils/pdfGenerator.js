@@ -124,16 +124,28 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   doc.text(`#: ${docNumber}`, rightX, 28, { align: 'right' });
   doc.text(`Fecha: ${moment(docDate).format('MMM DD, YYYY')}`, rightX, 34, { align: 'right' });
   
-  // Total in orange box
+  // Extra info for invoices (Due Date, PO#)
+  let infoY = 40;
+  if (extraInfo.dueDate) {
+    doc.text(`Due Date: ${moment(extraInfo.dueDate).format('MMM DD, YYYY')}`, rightX, infoY, { align: 'right' });
+    infoY += 6;
+  }
+  if (extraInfo.poNumber) {
+    doc.text(`PO#: ${extraInfo.poNumber}`, rightX, infoY, { align: 'right' });
+    infoY += 6;
+  }
+  
+  // Total in orange box - position adjusted based on extra info
+  const totalBoxY = Math.max(infoY, 40);
   doc.setFillColor(...COLORS.primary);
-  doc.roundedRect(pageWidth - 55, 40, 40, 12, 2, 2, 'F');
+  doc.roundedRect(pageWidth - 55, totalBoxY, 40, 12, 2, 2, 'F');
   doc.setTextColor(...COLORS.white);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, pageWidth - 35, 48, { align: 'center' });
+  doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, pageWidth - 35, totalBoxY + 8, { align: 'center' });
   
   // Separator line - position based on content height
-  const lineY = Math.max(leftY + 2, 60);
+  const lineY = Math.max(leftY + 2, totalBoxY + 18);
   doc.setDrawColor(...COLORS.primary);
   doc.setLineWidth(0.5);
   doc.line(15, lineY, pageWidth - 15, lineY);
