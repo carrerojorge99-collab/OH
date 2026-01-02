@@ -13,6 +13,12 @@ const COLORS = {
   white: [255, 255, 255]
 };
 
+// Helper function to format currency with thousands separator
+export const formatCurrency = (amount) => {
+  const num = parseFloat(amount) || 0;
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 // Helper function to load image as base64
 const loadImageAsBase64 = (url) => {
   return new Promise((resolve) => {
