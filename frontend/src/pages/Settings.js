@@ -1044,6 +1044,65 @@ const Settings = () => {
                     </div>
                   </div>
 
+                  {/* Porcentajes Predeterminados para Estimaciones de Costos */}
+                  <div className="p-4 border rounded-lg bg-amber-50 space-y-4">
+                    <div>
+                      <Label className="text-base font-medium">Porcentajes para Estimaciones de Costos</Label>
+                      <p className="text-sm text-slate-500">Valores predeterminados que se usarán en las estimaciones de costos de contratistas</p>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="default_b2b_percentage">B2B (%)</Label>
+                        <Input
+                          id="default_b2b_percentage"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={company.default_b2b_percentage || 4}
+                          onChange={(e) => setCompany(prev => ({ ...prev, default_b2b_percentage: parseFloat(e.target.value) || 0 }))}
+                        />
+                        <p className="text-xs text-slate-500">Aplica solo a Subcontratistas</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="default_cfse_percentage">CFSE (%)</Label>
+                        <Input
+                          id="default_cfse_percentage"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={company.default_cfse_percentage || 7}
+                          onChange={(e) => setCompany(prev => ({ ...prev, default_cfse_percentage: parseFloat(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="default_liability_percentage">Liability (%)</Label>
+                        <Input
+                          id="default_liability_percentage"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={company.default_liability_percentage || 7}
+                          onChange={(e) => setCompany(prev => ({ ...prev, default_liability_percentage: parseFloat(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="default_municipal_patent_percentage">Patente Municipal (%)</Label>
+                        <Input
+                          id="default_municipal_patent_percentage"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={company.default_municipal_patent_percentage || 1}
+                          onChange={(e) => setCompany(prev => ({ ...prev, default_municipal_patent_percentage: parseFloat(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Submit Button */}
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={savingCompany} className="flex items-center space-x-2">
