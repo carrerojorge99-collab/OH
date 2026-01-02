@@ -8128,8 +8128,12 @@ async def get_next_number(
         {"$set": {"current_number": current_number + 1}}
     )
     
-    # Generar número completo: PREFIX-YEAR-STARTING_NUMBER-CURRENT
-    full_number = f"{nomenclature['prefix']}-{current_year}-{nomenclature['starting_number']}-{current_number}"
+    # Generar número completo: PREFIX-YEAR-DEPARTMENT-CURRENT
+    department = nomenclature.get('department_number', '')
+    if department:
+        full_number = f"{nomenclature['prefix']}-{current_year}-{department}-{current_number}"
+    else:
+        full_number = f"{nomenclature['prefix']}-{current_year}-{current_number}"
     
     return {"number": full_number, "nomenclature": nomenclature}
 
