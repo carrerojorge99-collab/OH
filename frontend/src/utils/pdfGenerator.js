@@ -211,8 +211,8 @@ export const addTasksTable = (doc, tasks, startY) => {
     return [
       { content: desc, styles: { cellWidth: 120, minCellHeight: 25 } },
       { content: (task.quantity || 1).toString(), styles: { halign: 'center' } },
-      { content: `$${(task.unit_price || task.rate || 0).toFixed(2)}`, styles: { halign: 'right' } },
-      { content: `$${(task.amount || task.total || 0).toFixed(2)}`, styles: { halign: 'right' } }
+      { content: `$${formatCurrency(task.unit_price || task.rate || 0)}`, styles: { halign: 'right' } },
+      { content: `$${formatCurrency(task.amount || task.total || 0)}`, styles: { halign: 'right' } }
     ];
   });
   
