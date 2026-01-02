@@ -168,7 +168,22 @@ export const addPartySection = (doc, title, name, address, email, phone, startY)
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(11);
   let y = startY + 6;
-  if (name) { doc.text(name, 15, y); y += 5; }
+  
+  // Handle multi-line names (e.g., company + contact)
+  if (name) {
+    const nameLines = name.split('\n');
+    nameLines.forEach((line, idx) => {
+      if (idx === 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text(line, 15, y);
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(line, 15, y);
+      }
+      y += 5;
+    });
+  }
   
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.secondary);
