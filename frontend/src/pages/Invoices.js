@@ -395,10 +395,19 @@ const Invoices = () => {
     const doc = new jsPDF();
     const company = await fetchCompanyInfo();
     
+    // Get PO# from project if available
+    let poNumber = invoice.po_number;
+    if (!poNumber && invoice.project_id) {
+      const project = projects.find(p => p.project_id === invoice.project_id);
+      if (project) {
+        poNumber = project.po_number;
+      }
+    }
+    
     // Header: Empresa izquierda, Doc derecha - with Due Date and PO#
     let y = await addDocumentHeader(doc, company, 'INVOICE', invoice.invoice_number, invoice.created_at, invoice.total || 0, {
       dueDate: invoice.due_date,
-      poNumber: invoice.po_number
+      poNumber: poNumber
     });
     
     // Client section debajo de empresa - include all client info
