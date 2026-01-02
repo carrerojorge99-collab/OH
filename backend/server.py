@@ -8077,7 +8077,8 @@ async def update_nomenclature(
     update_data = {
         "name": data["name"],
         "prefix": data["prefix"].upper(),
-        "starting_number": data["starting_number"]
+        "department_number": data.get("department_number", ""),
+        "starting_number": data.get("starting_number", 1)
     }
     
     await db.nomenclatures.update_one({"nomenclature_id": nomenclature_id}, {"$set": update_data})
