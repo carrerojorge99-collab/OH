@@ -321,7 +321,7 @@ const CostEstimateDetail = () => {
     // Fixed contingency at 6%
     const fixedContingency = 6;
     
-    // CASCADING CALCULATION:
+    // CASCADING CALCULATION (Profit → Overhead → CFSE → Liability → Municipal Patent):
     // 1. Subtotal + Profit
     const profitAmount = subtotal * (Number(profitPercentage) / 100);
     const afterProfit = subtotal + profitAmount;
@@ -338,7 +338,7 @@ const CostEstimateDetail = () => {
     const liabilityAmount = afterCfse * (Number(liabilityPercentage) / 100);
     const afterLiability = afterCfse + liabilityAmount;
     
-    // 5. After Liability + Patente Municipal
+    // 5. After Liability + Municipal Patent
     const municipalPatentAmount = afterLiability * (Number(municipalPatentPercentage) / 100);
     const afterMunicipalPatent = afterLiability + municipalPatentAmount;
     
