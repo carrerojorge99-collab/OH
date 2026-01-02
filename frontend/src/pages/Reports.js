@@ -188,9 +188,35 @@ const Reports = () => {
     <Layout>
       <div className="space-y-8 fade-in">
         {/* Header */}
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">Reportes Avanzados</h1>
-          <p className="text-muted-foreground mt-2">Análisis detallado de proyectos, gastos y desempeño</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">Reportes Avanzados</h1>
+            <p className="text-muted-foreground mt-2">
+              Análisis detallado de proyectos, gastos y desempeño
+              {yearFilter !== 'all' && <span className="text-blue-600 font-medium"> - Año {yearFilter}</span>}
+            </p>
+          </div>
+          <div className="flex gap-2 items-center">
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger className="w-[140px]">
+                <Calendar className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los años</SelectItem>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={() => { setLoading(true); loadData(); }}
+              title="Refrescar datos"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
