@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -50,6 +50,11 @@ const HumanResources = () => {
   const [uploadForm, setUploadForm] = useState({ document_type: '', file: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSection, setActiveSection] = useState('info');
+
+  // Optimized profile field update handler - prevents re-render lag
+  const updateProfile = useCallback((field, value) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   useEffect(() => { loadEmployees(); }, []);
 
