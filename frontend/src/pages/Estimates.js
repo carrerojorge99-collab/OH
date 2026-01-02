@@ -261,6 +261,7 @@ const Estimates = () => {
     }
     setForm({
       project_id: estimate.project_id || '',
+      client_company: estimate.client_company || '',
       client_name: estimate.client_name,
       client_email: estimate.client_email || '',
       client_phone: estimate.client_phone || '',
@@ -273,7 +274,8 @@ const Estimates = () => {
       discount_percent: estimate.discount_percent,
       notes: estimate.notes || '',
       terms: estimate.terms || '',
-      valid_until: estimate.valid_until || ''
+      valid_until: estimate.valid_until || '',
+      custom_number: estimate.estimate_number || ''
     });
     setDialogOpen(true);
   };
