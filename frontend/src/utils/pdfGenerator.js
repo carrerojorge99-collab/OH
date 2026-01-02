@@ -263,8 +263,8 @@ export const addItemsTable = (doc, items, startY, columns = ['Descripción', 'Ca
   const tableData = items.map((item, idx) => [
     `${idx + 1}. ${item.description || item.name || ''}`,
     (item.quantity || 1).toString(),
-    `$${(item.unit_price || item.rate || 0).toFixed(2)}`,
-    `$${(item.amount || item.total || 0).toFixed(2)}`
+    `$${formatCurrency(item.unit_price || item.rate || 0)}`,
+    `$${formatCurrency(item.amount || item.total || 0)}`
   ]);
   
   autoTable(doc, {
