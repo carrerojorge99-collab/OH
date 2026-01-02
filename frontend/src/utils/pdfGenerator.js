@@ -69,11 +69,11 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   let leftY = 15;
   
   // Add company logo - use company's logo if available, otherwise fallback to default
-  // LARGER LOGO: Increased from 40x20 to 55x28 for better visibility
+  // LARGER LOGO: Stretched vertically for better visibility (55 width x 35 height)
   const logoToUse = company?.logoBase64 || LOGO_BASE64;
   try {
-    doc.addImage(logoToUse, 'PNG', 15, 8, 55, 28);
-    leftY = 40;
+    doc.addImage(logoToUse, 'PNG', 15, 8, 55, 35);
+    leftY = 46;
   } catch (e) {
     // If logo fails, just continue
     leftY = 15;
