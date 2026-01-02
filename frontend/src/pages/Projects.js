@@ -625,6 +625,19 @@ const Projects = () => {
               </SelectContent>
             </Select>
 
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-[160px] md:w-[180px]">
+                <Calendar className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los Años</SelectItem>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {(statusFilter !== 'all' || priorityFilter !== 'all' || paymentFilter !== 'all' || searchTerm) && (
               <Button
                 variant="outline"
