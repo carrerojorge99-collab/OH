@@ -379,8 +379,11 @@ const Estimates = () => {
     // Header: Empresa izquierda, Doc derecha
     let y = await addDocumentHeader(doc, company, 'ESTIMATE', estimate.estimate_number, estimate.created_at, estimate.total);
     
-    // Client section debajo de empresa
-    y = addPartySection(doc, 'Bill To:', estimate.client_name, estimate.client_address || '', estimate.client_email, estimate.client_phone, y);
+    // Client section - include company name if available
+    const clientDisplayName = estimate.client_company 
+      ? `${estimate.client_company}\nAttn: ${estimate.client_name}`
+      : estimate.client_name;
+    y = addPartySection(doc, 'Bill To:', clientDisplayName, estimate.client_address || '', estimate.client_email, estimate.client_phone, y);
     
     // Valid until derecha
     doc.setFontSize(8);
