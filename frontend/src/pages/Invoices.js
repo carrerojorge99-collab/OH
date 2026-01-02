@@ -442,9 +442,18 @@ const Invoices = () => {
     }));
     y = addTasksTable(doc, tasks, y + 4);
     
-    // Totals with tax details if available
-    const taxDetails = invoice.tax_type_name && invoice.tax_percentage ? 
-      [{ name: invoice.tax_type_name, percentage: invoice.tax_percentage, amount: invoice.tax_amount || 0 }] : null;
+    // Build tax details from selected_taxes or fallback to single tax
+    let taxDetails = null;
+    if (invoice.selected_taxes && invoice.selected_taxes.length > 0) {
+      const taxableAmount = invoice.subtotal || 0;
+      taxDetails = invoice.selected_taxes.map(t => ({
+        name: t.name,
+        percentage: t.percentage,
+        amount: taxableAmount * t.percentage / 100
+      }));
+    } else if (invoice.tax_type_name && invoice.tax_percentage) {
+      taxDetails = [{ name: invoice.tax_type_name, percentage: invoice.tax_percentage, amount: invoice.tax_amount || 0 }];
+    }
     y = addTotalsSection(doc, invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y, taxDetails);
     
     // Notes
