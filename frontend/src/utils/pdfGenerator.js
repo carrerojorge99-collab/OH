@@ -328,82 +328,79 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
   return y + 12;
 };
 
-// Notes section - Terms & Conditions expanded to 2 columns
+// Notes section - Notes on left, Terms & Conditions on right
 export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   if (!notes && !terms) return startY;
   
   const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const marginBottom = 25; // Space for footer
   let y = startY + 5;
+  
+  // Draw separator line
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.3);
   doc.line(15, y - 3, pageWidth - 15, y - 3);
   
+  // Check if we need a new page
+  const checkPageBreak = (currentY, neededSpace = 30) => {
+    if (currentY + neededSpace > pageHeight - marginBottom) {
+      doc.addPage();
+      return 20; // Reset Y position for new page
+    }
+    return currentY;
+  };
+  
+  // Calculate column positions
+  const leftColStart = 15;
+  const rightColStart = pageWidth / 2 + 5;
+  const columnWidth = (pageWidth / 2) - 25;
+  
+  // Draw headers side by side
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.secondary);
-  doc.text('Notes', 15, y + 3);
   
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...COLORS.text);
+  if (notes) {
+    doc.text('Notes', leftColStart, y + 3);
+  }
+  if (terms) {
+    doc.text('Terms & Conditions', rightColStart, y + 3);
+  }
   
   y += 10;
+  let leftY = y;
+  let rightY = y;
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.text);
+  
+  // Process Notes (left column)
   if (notes) {
-    const splitNotes = doc.splitTextToSize(notes, 170);
-    doc.text(splitNotes, 15, y);
-    y += splitNotes.length * 4 + 4;
+    const noteLines = notes.split('\n').filter(line => line.trim());
+    
+    noteLines.forEach((line, idx) => {
+      leftY = checkPageBreak(leftY, 15);
+      const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
+      doc.text(wrapped, leftColStart, leftY);
+      leftY += wrapped.length * 3.5 + 1;
+    });
   }
   
-  // Terms & Conditions in 2 columns if long enough
+  // Process Terms & Conditions (right column)
   if (terms) {
-    y += 4;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...COLORS.secondary);
-    doc.text('Terms & Conditions', 15, y);
-    y += 6;
+    const termLines = terms.split('\n').filter(line => line.trim());
     
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...COLORS.text);
-    
-    // Split terms into lines and distribute across 2 columns
-    const columnWidth = 85;
-    const allLines = terms.split('\n').filter(line => line.trim());
-    
-    if (allLines.length > 6) {
-      // Use 2 columns for longer terms
-      const midPoint = Math.ceil(allLines.length / 2);
-      const leftColumn = allLines.slice(0, midPoint);
-      const rightColumn = allLines.slice(midPoint);
-      
-      let leftY = y;
-      let rightY = y;
-      
-      // Left column
-      leftColumn.forEach((line, idx) => {
-        const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
-        doc.text(wrapped, 15, leftY);
-        leftY += wrapped.length * 3.5;
-      });
-      
-      // Right column
-      rightColumn.forEach((line, idx) => {
-        const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
-        doc.text(wrapped, 105, rightY);
-        rightY += wrapped.length * 3.5;
-      });
-      
-      y = Math.max(leftY, rightY);
-    } else {
-      // Single column for short terms
-      const splitTerms = doc.splitTextToSize(terms, 170);
-      doc.text(splitTerms, 15, y);
-      y += splitTerms.length * 3.5;
-    }
+    termLines.forEach((line, idx) => {
+      rightY = checkPageBreak(rightY, 15);
+      const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
+      doc.text(wrapped, rightColStart, rightY);
+      rightY += wrapped.length * 3.5 + 1;
+    });
   }
   
-  return y;
+  return Math.max(leftY, rightY);
 };
 
 // Footer
