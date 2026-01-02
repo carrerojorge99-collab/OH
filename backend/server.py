@@ -615,6 +615,8 @@ class Estimate(BaseModel):
     discount_amount: float = 0.0
     tax_rate: float = 0.0
     tax_amount: float = 0.0
+    tax_type_name: Optional[str] = None
+    tax_percentage: Optional[float] = None
     total: float
     status: str  # draft, sent, approved, rejected, converted
     notes: Optional[str] = None
