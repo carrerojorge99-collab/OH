@@ -119,6 +119,46 @@ const ClockHistory = () => {
     }
   };
 
+  const handleOpenEditDialog = (entry) => {
+    setEditingEntry(entry);
+    // Extract time from ISO string
+    const clockInTime = entry.clock_in ? moment(entry.clock_in).format('HH:mm') : '';
+    const clockOutTime = entry.clock_out ? moment(entry.clock_out).format('HH:mm') : '';
+    setEditForm({ clock_in_time: clockInTime, clock_out_time: clockOutTime });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEntry) return;
+    
+    setSaving(true);
+    try {
+      // Build the full datetime from date + time
+      const date = editingEntry.date;
+      const clockInFull = editForm.clock_in_time 
+        ? `${date}T${editForm.clock_in_time}:00` 
+        : null;
+      const clockOutFull = editForm.clock_out_time 
+        ? `${date}T${editForm.clock_out_time}:00` 
+        : null;
+      
+      await api.put(`/clock/${editingEntry.clock_id}`, {
+        clock_in: clockInFull,
+        clock_out: clockOutFull
+      }, { withCredentials: true });
+      
+      toast.success('Ponche actualizado exitosamente');
+      setEditDialogOpen(false);
+      setEditingEntry(null);
+      loadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating clock:', error);
+      toast.error(error.response?.data?.detail || 'Error al actualizar ponche');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const loadData = async () => {
     try {
       const timestamp = Date.now();
