@@ -19,27 +19,32 @@ const Reports = () => {
   const [yearFilter, setYearFilter] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
 
-  // Generate available years from projects
+  // Extract year from project_number (format: "2026-001" or "YYYY-XXX")
+  const getProjectYear = (project) => {
+    if (project.project_number) {
+      const match = project.project_number.match(/^(\d{4})/);
+      if (match) return parseInt(match[1]);
+    }
+    if (project.start_date) return new Date(project.start_date).getFullYear();
+    if (project.created_at) return new Date(project.created_at).getFullYear();
+    return null;
+  };
+
+  // Generate available years from projects (using project_number)
   const availableYears = useMemo(() => {
     const years = new Set();
     projects.forEach(p => {
-      if (p.start_date) {
-        years.add(new Date(p.start_date).getFullYear());
-      }
-      if (p.created_at) {
-        years.add(new Date(p.created_at).getFullYear());
-      }
+      const year = getProjectYear(p);
+      if (year) years.add(year);
     });
     return Array.from(years).sort((a, b) => b - a);
   }, [projects]);
 
-  // Filter projects by year
+  // Filter projects by year (using project_number)
   const filteredProjects = useMemo(() => {
     if (yearFilter === 'all') return projects;
     return projects.filter(p => {
-      const projectYear = p.start_date 
-        ? new Date(p.start_date).getFullYear() 
-        : new Date(p.created_at).getFullYear();
+      const projectYear = getProjectYear(p);
       return projectYear === parseInt(yearFilter);
     });
   }, [projects, yearFilter]);
