@@ -314,10 +314,16 @@ const CostEstimateDetail = () => {
     const subtotal = totalLabor + totalSubcontractors + totalMaterials + 
                      totalEquipment + totalTransportation + totalGC;
     
-    const multiplier = 1 + (Number(overheadPercentage) / 100) + (Number(profitPercentage) / 100) + 
-                      (Number(contingencyPercentage) / 100) + (Number(taxPercentage) / 100);
+    // B2B applies only to subcontractors
+    const b2bAmount = totalSubcontractors * (Number(b2bPercentage) / 100);
     
-    const grandTotal = subtotal * multiplier;
+    // Other percentages apply to the subtotal
+    const multiplier = 1 + (Number(overheadPercentage) / 100) + (Number(profitPercentage) / 100) + 
+                      (Number(contingencyPercentage) / 100) + (Number(taxPercentage) / 100) +
+                      (Number(cfsePercentage) / 100) + (Number(liabilityPercentage) / 100) +
+                      (Number(municipalPatentPercentage) / 100);
+    
+    const grandTotal = (subtotal * multiplier) + b2bAmount;
 
     return {
       totalLabor,
@@ -327,6 +333,7 @@ const CostEstimateDetail = () => {
       totalTransportation,
       totalGC,
       subtotal,
+      b2bAmount,
       grandTotal
     };
   };
