@@ -572,7 +572,7 @@ const PurchaseOrders = () => {
               </CardContent>
             </Card>
           ) : (
-            purchaseOrders.map(po => (
+            filteredPurchaseOrders.map(po => (
               <Card key={po.po_id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
