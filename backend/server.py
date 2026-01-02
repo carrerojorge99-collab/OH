@@ -4625,7 +4625,11 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
             "location_longitude": None,
             "geofence_radius": 100,
             "geofence_enabled": False,
-            "minimum_margin_percent": 15
+            "minimum_margin_percent": 15,
+            "default_b2b_percentage": 4,
+            "default_cfse_percentage": 7,
+            "default_liability_percentage": 7,
+            "default_municipal_patent_percentage": 1
         }
     # Asegurar que exista minimum_margin_percent
     if "minimum_margin_percent" not in company:
