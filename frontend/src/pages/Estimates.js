@@ -131,20 +131,14 @@ const Estimates = () => {
     try {
       const [estimatesRes, projectsRes, taxTypesRes, clientsRes] = await Promise.all([
         api.get(`/estimates`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`/projects`, { withCredentials: true }),
-        api.get(`/tax-types`, { withCredentials: true }),
-        api.get(`/clients`, { withCredentials: true }).catch(() => ({ data: [] }))
-      ]);
-      setEstimates(estimatesRes.data);
-      setProjects(projectsRes.data);
-      setTaxTypes(taxTypesRes.data);
-      setSavedClients(clientsRes.data || []);
         api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`/tax-types`, { withCredentials: true }).catch(() => ({ data: [] }))
+        api.get(`/tax-types`, { withCredentials: true }).catch(() => ({ data: [] })),
+        api.get(`/clients`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
       setEstimates(estimatesRes.data || []);
       setProjects(projectsRes.data || []);
       setTaxTypes(taxTypesRes.data || []);
+      setSavedClients(clientsRes.data || []);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
