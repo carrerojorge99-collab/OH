@@ -7467,14 +7467,41 @@ async def export_cost_estimate_pdf(
     elements.append(Spacer(1, 20))
     elements.append(Paragraph("Resumen", heading_style))
     
+    subtotal = estimate.get('subtotal', 0)
+    
     summary_data = [
         ['Concepto', 'Monto'],
-        ['Subtotal', f"${estimate.get('subtotal', 0):,.2f}"],
-        [f"Gastos Generales ({estimate.get('overhead_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('overhead_percentage', 0) / 100:,.2f}"],
-        [f"Utilidad ({estimate.get('profit_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('profit_percentage', 0) / 100:,.2f}"],
-        [f"Contingencia ({estimate.get('contingency_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('contingency_percentage', 0) / 100:,.2f}"],
-        [f"Impuestos ({estimate.get('tax_percentage', 0)}%)", f"${estimate.get('subtotal', 0) * estimate.get('tax_percentage', 0) / 100:,.2f}"],
+        ['Subtotal', f"${subtotal:,.2f}"],
+        [f"Gastos Generales ({estimate.get('overhead_percentage', 0)}%)", f"${subtotal * estimate.get('overhead_percentage', 0) / 100:,.2f}"],
+        [f"Utilidad ({estimate.get('profit_percentage', 0)}%)", f"${subtotal * estimate.get('profit_percentage', 0) / 100:,.2f}"],
+        [f"Contingencia ({estimate.get('contingency_percentage', 6)}%)", f"${subtotal * estimate.get('contingency_percentage', 6) / 100:,.2f}"],
     ]
+    
+    # Add tax if present
+    if estimate.get('tax_percentage', 0) > 0:
+        summary_data.append([f"Impuestos ({estimate.get('tax_percentage', 0)}%)", f"${subtotal * estimate.get('tax_percentage', 0) / 100:,.2f}"])
+    
+    # B2B applies only to subcontractors
+    total_subcontractors = estimate.get('total_subcontractors', 0)
+    b2b_percentage = estimate.get('b2b_percentage', 0)
+    if b2b_percentage > 0 and total_subcontractors > 0:
+        b2b_amount = total_subcontractors * b2b_percentage / 100
+        summary_data.append([f"B2B ({b2b_percentage}%) - Solo Subcontratistas", f"${b2b_amount:,.2f}"])
+    
+    # CFSE percentage
+    cfse_percentage = estimate.get('cfse_percentage', 0)
+    if cfse_percentage > 0:
+        summary_data.append([f"CFSE ({cfse_percentage}%)", f"${subtotal * cfse_percentage / 100:,.2f}"])
+    
+    # Liability percentage
+    liability_percentage = estimate.get('liability_percentage', 0)
+    if liability_percentage > 0:
+        summary_data.append([f"Responsabilidad ({liability_percentage}%)", f"${subtotal * liability_percentage / 100:,.2f}"])
+    
+    # Municipal Patent percentage
+    municipal_patent_percentage = estimate.get('municipal_patent_percentage', 0)
+    if municipal_patent_percentage > 0:
+        summary_data.append([f"Patente Municipal ({municipal_patent_percentage}%)", f"${subtotal * municipal_patent_percentage / 100:,.2f}"])
     
     summary_style = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
