@@ -748,7 +748,12 @@ const Estimates = () => {
                         <Badge className={statusColors[estimate.status]}>{statusLabels[estimate.status]}</Badge>
                       </div>
                       <p className="font-medium text-slate-900">{estimate.title}</p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-slate-600">
+                      <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-slate-600">
+                        {estimate.client_company && (
+                          <span className="flex items-center gap-1 font-medium text-slate-800">
+                            <Building2 className="w-4 h-4" />{estimate.client_company}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1"><User className="w-4 h-4" />{estimate.client_name}</span>
                         {estimate.client_email && <span className="flex items-center gap-1"><Mail className="w-4 h-4" />{estimate.client_email}</span>}
                         <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{moment(estimate.created_at).format('DD/MM/YYYY')}</span>
