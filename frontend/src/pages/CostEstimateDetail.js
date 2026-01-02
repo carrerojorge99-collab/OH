@@ -29,14 +29,6 @@ const CostEstimateDetail = () => {
   const [equipment, setEquipment] = useState([]);
   const [transportation, setTransportation] = useState([]);
   const [generalConditions, setGeneralConditions] = useState([]);
-  const [overheadPercentage, setOverheadPercentage] = useState(0);
-  const [profitPercentage, setProfitPercentage] = useState(0);
-  const [contingencyPercentage, setContingencyPercentage] = useState(0);
-  const [taxPercentage, setTaxPercentage] = useState(0);
-  const [b2bPercentage, setB2bPercentage] = useState(0);
-  const [cfsePercentage, setCfsePercentage] = useState(0);
-  const [liabilityPercentage, setLiabilityPercentage] = useState(0);
-  const [municipalPatentPercentage, setMunicipalPatentPercentage] = useState(0);
 
   useEffect(() => {
     loadData();
