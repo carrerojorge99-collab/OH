@@ -555,12 +555,13 @@ const CostEstimateDetail = () => {
                         />
                       </div>
                       <div>
-                        <Label>Contingencia (%)</Label>
+                        <Label>Contingencia (%) <span className="text-xs text-blue-600">*Fijo</span></Label>
                         <Input
                           type="number"
                           step="0.1"
-                          value={contingencyPercentage}
-                          onChange={(e) => setContingencyPercentage(e.target.value)}
+                          value={6}
+                          disabled
+                          className="bg-slate-100 cursor-not-allowed"
                         />
                       </div>
                       <div>
