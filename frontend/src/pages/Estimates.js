@@ -812,7 +812,7 @@ const Estimates = () => {
                         {estimate.items.map((item, idx) => (
                           <div key={idx} className="flex justify-between text-sm">
                             <span>{item.description}</span>
-                            <span className="font-mono">{item.quantity} x ${item.unit_price} = ${item.amount.toFixed(2)}</span>
+                            <span className="font-mono">{item.quantity} x ${formatCurrency(item.unit_price)} = ${formatCurrency(item.amount)}</span>
                           </div>
                         ))}
                       </div>
