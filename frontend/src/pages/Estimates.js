@@ -86,6 +86,7 @@ const Estimates = () => {
   
   const [form, setForm] = useState({
     project_id: '',
+    client_company: '', // Company/Business name
     client_name: '',
     client_email: '',
     client_phone: '',
@@ -101,6 +102,8 @@ const Estimates = () => {
     valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
     custom_number: ''
   });
+
+  const [savedClients, setSavedClients] = useState([]);
 
   const { nomenclatures, selectedNomenclature, generatedNumber, handleSelectNomenclature } = useNomenclature(
     (number) => setForm(prev => ({ ...prev, custom_number: number }))
@@ -126,8 +129,16 @@ const Estimates = () => {
 
   const loadData = async () => {
     try {
-      const [estimatesRes, projectsRes, taxTypesRes] = await Promise.all([
+      const [estimatesRes, projectsRes, taxTypesRes, clientsRes] = await Promise.all([
         api.get(`/estimates`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/projects`, { withCredentials: true }),
+        api.get(`/tax-types`, { withCredentials: true }),
+        api.get(`/clients`, { withCredentials: true }).catch(() => ({ data: [] }))
+      ]);
+      setEstimates(estimatesRes.data);
+      setProjects(projectsRes.data);
+      setTaxTypes(taxTypesRes.data);
+      setSavedClients(clientsRes.data || []);
         api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
         api.get(`/tax-types`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
