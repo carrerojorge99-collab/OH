@@ -89,7 +89,7 @@ const HumanResources = () => {
   // Initial load
   useEffect(() => { 
     loadEmployees(); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Load employee data when selection changes
@@ -110,7 +110,7 @@ const HumanResources = () => {
         notes: emp.notes || ''
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [selectedEmployee]);
 
   const handleSaveProfile = async () => {
