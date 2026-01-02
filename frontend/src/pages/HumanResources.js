@@ -66,28 +66,33 @@ const HumanResources = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const loadEmployees = useCallback(async () => {
+  const loadEmployees = async () => {
     try {
       const response = await api.get('/employees');
       setEmployees(response.data);
-      setLoading(false);
     } catch (error) {
       toast.error('Error al cargar empleados');
+    } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const loadDocuments = useCallback(async (userId) => {
+  const loadDocuments = async (userId) => {
     try {
       const response = await api.get(`/employees/${userId}/documents`);
       setDocuments(response.data);
     } catch (error) {
       setDocuments([]);
     }
+  };
+
+  // Initial load
+  useEffect(() => { 
+    loadEmployees(); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { loadEmployees(); }, [loadEmployees]);
-
+  // Load employee data when selection changes
   useEffect(() => {
     if (selectedEmployee) {
       loadDocuments(selectedEmployee.user_id);
@@ -105,7 +110,8 @@ const HumanResources = () => {
         notes: emp.notes || ''
       });
     }
-  }, [selectedEmployee, loadDocuments]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEmployee]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
