@@ -511,16 +511,40 @@ const Payroll = () => {
             <Button variant="ghost" onClick={() => navigate('/hr')}><ArrowLeft className="w-4 h-4 mr-2" /> Volver a RH</Button>
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Procesar Nómina</h1>
-              <p className="text-slate-600">Calcular pagos y deducciones basado en horas trabajadas</p>
+              <p className="text-slate-600">
+                Calcular pagos y deducciones basado en horas trabajadas
+                {yearFilter !== 'all' && <span className="text-blue-600 font-medium"> - Año {yearFilter}</span>}
+              </p>
             </div>
           </div>
-          <Button variant="outline" onClick={() => setShowHistory(!showHistory)}>
-            <History className="w-4 h-4 mr-2" /> {showHistory ? 'Ocultar' : 'Ver'} Historial ({payrollHistory.length})
-          </Button>
+          <div className="flex gap-2 items-center">
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger className="w-[140px]">
+                <Calendar className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los años</SelectItem>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={() => { setLoading(true); loadData(); loadPayrollHistory(); }}
+              title="Refrescar datos"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button variant="outline" onClick={() => setShowHistory(!showHistory)}>
+              <History className="w-4 h-4 mr-2" /> {showHistory ? 'Ocultar' : 'Ver'} Historial ({filteredPayrollHistory.length})
+            </Button>
+          </div>
         </div>
 
         {/* Payroll History */}
-        {showHistory && payrollHistory.length > 0 && (
+        {showHistory && filteredPayrollHistory.length > 0 && (
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><History className="w-5 h-5" /> Historial de Nóminas Guardadas</CardTitle></CardHeader>
             <CardContent>
@@ -539,7 +563,7 @@ const Payroll = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {payrollHistory.map((run, idx) => (
+                    {filteredPayrollHistory.map((run, idx) => (
                       <tr key={idx} className="border-b hover:bg-slate-50">
                         <td className="p-3 font-medium">{run.period_start} al {run.period_end}</td>
                         <td className="p-3 text-center">{run.employees?.length || 0}</td>
