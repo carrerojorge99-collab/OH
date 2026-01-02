@@ -212,6 +212,8 @@ const Estimates = () => {
       description: estimate.description || '',
       items: estimate.items,
       tax_rate: estimate.tax_rate,
+      tax_type_name: estimate.tax_type_name || '',
+      tax_percentage: estimate.tax_percentage || estimate.tax_rate || 0,
       discount_percent: estimate.discount_percent,
       notes: estimate.notes || '',
       terms: estimate.terms || '',
