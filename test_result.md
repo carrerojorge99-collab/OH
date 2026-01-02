@@ -1,31 +1,44 @@
 # Test Results
 
-## Test Session: Year Filter & PDF Changes
-**Date**: 2025-01-02
+## Test Session: Client Company Field & Client Profiles
+**Date**: 2026-01-02
 **Tester**: E1 Agent
 
-### Changes to Test:
-1. **Year Filter in Dashboard** - Filter projects/stats by year
-2. **Year Filter in Projects** - Filter project list by year  
-3. **Year Filter in Invoices** - Filter invoice list by year
-4. **Logo stretched more in PDFs** - From 55x35 to 60x45
-5. **PO# below Invoice Number in PDFs** - Changed order in invoice PDFs
-6. **Fixed 6% Contingency** - In Cost Estimate, contingency is now fixed at 6%
+### Changes Implemented:
+1. **Client Company Field in Estimates**
+   - Added `client_company` field to backend models (EstimateCreate, Estimate)
+   - Added `client_company` field to estimate creation/update endpoints
+   - Added UI field "Nombre de Empresa" in estimate form
+   - Updated PDF export to include company name
+   - Company name displays in estimate list with building icon
+
+2. **Client Profiles Feature**
+   - New `/api/client-profiles` GET endpoint to list saved profiles
+   - New `/api/client-profiles` POST endpoint to create profiles
+   - New `/api/client-profiles/find-or-create` POST endpoint for auto-creation
+   - Frontend selector to load saved client data
+   - Automatic profile creation when creating new estimates
+
+3. **Bug Fixes**
+   - Fixed duplicate code in Estimates.js loadData() function
+   - Fixed MongoDB ObjectId serialization error in client-profiles endpoints
 
 ### Test Protocol:
-1. Login and verify Dashboard loads with year selector
-2. Select a year and verify stats update correctly
-3. Navigate to Projects and verify year filter works
-4. Navigate to Invoices and verify year filter works
-5. Create/view a Cost Estimate and verify contingency is fixed at 6%
-6. Generate a test PDF to verify logo size and PO# placement
+1. Login and verify Estimates page loads correctly
+2. Verify existing estimate shows company name (ABC Corporation)
+3. Open "Nuevo Estimado" dialog
+4. Verify "Cargar Cliente Guardado" selector appears
+5. Verify "Nombre de Empresa" field exists
+6. Create new estimate with company name
+7. Verify new estimate shows company name in list
+8. Verify client profile is created automatically
+9. Verify saved client can be loaded into form
 
 ### Credentials:
-- Email: j.carrero@ohsmspr.com
+- Email: jcarrion@ohsmspr.com
 - Password: Admin2024!
 
 ### User Feedback to Incorporate:
-- Logo should be more stretched vertically
-- PO# should appear below Invoice number
-- Projects, Invoices and everything should be divided by year
-- Contingency in Cost Estimate should be fixed at 6%
+- Complete the cascading calculation feature verification for Cost Estimates
+- Test PDF generation with company name
+- Verify automatic client profile creation works from UI
