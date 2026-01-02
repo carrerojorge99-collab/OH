@@ -1365,7 +1365,7 @@ const getPriorityLabel = (priority) => {
   return labels[priority] || priority || 'N/A';
 };
 
-export { COLORS, formatCurrency };
+export { COLORS };
 
 export default { 
   fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addItemsTable, 
