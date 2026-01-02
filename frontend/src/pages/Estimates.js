@@ -328,9 +328,18 @@ const Estimates = () => {
     // Tasks table
     y = addTasksTable(doc, estimate.items, y + 4);
     
-    // Totals with tax details if available
-    const taxDetails = estimate.tax_type_name && estimate.tax_percentage ? 
-      [{ name: estimate.tax_type_name, percentage: estimate.tax_percentage, amount: estimate.tax_amount || 0 }] : null;
+    // Build tax details from selected_taxes or fallback to single tax
+    let taxDetails = null;
+    if (estimate.selected_taxes && estimate.selected_taxes.length > 0) {
+      const taxableAmount = estimate.subtotal - (estimate.discount_amount || 0);
+      taxDetails = estimate.selected_taxes.map(t => ({
+        name: t.name,
+        percentage: t.percentage,
+        amount: taxableAmount * t.percentage / 100
+      }));
+    } else if (estimate.tax_type_name && estimate.tax_percentage) {
+      taxDetails = [{ name: estimate.tax_type_name, percentage: estimate.tax_percentage, amount: estimate.tax_amount || 0 }];
+    }
     y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y, taxDetails);
     
     // Notes - with 2-column terms
