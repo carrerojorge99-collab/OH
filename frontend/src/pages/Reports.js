@@ -164,7 +164,7 @@ const Reports = () => {
     }));
 
   // ROI por proyecto
-  const projectROI = projects.map(p => ({
+  const projectROI = filteredProjects.map(p => ({
     name: p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name,
     roi: p.project_value > 0 ? ((p.project_value - p.budget_spent) / p.project_value * 100).toFixed(1) : 0
   })).sort((a, b) => b.roi - a.roi);
