@@ -31,6 +31,7 @@ const Projects = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
+  const [yearFilter, setYearFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [users, setUsers] = useState([]);
@@ -38,6 +39,20 @@ const Projects = () => {
   
   // Roles que pueden crear proyectos
   const canCreateProject = user?.role && ['super_admin', 'admin', 'project_manager'].includes(user.role);
+
+  // Generate available years from projects
+  const availableYears = React.useMemo(() => {
+    const years = new Set();
+    projects.forEach(p => {
+      if (p.start_date) {
+        years.add(new Date(p.start_date).getFullYear());
+      }
+      if (p.created_at) {
+        years.add(new Date(p.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [projects]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -85,10 +100,20 @@ const Projects = () => {
       const matchesPriority = priorityFilter === 'all' || project.priority === priorityFilter;
       const matchesPayment = paymentFilter === 'all' || (project.payment_status || 'pending') === paymentFilter;
       
-      return matchesSearch && matchesStatus && matchesPriority && matchesPayment;
+      // Year filter
+      let matchesYear = yearFilter === 'all';
+      if (!matchesYear && project.start_date) {
+        const projectYear = new Date(project.start_date).getFullYear();
+        matchesYear = projectYear === parseInt(yearFilter);
+      } else if (!matchesYear && project.created_at) {
+        const projectYear = new Date(project.created_at).getFullYear();
+        matchesYear = projectYear === parseInt(yearFilter);
+      }
+      
+      return matchesSearch && matchesStatus && matchesPriority && matchesPayment && matchesYear;
     });
     setFilteredProjects(filtered);
-  }, [searchTerm, statusFilter, priorityFilter, paymentFilter, projects]);
+  }, [searchTerm, statusFilter, priorityFilter, paymentFilter, yearFilter, projects]);
 
   const loadProjects = async () => {
     try {
