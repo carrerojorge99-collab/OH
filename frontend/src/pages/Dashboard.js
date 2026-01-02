@@ -166,11 +166,19 @@ const Dashboard = () => {
 
   const projectsByStatus = filteredProjects.reduce((acc, project) => {
     const status = project.status;
-    const existing = acc.find(item => item.name === status);
+    const statusLabels = {
+      'planning': 'Planificación',
+      'in_progress': 'En Progreso',
+      'on_hold': 'En Espera',
+      'completed': 'Completado',
+      'cancelled': 'Cancelado'
+    };
+    const statusName = statusLabels[status] || status;
+    const existing = acc.find(item => item.name === statusName);
     if (existing) {
       existing.value += 1;
     } else {
-      acc.push({ name: status, value: 1 });
+      acc.push({ name: statusName, value: 1 });
     }
     return acc;
   }, []);
