@@ -313,12 +313,12 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
   doc.setTextColor(...COLORS.secondary);
   
   doc.text('Sub Total:', rightX - 45, y);
-  doc.text(`$${subtotal.toFixed(2)}`, rightX, y, { align: 'right' });
+  doc.text(`$${formatCurrency(subtotal)}`, rightX, y, { align: 'right' });
   y += 6;
   
   if (discount > 0) {
     doc.text('Descuento:', rightX - 45, y);
-    doc.text(`-$${discount.toFixed(2)}`, rightX, y, { align: 'right' });
+    doc.text(`-$${formatCurrency(discount)}`, rightX, y, { align: 'right' });
     y += 6;
   }
   
@@ -326,12 +326,12 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
   if (taxDetails && taxDetails.length > 0) {
     taxDetails.forEach(taxItem => {
       doc.text(`${taxItem.name} (${taxItem.percentage}%):`, rightX - 45, y);
-      doc.text(`$${taxItem.amount.toFixed(2)}`, rightX, y, { align: 'right' });
+      doc.text(`$${formatCurrency(taxItem.amount)}`, rightX, y, { align: 'right' });
       y += 6;
     });
   } else if (tax > 0) {
     doc.text('Impuesto:', rightX - 45, y);
-    doc.text(`$${tax.toFixed(2)}`, rightX, y, { align: 'right' });
+    doc.text(`$${formatCurrency(tax)}`, rightX, y, { align: 'right' });
     y += 6;
   }
   
@@ -344,7 +344,7 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.text);
   doc.text('Total:', rightX - 45, y);
-  doc.text(`$${total.toFixed(2)}`, rightX, y, { align: 'right' });
+  doc.text(`$${formatCurrency(total)}`, rightX, y, { align: 'right' });
   
   return y + 12;
 };
