@@ -4724,6 +4724,8 @@ async def create_client_profile(data: dict, request: Request, session_token: Opt
     }
     
     await db.client_profiles.insert_one(profile)
+    # Remove MongoDB _id before returning
+    profile.pop("_id", None)
     return {"message": "Perfil de cliente creado", "profile_id": profile_id, "profile": profile}
 
 @api_router.post("/client-profiles/find-or-create")
@@ -4762,6 +4764,8 @@ async def find_or_create_client_profile(data: dict, request: Request, session_to
     }
     
     await db.client_profiles.insert_one(profile)
+    # Remove MongoDB _id before returning
+    profile.pop("_id", None)
     return {"found": False, "profile": profile, "message": "Perfil de cliente creado automáticamente"}
 
 @api_router.get("/clients/{client_id}/projects")
