@@ -444,3 +444,44 @@ Status: **Backend API tests PASSED** ✅
 - Authentication and session management working properly
 
 ## Last Test Run
+
+## Cost Estimate Percentages Feature Test (2025-01-02)
+
+### Feature Under Test
+**NEW: Cost Estimate Contractor Percentages**
+- B2B (4%) - Applies only to Subcontractors
+- CFSE (7%) - Applies to Subtotal
+- Liability (7%) - Applies to Subtotal
+- Patente Municipal (1%) - Applies to Subtotal
+
+### Implementation Summary
+1. **Backend Changes:**
+   - Added new percentage fields to `CostEstimate` and `CostEstimateCreate` models
+   - Updated `/api/cost-estimates` POST/PUT endpoints with new calculation logic
+   - Added default percentages to `company_settings` schema
+   - B2B calculation: Only applies to subcontractors total
+   - Other percentages: Apply to overall subtotal
+
+2. **Frontend Changes:**
+   - Added new state variables for percentages in `CostEstimateDetail.js`
+   - Load default percentages from company settings for new estimates
+   - Added contractor percentage section in Summary tab with amber background
+   - Shows B2B amount separately when applicable
+
+3. **Settings Changes:**
+   - Added new section "Porcentajes para Estimaciones de Costos" in Company tab
+   - Fields: B2B (%), CFSE (%), Liability (%), Patente Municipal (%)
+   - Values are configurable and saved to company_settings
+
+### Files Modified:
+- `/app/backend/server.py` - Models and endpoints
+- `/app/frontend/src/pages/Settings.js` - Company settings form
+- `/app/frontend/src/pages/CostEstimateDetail.js` - Estimate detail page
+
+### Test Scenarios:
+1. Verify default percentages load from Settings
+2. Verify percentages display in Cost Estimate summary
+3. Verify B2B calculates only on subcontractors
+4. Verify grand total includes all percentages correctly
+
+### Status: PENDING TESTING
