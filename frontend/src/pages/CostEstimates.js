@@ -19,8 +19,9 @@ const CostEstimates = () => {
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
-  // Default to current year
-  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+  // Start with 'all' and update to current year if data exists
+  const [yearFilter, setYearFilter] = useState('all');
+  const [yearInitialized, setYearInitialized] = useState(false);
 
   // Generate available years from estimates
   const availableYears = useMemo(() => {
@@ -41,6 +42,17 @@ const CostEstimates = () => {
       return year === parseInt(yearFilter);
     });
   }, [estimates, yearFilter]);
+
+  // Auto-set year filter to current year if available
+  useEffect(() => {
+    if (!yearInitialized && estimates.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setYearFilter(currentYear.toString());
+      }
+      setYearInitialized(true);
+    }
+  }, [estimates, availableYears, yearInitialized]);
 
   useEffect(() => {
     loadData();
