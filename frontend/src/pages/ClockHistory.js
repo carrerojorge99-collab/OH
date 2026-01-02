@@ -30,6 +30,12 @@ const ClockHistory = () => {
   const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
+  
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editForm, setEditForm] = useState({ clock_in_time: '', clock_out_time: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
