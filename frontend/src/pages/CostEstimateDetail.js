@@ -271,7 +271,7 @@ const CostEstimateDetail = () => {
     setGeneralConditions(generalConditions.filter((_, i) => i !== index));
   };
 
-  // Calculate totals - Cascading calculation
+  // Calculate totals - Simple sum only
   const calculateTotals = () => {
     const totalLabor = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
     const totalSubcontractors = subcontractors.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
@@ -282,40 +282,6 @@ const CostEstimateDetail = () => {
     
     const subtotal = totalLabor + totalSubcontractors + totalMaterials + 
                      totalEquipment + totalTransportation + totalGC;
-    
-    // B2B applies only to subcontractors (added at the end)
-    const b2bAmount = totalSubcontractors * (Number(b2bPercentage) / 100);
-    
-    // Fixed contingency at 6%
-    const fixedContingency = 6;
-    
-    // CASCADING CALCULATION (Profit → Overhead → CFSE → Liability → Municipal Patent):
-    // 1. Subtotal + Profit
-    const profitAmount = subtotal * (Number(profitPercentage) / 100);
-    const afterProfit = subtotal + profitAmount;
-    
-    // 2. After Profit + Overhead
-    const overheadAmount = afterProfit * (Number(overheadPercentage) / 100);
-    const afterOverhead = afterProfit + overheadAmount;
-    
-    // 3. After Overhead + CFSE
-    const cfseAmount = afterOverhead * (Number(cfsePercentage) / 100);
-    const afterCfse = afterOverhead + cfseAmount;
-    
-    // 4. After CFSE + Liability
-    const liabilityAmount = afterCfse * (Number(liabilityPercentage) / 100);
-    const afterLiability = afterCfse + liabilityAmount;
-    
-    // 5. After Liability + Municipal Patent
-    const municipalPatentAmount = afterLiability * (Number(municipalPatentPercentage) / 100);
-    const afterMunicipalPatent = afterLiability + municipalPatentAmount;
-    
-    // 6. Add contingency and tax on subtotal (not cascaded)
-    const contingencyAmount = subtotal * (fixedContingency / 100);
-    const taxAmount = subtotal * (Number(taxPercentage) / 100);
-    
-    // Grand Total = Cascaded amount + Contingency + Tax + B2B
-    const grandTotal = afterMunicipalPatent + contingencyAmount + taxAmount + b2bAmount;
 
     return {
       totalLabor,
@@ -325,15 +291,7 @@ const CostEstimateDetail = () => {
       totalTransportation,
       totalGC,
       subtotal,
-      b2bAmount,
-      profitAmount,
-      overheadAmount,
-      cfseAmount,
-      liabilityAmount,
-      municipalPatentAmount,
-      contingencyAmount,
-      taxAmount,
-      grandTotal
+      grandTotal: subtotal
     };
   };
 
