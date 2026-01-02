@@ -89,8 +89,8 @@ const Reports = () => {
     }
   };
 
-  // Comparativa entre proyectos
-  const projectComparison = projects.map(p => ({
+  // Comparativa entre proyectos (use filtered)
+  const projectComparison = filteredProjects.map(p => ({
     name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name,
     presupuesto: p.budget_total,
     gastado: p.budget_spent,
@@ -100,7 +100,11 @@ const Reports = () => {
   }));
 
   // Análisis de tendencias de gastos (por mes)
-  const expensesByMonth = expenses.reduce((acc, expense) => {
+  const filteredExpenses = yearFilter === 'all' 
+    ? expenses 
+    : expenses.filter(e => new Date(e.date).getFullYear() === parseInt(yearFilter));
+
+  const expensesByMonth = filteredExpenses.reduce((acc, expense) => {
     const month = expense.date.substring(0, 7); // YYYY-MM
     if (!acc[month]) {
       acc[month] = 0;
@@ -117,7 +121,7 @@ const Reports = () => {
     }));
 
   // Proyección de finalización basada en progreso
-  const projectProjections = projects.map(p => {
+  const projectProjections = filteredProjects.map(p => {
     const projectTasks = tasks.filter(t => t.project_id === p.project_id);
     const totalTasks = projectTasks.length;
     const completedTasks = projectTasks.filter(t => t.status === 'done').length;
