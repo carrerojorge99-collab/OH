@@ -814,7 +814,7 @@ const Invoices = () => {
                             <div>
                               <Label className="text-xs">Total</Label>
                               <div className="h-9 flex items-center font-mono font-bold text-blue-600">
-                                ${(parseFloat(item.amount) || 0).toFixed(2)}
+                                ${formatCurrency(parseFloat(item.amount) || 0)}
                               </div>
                             </div>
                           </div>
