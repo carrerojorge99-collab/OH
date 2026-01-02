@@ -60,8 +60,7 @@ const Estimates = () => {
     description: '',
     items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
-    tax_type_name: '',
-    tax_percentage: 0,
+    selected_taxes: [], // Array of {name, percentage}
     discount_percent: 0,
     notes: '',
     terms: 'Este estimado es válido por 30 días.',
