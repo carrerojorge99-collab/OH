@@ -436,7 +436,7 @@ const ClockHistory = () => {
                                   <span className="text-slate-600">{entry.project_name || 'Sin proyecto'}</span>
                                 </div>
                               </div>
-                              <div className="text-right flex items-center gap-3">
+                              <div className="text-right flex items-center gap-2">
                                 {entry.hours_worked > 0 && (
                                   <span className="font-mono font-semibold text-blue-600">
                                     {entry.hours_worked.toFixed(2)}h
@@ -445,11 +445,24 @@ const ClockHistory = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-1 h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditDialog(entry);
+                                  }}
+                                  title="Editar ponche"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDeleteClock(entry.clock_id, entry.user_name, entry.date);
                                   }}
+                                  title="Eliminar ponche"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
