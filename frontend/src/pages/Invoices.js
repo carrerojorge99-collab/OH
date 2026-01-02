@@ -49,8 +49,7 @@ const Invoices = () => {
     client_address: '',
     sponsor_name: '',
     tax_rate: 0,
-    tax_type_id: '',
-    tax_type_name: '',
+    selected_taxes: [],
     notes: '',
     custom_number: ''
   });
@@ -65,8 +64,7 @@ const Invoices = () => {
     sponsor_name: '',
     items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
-    tax_type_id: '',
-    tax_type_name: '',
+    selected_taxes: [],
     discount_percent: 0,
     notes: '',
     terms: '',
