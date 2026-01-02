@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, Calendar, DollarSign, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, DollarSign, Activity, RefreshCw } from 'lucide-react';
+import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 
 
@@ -14,6 +15,45 @@ const Reports = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState('budget');
+  // Start with 'all' and update to current year if data exists
+  const [yearFilter, setYearFilter] = useState('all');
+  const [yearInitialized, setYearInitialized] = useState(false);
+
+  // Generate available years from projects
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    projects.forEach(p => {
+      if (p.start_date) {
+        years.add(new Date(p.start_date).getFullYear());
+      }
+      if (p.created_at) {
+        years.add(new Date(p.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [projects]);
+
+  // Filter projects by year
+  const filteredProjects = useMemo(() => {
+    if (yearFilter === 'all') return projects;
+    return projects.filter(p => {
+      const projectYear = p.start_date 
+        ? new Date(p.start_date).getFullYear() 
+        : new Date(p.created_at).getFullYear();
+      return projectYear === parseInt(yearFilter);
+    });
+  }, [projects, yearFilter]);
+
+  // Auto-set year filter to current year if available
+  useEffect(() => {
+    if (!yearInitialized && projects.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setYearFilter(currentYear.toString());
+      }
+      setYearInitialized(true);
+    }
+  }, [projects, availableYears, yearInitialized]);
 
   useEffect(() => {
     loadData();
