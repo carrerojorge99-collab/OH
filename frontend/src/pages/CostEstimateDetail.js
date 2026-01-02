@@ -564,17 +564,9 @@ const CostEstimateDetail = () => {
 
                   {/* Percentages */}
                   <div className="space-y-3 mt-6">
-                    <p className="font-medium text-slate-700 mb-2">Porcentajes Generales</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div>
-                        <Label>Overhead (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={overheadPercentage}
-                          onChange={(e) => setOverheadPercentage(e.target.value)}
-                        />
-                      </div>
+                    <p className="font-medium text-slate-700 mb-2">Porcentajes Generales (Cálculo en Cascada)</p>
+                    <p className="text-xs text-slate-500 mb-2">Orden: Profit → Overhead → CFSE → Liability → Municipal Patent</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                       <div>
                         <Label>Profit (%)</Label>
                         <Input
@@ -585,35 +577,12 @@ const CostEstimateDetail = () => {
                         />
                       </div>
                       <div>
-                        <Label>Contingencia (%) <span className="text-xs text-blue-600">*Fijo</span></Label>
+                        <Label>Overhead (%)</Label>
                         <Input
                           type="number"
                           step="0.1"
-                          value={6}
-                          disabled
-                          className="bg-slate-100 cursor-not-allowed"
-                        />
-                      </div>
-                      <div>
-                        <Label>Impuestos (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={taxPercentage}
-                          onChange={(e) => setTaxPercentage(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    
-                    <p className="font-medium text-slate-700 mb-2 mt-4">Porcentajes de Contratista</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-amber-50 rounded-lg">
-                      <div>
-                        <Label>B2B (%) <span className="text-xs text-amber-600">*Solo Subcontratistas</span></Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={b2bPercentage}
-                          onChange={(e) => setB2bPercentage(e.target.value)}
+                          value={overheadPercentage}
+                          onChange={(e) => setOverheadPercentage(e.target.value)}
                         />
                       </div>
                       <div>
@@ -635,12 +604,44 @@ const CostEstimateDetail = () => {
                         />
                       </div>
                       <div>
-                        <Label>Patente Municipal (%)</Label>
+                        <Label>Municipal Patent (%)</Label>
                         <Input
                           type="number"
                           step="0.1"
                           value={municipalPatentPercentage}
                           onChange={(e) => setMunicipalPatentPercentage(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <p className="font-medium text-slate-700 mb-2 mt-4">Otros Porcentajes</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Contingencia (%) <span className="text-xs text-blue-600">*Fijo 6%</span></Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={6}
+                          disabled
+                          className="bg-slate-100 cursor-not-allowed"
+                        />
+                      </div>
+                      <div>
+                        <Label>Impuestos (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={taxPercentage}
+                          onChange={(e) => setTaxPercentage(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>B2B (%) <span className="text-xs text-amber-600">*Solo Subcontratistas</span></Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={b2bPercentage}
+                          onChange={(e) => setB2bPercentage(e.target.value)}
                         />
                       </div>
                     </div>
