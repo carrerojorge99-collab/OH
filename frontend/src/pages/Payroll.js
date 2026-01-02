@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -8,7 +8,8 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Checkbox } from '../components/ui/checkbox';
-import { ArrowLeft, Calculator, Clock, Users, Download, Edit2, Check, Save, FileText, Printer, History } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { ArrowLeft, Calculator, Clock, Users, Download, Edit2, Check, Save, FileText, Printer, History, Calendar, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import jsPDF from 'jspdf';
@@ -28,6 +29,31 @@ const Payroll = () => {
   const [saving, setSaving] = useState(false);
   const [payrollHistory, setPayrollHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  // Default to current year
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+
+  // Generate available years from payroll history
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    payrollHistory.forEach(p => {
+      if (p.period_start) {
+        years.add(new Date(p.period_start).getFullYear());
+      }
+      if (p.created_at) {
+        years.add(new Date(p.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [payrollHistory]);
+
+  // Filter payroll history by year
+  const filteredPayrollHistory = useMemo(() => {
+    if (yearFilter === 'all') return payrollHistory;
+    return payrollHistory.filter(p => {
+      const year = p.period_start ? new Date(p.period_start).getFullYear() : new Date(p.created_at).getFullYear();
+      return year === parseInt(yearFilter);
+    });
+  }, [payrollHistory, yearFilter]);
 
   useEffect(() => {
     loadData();
