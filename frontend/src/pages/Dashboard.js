@@ -113,7 +113,7 @@ const Dashboard = () => {
   const statCards = [
     {
       title: 'Total Proyectos',
-      value: stats?.total_projects || 0,
+      value: filteredStats?.total_projects || 0,
       icon: FolderKanban,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -121,7 +121,7 @@ const Dashboard = () => {
     },
     {
       title: 'Proyectos Activos',
-      value: stats?.active_projects || 0,
+      value: filteredStats?.active_projects || 0,
       icon: Clock,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
@@ -129,7 +129,7 @@ const Dashboard = () => {
     },
     {
       title: 'Proyectos Completados',
-      value: stats?.completed_projects || 0,
+      value: filteredStats?.completed_projects || 0,
       icon: CheckCircle2,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -137,21 +137,21 @@ const Dashboard = () => {
     },
     {
       title: 'Ganancia Total',
-      value: `$${(stats?.total_profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+      value: `$${(filteredStats?.total_profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
       icon: TrendingUp,
-      color: stats?.total_profit >= 0 ? 'text-green-600' : 'text-red-600',
-      bgColor: stats?.total_profit >= 0 ? 'bg-green-50' : 'bg-red-50',
+      color: filteredStats?.total_profit >= 0 ? 'text-green-600' : 'text-red-600',
+      bgColor: filteredStats?.total_profit >= 0 ? 'bg-green-50' : 'bg-red-50',
       testId: 'stat-total-profit',
       isCurrency: true
     }
   ];
 
   const budgetData = [
-    { name: 'Gastado', value: stats?.total_spent || 0, color: '#EF4444' },
-    { name: 'Disponible', value: stats?.budget_remaining || 0, color: '#10B981' }
+    { name: 'Gastado', value: filteredStats?.total_spent || 0, color: '#EF4444' },
+    { name: 'Disponible', value: filteredStats?.budget_remaining || 0, color: '#10B981' }
   ];
 
-  const projectsByStatus = projects.reduce((acc, project) => {
+  const projectsByStatus = filteredProjects.reduce((acc, project) => {
     const status = project.status;
     const existing = acc.find(item => item.name === status);
     if (existing) {
@@ -163,7 +163,7 @@ const Dashboard = () => {
   }, []);
 
   // Payment Status Data
-  const projectsByPaymentStatus = projects.reduce((acc, project) => {
+  const projectsByPaymentStatus = filteredProjects.reduce((acc, project) => {
     const status = project.payment_status || 'pending';
     const statusLabels = {
       'pending': 'Pendiente',
@@ -181,7 +181,7 @@ const Dashboard = () => {
   }, []);
 
   // ROI Data (Top 5 projects by profit margin)
-  const projectsWithROI = projects
+  const projectsWithROI = filteredProjects
     .map(p => ({
       name: p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name,
       roi: p.project_value > 0 ? ((p.profit / p.project_value) * 100) : 0,
@@ -191,7 +191,7 @@ const Dashboard = () => {
     .slice(0, 5);
 
   // Budget Progress Data (Top 5 projects by budget usage)
-  const projectsBudgetProgress = projects
+  const projectsBudgetProgress = filteredProjects
     .filter(p => p.budget_total > 0)
     .map(p => ({
       name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name,
@@ -202,7 +202,7 @@ const Dashboard = () => {
 
   // On-Time Projects Analysis
   const today = new Date();
-  const onTimeAnalysis = projects.reduce((acc, project) => {
+  const onTimeAnalysis = filteredProjects.reduce((acc, project) => {
     if (project.status === 'completed') {
       acc.completed += 1;
     } else if (project.end_date) {
