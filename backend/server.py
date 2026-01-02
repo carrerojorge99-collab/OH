@@ -7590,18 +7590,18 @@ async def export_cost_estimate_pdf(
     summary_data = [
         ['Concepto', 'Base', 'Monto'],
         ['Subtotal', '', f"${subtotal:,.2f}"],
-        [f"Utilidad ({profit_pct}%)", f"${subtotal:,.2f}", f"${profit_amount:,.2f}"],
-        [f"Gastos Generales ({overhead_pct}%)", f"${after_profit:,.2f}", f"${overhead_amount:,.2f}"],
+        [f"Profit ({profit_pct}%)", f"${subtotal:,.2f}", f"${profit_amount:,.2f}"],
+        [f"Overhead ({overhead_pct}%)", f"${after_profit:,.2f}", f"${overhead_amount:,.2f}"],
     ]
     
     if cfse_pct > 0:
         summary_data.append([f"CFSE ({cfse_pct}%)", f"${after_overhead:,.2f}", f"${cfse_amount:,.2f}"])
     
     if liability_pct > 0:
-        summary_data.append([f"Responsabilidad ({liability_pct}%)", f"${after_cfse:,.2f}", f"${liability_amount:,.2f}"])
+        summary_data.append([f"Liability ({liability_pct}%)", f"${after_cfse:,.2f}", f"${liability_amount:,.2f}"])
     
     if municipal_patent_pct > 0:
-        summary_data.append([f"Patente Municipal ({municipal_patent_pct}%)", f"${after_liability:,.2f}", f"${municipal_patent_amount:,.2f}"])
+        summary_data.append([f"Municipal Patent ({municipal_patent_pct}%)", f"${after_liability:,.2f}", f"${municipal_patent_amount:,.2f}"])
     
     summary_data.append([f"Contingencia ({contingency_pct}%)", f"${subtotal:,.2f}", f"${contingency_amount:,.2f}"])
     
