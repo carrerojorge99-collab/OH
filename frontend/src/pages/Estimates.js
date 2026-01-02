@@ -149,6 +149,7 @@ const Estimates = () => {
   const resetForm = () => {
     setForm({
       project_id: '',
+      client_company: '',
       client_name: '',
       client_email: '',
       client_phone: '',
@@ -161,7 +162,8 @@ const Estimates = () => {
       discount_percent: 0,
       notes: '',
       terms: 'Este estimado es válido por 30 días.',
-      valid_until: moment().add(30, 'days').format('YYYY-MM-DD')
+      valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
+      custom_number: ''
     });
     setEditingEstimate(null);
   };
