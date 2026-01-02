@@ -277,8 +277,8 @@ export const addItemsTable = (doc, items, startY, columns = ['Descripción', 'Ca
   return doc.lastAutoTable.finalY;
 };
 
-// Totals section
-export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, startY) => {
+// Totals section - with tax breakdown support
+export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, startY, taxDetails = null) => {
   const pageWidth = doc.internal.pageSize.width;
   const rightX = pageWidth - 15;
   let y = startY + 10;
@@ -297,7 +297,14 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
     y += 6;
   }
   
-  if (tax > 0) {
+  // Tax breakdown if provided
+  if (taxDetails && taxDetails.length > 0) {
+    taxDetails.forEach(taxItem => {
+      doc.text(`${taxItem.name} (${taxItem.percentage}%):`, rightX - 45, y);
+      doc.text(`$${taxItem.amount.toFixed(2)}`, rightX, y, { align: 'right' });
+      y += 6;
+    });
+  } else if (tax > 0) {
     doc.text('Impuesto:', rightX - 45, y);
     doc.text(`$${tax.toFixed(2)}`, rightX, y, { align: 'right' });
     y += 6;
