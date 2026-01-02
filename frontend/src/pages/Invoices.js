@@ -39,7 +39,8 @@ const Invoices = () => {
   const [payments, setPayments] = useState([]);
   const [savedClients, setSavedClients] = useState([]);
   const [taxTypes, setTaxTypes] = useState([]);
-  const [yearFilter, setYearFilter] = useState('all');
+  // Default to current year so previous years are "historical"
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
   const navigate = useNavigate();
 
   // Generate available years from invoices
