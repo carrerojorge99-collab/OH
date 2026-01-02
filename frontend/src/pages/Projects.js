@@ -42,16 +42,24 @@ const Projects = () => {
   // Roles que pueden crear proyectos
   const canCreateProject = user?.role && ['super_admin', 'admin', 'project_manager'].includes(user.role);
 
-  // Generate available years from projects
+  // Extract year from project_number (format: "2026-001" or "YYYY-XXX")
+  const getProjectYear = (project) => {
+    if (project.project_number) {
+      const match = project.project_number.match(/^(\d{4})/);
+      if (match) return parseInt(match[1]);
+    }
+    // Fallback to start_date or created_at
+    if (project.start_date) return new Date(project.start_date).getFullYear();
+    if (project.created_at) return new Date(project.created_at).getFullYear();
+    return null;
+  };
+
+  // Generate available years from projects (using project_number)
   const availableYears = React.useMemo(() => {
     const years = new Set();
     projects.forEach(p => {
-      if (p.start_date) {
-        years.add(new Date(p.start_date).getFullYear());
-      }
-      if (p.created_at) {
-        years.add(new Date(p.created_at).getFullYear());
-      }
+      const year = getProjectYear(p);
+      if (year) years.add(year);
     });
     return Array.from(years).sort((a, b) => b - a);
   }, [projects]);
