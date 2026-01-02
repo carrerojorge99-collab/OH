@@ -215,7 +215,7 @@ const Reports = () => {
                 <div>
                   <p className="text-sm font-medium text-slate-600 mb-1">Proyectos a Tiempo</p>
                   <p className="text-3xl font-bold">
-                    {projectProjections.filter(p => p.dias_retraso <= 0).length}/{projects.length}
+                    {projectProjections.filter(p => p.dias_retraso <= 0).length}/{filteredProjects.length}
                   </p>
                 </div>
                 <Calendar className="w-8 h-8 text-blue-600" />
@@ -229,7 +229,7 @@ const Reports = () => {
                 <div>
                   <p className="text-sm font-medium text-slate-600 mb-1">Gasto Total</p>
                   <p className="text-2xl font-bold font-mono">
-                    ${expenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    ${filteredExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 <DollarSign className="w-8 h-8 text-red-600" />
