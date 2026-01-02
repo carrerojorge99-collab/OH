@@ -123,13 +123,10 @@ const Projects = () => {
       const matchesPriority = priorityFilter === 'all' || project.priority === priorityFilter;
       const matchesPayment = paymentFilter === 'all' || (project.payment_status || 'pending') === paymentFilter;
       
-      // Year filter
+      // Year filter using project_number
       let matchesYear = yearFilter === 'all';
-      if (!matchesYear && project.start_date) {
-        const projectYear = new Date(project.start_date).getFullYear();
-        matchesYear = projectYear === parseInt(yearFilter);
-      } else if (!matchesYear && project.created_at) {
-        const projectYear = new Date(project.created_at).getFullYear();
+      if (!matchesYear) {
+        const projectYear = getProjectYear(project);
         matchesYear = projectYear === parseInt(yearFilter);
       }
       
