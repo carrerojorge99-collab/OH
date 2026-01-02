@@ -543,8 +543,7 @@ class Invoice(BaseModel):
     subtotal: float
     tax_rate: float
     tax_amount: float
-    tax_type_name: Optional[str] = None
-    tax_percentage: Optional[float] = None
+    selected_taxes: Optional[List[dict]] = []
     total: float
     amount_paid: float = 0.0
     balance_due: float = 0.0
