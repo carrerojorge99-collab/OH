@@ -29,8 +29,9 @@ const Payroll = () => {
   const [saving, setSaving] = useState(false);
   const [payrollHistory, setPayrollHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  // Default to current year
-  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+  // Start with 'all' and update to current year if data exists
+  const [yearFilter, setYearFilter] = useState('all');
+  const [yearInitialized, setYearInitialized] = useState(false);
 
   // Generate available years from payroll history
   const availableYears = useMemo(() => {
@@ -54,6 +55,17 @@ const Payroll = () => {
       return year === parseInt(yearFilter);
     });
   }, [payrollHistory, yearFilter]);
+
+  // Auto-set year filter to current year if available
+  useEffect(() => {
+    if (!yearInitialized && payrollHistory.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setYearFilter(currentYear.toString());
+      }
+      setYearInitialized(true);
+    }
+  }, [payrollHistory, availableYears, yearInitialized]);
 
   useEffect(() => {
     loadData();
