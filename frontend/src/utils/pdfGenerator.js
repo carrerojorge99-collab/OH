@@ -69,11 +69,11 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   let leftY = 15;
   
   // Add company logo - use company's logo if available, otherwise fallback to default
-  // LARGER LOGO: Stretched vertically for better visibility (55 width x 35 height)
+  // LARGER LOGO: Stretched more vertically for better visibility (60 width x 45 height)
   const logoToUse = company?.logoBase64 || LOGO_BASE64;
   try {
-    doc.addImage(logoToUse, 'PNG', 15, 8, 55, 35);
-    leftY = 46;
+    doc.addImage(logoToUse, 'PNG', 15, 6, 60, 45);
+    leftY = 54;
   } catch (e) {
     // If logo fails, just continue
     leftY = 15;
@@ -117,21 +117,25 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   doc.setTextColor(...COLORS.text);
   doc.text(docType.toUpperCase(), rightX, 20, { align: 'right' });
   
-  // Document number and date
+  // Document number and date - PO# now appears below invoice number
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLORS.secondary);
   doc.text(`#: ${docNumber}`, rightX, 28, { align: 'right' });
-  doc.text(`Fecha: ${moment(docDate).format('MMM DD, YYYY')}`, rightX, 34, { align: 'right' });
   
-  // Extra info for invoices (Due Date, PO#)
-  let infoY = 40;
-  if (extraInfo.dueDate) {
-    doc.text(`Due Date: ${moment(extraInfo.dueDate).format('MMM DD, YYYY')}`, rightX, infoY, { align: 'right' });
-    infoY += 6;
-  }
+  // PO# immediately below invoice number (for invoices)
+  let infoY = 34;
   if (extraInfo.poNumber) {
     doc.text(`PO#: ${extraInfo.poNumber}`, rightX, infoY, { align: 'right' });
+    infoY += 6;
+  }
+  
+  doc.text(`Fecha: ${moment(docDate).format('MMM DD, YYYY')}`, rightX, infoY, { align: 'right' });
+  infoY += 6;
+  
+  // Due Date after fecha
+  if (extraInfo.dueDate) {
+    doc.text(`Due Date: ${moment(extraInfo.dueDate).format('MMM DD, YYYY')}`, rightX, infoY, { align: 'right' });
     infoY += 6;
   }
   

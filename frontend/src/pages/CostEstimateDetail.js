@@ -76,6 +76,7 @@ const CostEstimateDetail = () => {
       } else {
         // For new estimates, load default percentages from company settings
         const companyData = companyRes.data;
+        setContingencyPercentage(6); // Fixed contingency at 6%
         setB2bPercentage(companyData.default_b2b_percentage || 4);
         setCfsePercentage(companyData.default_cfse_percentage || 7);
         setLiabilityPercentage(companyData.default_liability_percentage || 7);
