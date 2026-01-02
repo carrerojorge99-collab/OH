@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import Layout from '../components/Layout';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import AlertsBanner from '../components/AlertsBanner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { FolderKanban, CheckCircle2, Clock, DollarSign, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { FolderKanban, CheckCircle2, Clock, DollarSign, TrendingUp, TrendingDown, RefreshCw, Calendar } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 
@@ -14,6 +15,32 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState('all');
+
+  // Generate list of available years from projects
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    projects.forEach(p => {
+      if (p.start_date) {
+        years.add(new Date(p.start_date).getFullYear());
+      }
+      if (p.created_at) {
+        years.add(new Date(p.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [projects]);
+
+  // Filter projects by selected year
+  const filteredProjects = useMemo(() => {
+    if (selectedYear === 'all') return projects;
+    return projects.filter(p => {
+      const projectYear = p.start_date 
+        ? new Date(p.start_date).getFullYear() 
+        : new Date(p.created_at).getFullYear();
+      return projectYear === parseInt(selectedYear);
+    });
+  }, [projects, selectedYear]);
 
   useEffect(() => {
     loadDashboardData();
@@ -47,6 +74,28 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+  // Calculate filtered stats based on selected year
+  const filteredStats = useMemo(() => {
+    if (selectedYear === 'all') return stats;
+    
+    const totalProjects = filteredProjects.length;
+    const activeProjects = filteredProjects.filter(p => p.status === 'in_progress').length;
+    const completedProjects = filteredProjects.filter(p => p.status === 'completed').length;
+    const totalSpent = filteredProjects.reduce((sum, p) => sum + (p.budget_spent || 0), 0);
+    const totalBudget = filteredProjects.reduce((sum, p) => sum + (p.budget_total || 0), 0);
+    const totalValue = filteredProjects.reduce((sum, p) => sum + (p.project_value || 0), 0);
+    const totalProfit = totalValue - totalSpent;
+    
+    return {
+      total_projects: totalProjects,
+      active_projects: activeProjects,
+      completed_projects: completedProjects,
+      total_spent: totalSpent,
+      budget_remaining: totalBudget - totalSpent,
+      total_profit: totalProfit
+    };
+  }, [stats, filteredProjects, selectedYear]);
 
   if (loading) {
     return (
