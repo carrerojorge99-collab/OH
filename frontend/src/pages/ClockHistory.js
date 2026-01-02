@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
-import { MapPin, Calendar, User, Clock, FolderKanban, ChevronDown, ChevronRight, Trash2, Edit2 } from 'lucide-react';
+import { MapPin, Calendar, User, Clock, FolderKanban, ChevronDown, ChevronRight, Trash2, Edit2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
@@ -36,6 +37,17 @@ const ClockHistory = () => {
   const [editingEntry, setEditingEntry] = useState(null);
   const [editForm, setEditForm] = useState({ clock_in_time: '', clock_out_time: '' });
   const [saving, setSaving] = useState(false);
+
+  // Manual entry dialog state
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    user_id: '',
+    project_id: '',
+    date: moment().format('YYYY-MM-DD'),
+    clock_in_time: '08:00',
+    clock_out_time: '',
+    notes: ''
+  });
 
   useEffect(() => {
     loadData();
