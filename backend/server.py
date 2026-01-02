@@ -4696,6 +4696,74 @@ async def update_client(client_id: str, data: dict, request: Request, session_to
     await db.users.update_one({"user_id": client_id}, {"$set": update_data})
     return {"message": "Cliente actualizado"}
 
+# ==================== CLIENT PROFILES (Reusable commercial contacts) ====================
+@api_router.get("/client-profiles")
+async def get_client_profiles(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all client profiles for reuse in estimates/invoices"""
+    user = await get_current_user(request, session_token)
+    profiles = await db.client_profiles.find({}, {"_id": 0}).sort("company_name", 1).to_list(1000)
+    return profiles
+
+@api_router.post("/client-profiles")
+async def create_client_profile(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new client profile for reuse"""
+    user = await get_current_user(request, session_token)
+    
+    profile_id = f"cp_{uuid4().hex[:12]}"
+    
+    profile = {
+        "profile_id": profile_id,
+        "company_name": data.get("company_name", ""),
+        "contact_name": data.get("contact_name", ""),
+        "email": data.get("email", ""),
+        "phone": data.get("phone", ""),
+        "address": data.get("address", ""),
+        "notes": data.get("notes", ""),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user.user_id
+    }
+    
+    await db.client_profiles.insert_one(profile)
+    return {"message": "Perfil de cliente creado", "profile_id": profile_id, "profile": profile}
+
+@api_router.post("/client-profiles/find-or-create")
+async def find_or_create_client_profile(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Find existing client profile by email/company or create new one"""
+    user = await get_current_user(request, session_token)
+    
+    email = data.get("email", "").strip().lower()
+    company_name = data.get("company_name", "").strip()
+    contact_name = data.get("contact_name", "").strip()
+    
+    # Try to find by email first (most specific)
+    existing = None
+    if email:
+        existing = await db.client_profiles.find_one({"email": {"$regex": f"^{email}$", "$options": "i"}}, {"_id": 0})
+    
+    # If not found by email, try by company name
+    if not existing and company_name:
+        existing = await db.client_profiles.find_one({"company_name": {"$regex": f"^{company_name}$", "$options": "i"}}, {"_id": 0})
+    
+    if existing:
+        return {"found": True, "profile": existing}
+    
+    # Create new profile
+    profile_id = f"cp_{uuid4().hex[:12]}"
+    profile = {
+        "profile_id": profile_id,
+        "company_name": company_name,
+        "contact_name": contact_name,
+        "email": email,
+        "phone": data.get("phone", ""),
+        "address": data.get("address", ""),
+        "notes": "",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user.user_id
+    }
+    
+    await db.client_profiles.insert_one(profile)
+    return {"found": False, "profile": profile, "message": "Perfil de cliente creado automáticamente"}
+
 @api_router.get("/clients/{client_id}/projects")
 async def get_client_projects(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
