@@ -38,6 +38,16 @@ const emptyProfile = {
   emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relationship: '', notes: ''
 };
 
+// Field component moved outside to prevent re-renders
+const Field = ({ label, icon: Icon, children }) => (
+  <div className="space-y-1">
+    <Label className="text-xs text-slate-500 flex items-center gap-1">
+      {Icon && <Icon className="w-3 h-3" />} {label}
+    </Label>
+    {children}
+  </div>
+);
+
 const HumanResources = () => {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
