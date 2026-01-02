@@ -69,7 +69,7 @@ const NomenclatureSelector = ({ nomenclatures = [], selectedNomenclature, genera
           <option value="">Manual (sin nomenclatura)</option>
           {Array.isArray(nomenclatures) && nomenclatures.map(n => (
             <option key={n.nomenclature_id} value={n.nomenclature_id}>
-              {n.name} ({n.prefix})
+              {n.name} ({n.prefix}{n.department_number ? `-${n.department_number}` : ''})
             </option>
           ))}
         </select>
