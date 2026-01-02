@@ -2127,6 +2127,84 @@ class ClockEditRequest(BaseModel):
     clock_out: Optional[str] = None
     notes: Optional[str] = None
 
+class ManualClockRequest(BaseModel):
+    user_id: str
+    project_id: str
+    date: str  # YYYY-MM-DD
+    clock_in_time: str  # HH:MM
+    clock_out_time: Optional[str] = None  # HH:MM
+    notes: Optional[str] = None
+
+@api_router.post("/clock/manual")
+async def create_manual_clock_entry(
+    data: ManualClockRequest,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Create a manual clock entry (admin/RRHH/PM only)"""
+    current_user = await get_current_user(request, session_token)
+    
+    # Only admins, RRHH and PM can create manual entries
+    if current_user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Solo administradores, RRHH o PM pueden crear ponches manuales")
+    
+    # Validate user exists
+    target_user = await db.users.find_one({"user_id": data.user_id}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Validate project exists
+    project = await db.projects.find_one({"project_id": data.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Build datetime strings
+    clock_in_full = f"{data.date}T{data.clock_in_time}:00"
+    clock_out_full = f"{data.date}T{data.clock_out_time}:00" if data.clock_out_time else None
+    
+    # Calculate hours worked
+    hours_worked = 0
+    status = "active"
+    if clock_out_full:
+        clock_in_dt = datetime.fromisoformat(clock_in_full)
+        clock_out_dt = datetime.fromisoformat(clock_out_full)
+        hours_worked = round((clock_out_dt - clock_in_dt).total_seconds() / 3600, 2)
+        status = "completed"
+    
+    # Create clock entry
+    clock_id = f"clk_{uuid4().hex[:16]}"
+    clock_doc = {
+        "clock_id": clock_id,
+        "user_id": data.user_id,
+        "user_name": target_user.get('name', target_user.get('email', 'Sin nombre')),
+        "project_id": data.project_id,
+        "project_name": project.get('name', 'Sin nombre'),
+        "date": data.date,
+        "clock_in": clock_in_full,
+        "clock_out": clock_out_full,
+        "hours_worked": hours_worked,
+        "status": status,
+        "notes": data.notes or "Entrada manual",
+        "is_manual": True,
+        "created_by": current_user.user_id,
+        "created_by_name": current_user.name,
+        "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.clock_entries.insert_one(clock_doc)
+    
+    # Log audit
+    await log_audit(
+        current_user.user_id,
+        current_user.name,
+        "create",
+        "clock_entry",
+        clock_id,
+        {"manual_entry": True, "for_user": target_user.get('name'), "date": data.date}
+    )
+    
+    return ClockEntry(**clock_doc)
+
 @api_router.put("/clock/{clock_id}")
 async def update_clock_entry(
     clock_id: str,
