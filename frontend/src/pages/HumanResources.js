@@ -154,15 +154,6 @@ const HumanResources = () => {
     (e.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const Field = ({ label, icon: Icon, children }) => (
-    <div className="space-y-1">
-      <Label className="text-xs text-slate-500 flex items-center gap-1">
-        {Icon && <Icon className="w-3 h-3" />} {label}
-      </Label>
-      {children}
-    </div>
-  );
-
   if (loading) return <Layout><div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div></Layout>;
 
   return (
