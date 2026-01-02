@@ -60,6 +60,29 @@ const PurchaseOrders = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPO, setEditingPO] = useState(null);
   const [selectedPO, setSelectedPO] = useState(null);
+  // Default to current year
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+
+  // Generate available years from purchase orders
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    purchaseOrders.forEach(po => {
+      if (po.created_at) {
+        years.add(new Date(po.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [purchaseOrders]);
+
+  // Filter purchase orders by year
+  const filteredPurchaseOrders = useMemo(() => {
+    if (yearFilter === 'all') return purchaseOrders;
+    return purchaseOrders.filter(po => {
+      const year = po.created_at ? new Date(po.created_at).getFullYear() : new Date().getFullYear();
+      return year === parseInt(yearFilter);
+    });
+  }, [purchaseOrders, yearFilter]);
+
   const [form, setForm] = useState({
     project_id: '',
     supplier_name: '',
