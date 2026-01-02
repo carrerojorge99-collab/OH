@@ -666,6 +666,146 @@ const ClockHistory = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manual Clock Entry Dialog */}
+      <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Crear Ponche Manual
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="manual_user" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Empleado *
+                </Label>
+                <Select 
+                  value={manualForm.user_id} 
+                  onValueChange={(v) => setManualForm({...manualForm, user_id: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar empleado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(user => (
+                      <SelectItem key={user.user_id} value={user.user_id}>
+                        {user.name || user.email || 'Sin nombre'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="manual_project" className="flex items-center gap-2">
+                  <FolderKanban className="w-4 h-4" />
+                  Proyecto *
+                </Label>
+                <Select 
+                  value={manualForm.project_id} 
+                  onValueChange={(v) => setManualForm({...manualForm, project_id: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar proyecto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map(project => (
+                      <SelectItem key={project.project_id} value={project.project_id}>
+                        {project.name || 'Sin nombre'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="manual_date" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Fecha *
+              </Label>
+              <Input
+                id="manual_date"
+                type="date"
+                value={manualForm.date}
+                onChange={(e) => setManualForm({...manualForm, date: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="manual_clock_in" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-green-600" />
+                  Hora Entrada *
+                </Label>
+                <Input
+                  id="manual_clock_in"
+                  type="time"
+                  value={manualForm.clock_in_time}
+                  onChange={(e) => setManualForm({...manualForm, clock_in_time: e.target.value})}
+                  className="font-mono"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="manual_clock_out" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-red-600" />
+                  Hora Salida
+                </Label>
+                <Input
+                  id="manual_clock_out"
+                  type="time"
+                  value={manualForm.clock_out_time}
+                  onChange={(e) => setManualForm({...manualForm, clock_out_time: e.target.value})}
+                  className="font-mono"
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
+            
+            {manualForm.clock_in_time && manualForm.clock_out_time && (
+              <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
+                <strong>Horas calculadas:</strong>{' '}
+                {(() => {
+                  const start = moment(manualForm.clock_in_time, 'HH:mm');
+                  const end = moment(manualForm.clock_out_time, 'HH:mm');
+                  const diff = end.diff(start, 'hours', true);
+                  return diff > 0 ? `${diff.toFixed(2)} horas` : 'Hora inválida';
+                })()}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="manual_notes">Notas (opcional)</Label>
+              <Textarea
+                id="manual_notes"
+                value={manualForm.notes}
+                onChange={(e) => setManualForm({...manualForm, notes: e.target.value})}
+                placeholder="Ej: Olvidó ponchar, ajuste de horario..."
+                rows={2}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setManualDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreateManualEntry} 
+              disabled={saving || !manualForm.user_id || !manualForm.project_id || !manualForm.date || !manualForm.clock_in_time}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {saving ? 'Creando...' : 'Crear Ponche'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
