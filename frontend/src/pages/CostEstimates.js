@@ -154,7 +154,7 @@ const CostEstimates = () => {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {estimates.map((estimate) => (
+            {filteredEstimates.map((estimate) => (
               <Card key={estimate.estimate_id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
