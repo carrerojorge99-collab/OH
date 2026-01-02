@@ -318,9 +318,12 @@ const CostEstimateDetail = () => {
     // B2B applies only to subcontractors
     const b2bAmount = totalSubcontractors * (Number(b2bPercentage) / 100);
     
+    // Fixed contingency at 6%
+    const fixedContingency = 6;
+    
     // Other percentages apply to the subtotal
     const multiplier = 1 + (Number(overheadPercentage) / 100) + (Number(profitPercentage) / 100) + 
-                      (Number(contingencyPercentage) / 100) + (Number(taxPercentage) / 100) +
+                      (fixedContingency / 100) + (Number(taxPercentage) / 100) +
                       (Number(cfsePercentage) / 100) + (Number(liabilityPercentage) / 100) +
                       (Number(municipalPatentPercentage) / 100);
     
