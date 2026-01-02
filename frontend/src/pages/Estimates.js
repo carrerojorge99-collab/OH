@@ -485,6 +485,14 @@ const Estimates = () => {
                     </Select>
                   </div>
                   <div>
+                    <Label>Nombre de Empresa</Label>
+                    <Input 
+                      value={form.client_company} 
+                      onChange={(e) => setForm({...form, client_company: e.target.value})} 
+                      placeholder="Ej: ABC Corporation"
+                    />
+                  </div>
+                  <div>
                     <Label>Nombre del Cliente *</Label>
                     <Input value={form.client_name} onChange={(e) => setForm({...form, client_name: e.target.value})} required />
                   </div>
@@ -496,7 +504,7 @@ const Estimates = () => {
                     <Label>Teléfono</Label>
                     <Input value={form.client_phone} onChange={(e) => setForm({...form, client_phone: e.target.value})} />
                   </div>
-                  <div className="md:col-span-2">
+                  <div>
                     <Label>Dirección</Label>
                     <Input value={form.client_address} onChange={(e) => setForm({...form, client_address: e.target.value})} />
                   </div>
