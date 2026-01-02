@@ -434,7 +434,7 @@ const Settings = () => {
         });
         toast.success('Nomenclatura creada');
       }
-      setNomenclatureForm({ name: '', prefix: '', starting_number: 100 });
+      setNomenclatureForm({ name: '', prefix: '', department_number: '' });
       fetchNomenclatures();
     } catch (error) {
       toast.error('Error al guardar nomenclatura');
