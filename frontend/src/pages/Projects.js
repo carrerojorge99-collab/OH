@@ -31,8 +31,9 @@ const Projects = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
-  // Default to current year so previous years are "historical"
-  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+  // Start with 'all' and update to current year if data exists
+  const [yearFilter, setYearFilter] = useState('all');
+  const [yearFilterInitialized, setYearFilterInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [users, setUsers] = useState([]);
@@ -54,6 +55,19 @@ const Projects = () => {
     });
     return Array.from(years).sort((a, b) => b - a);
   }, [projects]);
+
+  // Auto-set year filter to current year if available, otherwise 'all'
+  React.useEffect(() => {
+    if (!yearFilterInitialized && projects.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setYearFilter(currentYear.toString());
+      } else {
+        setYearFilter('all');
+      }
+      setYearFilterInitialized(true);
+    }
+  }, [projects, availableYears, yearFilterInitialized]);
 
   const [formData, setFormData] = useState({
     name: '',
