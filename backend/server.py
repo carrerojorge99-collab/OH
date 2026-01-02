@@ -4634,6 +4634,15 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
     # Asegurar que exista minimum_margin_percent
     if "minimum_margin_percent" not in company:
         company["minimum_margin_percent"] = 15
+    # Asegurar que existan los porcentajes de estimación de costos
+    if "default_b2b_percentage" not in company:
+        company["default_b2b_percentage"] = 4
+    if "default_cfse_percentage" not in company:
+        company["default_cfse_percentage"] = 7
+    if "default_liability_percentage" not in company:
+        company["default_liability_percentage"] = 7
+    if "default_municipal_patent_percentage" not in company:
+        company["default_municipal_patent_percentage"] = 1
     return company
 
 @api_router.put("/company")
