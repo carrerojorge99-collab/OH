@@ -1123,7 +1123,7 @@ async def create_project(project_data: ProjectCreate, request: Request, session_
         raise
     
     # Solo admins y project managers pueden crear proyectos
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
         print(f"Permission denied for role: {user.role}")
         raise HTTPException(status_code=403, detail="No tienes permiso para crear proyectos")
     
