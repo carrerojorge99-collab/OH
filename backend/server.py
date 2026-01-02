@@ -8042,7 +8042,8 @@ async def create_nomenclature(
         "nomenclature_id": nomenclature_id,
         "name": data["name"],
         "prefix": data["prefix"].upper(),
-        "starting_number": data["starting_number"],
+        "department_number": data.get("department_number", ""),
+        "starting_number": data.get("starting_number", 1),
         "current_number": 1,
         "current_year": current_year,
         "created_at": datetime.now(PUERTO_RICO_TZ).isoformat()
@@ -8054,6 +8055,7 @@ async def create_nomenclature(
         "nomenclature_id": nomenclature_id,
         "name": nom["name"],
         "prefix": nom["prefix"],
+        "department_number": nom["department_number"],
         "starting_number": nom["starting_number"],
         "current_number": nom["current_number"],
         "current_year": nom["current_year"],
