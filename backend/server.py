@@ -1202,7 +1202,8 @@ def extract_project_number(project_number: str) -> tuple:
 async def get_projects(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.SUPER_ADMIN.value:
+    # Super Admin y Project Manager pueden ver todos los proyectos
+    if user.role in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
         projects = await db.projects.find({}, {"_id": 0}).to_list(1000)
     else:
         projects = await db.projects.find(
