@@ -69,6 +69,17 @@ const Invoices = () => {
     });
   }, [invoices, yearFilter]);
 
+  // Auto-set year filter to current year if available
+  React.useEffect(() => {
+    if (!yearInitialized && invoices.length > 0) {
+      const currentYear = new Date().getFullYear();
+      if (availableYears.includes(currentYear)) {
+        setYearFilter(currentYear.toString());
+      }
+      setYearInitialized(true);
+    }
+  }, [invoices, availableYears, yearInitialized]);
+
   const [formData, setFormData] = useState({
     project_id: '',
     client_name: '',
