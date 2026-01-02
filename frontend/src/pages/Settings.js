@@ -94,7 +94,12 @@ const Settings = () => {
     location_longitude: null,
     geofence_radius: 100,
     geofence_enabled: false,
-    minimum_margin_percent: 15
+    minimum_margin_percent: 15,
+    // Cost Estimate default percentages
+    default_b2b_percentage: 4,
+    default_cfse_percentage: 7,
+    default_liability_percentage: 7,
+    default_municipal_patent_percentage: 1
   });
 
   const API_URL = getBackendUrl();
