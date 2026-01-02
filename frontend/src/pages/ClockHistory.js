@@ -171,6 +171,42 @@ const ClockHistory = () => {
     }
   };
 
+  const handleCreateManualEntry = async () => {
+    if (!manualForm.user_id || !manualForm.project_id || !manualForm.date || !manualForm.clock_in_time) {
+      toast.error('Por favor complete los campos requeridos');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      await api.post('/clock/manual', {
+        user_id: manualForm.user_id,
+        project_id: manualForm.project_id,
+        date: manualForm.date,
+        clock_in_time: manualForm.clock_in_time,
+        clock_out_time: manualForm.clock_out_time || null,
+        notes: manualForm.notes || null
+      }, { withCredentials: true });
+      
+      toast.success('Ponche manual creado exitosamente');
+      setManualDialogOpen(false);
+      setManualForm({
+        user_id: '',
+        project_id: '',
+        date: moment().format('YYYY-MM-DD'),
+        clock_in_time: '08:00',
+        clock_out_time: '',
+        notes: ''
+      });
+      loadData(); // Reload data
+    } catch (error) {
+      console.error('Error creating manual clock:', error);
+      toast.error(error.response?.data?.detail || 'Error al crear ponche manual');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const loadData = async () => {
     try {
       const timestamp = Date.now();
