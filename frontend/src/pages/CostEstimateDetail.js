@@ -57,22 +57,6 @@ const CostEstimateDetail = () => {
         setEquipment(estimateRes.data.equipment || []);
         setTransportation(estimateRes.data.transportation || []);
         setGeneralConditions(estimateRes.data.general_conditions || []);
-        setOverheadPercentage(estimateRes.data.overhead_percentage || 0);
-        setProfitPercentage(estimateRes.data.profit_percentage || 0);
-        setContingencyPercentage(estimateRes.data.contingency_percentage || 0);
-        setTaxPercentage(estimateRes.data.tax_percentage || 0);
-        setB2bPercentage(estimateRes.data.b2b_percentage || 0);
-        setCfsePercentage(estimateRes.data.cfse_percentage || 0);
-        setLiabilityPercentage(estimateRes.data.liability_percentage || 0);
-        setMunicipalPatentPercentage(estimateRes.data.municipal_patent_percentage || 0);
-      } else {
-        // For new estimates, load default percentages from company settings
-        const companyData = companyRes.data;
-        setContingencyPercentage(6); // Fixed contingency at 6%
-        setB2bPercentage(companyData.default_b2b_percentage || 4);
-        setCfsePercentage(companyData.default_cfse_percentage || 7);
-        setLiabilityPercentage(companyData.default_liability_percentage || 7);
-        setMunicipalPatentPercentage(companyData.default_municipal_patent_percentage || 1);
       }
     } catch (error) {
       console.error('Error loading data:', error);
