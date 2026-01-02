@@ -33,7 +33,7 @@ const documentTypes = [
 const emptyProfile = {
   phone: '', address: '', city: '', zipcode: '', country: '', date_of_birth: '', gender: '', marital_status: '',
   nationality: '', id_number: '', department: '', position: '', hire_date: '',
-  employment_type: '', worker_classification: '', salary: 0, hourly_rate: 0, pay_frequency: '', bank_name: '', bank_account: '',
+  employment_type: '', worker_classification: '', salary: '', hourly_rate: '', pay_frequency: '', bank_name: '', bank_account: '',
   routing_number: '', account_type: 'checking',
   emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relationship: '', notes: ''
 };
@@ -369,10 +369,10 @@ const HumanResources = () => {
                       </h3>
                       <div className="grid grid-cols-3 gap-4">
                         <Field label="Salario Fijo">
-                          <Input type="number" value={profile.salary} onChange={(e) => updateProfile('salary', parseFloat(e.target.value) || 0)} />
+                          <Input type="number" value={profile.salary} onChange={(e) => updateProfile('salary', e.target.value)} placeholder="0.00" />
                         </Field>
                         <Field label="Tarifa por Hora">
-                          <Input type="number" value={profile.hourly_rate} onChange={(e) => updateProfile('hourly_rate', parseFloat(e.target.value) || 0)} />
+                          <Input type="number" value={profile.hourly_rate} onChange={(e) => updateProfile('hourly_rate', e.target.value)} placeholder="0.00" />
                         </Field>
                         <Field label="Frecuencia de Pago">
                           <Select value={profile.pay_frequency} onValueChange={(v) => updateProfile('pay_frequency', v)}>
