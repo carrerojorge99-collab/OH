@@ -44,6 +44,7 @@ const statusLabels = {
 const Estimates = () => {
   const [estimates, setEstimates] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [taxTypes, setTaxTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEstimate, setEditingEstimate] = useState(null);
@@ -59,6 +60,8 @@ const Estimates = () => {
     description: '',
     items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
+    tax_type_name: '',
+    tax_percentage: 0,
     discount_percent: 0,
     notes: '',
     terms: 'Este estimado es válido por 30 días.',
@@ -90,12 +93,14 @@ const Estimates = () => {
 
   const loadData = async () => {
     try {
-      const [estimatesRes, projectsRes] = await Promise.all([
+      const [estimatesRes, projectsRes, taxTypesRes] = await Promise.all([
         api.get(`/estimates`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/tax-types`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
       setEstimates(estimatesRes.data || []);
       setProjects(projectsRes.data || []);
+      setTaxTypes(taxTypesRes.data || []);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
