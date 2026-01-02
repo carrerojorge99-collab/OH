@@ -978,7 +978,7 @@ const Invoices = () => {
                           <div key={payment.payment_id} className="text-xs bg-slate-50 p-2 rounded">
                             <div className="flex justify-between">
                               <span>{moment(payment.created_at).format('DD/MM/YYYY')}</span>
-                              <span className="font-bold">${payment.amount.toFixed(2)}</span>
+                              <span className="font-bold">${formatCurrency(payment.amount)}</span>
                             </div>
                             <div className="text-slate-600">{payment.payment_method}</div>
                           </div>
