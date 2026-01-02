@@ -155,9 +155,17 @@ const Estimates = () => {
     const subtotal = form.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
     const discountAmount = subtotal * (parseFloat(form.discount_percent) || 0) / 100;
     const taxableAmount = subtotal - discountAmount;
-    const taxAmount = taxableAmount * (parseFloat(form.tax_rate) || 0) / 100;
+    // Calculate tax from selected taxes
+    const totalTaxRate = form.selected_taxes.reduce((sum, t) => sum + (t.percentage || 0), 0);
+    const taxAmount = taxableAmount * totalTaxRate / 100;
     const total = taxableAmount + taxAmount;
-    return { subtotal, discountAmount, taxAmount, total };
+    // Calculate individual tax amounts for display
+    const taxDetails = form.selected_taxes.map(t => ({
+      name: t.name,
+      percentage: t.percentage,
+      amount: taxableAmount * t.percentage / 100
+    }));
+    return { subtotal, discountAmount, taxAmount, total, taxDetails };
   };
 
   const handleSubmit = async (e) => {
