@@ -62,17 +62,18 @@ export const fetchCompanyInfo = async () => {
 };
 
 // Add professional header with company info left, doc info right
-export const addDocumentHeader = async (doc, company, docType, docNumber, docDate, total) => {
+export const addDocumentHeader = async (doc, company, docType, docNumber, docDate, total, extraInfo = {}) => {
   const pageWidth = doc.internal.pageSize.width;
   
   // === LEFT SIDE: Company Logo and Info ===
   let leftY = 15;
   
   // Add company logo - use company's logo if available, otherwise fallback to default
+  // LARGER LOGO: Increased from 40x20 to 55x28 for better visibility
   const logoToUse = company?.logoBase64 || LOGO_BASE64;
   try {
-    doc.addImage(logoToUse, 'PNG', 15, 10, 40, 20);
-    leftY = 33;
+    doc.addImage(logoToUse, 'PNG', 15, 8, 55, 28);
+    leftY = 40;
   } catch (e) {
     // If logo fails, just continue
     leftY = 15;
