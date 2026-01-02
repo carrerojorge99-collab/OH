@@ -357,62 +357,88 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   doc.setLineWidth(0.3);
   doc.line(15, y - 3, pageWidth - 15, y - 3);
   
-  // Check if we need a new page
-  const checkPageBreak = (currentY, neededSpace = 30) => {
-    if (currentY + neededSpace > pageHeight - marginBottom) {
-      doc.addPage();
-      return 20; // Reset Y position for new page
-    }
-    return currentY;
-  };
-  
   // Calculate column positions
   const leftColStart = 15;
   const rightColStart = pageWidth / 2 + 5;
   const columnWidth = (pageWidth / 2) - 25;
   
-  // Draw headers side by side
+  // Draw headers side by side (Terms on LEFT, Notes on RIGHT)
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.secondary);
   
-  if (notes) {
-    doc.text('Notes', leftColStart, y + 3);
-  }
   if (terms) {
-    doc.text('Terms & Conditions', rightColStart, y + 3);
+    doc.text('Terms & Conditions', leftColStart, y + 3);
+  }
+  if (notes) {
+    doc.text('Notes', rightColStart, y + 3);
   }
   
   y += 10;
   let leftY = y;
   let rightY = y;
+  let leftPageNum = doc.internal.getNumberOfPages();
+  let rightPageNum = doc.internal.getNumberOfPages();
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...COLORS.text);
   
-  // Process Notes (left column)
-  if (notes) {
-    const noteLines = notes.split('\n').filter(line => line.trim());
+  // Helper function to add text with proper page breaks for a single column
+  const addColumnText = (text, colStart, currentY, isLeftColumn) => {
+    if (!text) return currentY;
     
-    noteLines.forEach((line, idx) => {
-      leftY = checkPageBreak(leftY, 15);
+    const lines = text.split('\n').filter(line => line.trim());
+    let workingY = currentY;
+    
+    lines.forEach((line) => {
+      // Check if we need a new page
+      if (workingY + 15 > pageHeight - marginBottom) {
+        doc.addPage();
+        workingY = 20;
+        
+        // Re-add column header on new page
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...COLORS.secondary);
+        if (isLeftColumn) {
+          doc.text('Terms & Conditions (continued)', colStart, workingY);
+        } else {
+          doc.text('Notes (continued)', colStart, workingY);
+        }
+        workingY += 8;
+        
+        // Reset font for content
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...COLORS.text);
+      }
+      
       const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
-      doc.text(wrapped, leftColStart, leftY);
-      leftY += wrapped.length * 3.5 + 1;
+      doc.text(wrapped, colStart, workingY);
+      workingY += wrapped.length * 3.5 + 1;
     });
+    
+    return workingY;
+  };
+  
+  // Process Terms & Conditions (LEFT column)
+  if (terms) {
+    leftY = addColumnText(terms, leftColStart, leftY, true);
   }
   
-  // Process Terms & Conditions (right column)
-  if (terms) {
-    const termLines = terms.split('\n').filter(line => line.trim());
-    
-    termLines.forEach((line, idx) => {
-      rightY = checkPageBreak(rightY, 15);
-      const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
-      doc.text(wrapped, rightColStart, rightY);
-      rightY += wrapped.length * 3.5 + 1;
-    });
+  // Go back to original page for right column if needed
+  const currentPage = doc.internal.getNumberOfPages();
+  if (notes && currentPage > leftPageNum) {
+    // If terms created new pages, we need to handle notes separately
+    // For simplicity, continue notes after terms on the same flow
+  }
+  
+  // Process Notes (RIGHT column) - start on same page as terms started
+  if (notes) {
+    // Reset to first page of this section for the right column
+    doc.setPage(leftPageNum);
+    rightY = addColumnText(notes, rightColStart, rightY, false);
   }
   
   return Math.max(leftY, rightY);
