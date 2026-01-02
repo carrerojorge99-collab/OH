@@ -349,13 +349,13 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
   return y + 12;
 };
 
-// Notes section - Notes on left, Terms & Conditions on right
+// Notes section - Terms & Conditions on LEFT, Notes on RIGHT (side by side)
 export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   if (!notes && !terms) return startY;
   
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const marginBottom = 25; // Space for footer
+  const marginBottom = 30;
   let y = startY + 5;
   
   // Draw separator line
@@ -363,91 +363,97 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   doc.setLineWidth(0.3);
   doc.line(15, y - 3, pageWidth - 15, y - 3);
   
-  // Calculate column positions
+  // Calculate column positions - Terms LEFT, Notes RIGHT
   const leftColStart = 15;
   const rightColStart = pageWidth / 2 + 5;
-  const columnWidth = (pageWidth / 2) - 25;
+  const columnWidth = (pageWidth / 2) - 20;
+  const lineHeight = 3.5;
   
-  // Draw headers side by side (Terms on LEFT, Notes on RIGHT)
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.secondary);
+  // Prepare all lines for both columns
+  const termsLines = terms ? terms.split('\n').filter(line => line.trim()) : [];
+  const notesLines = notes ? notes.split('\n').filter(line => line.trim()) : [];
   
-  if (terms) {
-    doc.text('Terms & Conditions', leftColStart, y + 3);
-  }
-  if (notes) {
-    doc.text('Notes', rightColStart, y + 3);
-  }
-  
-  y += 10;
-  let leftY = y;
-  let rightY = y;
-  let leftPageNum = doc.internal.getNumberOfPages();
-  let rightPageNum = doc.internal.getNumberOfPages();
-  
-  doc.setFont('helvetica', 'normal');
+  // Wrap all text into lines that fit column width
   doc.setFontSize(7);
-  doc.setTextColor(...COLORS.text);
+  const wrappedTerms = [];
+  const wrappedNotes = [];
   
-  // Helper function to add text with proper page breaks for a single column
-  const addColumnText = (text, colStart, currentY, isLeftColumn) => {
-    if (!text) return currentY;
-    
-    const lines = text.split('\n').filter(line => line.trim());
-    let workingY = currentY;
-    
-    lines.forEach((line) => {
-      // Check if we need a new page
-      if (workingY + 15 > pageHeight - marginBottom) {
-        doc.addPage();
-        workingY = 20;
-        
-        // Re-add column header on new page
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...COLORS.secondary);
-        if (isLeftColumn) {
-          doc.text('Terms & Conditions (continued)', colStart, workingY);
-        } else {
-          doc.text('Notes (continued)', colStart, workingY);
-        }
-        workingY += 8;
-        
-        // Reset font for content
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(...COLORS.text);
-      }
-      
-      const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
-      doc.text(wrapped, colStart, workingY);
-      workingY += wrapped.length * 3.5 + 1;
-    });
-    
-    return workingY;
-  };
+  termsLines.forEach(line => {
+    const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
+    wrappedTerms.push(...wrapped);
+  });
   
-  // Process Terms & Conditions (LEFT column)
-  if (terms) {
-    leftY = addColumnText(terms, leftColStart, leftY, true);
+  notesLines.forEach(line => {
+    const wrapped = doc.splitTextToSize(line.trim(), columnWidth);
+    wrappedNotes.push(...wrapped);
+  });
+  
+  // Calculate how many lines fit per page
+  const headerHeight = 15;
+  const availableHeight = pageHeight - marginBottom - y - headerHeight;
+  const linesPerPage = Math.floor(availableHeight / lineHeight);
+  
+  let termsIdx = 0;
+  let notesIdx = 0;
+  let currentY = y;
+  let isFirstPage = true;
+  
+  // Process both columns simultaneously, page by page
+  while (termsIdx < wrappedTerms.length || notesIdx < wrappedNotes.length) {
+    // Add new page if needed (not on first iteration)
+    if (!isFirstPage) {
+      doc.addPage();
+      currentY = 20;
+    }
+    
+    // Draw headers
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.secondary);
+    
+    const headerSuffix = isFirstPage ? '' : ' (cont.)';
+    
+    if (terms && termsIdx < wrappedTerms.length) {
+      doc.text('Terms & Conditions' + headerSuffix, leftColStart, currentY + 3);
+    }
+    if (notes && notesIdx < wrappedNotes.length) {
+      doc.text('Notes' + headerSuffix, rightColStart, currentY + 3);
+    }
+    
+    currentY += 12;
+    
+    // Set font for content
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.text);
+    
+    // Calculate lines for this page
+    const pageAvailableHeight = pageHeight - marginBottom - currentY;
+    const pageLinesCount = Math.floor(pageAvailableHeight / lineHeight);
+    
+    // Draw left column (Terms)
+    let leftY = currentY;
+    const termsEndIdx = Math.min(termsIdx + pageLinesCount, wrappedTerms.length);
+    for (let i = termsIdx; i < termsEndIdx; i++) {
+      doc.text(wrappedTerms[i], leftColStart, leftY);
+      leftY += lineHeight;
+    }
+    termsIdx = termsEndIdx;
+    
+    // Draw right column (Notes)
+    let rightY = currentY;
+    const notesEndIdx = Math.min(notesIdx + pageLinesCount, wrappedNotes.length);
+    for (let i = notesIdx; i < notesEndIdx; i++) {
+      doc.text(wrappedNotes[i], rightColStart, rightY);
+      rightY += lineHeight;
+    }
+    notesIdx = notesEndIdx;
+    
+    currentY = Math.max(leftY, rightY);
+    isFirstPage = false;
   }
   
-  // Go back to original page for right column if needed
-  const currentPage = doc.internal.getNumberOfPages();
-  if (notes && currentPage > leftPageNum) {
-    // If terms created new pages, we need to handle notes separately
-    // For simplicity, continue notes after terms on the same flow
-  }
-  
-  // Process Notes (RIGHT column) - start on same page as terms started
-  if (notes) {
-    // Reset to first page of this section for the right column
-    doc.setPage(leftPageNum);
-    rightY = addColumnText(notes, rightColStart, rightY, false);
-  }
-  
-  return Math.max(leftY, rightY);
+  return currentY + 5;
 };
 
 // Footer
