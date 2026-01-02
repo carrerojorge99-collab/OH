@@ -2550,7 +2550,8 @@ async def mark_all_notifications_read(request: Request, session_token: Optional[
 async def get_dashboard_stats(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    if user.role == UserRole.SUPER_ADMIN.value:
+    # Super Admin y Project Manager ven todos los proyectos
+    if user.role in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
         projects_query = {}
     else:
         projects_query = {"$or": [{"created_by": user.user_id}, {"team_members": user.user_id}]}
