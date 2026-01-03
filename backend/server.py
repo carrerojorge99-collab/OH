@@ -1299,6 +1299,88 @@ async def delete_project(project_id: str, request: Request, session_token: Optio
     
     return {"message": "Proyecto eliminado exitosamente"}
 
+# ==================== PROJECT TEAM MEMBERS ====================
+
+@api_router.get("/projects/{project_id}/team")
+async def get_project_team(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get team members for a project with their user details"""
+    user = await get_current_user(request, session_token)
+    
+    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    team_member_ids = project.get("team_members", [])
+    
+    # Get user details for each team member
+    team_members = []
+    for member_id in team_member_ids:
+        member = await db.users.find_one({"user_id": member_id}, {"_id": 0, "password_hash": 0})
+        if member:
+            team_members.append({
+                "user_id": member.get("user_id"),
+                "name": member.get("name"),
+                "email": member.get("email"),
+                "role": member.get("role"),
+                "position": member.get("position", "")
+            })
+    
+    return team_members
+
+@api_router.post("/projects/{project_id}/team")
+async def add_team_member(project_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Add a team member to a project"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Solo PM o administradores pueden gestionar el equipo")
+    
+    project = await db.projects.find_one({"project_id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    member_id = data.get("user_id")
+    if not member_id:
+        raise HTTPException(status_code=400, detail="user_id es requerido")
+    
+    # Verify user exists
+    member = await db.users.find_one({"user_id": member_id})
+    if not member:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Add to team_members if not already there
+    team_members = project.get("team_members", [])
+    if member_id not in team_members:
+        team_members.append(member_id)
+        await db.projects.update_one(
+            {"project_id": project_id},
+            {"$set": {"team_members": team_members, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    return {"message": f"{member.get('name')} añadido al equipo"}
+
+@api_router.delete("/projects/{project_id}/team/{member_id}")
+async def remove_team_member(project_id: str, member_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Remove a team member from a project"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Solo PM o administradores pueden gestionar el equipo")
+    
+    project = await db.projects.find_one({"project_id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    team_members = project.get("team_members", [])
+    if member_id in team_members:
+        team_members.remove(member_id)
+        await db.projects.update_one(
+            {"project_id": project_id},
+            {"$set": {"team_members": team_members, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    return {"message": "Miembro eliminado del equipo"}
+
 # ==================== CHANGE ORDERS ====================
 @api_router.post("/change-orders")
 async def create_change_order(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
