@@ -67,6 +67,14 @@ const CostEstimateDetail = () => {
         setEquipment(estimateRes.data.equipment || []);
         setTransportation(estimateRes.data.transportation || []);
         setGeneralConditions(estimateRes.data.general_conditions || []);
+        setProfitPercentage(estimateRes.data.profit_percentage || 0);
+        setOverheadPercentage(estimateRes.data.overhead_percentage || 0);
+        setCfsePercentage(estimateRes.data.cfse_percentage || 0);
+        setLiabilityPercentage(estimateRes.data.liability_percentage || 0);
+        setMunicipalPatentPercentage(estimateRes.data.municipal_patent_percentage || 0);
+        setContingencyPercentage(estimateRes.data.contingency_percentage || 0);
+        setB2bOhsmsPercentage(estimateRes.data.b2b_ohsms_percentage || 0);
+        setB2bSubcontractorPercentage(estimateRes.data.b2b_subcontractor_percentage || 0);
       }
     } catch (error) {
       console.error('Error loading data:', error);
