@@ -122,8 +122,8 @@ const ClientProfileDetail = () => {
   };
 
   const navigateToNewEstimate = () => {
-    // Navigate to estimates page with client pre-selected
-    navigate(`/estimates?client_profile_id=${profileId}&company=${encodeURIComponent(client.company_name || '')}&contact=${encodeURIComponent(client.contact_name || '')}&email=${encodeURIComponent(client.email || '')}&phone=${encodeURIComponent(client.phone || '')}&address=${encodeURIComponent(client.address || '')}`);
+    // Navigate to old estimates page with client pre-selected
+    navigate(`/estimates-legacy?client_profile_id=${profileId}&company=${encodeURIComponent(client.company_name || '')}&contact=${encodeURIComponent(client.contact_name || '')}&email=${encodeURIComponent(client.email || '')}&phone=${encodeURIComponent(client.phone || '')}&address=${encodeURIComponent(client.address || '')}`);
   };
 
   // Calculate stats
