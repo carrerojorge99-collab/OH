@@ -176,7 +176,8 @@ const CostEstimateDetail = () => {
     setSubcontractors([...subcontractors, {
       trade: 'Civil',
       description: '',
-      cost: 0
+      cost: 0,
+      labor_cost: 0
     }]);
   };
 
