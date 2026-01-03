@@ -228,6 +228,16 @@ class EmployeeProfile(BaseModel):
     emergency_contact_relationship: Optional[str] = ""
     # Notes
     notes: Optional[str] = ""
+    
+    @field_validator('salary', 'hourly_rate', mode='before')
+    @classmethod
+    def convert_empty_string_to_zero(cls, v):
+        if v == "" or v is None:
+            return 0
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return 0
 
 class ProjectCreate(BaseModel):
     name: str
