@@ -372,8 +372,20 @@ const CostEstimateDetail = () => {
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
     
-    // Breakdown: Material/Equipment vs Labor
+    // Breakdown: Material/Equipment vs Labor (with percentages applied)
     const totalMaterialEquipment = round2(totalSubcontractors + totalMaterials + totalEquipment + totalTransportation + totalGC);
+    
+    // Calculate proportional breakdown with percentages
+    // Labor gets: its proportion of cascade + CFSE + B2B OHSMS Labor
+    // Material/Equipment gets: its proportion of cascade + B2B Subcontractor
+    const laborRatio = subtotal > 0 ? totalLabor / subtotal : 0;
+    const matEquipRatio = subtotal > 0 ? totalMaterialEquipment / subtotal : 0;
+    
+    // Labor with all percentages = (labor proportion of cascade total) + CFSE + B2B OHSMS Labor
+    const laborWithPercentages = round2((afterB2bOhsms * laborRatio) + cfseAmount + b2bOhsmsLaborAmount);
+    
+    // Material/Equipment with all percentages = grand total - labor with percentages
+    const matEquipWithPercentages = round2(grandTotal - laborWithPercentages);
 
     return {
       totalLabor,
@@ -384,6 +396,8 @@ const CostEstimateDetail = () => {
       totalTransportation,
       totalGC,
       totalMaterialEquipment,
+      laborWithPercentages,
+      matEquipWithPercentages,
       subtotal,
       profitAmount,
       afterProfit,
