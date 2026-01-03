@@ -590,7 +590,7 @@ const CostEstimateDetail = () => {
                   {/* Percentages Section */}
                   <div className="space-y-4 mt-6 p-4 border rounded-lg bg-slate-50">
                     <p className="font-semibold text-slate-700">Porcentajes (Cálculo en Cascada)</p>
-                    <p className="text-xs text-slate-500">Subtotal × Profit = s → s × Overhead = w → M.O. × CFSE = q → M.O. × B2B OHSMS = r → (q+r+w) × Liability × Municipal Patent × Contingency × B2B OHSMS Global = TOTAL</p>
+                    <p className="text-xs text-slate-500">Subtotal × Profit = s → s × Overhead = w → (w + M.O.×CFSE) × Liability × Municipal Patent × Contingency × B2B OHSMS = TOTAL</p>
                     
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div>
