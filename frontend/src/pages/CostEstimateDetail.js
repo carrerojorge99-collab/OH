@@ -591,7 +591,33 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg font-bold text-lg">
+                  {/* Breakdown: Material/Equipment | Labor | Total */}
+                  <div className="mt-6 p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-orange-500 text-white p-2 rounded font-semibold">
+                        Material/Equipment
+                      </div>
+                      <div className="bg-orange-400 text-white p-2 rounded font-semibold">
+                        Labor
+                      </div>
+                      <div className="bg-orange-500 text-white p-2 rounded font-semibold">
+                        Total
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-center mt-2 bg-gray-100 p-3 rounded">
+                      <div className="font-bold text-lg">
+                        ${totals.totalMaterialEquipment.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="font-bold text-lg bg-orange-100 rounded py-1">
+                        ${totals.totalLabor.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="font-bold text-lg">
+                        ${totals.subtotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg font-bold text-lg mt-4">
                     <div>SUBTOTAL</div>
                     <div className="text-right text-blue-600">
                       ${totals.subtotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
