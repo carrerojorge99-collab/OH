@@ -65,7 +65,7 @@ const Layout = ({ children }) => {
       { name: 'Mi Historial', href: '/clock/history', icon: Clock },
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Calendario', href: '/calendar', icon: Calendar },
-      { name: 'Estimados', href: '/estimates', icon: FileText },
+      { name: 'Estimados', href: '/estimados', icon: FileText },
       { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
       { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
       { name: 'Facturas', href: '/invoices', icon: DollarSign },
