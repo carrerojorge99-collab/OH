@@ -305,13 +305,12 @@ const CostEstimateDetail = () => {
   // Formula:
   // Subtotal x Profit = s
   // s x Overhead = w
-  // Mano de Obra x CFSE = q (CFSE only applies to labor)
-  // Mano de Obra x B2B OHSMS = r (B2B OHSMS only applies to labor)
-  // q + r + w = qq
+  // Mano de Obra x CFSE = q (CFSE only applies to labor - just the increment)
+  // w + cfseAmount = qq (add CFSE increment to overhead result)
   // qq x Liability = M
   // M x Municipal Patent = C
   // C x Contingency = U
-  // U x B2B OHSMS Global = TOTAL
+  // U x B2B OHSMS (global) = TOTAL
   // Plus: B2B Subcontractor applies only to subcontractor's labor cost
   const calculateTotals = () => {
     const totalLabor = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
@@ -338,41 +337,34 @@ const CostEstimateDetail = () => {
     const afterOverhead = afterProfit * overheadMultiplier; // w
     const overheadAmount = afterOverhead - afterProfit;
     
-    // Step 3: Mano de Obra x (1 + CFSE%) = q (CFSE only on labor)
-    const cfseMultiplier = 1 + (Number(cfsePercentage) / 100);
-    const afterCfse = totalLabor * cfseMultiplier; // q
-    const cfseAmount = afterCfse - totalLabor;
+    // Step 3: Mano de Obra x CFSE% = cfseAmount (only the increment, not the total)
+    const cfseAmount = totalLabor * (Number(cfsePercentage) / 100); // q is just the increment
     
-    // Step 4: Mano de Obra x (1 + B2B OHSMS%) = r (B2B OHSMS only on labor)
-    const b2bOhsmsMultiplier = 1 + (Number(b2bOhsmsPercentage) / 100);
-    const afterB2bOhsms = totalLabor * b2bOhsmsMultiplier; // r
-    const b2bOhsmsAmount = afterB2bOhsms - totalLabor;
+    // Step 4: w + cfseAmount = qq (add CFSE increment to overhead result)
+    const combinedTotal = afterOverhead + cfseAmount; // qq
     
-    // Step 5: q + r + w = qq (combine CFSE, B2B OHSMS, and Overhead results)
-    const combinedTotal = afterCfse + afterB2bOhsms + afterOverhead - totalLabor; // qq (subtract totalLabor once since it's counted twice)
-    
-    // Step 6: qq x (1 + Liability%) = M
+    // Step 5: qq x (1 + Liability%) = M
     const liabilityMultiplier = 1 + (Number(liabilityPercentage) / 100);
     const afterLiability = combinedTotal * liabilityMultiplier; // M
     const liabilityAmount = afterLiability - combinedTotal;
     
-    // Step 7: M x (1 + Municipal Patent%) = C
+    // Step 6: M x (1 + Municipal Patent%) = C
     const municipalPatentMultiplier = 1 + (Number(municipalPatentPercentage) / 100);
     const afterMunicipalPatent = afterLiability * municipalPatentMultiplier; // C
     const municipalPatentAmount = afterMunicipalPatent - afterLiability;
     
-    // Step 8: C x (1 + Contingency%) = U
+    // Step 7: C x (1 + Contingency%) = U
     const contingencyMultiplier = 1 + (Number(contingencyPercentage) / 100);
     const afterContingency = afterMunicipalPatent * contingencyMultiplier; // U
     const contingencyAmount = afterContingency - afterMunicipalPatent;
     
-    // Step 9: U x (1 + B2B OHSMS Global%) = TOTAL (B2B OHSMS Global applies to everything)
-    const b2bOhsmsGlobalMultiplier = 1 + (Number(b2bOhsmsGlobalPercentage) / 100);
-    const afterB2bOhsmsGlobal = afterContingency * b2bOhsmsGlobalMultiplier;
-    const b2bOhsmsGlobalAmount = afterB2bOhsmsGlobal - afterContingency;
+    // Step 8: U x (1 + B2B OHSMS%) = TOTAL (B2B OHSMS is global)
+    const b2bOhsmsMultiplier = 1 + (Number(b2bOhsmsPercentage) / 100);
+    const afterB2bOhsms = afterContingency * b2bOhsmsMultiplier;
+    const b2bOhsmsAmount = afterB2bOhsms - afterContingency;
     
     // Final total = cascaded total + B2B subcontractor (labor)
-    const grandTotal = afterB2bOhsmsGlobal + b2bSubcontractorAmount;
+    const grandTotal = afterB2bOhsms + b2bSubcontractorAmount;
 
     return {
       totalLabor,
@@ -388,9 +380,6 @@ const CostEstimateDetail = () => {
       overheadAmount,
       afterOverhead,
       cfseAmount,
-      afterCfse,
-      b2bOhsmsAmount,
-      afterB2bOhsms,
       combinedTotal,
       liabilityAmount,
       afterLiability,
@@ -398,8 +387,8 @@ const CostEstimateDetail = () => {
       afterMunicipalPatent,
       contingencyAmount,
       afterContingency,
-      b2bOhsmsGlobalAmount,
-      afterB2bOhsmsGlobal,
+      b2bOhsmsAmount,
+      afterB2bOhsms,
       b2bSubcontractorAmount,
       grandTotal
     };
