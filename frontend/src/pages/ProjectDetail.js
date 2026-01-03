@@ -1595,6 +1595,7 @@ const ProjectDetail = () => {
         <Tabs defaultValue="tasks" className="space-y-6">
           <TabsList className="bg-white border border-slate-200">
             <TabsTrigger value="tasks" data-testid="tasks-tab">Tareas</TabsTrigger>
+            <TabsTrigger value="team" data-testid="team-tab">Equipo</TabsTrigger>
             <TabsTrigger value="budget" data-testid="budget-tab">Presupuesto</TabsTrigger>
             <TabsTrigger value="invoices" data-testid="invoices-tab">Facturas</TabsTrigger>
             <TabsTrigger value="change-orders" data-testid="change-orders-tab">Change Orders</TabsTrigger>
