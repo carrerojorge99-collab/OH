@@ -121,7 +121,24 @@ const HumanResources = () => {
       loadEmployees();
     } catch (error) {
       console.error('Error guardando perfil:', error);
-      const errorMsg = error.response?.data?.detail || error.message || 'Error desconocido';
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      
+      let errorMsg = 'Error desconocido';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.detail) {
+          errorMsg = typeof error.response.data.detail === 'string' 
+            ? error.response.data.detail 
+            : JSON.stringify(error.response.data.detail);
+        } else {
+          errorMsg = JSON.stringify(error.response.data);
+        }
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
       toast.error(`Error: ${errorMsg}`);
     }
     setSaving(false);
