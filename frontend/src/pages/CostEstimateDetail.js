@@ -620,13 +620,13 @@ const CostEstimateDetail = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-center mt-2 bg-gray-100 p-3 rounded">
                       <div className="font-bold text-lg">
-                        ${totals.totalMaterialEquipment.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                        ${totals.matEquipWithPercentages.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                       </div>
                       <div className="font-bold text-lg bg-orange-100 rounded py-1">
-                        ${totals.totalLabor.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                        ${totals.laborWithPercentages.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                       </div>
                       <div className="font-bold text-lg">
-                        ${totals.subtotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                        ${totals.grandTotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                       </div>
                     </div>
                   </div>
