@@ -131,6 +131,31 @@ const Estimates = () => {
     };
   }, []);
 
+  // Handle query params from client profile page
+  useEffect(() => {
+    const clientProfileId = searchParams.get('client_profile_id');
+    const company = searchParams.get('company');
+    const contact = searchParams.get('contact');
+    const email = searchParams.get('email');
+    const phone = searchParams.get('phone');
+    const address = searchParams.get('address');
+    
+    if (clientProfileId) {
+      setForm(prev => ({
+        ...prev,
+        client_profile_id: clientProfileId,
+        client_company: company || '',
+        client_name: contact || '',
+        client_email: email || '',
+        client_phone: phone || '',
+        client_address: address || ''
+      }));
+      setDialogOpen(true);
+      // Clear the query params
+      setSearchParams({});
+    }
+  }, [searchParams]);
+
   const loadData = async () => {
     try {
       const [estimatesRes, projectsRes, taxTypesRes, clientsRes, profilesRes] = await Promise.all([
