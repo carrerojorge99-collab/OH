@@ -1830,6 +1830,96 @@ const ProjectDetail = () => {
             )}
           </TabsContent>
 
+          {/* Team Tab */}
+          <TabsContent value="team" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold tracking-tight">Equipo del Proyecto</h2>
+              <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-primary">
+                    <UserPlus className="w-4 h-4 mr-2" /> Añadir Miembro
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Añadir Miembro al Equipo</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {availableUsers.length === 0 ? (
+                      <p className="text-center text-slate-500 py-4">Todos los usuarios ya están en el equipo</p>
+                    ) : (
+                      availableUsers.map(user => (
+                        <div 
+                          key={user.user_id} 
+                          className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <User className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{user.name}</p>
+                              <p className="text-sm text-slate-500">{user.email}</p>
+                              <p className="text-xs text-slate-400">{user.role}</p>
+                            </div>
+                          </div>
+                          <Button size="sm" onClick={() => handleAddTeamMember(user.user_id)}>
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" /> Miembros del Equipo ({teamMembers.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {teamMembers.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                    <Users className="w-12 h-12 mx-auto text-slate-300 mb-2" />
+                    <p className="text-slate-500">No hay miembros asignados</p>
+                    <p className="text-sm text-slate-400">Añade empleados al equipo para que puedan ver este proyecto</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {teamMembers.map(member => (
+                      <div 
+                        key={member.user_id} 
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="w-6 h-6 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-slate-500">{member.position || member.role}</p>
+                            <p className="text-xs text-slate-400">{member.email}</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleRemoveTeamMember(member.user_id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Budget Tab */}
           <TabsContent value="budget" className="space-y-6">
             {/* Budget Summary Cards */}
