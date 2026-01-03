@@ -675,9 +675,9 @@ const CostEstimateDetail = () => {
                           onChange={(e) => setB2bSubcontractorPercentage(e.target.value)}
                         />
                         {totals.b2bSubcontractorAmount > 0 && (
-                          <p className="text-xs text-amber-600 mt-1">+${totals.b2bSubcontractorAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })} (solo subcontratistas)</p>
+                          <p className="text-xs text-amber-600 mt-1">+${totals.b2bSubcontractorAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
-                        <p className="text-xs text-amber-500 mt-1">*Solo aplica a Subcontratistas</p>
+                        <p className="text-xs text-amber-500 mt-1">*Aplica sobre M.O. Subcontratista: ${totals.totalSubcontractorLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
                       </div>
                     </div>
                   </div>
