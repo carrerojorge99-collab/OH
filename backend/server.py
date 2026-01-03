@@ -7688,7 +7688,41 @@ async def export_cost_estimate_pdf(
     t.setStyle(summary_style)
     elements.append(t)
     
+    # Material/Equipment | Labor | Total breakdown
+    elements.append(Spacer(1, 15))
+    breakdown_header = [['Material/Equipment', 'Labor', 'Total']]
+    breakdown_data = [[f"${mat_equip_with_percentages:,.2f}", f"${labor_with_percentages:,.2f}", f"${grand_total:,.2f}"]]
+    
+    breakdown_header_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+    ])
+    
+    breakdown_data_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
+        ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('TOPPADDING', (0, 0), (-1, 0), 10),
+    ])
+    
+    th = Table(breakdown_header, colWidths=[2.17*inch, 2.17*inch, 2.17*inch])
+    th.setStyle(breakdown_header_style)
+    elements.append(th)
+    
+    td = Table(breakdown_data, colWidths=[2.17*inch, 2.17*inch, 2.17*inch])
+    td.setStyle(breakdown_data_style)
+    elements.append(td)
+    
     # Grand total with orange background
+    elements.append(Spacer(1, 10))
     total_style = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_COLOR),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -7700,7 +7734,7 @@ async def export_cost_estimate_pdf(
         ('TOPPADDING', (0, 0), (-1, 0), 10),
     ])
     
-    total_data = [['GRAN TOTAL', f"${estimate.get('grand_total', 0):,.2f}"]]
+    total_data = [['GRAN TOTAL', f"${grand_total:,.2f}"]]
     tt = Table(total_data, colWidths=[4*inch, 2.5*inch])
     tt.setStyle(total_style)
     elements.append(tt)
