@@ -4818,6 +4818,98 @@ async def delete_client_profile(profile_id: str, request: Request, session_token
     await db.client_profiles.delete_one({"profile_id": profile_id})
     return {"message": "Cliente eliminado"}
 
+# ============== MIGRATION ENDPOINT ==============
+
+@api_router.post("/migrate/estimates-to-client-profiles")
+async def migrate_estimates_to_client_profiles(request: Request, session_token: Optional[str] = Cookie(None)):
+    """
+    Migration endpoint: Links existing estimates to client profiles.
+    Creates client profiles if they don't exist based on estimate client info.
+    Only super_admin can run this migration.
+    """
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="Solo super administradores pueden ejecutar migraciones")
+    
+    # Get all estimates without client_profile_id or with null/empty client_profile_id
+    estimates = await db.estimates.find({
+        "$or": [
+            {"client_profile_id": {"$exists": False}},
+            {"client_profile_id": None},
+            {"client_profile_id": ""}
+        ]
+    }).to_list(10000)
+    
+    migrated_count = 0
+    created_profiles = 0
+    errors = []
+    
+    for estimate in estimates:
+        try:
+            estimate_id = estimate.get("estimate_id")
+            client_email = (estimate.get("client_email") or "").strip().lower()
+            client_company = (estimate.get("client_company") or "").strip()
+            client_name = (estimate.get("client_name") or "").strip()
+            
+            if not client_email and not client_company and not client_name:
+                errors.append(f"Estimate {estimate_id}: No client info to match")
+                continue
+            
+            # Try to find existing client profile
+            existing_profile = None
+            
+            # First try by email (most specific)
+            if client_email:
+                existing_profile = await db.client_profiles.find_one({
+                    "email": {"$regex": f"^{client_email}$", "$options": "i"}
+                })
+            
+            # If not found, try by company name
+            if not existing_profile and client_company:
+                existing_profile = await db.client_profiles.find_one({
+                    "company_name": {"$regex": f"^{client_company}$", "$options": "i"}
+                })
+            
+            # If still not found, create new profile
+            if existing_profile:
+                profile_id = existing_profile.get("profile_id")
+            else:
+                # Create new client profile
+                profile_id = f"cp_{uuid4().hex[:12]}"
+                new_profile = {
+                    "profile_id": profile_id,
+                    "company_name": client_company or "",
+                    "contact_name": client_name or "",
+                    "email": client_email or "",
+                    "phone": estimate.get("client_phone") or "",
+                    "address": estimate.get("client_address") or "",
+                    "notes": "",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_by": user.user_id,
+                    "migrated_from_estimate": estimate_id
+                }
+                await db.client_profiles.insert_one(new_profile)
+                created_profiles += 1
+            
+            # Update the estimate with the client_profile_id
+            await db.estimates.update_one(
+                {"estimate_id": estimate_id},
+                {"$set": {"client_profile_id": profile_id}}
+            )
+            migrated_count += 1
+            
+        except Exception as e:
+            errors.append(f"Estimate {estimate.get('estimate_id', 'unknown')}: {str(e)}")
+    
+    return {
+        "message": "Migración completada",
+        "total_estimates_processed": len(estimates),
+        "estimates_migrated": migrated_count,
+        "new_profiles_created": created_profiles,
+        "errors": errors[:20] if errors else []  # Limit errors to first 20
+    }
+
 # ============== CLIENT PROFILE ESTIMATES ==============
 
 @api_router.get("/client-profiles/{profile_id}/estimates")
