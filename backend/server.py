@@ -8455,24 +8455,54 @@ async def update_employee_profile(
     request: Request,
     session_token: Optional[str] = Cookie(None)
 ):
-    user = await get_current_user(request, session_token)
+    import logging
+    logger = logging.getLogger("employee_profile")
     
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
-        raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
-    
-    profile_dict = profile_data.model_dump()
-    profile_dict["user_id"] = employee_id
-    profile_dict["updated_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
-    
-    existing = await db.employee_profiles.find_one({"user_id": employee_id})
-    if existing:
-        await db.employee_profiles.update_one({"user_id": employee_id}, {"$set": profile_dict})
-    else:
-        profile_dict["employee_id"] = f"emp_{uuid4().hex[:16]}"
-        profile_dict["created_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
-        await db.employee_profiles.insert_one(profile_dict)
-    
-    return {"message": "Perfil actualizado"}
+    try:
+        logger.info(f"=== UPDATE EMPLOYEE PROFILE START ===")
+        logger.info(f"Employee ID: {employee_id}")
+        logger.info(f"Profile data received: {profile_data}")
+        
+        user = await get_current_user(request, session_token)
+        logger.info(f"User requesting update: {user.name} (role: {user.role})")
+        
+        if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
+            logger.warning(f"Access denied for user {user.name} with role {user.role}")
+            raise HTTPException(status_code=403, detail="Solo RRHH o administradores")
+        
+        profile_dict = profile_data.model_dump()
+        logger.info(f"Profile dict after model_dump: {profile_dict}")
+        
+        profile_dict["user_id"] = employee_id
+        profile_dict["updated_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
+        
+        existing = await db.employee_profiles.find_one({"user_id": employee_id})
+        logger.info(f"Existing profile found: {existing is not None}")
+        
+        if existing:
+            logger.info(f"Updating existing profile for user_id: {employee_id}")
+            result = await db.employee_profiles.update_one({"user_id": employee_id}, {"$set": profile_dict})
+            logger.info(f"Update result - matched: {result.matched_count}, modified: {result.modified_count}")
+        else:
+            profile_dict["employee_id"] = f"emp_{uuid4().hex[:16]}"
+            profile_dict["created_at"] = datetime.now(PUERTO_RICO_TZ).isoformat()
+            logger.info(f"Creating new profile with employee_id: {profile_dict['employee_id']}")
+            result = await db.employee_profiles.insert_one(profile_dict)
+            logger.info(f"Insert result - inserted_id: {result.inserted_id}")
+        
+        logger.info(f"=== UPDATE EMPLOYEE PROFILE SUCCESS ===")
+        return {"message": "Perfil actualizado"}
+        
+    except HTTPException as he:
+        logger.error(f"HTTP Exception: {he.detail}")
+        raise he
+    except Exception as e:
+        logger.error(f"=== UPDATE EMPLOYEE PROFILE ERROR ===")
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error message: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error al guardar perfil: {str(e)}")
 
 # Endpoint para que empleados actualicen su propio perfil (sin campos de salario)
 class EmployeeProfileSelfUpdate(BaseModel):
