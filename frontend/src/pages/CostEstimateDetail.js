@@ -876,7 +876,7 @@ const CostEstimateDetail = () => {
                       ))}
                     </tbody>
                   </table>
-                  <p className="text-xs text-amber-600 mt-2">* El B2B Subcontratista se calcula sobre la columna "Mano de Obra"</p>
+                  <p className="text-xs text-amber-600 mt-2">* El B2B Subcontratista se calcula sobre la columna Mano de Obra</p>
                 </div>
               </CardContent>
             </Card>
