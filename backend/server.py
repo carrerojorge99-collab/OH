@@ -5917,6 +5917,7 @@ async def create_estimate(
         "estimate_number": estimate_number,
         "project_id": estimate_data.project_id,
         "project_name": project_name,
+        "client_profile_id": estimate_data.client_profile_id,
         "client_company": estimate_data.client_company,
         "client_name": estimate_data.client_name,
         "client_email": estimate_data.client_email,
