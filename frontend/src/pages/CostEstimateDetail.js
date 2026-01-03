@@ -366,8 +366,8 @@ const CostEstimateDetail = () => {
     const afterB2bOhsms = afterContingency * b2bOhsmsMultiplier;
     const b2bOhsmsAmount = afterB2bOhsms - afterContingency;
     
-    // Final total = cascaded total + B2B subcontractor (labor)
-    const grandTotal = afterB2bOhsms + b2bSubcontractorAmount;
+    // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
+    const grandTotal = afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount;
 
     return {
       totalLabor,
@@ -392,6 +392,7 @@ const CostEstimateDetail = () => {
       afterContingency,
       b2bOhsmsAmount,
       afterB2bOhsms,
+      b2bOhsmsLaborAmount,
       b2bSubcontractorAmount,
       grandTotal
     };
