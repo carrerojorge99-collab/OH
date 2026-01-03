@@ -30,6 +30,7 @@ import MyRequests from './pages/MyRequests';
 import MyProfile from './pages/MyProfile';
 import Clients from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
+import ClientProfileDetail from './pages/ClientProfileDetail';
 import Safety from './pages/Safety';
 import ProtectedRoute from './components/ProtectedRoute';
 
