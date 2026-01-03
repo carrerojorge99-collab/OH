@@ -7424,20 +7424,30 @@ async def export_cost_estimate_pdf(
     labor_costs = estimate.get('labor_costs', [])
     if labor_costs:
         elements.append(Paragraph("Mano de Obra", heading_style))
-        labor_data = [['Rol', 'Horas', 'Tarifa/Hora', 'Subtotal']]
+        labor_data = [['Rol', 'Cant.', 'Hrs Reg.', 'Hrs OT', 'Tarifa', 'Tarifa OT', 'Subtotal']]
         for item in labor_costs:
+            qty = item.get('qty_personnel', 1)
+            reg_hrs = item.get('regular_hours', 0)
+            ot_hrs = item.get('overtime_hours', 0)
+            rate = item.get('rate', 0)
+            ot_rate = item.get('overtime_rate', 0)
+            subtotal = item.get('subtotal', 0)
             labor_data.append([
                 item.get('role_name', ''),
-                str(item.get('hours', 0)),
-                f"${item.get('hourly_rate', 0):,.2f}",
-                f"${item.get('subtotal', 0):,.2f}"
+                str(qty),
+                str(reg_hrs),
+                str(ot_hrs),
+                f"${float(rate):,.2f}",
+                f"${float(ot_rate):,.2f}",
+                f"${float(subtotal):,.2f}"
             ])
-        t = Table(labor_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        t = Table(labor_data, colWidths=[1.5*inch, 0.5*inch, 0.7*inch, 0.7*inch, 0.9*inch, 0.9*inch, 1.3*inch])
         t.setStyle(table_style)
         elements.append(t)
         # Footer row
-        footer_data = [['', '', 'Total:', f"${estimate.get('total_labor', 0):,.2f}"]]
-        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        total_labor_sum = sum(float(item.get('subtotal', 0)) for item in labor_costs)
+        footer_data = [['', '', '', '', '', 'Total:', f"${total_labor_sum:,.2f}"]]
+        tf = Table(footer_data, colWidths=[1.5*inch, 0.5*inch, 0.7*inch, 0.7*inch, 0.9*inch, 0.9*inch, 1.3*inch])
         tf.setStyle(footer_style)
         elements.append(tf)
     
