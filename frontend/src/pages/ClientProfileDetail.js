@@ -147,8 +147,8 @@ const ClientProfileDetail = () => {
         <div className="text-center py-12">
           <Building2 className="w-12 h-12 mx-auto text-slate-300 mb-4" />
           <p className="text-slate-500">Cliente no encontrado</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/clients')}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Clientes
+          <Button variant="outline" className="mt-4" onClick={() => navigate('/estimados')}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Estimados
           </Button>
         </div>
       </Layout>
