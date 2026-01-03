@@ -582,6 +582,7 @@ class EstimateItem(BaseModel):
 
 class EstimateCreate(BaseModel):
     project_id: Optional[str] = None
+    client_profile_id: Optional[str] = None
     client_company: Optional[str] = None
     client_name: str
     client_email: Optional[str] = None
@@ -604,6 +605,7 @@ class Estimate(BaseModel):
     estimate_number: str
     project_id: Optional[str] = None
     project_name: Optional[str] = None
+    client_profile_id: Optional[str] = None
     client_company: Optional[str] = None
     client_name: str
     client_email: Optional[str] = None
