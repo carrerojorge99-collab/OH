@@ -107,9 +107,23 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       
-      <Route path="/estimates" element={
+      {/* Old estimates page - hidden from navigation but still accessible */}
+      <Route path="/estimates-legacy" element={
         <ProtectedRoute>
           <Estimates />
+        </ProtectedRoute>
+      } />
+      
+      {/* New Estimados area - Client Profiles */}
+      <Route path="/estimados" element={
+        <ProtectedRoute>
+          <ClientEstimates />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/estimados/:profileId" element={
+        <ProtectedRoute>
+          <ClientProfileDetail />
         </ProtectedRoute>
       } />
       
