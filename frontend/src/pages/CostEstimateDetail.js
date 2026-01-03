@@ -679,19 +679,6 @@ const CostEstimateDetail = () => {
                         )}
                         <p className="text-xs text-green-500">*Aplica al total</p>
                       </div>
-                      <div className="bg-green-50 p-2 rounded">
-                        <Label className="text-green-700">B2B OHSMS Global (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={b2bOhsmsGlobalPercentage}
-                          onChange={(e) => setB2bOhsmsGlobalPercentage(e.target.value)}
-                        />
-                        {totals.b2bOhsmsGlobalAmount > 0 && (
-                          <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsGlobalAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
-                        )}
-                        <p className="text-xs text-green-500 mt-1">*Aplica al total</p>
-                      </div>
                       <div className="bg-amber-50 p-2 rounded">
                         <Label className="text-amber-700">B2B Subcontratista (%)</Label>
                         <Input
@@ -703,7 +690,7 @@ const CostEstimateDetail = () => {
                         {totals.b2bSubcontractorAmount > 0 && (
                           <p className="text-xs text-amber-600 mt-1">+${totals.b2bSubcontractorAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
-                        <p className="text-xs text-amber-500 mt-1">*Aplica sobre M.O. Subcontratista: ${totals.totalSubcontractorLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
+                        <p className="text-xs text-amber-500">*M.O. Subcontr.: ${totals.totalSubcontractorLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
                       </div>
                     </div>
                   </div>
