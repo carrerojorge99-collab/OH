@@ -31,6 +31,7 @@ import MyProfile from './pages/MyProfile';
 import Clients from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
 import ClientProfileDetail from './pages/ClientProfileDetail';
+import ClientEstimates from './pages/ClientEstimates';
 import Safety from './pages/Safety';
 import ProtectedRoute from './components/ProtectedRoute';
 
