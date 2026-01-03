@@ -4770,6 +4770,116 @@ async def find_or_create_client_profile(data: dict, request: Request, session_to
     profile.pop("_id", None)
     return {"found": False, "profile": profile, "message": "Perfil de cliente creado automáticamente"}
 
+# ============== CLIENT PROFILES DETAIL ENDPOINTS ==============
+
+@api_router.get("/client-profiles/{profile_id}")
+async def get_client_profile(profile_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get a single client profile by ID"""
+    user = await get_current_user(request, session_token)
+    profile = await db.client_profiles.find_one({"profile_id": profile_id}, {"_id": 0})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    return profile
+
+@api_router.put("/client-profiles/{profile_id}")
+async def update_client_profile(profile_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a client profile"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.client_profiles.find_one({"profile_id": profile_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    update_data = {
+        "company_name": data.get("company_name", existing.get("company_name", "")),
+        "contact_name": data.get("contact_name", existing.get("contact_name", "")),
+        "email": data.get("email", existing.get("email", "")),
+        "phone": data.get("phone", existing.get("phone", "")),
+        "address": data.get("address", existing.get("address", "")),
+        "tax_id": data.get("tax_id", existing.get("tax_id", "")),
+        "notes": data.get("notes", existing.get("notes", "")),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": user.user_id
+    }
+    
+    await db.client_profiles.update_one({"profile_id": profile_id}, {"$set": update_data})
+    return {"message": "Cliente actualizado"}
+
+@api_router.delete("/client-profiles/{profile_id}")
+async def delete_client_profile(profile_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a client profile"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.ADMIN.value]:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden eliminar clientes")
+    
+    await db.client_profiles.delete_one({"profile_id": profile_id})
+    return {"message": "Cliente eliminado"}
+
+# ============== CLIENT PROFILE ESTIMATES ==============
+
+@api_router.get("/client-profiles/{profile_id}/estimates")
+async def get_client_profile_estimates(profile_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all estimates for a client profile"""
+    user = await get_current_user(request, session_token)
+    estimates = await db.estimates.find({"client_profile_id": profile_id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return estimates
+
+# ============== CLIENT PROFILE DOCUMENTS ==============
+
+@api_router.post("/client-profiles/{profile_id}/documents")
+async def upload_client_profile_document(profile_id: str, document_type: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Upload a document to a client profile"""
+    user = await get_current_user(request, session_token)
+    
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        raise HTTPException(status_code=400, detail="No file provided")
+    
+    content = await file.read()
+    file_b64 = base64.b64encode(content).decode()
+    
+    doc = {
+        "document_id": str(uuid4()),
+        "profile_id": profile_id,
+        "filename": file.filename,
+        "document_type": document_type,
+        "file_data": file_b64,
+        "uploaded_by": user.user_id,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.client_profile_documents.insert_one(doc)
+    return {"message": "Documento subido", "document_id": doc["document_id"]}
+
+@api_router.get("/client-profiles/{profile_id}/documents")
+async def get_client_profile_documents(profile_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all documents for a client profile"""
+    user = await get_current_user(request, session_token)
+    docs = await db.client_profile_documents.find({"profile_id": profile_id}, {"_id": 0, "file_data": 0}).to_list(100)
+    return docs
+
+@api_router.get("/client-profiles/{profile_id}/documents/{doc_id}/download")
+async def download_client_profile_document(profile_id: str, doc_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Download a client profile document"""
+    from fastapi.responses import Response
+    user = await get_current_user(request, session_token)
+    
+    doc = await db.client_profile_documents.find_one({"document_id": doc_id, "profile_id": profile_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    content = base64.b64decode(doc["file_data"])
+    return Response(content=content, media_type="application/octet-stream", headers={"Content-Disposition": f"attachment; filename={doc['filename']}"})
+
+@api_router.delete("/client-profiles/{profile_id}/documents/{doc_id}")
+async def delete_client_profile_document(profile_id: str, doc_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a client profile document"""
+    user = await get_current_user(request, session_token)
+    await db.client_profile_documents.delete_one({"document_id": doc_id, "profile_id": profile_id})
+    return {"message": "Documento eliminado"}
+
 @api_router.get("/clients/{client_id}/projects")
 async def get_client_projects(client_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
