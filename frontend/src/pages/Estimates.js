@@ -224,9 +224,32 @@ const Estimates = () => {
     const totalTaxRate = form.selected_taxes.reduce((sum, t) => sum + (t.percentage || 0), 0);
 
     try {
+      // First, find or create client profile to get profile_id
+      let clientProfileId = form.client_profile_id || null;
+      
+      if (!editingEstimate && (form.client_email || form.client_company)) {
+        try {
+          const profileData = {
+            company_name: form.client_company || '',
+            contact_name: form.client_name,
+            email: form.client_email || '',
+            phone: form.client_phone || '',
+            address: form.client_address || ''
+          };
+          const profileRes = await api.post('/client-profiles/find-or-create', profileData, { withCredentials: true });
+          clientProfileId = profileRes.data.profile?.profile_id || null;
+          if (!profileRes.data.found) {
+            toast.info('Perfil de cliente creado automáticamente');
+          }
+        } catch (profileErr) {
+          console.log('Could not save client profile:', profileErr);
+        }
+      }
+
       const payload = {
         ...form,
         project_id: form.project_id || null,
+        client_profile_id: clientProfileId,
         items: form.items.map(item => ({
           ...item,
           quantity: parseFloat(item.quantity) || 1,
@@ -244,26 +267,6 @@ const Estimates = () => {
       } else {
         await api.post(`/estimates`, payload, { withCredentials: true });
         toast.success('Estimado creado');
-        
-        // Automatically create/find client profile for reuse
-        if (form.client_email || form.client_company) {
-          try {
-            const profileData = {
-              company_name: form.client_company || '',
-              contact_name: form.client_name,
-              email: form.client_email || '',
-              phone: form.client_phone || '',
-              address: form.client_address || ''
-            };
-            const profileRes = await api.post('/client-profiles/find-or-create', profileData, { withCredentials: true });
-            if (!profileRes.data.found) {
-              toast.info('Perfil de cliente guardado para uso futuro');
-            }
-          } catch (profileErr) {
-            // Silent fail - profile creation is optional
-            console.log('Could not save client profile:', profileErr);
-          }
-        }
       }
       
       setDialogOpen(false);
