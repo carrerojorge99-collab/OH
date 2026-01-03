@@ -361,10 +361,10 @@ const CostEstimateDetail = () => {
     const afterContingency = afterMunicipalPatent * contingencyMultiplier; // U
     const contingencyAmount = afterContingency - afterMunicipalPatent;
     
-    // Step 8: U x (1 + B2B OHSMS%) = TOTAL (B2B OHSMS is global)
-    const b2bOhsmsMultiplier = 1 + (Number(b2bOhsmsPercentage) / 100);
-    const afterB2bOhsms = afterContingency * b2bOhsmsMultiplier;
-    const b2bOhsmsAmount = afterB2bOhsms - afterContingency;
+    // Step 8: U x 0.35 x B2B OHSMS% = B2B OHSMS Amount (se multiplica por 0.35 primero)
+    const b2bOhsmsBase = afterContingency * 0.35;
+    const b2bOhsmsAmount = b2bOhsmsBase * (Number(b2bOhsmsPercentage) / 100);
+    const afterB2bOhsms = afterContingency + b2bOhsmsAmount;
     
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount;
