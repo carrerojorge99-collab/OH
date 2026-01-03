@@ -301,11 +301,12 @@ const CostEstimateDetail = () => {
   // Calculate totals - Cascading multiplication
   // Formula: Subtotal x Profit = s, s x Overhead = w, w x CFSE = q, 
   // q x Liability = M, M x Municipal Patent = C, C x Contingency = TOTAL
-  // Plus: B2B Subcontractor applies only to subcontractors
-  // Plus: B2B OHSMS applies only to labor costs (Mano de Obra)
+  // Plus: B2B Subcontractor applies only to subcontractor's labor cost
+  // Plus: B2B OHSMS applies only to OHSMS labor costs (Mano de Obra)
   const calculateTotals = () => {
     const totalLabor = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
     const totalSubcontractors = subcontractors.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
+    const totalSubcontractorLabor = subcontractors.reduce((sum, item) => sum + (Number(item.labor_cost) || 0), 0);
     const totalMaterials = materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const totalEquipment = equipment.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     const totalTransportation = transportation.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
@@ -314,10 +315,10 @@ const CostEstimateDetail = () => {
     const subtotal = totalLabor + totalSubcontractors + totalMaterials + 
                      totalEquipment + totalTransportation + totalGC;
     
-    // B2B Subcontractor - applies only to subcontractors (added at the end)
-    const b2bSubcontractorAmount = totalSubcontractors * (Number(b2bSubcontractorPercentage) / 100);
+    // B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
+    const b2bSubcontractorAmount = totalSubcontractorLabor * (Number(b2bSubcontractorPercentage) / 100);
     
-    // B2B OHSMS - applies only to labor costs (Mano de Obra) (added at the end)
+    // B2B OHSMS - applies only to OHSMS labor costs (Mano de Obra) (added at the end)
     const b2bOhsmsAmount = totalLabor * (Number(b2bOhsmsPercentage) / 100);
     
     // CASCADING CALCULATION (each multiplies the previous result):
@@ -351,12 +352,13 @@ const CostEstimateDetail = () => {
     const afterContingency = afterMunicipalPatent * contingencyMultiplier;
     const contingencyAmount = afterContingency - afterMunicipalPatent;
     
-    // Final total = cascaded total + B2B subcontractor + B2B OHSMS (labor only)
+    // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = afterContingency + b2bSubcontractorAmount + b2bOhsmsAmount;
 
     return {
       totalLabor,
       totalSubcontractors,
+      totalSubcontractorLabor,
       totalMaterials,
       totalEquipment,
       totalTransportation,
