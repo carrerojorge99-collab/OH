@@ -284,6 +284,7 @@ const Estimates = () => {
     if (!profile) return;
     setForm(prev => ({
       ...prev,
+      client_profile_id: profile.profile_id || '',
       client_company: profile.company_name || '',
       client_name: profile.contact_name || '',
       client_email: profile.email || '',
