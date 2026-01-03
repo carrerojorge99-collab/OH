@@ -678,6 +678,19 @@ const CostEstimateDetail = () => {
                         )}
                         <p className="text-xs text-blue-500 mt-1">*Solo aplica a Mano de Obra</p>
                       </div>
+                      <div className="bg-green-50 p-2 rounded">
+                        <Label className="text-green-700">B2B OHSMS Global (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={b2bOhsmsGlobalPercentage}
+                          onChange={(e) => setB2bOhsmsGlobalPercentage(e.target.value)}
+                        />
+                        {totals.b2bOhsmsGlobalAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsGlobalAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                        <p className="text-xs text-green-500 mt-1">*Aplica al total</p>
+                      </div>
                       <div className="bg-amber-50 p-2 rounded">
                         <Label className="text-amber-700">B2B Subcontratista (%)</Label>
                         <Input
