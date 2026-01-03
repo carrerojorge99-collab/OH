@@ -8,7 +8,7 @@ const ROLE_ROUTES = {
   admin: ['*'], // Backward compatibility
   project_manager: [
     '/dashboard', '/clock', '/projects', '/calendar', '/reports', '/approvals', '/my-requests', '/my-profile',
-    '/estimates', '/cost-estimates', '/purchase-orders', '/invoices'
+    '/estimados', '/estimates-legacy', '/cost-estimates', '/purchase-orders', '/invoices'
   ],
   rrhh: [
     '/dashboard', '/clock', '/hr', '/payroll', '/users', '/approvals', '/my-requests', '/my-profile'
