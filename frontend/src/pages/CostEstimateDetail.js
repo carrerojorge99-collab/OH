@@ -815,7 +815,8 @@ const CostEstimateDetail = () => {
                       <tr className="border-b bg-slate-50">
                         <th className="p-2 text-left text-xs">Tipo</th>
                         <th className="p-2 text-left text-xs">Descripción</th>
-                        <th className="p-2 text-right text-xs">Costo</th>
+                        <th className="p-2 text-right text-xs">Costo Total</th>
+                        <th className="p-2 text-right text-xs bg-amber-50">Mano de Obra (para B2B)</th>
                         <th className="p-2"></th>
                       </tr>
                     </thead>
@@ -849,6 +850,16 @@ const CostEstimateDetail = () => {
                               onChange={(e) => updateSubcontractorRow(idx, 'cost', e.target.value)}
                             />
                           </td>
+                          <td className="p-2 bg-amber-50">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="text-right border-amber-300"
+                              value={item.labor_cost || 0}
+                              onChange={(e) => updateSubcontractorRow(idx, 'labor_cost', e.target.value)}
+                              placeholder="Mano de obra"
+                            />
+                          </td>
                           <td className="p-2">
                             <Button
                               size="sm"
@@ -862,6 +873,7 @@ const CostEstimateDetail = () => {
                       ))}
                     </tbody>
                   </table>
+                  <p className="text-xs text-amber-600 mt-2">* El B2B Subcontratista se calcula sobre la columna "Mano de Obra"</p>
                 </div>
               </CardContent>
             </Card>
