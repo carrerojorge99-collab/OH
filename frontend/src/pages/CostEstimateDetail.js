@@ -105,7 +105,7 @@ const CostEstimateDetail = () => {
         municipal_patent_percentage: Number(municipalPatentPercentage),
         contingency_percentage: Number(contingencyPercentage),
         b2b_ohsms_percentage: Number(b2bOhsmsPercentage),
-        b2b_ohsms_global_percentage: Number(b2bOhsmsGlobalPercentage),
+        b2b_ohsms_labor_percentage: Number(b2bOhsmsLaborPercentage),
         b2b_subcontractor_percentage: Number(b2bSubcontractorPercentage)
       };
 
