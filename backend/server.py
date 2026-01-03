@@ -7504,13 +7504,14 @@ async def export_cost_estimate_pdf(
                 item.get('description', '')[:25],
                 str(item.get('quantity', 0)),
                 str(item.get('days', 0)),
-                f"${item.get('rate_per_day', 0):,.2f}",
-                f"${item.get('total', 0):,.2f}"
+                f"${float(item.get('rate', 0)):,.2f}",
+                f"${float(item.get('total', 0)):,.2f}"
             ])
         t = Table(eq_data, colWidths=[2*inch, 1*inch, 0.8*inch, 1.2*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
-        footer_data = [['', '', '', 'Total:', f"${estimate.get('total_equipment', 0):,.2f}"]]
+        total_eq_sum = sum(float(item.get('total', 0)) for item in equipment)
+        footer_data = [['', '', '', 'Total:', f"${total_eq_sum:,.2f}"]]
         tf = Table(footer_data, colWidths=[2*inch, 1*inch, 0.8*inch, 1.2*inch, 1.5*inch])
         tf.setStyle(footer_style)
         elements.append(tf)
