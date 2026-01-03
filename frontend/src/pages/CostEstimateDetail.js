@@ -327,6 +327,9 @@ const CostEstimateDetail = () => {
     // B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
     const b2bSubcontractorAmount = totalSubcontractorLabor * (Number(b2bSubcontractorPercentage) / 100);
     
+    // B2B OHSMS Labor - applies only to OHSMS labor cost (added at the end)
+    const b2bOhsmsLaborAmount = totalLabor * (Number(b2bOhsmsLaborPercentage) / 100);
+    
     // Step 1: Subtotal x (1 + Profit%) = s
     const profitMultiplier = 1 + (Number(profitPercentage) / 100);
     const afterProfit = subtotal * profitMultiplier; // s
