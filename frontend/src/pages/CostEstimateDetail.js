@@ -371,6 +371,9 @@ const CostEstimateDetail = () => {
     
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
+    
+    // Breakdown: Material/Equipment vs Labor
+    const totalMaterialEquipment = round2(totalSubcontractors + totalMaterials + totalEquipment + totalTransportation + totalGC);
 
     return {
       totalLabor,
@@ -380,6 +383,7 @@ const CostEstimateDetail = () => {
       totalEquipment,
       totalTransportation,
       totalGC,
+      totalMaterialEquipment,
       subtotal,
       profitAmount,
       afterProfit,
