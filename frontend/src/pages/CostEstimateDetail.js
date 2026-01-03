@@ -575,7 +575,7 @@ const CostEstimateDetail = () => {
                   {/* Percentages Section */}
                   <div className="space-y-4 mt-6 p-4 border rounded-lg bg-slate-50">
                     <p className="font-semibold text-slate-700">Porcentajes (Cálculo en Cascada)</p>
-                    <p className="text-xs text-slate-500">Subtotal × Profit × Overhead × CFSE × Liability × Municipal Patent × Contingency × B2B OHSMS = TOTAL</p>
+                    <p className="text-xs text-slate-500">Subtotal × Profit × Overhead × CFSE × Liability × Municipal Patent × Contingency = TOTAL</p>
                     
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div>
@@ -650,8 +650,8 @@ const CostEstimateDetail = () => {
                           <p className="text-xs text-green-600 mt-1">+${totals.contingencyAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div>
-                        <Label>B2B OHSMS (%)</Label>
+                      <div className="bg-blue-50 p-2 rounded">
+                        <Label className="text-blue-700">B2B OHSMS (%)</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -659,8 +659,9 @@ const CostEstimateDetail = () => {
                           onChange={(e) => setB2bOhsmsPercentage(e.target.value)}
                         />
                         {totals.b2bOhsmsAmount > 0 && (
-                          <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                          <p className="text-xs text-blue-600 mt-1">+${totals.b2bOhsmsAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })} (solo mano de obra)</p>
                         )}
+                        <p className="text-xs text-blue-500 mt-1">*Solo aplica a Mano de Obra</p>
                       </div>
                       <div className="bg-amber-50 p-2 rounded">
                         <Label className="text-amber-700">B2B Subcontratista (%)</Label>
@@ -673,6 +674,7 @@ const CostEstimateDetail = () => {
                         {totals.b2bSubcontractorAmount > 0 && (
                           <p className="text-xs text-amber-600 mt-1">+${totals.b2bSubcontractorAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })} (solo subcontratistas)</p>
                         )}
+                        <p className="text-xs text-amber-500 mt-1">*Solo aplica a Subcontratistas</p>
                       </div>
                     </div>
                   </div>
