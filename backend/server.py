@@ -7545,73 +7545,131 @@ async def export_cost_estimate_pdf(
     elements.append(Spacer(1, 20))
     elements.append(Paragraph("Resumen", heading_style))
     
-    subtotal = estimate.get('subtotal', 0)
-    total_subcontractors = estimate.get('total_subcontractors', 0)
+    # Helper function to round to 2 decimals
+    def round2(num):
+        return round(num * 100) / 100
+    
+    # Get raw data from estimate
+    labor_costs = estimate.get('labor_costs', [])
+    subcontractors = estimate.get('subcontractors', [])
+    materials = estimate.get('materials', [])
+    equipment = estimate.get('equipment', [])
+    transportation = estimate.get('transportation', [])
+    general_conditions = estimate.get('general_conditions', [])
+    
+    # Calculate totals from line items
+    total_labor = round2(sum(float(item.get('subtotal', 0)) for item in labor_costs))
+    total_subcontractors = round2(sum(float(item.get('cost', 0)) for item in subcontractors))
+    total_subcontractor_labor = round2(sum(float(item.get('labor_cost', 0)) for item in subcontractors))
+    total_materials = round2(sum(float(item.get('total', 0)) for item in materials))
+    total_equipment = round2(sum(float(item.get('total', 0)) for item in equipment))
+    total_transportation = round2(sum(float(item.get('total', 0)) for item in transportation))
+    total_gc = round2(sum(float(item.get('total', 0)) for item in general_conditions))
+    
+    subtotal = round2(total_labor + total_subcontractors + total_materials + 
+                      total_equipment + total_transportation + total_gc)
     
     # Get percentages
-    profit_pct = estimate.get('profit_percentage', 0)
-    overhead_pct = estimate.get('overhead_percentage', 0)
-    cfse_pct = estimate.get('cfse_percentage', 0)
-    liability_pct = estimate.get('liability_percentage', 0)
-    municipal_patent_pct = estimate.get('municipal_patent_percentage', 0)
-    contingency_pct = estimate.get('contingency_percentage', 6)
-    tax_pct = estimate.get('tax_percentage', 0)
-    b2b_pct = estimate.get('b2b_percentage', 0)
+    profit_pct = float(estimate.get('profit_percentage', 0))
+    overhead_pct = float(estimate.get('overhead_percentage', 0))
+    cfse_pct = float(estimate.get('cfse_percentage', 0))
+    liability_pct = float(estimate.get('liability_percentage', 0))
+    municipal_patent_pct = float(estimate.get('municipal_patent_percentage', 0))
+    contingency_pct = float(estimate.get('contingency_percentage', 0))
+    b2b_ohsms_pct = float(estimate.get('b2b_ohsms_percentage', 0))
+    b2b_ohsms_labor_pct = float(estimate.get('b2b_ohsms_labor_percentage', 0))
+    b2b_subcontractor_pct = float(estimate.get('b2b_subcontractor_percentage', 0))
     
-    # CASCADING CALCULATION (Profit → Overhead → CFSE → Liability → Municipal Patent):
-    # 1. Subtotal + Profit
-    profit_amount = subtotal * profit_pct / 100
-    after_profit = subtotal + profit_amount
+    # CASCADING CALCULATION matching frontend exactly:
+    # B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
+    b2b_subcontractor_amount = round2(total_subcontractor_labor * (b2b_subcontractor_pct / 100))
     
-    # 2. After Profit + Overhead
-    overhead_amount = after_profit * overhead_pct / 100
-    after_overhead = after_profit + overhead_amount
+    # B2B OHSMS Labor - applies only to OHSMS labor cost (added at the end)
+    b2b_ohsms_labor_amount = round2(total_labor * (b2b_ohsms_labor_pct / 100))
     
-    # 3. After Overhead + CFSE
-    cfse_amount = after_overhead * cfse_pct / 100
-    after_cfse = after_overhead + cfse_amount
+    # Step 1: Subtotal x (1 + Profit%) = s
+    profit_multiplier = 1 + (profit_pct / 100)
+    after_profit = round2(subtotal * profit_multiplier)
+    profit_amount = round2(after_profit - subtotal)
     
-    # 4. After CFSE + Liability
-    liability_amount = after_cfse * liability_pct / 100
-    after_liability = after_cfse + liability_amount
+    # Step 2: s x (1 + Overhead%) = w
+    overhead_multiplier = 1 + (overhead_pct / 100)
+    after_overhead = round2(after_profit * overhead_multiplier)
+    overhead_amount = round2(after_overhead - after_profit)
     
-    # 5. After Liability + Municipal Patent
-    municipal_patent_amount = after_liability * municipal_patent_pct / 100
-    after_municipal_patent = after_liability + municipal_patent_amount
+    # Step 3: Mano de Obra x CFSE% = cfseAmount (only the increment)
+    cfse_amount = round2(total_labor * (cfse_pct / 100))
     
-    # 6. Contingency and tax on subtotal (not cascaded)
-    contingency_amount = subtotal * contingency_pct / 100
-    tax_amount = subtotal * tax_pct / 100
+    # Step 4: w + cfseAmount = qq
+    combined_total = round2(after_overhead + cfse_amount)
     
-    # B2B on subcontractors only
-    b2b_amount = total_subcontractors * b2b_pct / 100
+    # Step 5: qq x (1 + Liability%) = M
+    liability_multiplier = 1 + (liability_pct / 100)
+    after_liability = round2(combined_total * liability_multiplier)
+    liability_amount = round2(after_liability - combined_total)
     
-    # Grand Total
-    grand_total = after_municipal_patent + contingency_amount + tax_amount + b2b_amount
+    # Step 6: M x (1 + Municipal Patent%) = C
+    municipal_patent_multiplier = 1 + (municipal_patent_pct / 100)
+    after_municipal_patent = round2(after_liability * municipal_patent_multiplier)
+    municipal_patent_amount = round2(after_municipal_patent - after_liability)
     
+    # Step 7: C x (1 + Contingency%) = U
+    contingency_multiplier = 1 + (contingency_pct / 100)
+    after_contingency = round2(after_municipal_patent * contingency_multiplier)
+    contingency_amount = round2(after_contingency - after_municipal_patent)
+    
+    # Step 8: U x 0.35 x B2B OHSMS% = B2B OHSMS Amount
+    b2b_ohsms_base = round2(after_contingency * 0.35)
+    b2b_ohsms_amount = round2(b2b_ohsms_base * (b2b_ohsms_pct / 100))
+    after_b2b_ohsms = round2(after_contingency + b2b_ohsms_amount)
+    
+    # Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
+    grand_total = round2(after_b2b_ohsms + b2b_subcontractor_amount + b2b_ohsms_labor_amount)
+    
+    # Calculate Material/Equipment breakdown
+    total_material_equipment = round2(total_subcontractors + total_materials + total_equipment + total_transportation + total_gc)
+    labor_ratio = total_labor / subtotal if subtotal > 0 else 0
+    labor_with_percentages = round2((after_b2b_ohsms * labor_ratio) + cfse_amount + b2b_ohsms_labor_amount)
+    mat_equip_with_percentages = round2(grand_total - labor_with_percentages)
+    
+    # Build summary table
     summary_data = [
         ['Concepto', 'Base', 'Monto'],
-        ['Subtotal', '', f"${subtotal:,.2f}"],
-        [f"Profit ({profit_pct}%)", f"${subtotal:,.2f}", f"${profit_amount:,.2f}"],
-        [f"Overhead ({overhead_pct}%)", f"${after_profit:,.2f}", f"${overhead_amount:,.2f}"],
+        ['Mano de Obra', '', f"${total_labor:,.2f}"],
+        ['Subcontratistas', '', f"${total_subcontractors:,.2f}"],
+        ['Materiales', '', f"${total_materials:,.2f}"],
+        ['Equipos', '', f"${total_equipment:,.2f}"],
+        ['Transporte', '', f"${total_transportation:,.2f}"],
+        ['Condiciones Generales', '', f"${total_gc:,.2f}"],
+        ['SUBTOTAL', '', f"${subtotal:,.2f}"],
     ]
     
+    if profit_pct > 0:
+        summary_data.append([f"Profit ({profit_pct}%)", f"${subtotal:,.2f}", f"${profit_amount:,.2f}"])
+    
+    if overhead_pct > 0:
+        summary_data.append([f"Overhead ({overhead_pct}%)", f"${after_profit:,.2f}", f"${overhead_amount:,.2f}"])
+    
     if cfse_pct > 0:
-        summary_data.append([f"CFSE ({cfse_pct}%)", f"${after_overhead:,.2f}", f"${cfse_amount:,.2f}"])
+        summary_data.append([f"CFSE ({cfse_pct}%) - Solo M.O.", f"${total_labor:,.2f}", f"${cfse_amount:,.2f}"])
     
     if liability_pct > 0:
-        summary_data.append([f"Liability ({liability_pct}%)", f"${after_cfse:,.2f}", f"${liability_amount:,.2f}"])
+        summary_data.append([f"Liability ({liability_pct}%)", f"${combined_total:,.2f}", f"${liability_amount:,.2f}"])
     
     if municipal_patent_pct > 0:
         summary_data.append([f"Municipal Patent ({municipal_patent_pct}%)", f"${after_liability:,.2f}", f"${municipal_patent_amount:,.2f}"])
     
-    summary_data.append([f"Contingencia ({contingency_pct}%)", f"${subtotal:,.2f}", f"${contingency_amount:,.2f}"])
+    if contingency_pct > 0:
+        summary_data.append([f"Contingency ({contingency_pct}%)", f"${after_municipal_patent:,.2f}", f"${contingency_amount:,.2f}"])
     
-    if tax_pct > 0:
-        summary_data.append([f"Impuestos ({tax_pct}%)", f"${subtotal:,.2f}", f"${tax_amount:,.2f}"])
+    if b2b_ohsms_pct > 0:
+        summary_data.append([f"B2B OHSMS Global ({b2b_ohsms_pct}%)", f"${b2b_ohsms_base:,.2f} (35%)", f"${b2b_ohsms_amount:,.2f}"])
     
-    if b2b_pct > 0 and total_subcontractors > 0:
-        summary_data.append([f"B2B ({b2b_pct}%) - Solo Subcontratistas", f"${total_subcontractors:,.2f}", f"${b2b_amount:,.2f}"])
+    if b2b_ohsms_labor_pct > 0:
+        summary_data.append([f"B2B OHSMS M.O. ({b2b_ohsms_labor_pct}%)", f"${total_labor:,.2f}", f"${b2b_ohsms_labor_amount:,.2f}"])
+    
+    if b2b_subcontractor_pct > 0 and total_subcontractor_labor > 0:
+        summary_data.append([f"B2B Subcontratista ({b2b_subcontractor_pct}%)", f"${total_subcontractor_labor:,.2f}", f"${b2b_subcontractor_amount:,.2f}"])
     
     summary_style = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
