@@ -7482,13 +7482,14 @@ async def export_cost_estimate_pdf(
             mat_data.append([
                 item.get('description', '')[:30],
                 str(item.get('quantity', 0)),
-                f"${item.get('unit_cost', 0):,.2f}",
-                f"${item.get('total', 0):,.2f}"
+                f"${float(item.get('unit_cost', 0)):,.2f}",
+                f"${float(item.get('total', 0)):,.2f}"
             ])
         t = Table(mat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
         t.setStyle(table_style)
         elements.append(t)
-        footer_data = [['', '', 'Total:', f"${estimate.get('total_materials', 0):,.2f}"]]
+        total_mat_sum = sum(float(item.get('total', 0)) for item in materials)
+        footer_data = [['', '', 'Total:', f"${total_mat_sum:,.2f}"]]
         tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
         tf.setStyle(footer_style)
         elements.append(tf)
