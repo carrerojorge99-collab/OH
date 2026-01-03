@@ -1823,11 +1823,18 @@ const Settings = () => {
                         toast.info('Ejecutando migración...');
                         const response = await api.post('/migrate/estimates-to-client-profiles', {}, { withCredentials: true });
                         const data = response.data;
-                        toast.success(
-                          `Migración completada: ${data.estimates_migrated} estimados migrados, ${data.new_profiles_created} clientes creados`
-                        );
+                        if (data.errors && data.errors.length > 0) {
+                          toast.warning(`Migración con advertencias: ${data.estimates_migrated} migrados. Errores: ${data.errors.length}`);
+                          console.log('Migration errors:', data.errors);
+                        } else {
+                          toast.success(
+                            `Migración completada: ${data.estimates_migrated} estimados migrados, ${data.new_profiles_created} clientes creados`
+                          );
+                        }
                       } catch (error) {
-                        toast.error(error.response?.data?.detail || 'Error al ejecutar migración');
+                        console.error('Migration error:', error);
+                        const errorMsg = error.response?.data?.detail || error.message || 'Error desconocido';
+                        toast.error(`Error: ${errorMsg}`);
                       }
                     }}
                     className="bg-blue-600 hover:bg-blue-700"
