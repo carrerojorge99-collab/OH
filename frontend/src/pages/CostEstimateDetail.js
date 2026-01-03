@@ -75,6 +75,7 @@ const CostEstimateDetail = () => {
         setMunicipalPatentPercentage(estimateRes.data.municipal_patent_percentage || 0);
         setContingencyPercentage(estimateRes.data.contingency_percentage || 0);
         setB2bOhsmsPercentage(estimateRes.data.b2b_ohsms_percentage || 0);
+        setB2bOhsmsGlobalPercentage(estimateRes.data.b2b_ohsms_global_percentage || 0);
         setB2bSubcontractorPercentage(estimateRes.data.b2b_subcontractor_percentage || 0);
       }
     } catch (error) {
