@@ -617,8 +617,8 @@ const CostEstimateDetail = () => {
                           <p className="text-xs text-green-600 mt-1">+${totals.overheadAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div>
-                        <Label>CFSE (%)</Label>
+                      <div className="bg-blue-50 p-2 rounded">
+                        <Label className="text-blue-700">CFSE (%)</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -626,8 +626,9 @@ const CostEstimateDetail = () => {
                           onChange={(e) => setCfsePercentage(e.target.value)}
                         />
                         {totals.cfseAmount > 0 && (
-                          <p className="text-xs text-green-600 mt-1">+${totals.cfseAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                          <p className="text-xs text-blue-600 mt-1">+${totals.cfseAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
+                        <p className="text-xs text-blue-500">*Solo M.O.: ${totals.totalLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
                       </div>
                       <div>
                         <Label>Liability (%)</Label>
