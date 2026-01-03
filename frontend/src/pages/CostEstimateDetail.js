@@ -313,61 +313,64 @@ const CostEstimateDetail = () => {
   // U x B2B OHSMS (global) = TOTAL
   // Plus: B2B Subcontractor applies only to subcontractor's labor cost
   const calculateTotals = () => {
-    const totalLabor = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
-    const totalSubcontractors = subcontractors.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
-    const totalSubcontractorLabor = subcontractors.reduce((sum, item) => sum + (Number(item.labor_cost) || 0), 0);
-    const totalMaterials = materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
-    const totalEquipment = equipment.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
-    const totalTransportation = transportation.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
-    const totalGC = generalConditions.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+    // Helper function to round to 2 decimals
+    const round2 = (num) => Math.round(num * 100) / 100;
     
-    const subtotal = totalLabor + totalSubcontractors + totalMaterials + 
-                     totalEquipment + totalTransportation + totalGC;
+    const totalLabor = round2(laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0));
+    const totalSubcontractors = round2(subcontractors.reduce((sum, item) => sum + (Number(item.cost) || 0), 0));
+    const totalSubcontractorLabor = round2(subcontractors.reduce((sum, item) => sum + (Number(item.labor_cost) || 0), 0));
+    const totalMaterials = round2(materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
+    const totalEquipment = round2(equipment.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
+    const totalTransportation = round2(transportation.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
+    const totalGC = round2(generalConditions.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
+    
+    const subtotal = round2(totalLabor + totalSubcontractors + totalMaterials + 
+                     totalEquipment + totalTransportation + totalGC);
     
     // B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
-    const b2bSubcontractorAmount = totalSubcontractorLabor * (Number(b2bSubcontractorPercentage) / 100);
+    const b2bSubcontractorAmount = round2(totalSubcontractorLabor * (Number(b2bSubcontractorPercentage) / 100));
     
     // B2B OHSMS Labor - applies only to OHSMS labor cost (added at the end)
-    const b2bOhsmsLaborAmount = totalLabor * (Number(b2bOhsmsLaborPercentage) / 100);
+    const b2bOhsmsLaborAmount = round2(totalLabor * (Number(b2bOhsmsLaborPercentage) / 100));
     
     // Step 1: Subtotal x (1 + Profit%) = s
     const profitMultiplier = 1 + (Number(profitPercentage) / 100);
-    const afterProfit = subtotal * profitMultiplier; // s
-    const profitAmount = afterProfit - subtotal;
+    const afterProfit = round2(subtotal * profitMultiplier); // s
+    const profitAmount = round2(afterProfit - subtotal);
     
     // Step 2: s x (1 + Overhead%) = w
     const overheadMultiplier = 1 + (Number(overheadPercentage) / 100);
-    const afterOverhead = afterProfit * overheadMultiplier; // w
-    const overheadAmount = afterOverhead - afterProfit;
+    const afterOverhead = round2(afterProfit * overheadMultiplier); // w
+    const overheadAmount = round2(afterOverhead - afterProfit);
     
     // Step 3: Mano de Obra x CFSE% = cfseAmount (only the increment, not the total)
-    const cfseAmount = totalLabor * (Number(cfsePercentage) / 100); // q is just the increment
+    const cfseAmount = round2(totalLabor * (Number(cfsePercentage) / 100)); // q is just the increment
     
     // Step 4: w + cfseAmount = qq (add CFSE increment to overhead result)
-    const combinedTotal = afterOverhead + cfseAmount; // qq
+    const combinedTotal = round2(afterOverhead + cfseAmount); // qq
     
     // Step 5: qq x (1 + Liability%) = M
     const liabilityMultiplier = 1 + (Number(liabilityPercentage) / 100);
-    const afterLiability = combinedTotal * liabilityMultiplier; // M
-    const liabilityAmount = afterLiability - combinedTotal;
+    const afterLiability = round2(combinedTotal * liabilityMultiplier); // M
+    const liabilityAmount = round2(afterLiability - combinedTotal);
     
     // Step 6: M x (1 + Municipal Patent%) = C
     const municipalPatentMultiplier = 1 + (Number(municipalPatentPercentage) / 100);
-    const afterMunicipalPatent = afterLiability * municipalPatentMultiplier; // C
-    const municipalPatentAmount = afterMunicipalPatent - afterLiability;
+    const afterMunicipalPatent = round2(afterLiability * municipalPatentMultiplier); // C
+    const municipalPatentAmount = round2(afterMunicipalPatent - afterLiability);
     
     // Step 7: C x (1 + Contingency%) = U
     const contingencyMultiplier = 1 + (Number(contingencyPercentage) / 100);
-    const afterContingency = afterMunicipalPatent * contingencyMultiplier; // U
-    const contingencyAmount = afterContingency - afterMunicipalPatent;
+    const afterContingency = round2(afterMunicipalPatent * contingencyMultiplier); // U
+    const contingencyAmount = round2(afterContingency - afterMunicipalPatent);
     
     // Step 8: U x 0.35 x B2B OHSMS% = B2B OHSMS Amount (se multiplica por 0.35 primero)
-    const b2bOhsmsBase = afterContingency * 0.35;
-    const b2bOhsmsAmount = b2bOhsmsBase * (Number(b2bOhsmsPercentage) / 100);
-    const afterB2bOhsms = afterContingency + b2bOhsmsAmount;
+    const b2bOhsmsBase = round2(afterContingency * 0.35);
+    const b2bOhsmsAmount = round2(b2bOhsmsBase * (Number(b2bOhsmsPercentage) / 100));
+    const afterB2bOhsms = round2(afterContingency + b2bOhsmsAmount);
     
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
-    const grandTotal = afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount;
+    const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
 
     return {
       totalLabor,
