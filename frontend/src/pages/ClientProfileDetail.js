@@ -160,8 +160,8 @@ const ClientProfileDetail = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/clients')}>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/estimados')}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center">
