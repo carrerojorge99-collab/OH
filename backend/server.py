@@ -7520,19 +7520,22 @@ async def export_cost_estimate_pdf(
     transportation = estimate.get('transportation', [])
     if transportation:
         elements.append(Paragraph("Transporte", heading_style))
-        trans_data = [['Descripción', 'Cantidad', 'Costo Unitario', 'Total']]
+        trans_data = [['Descripción', 'Ciudad', 'Millas', 'Costo/Milla', 'Días', 'Total']]
         for item in transportation:
             trans_data.append([
-                item.get('description', '')[:30],
-                str(item.get('quantity', 0)),
-                f"${item.get('unit_cost', 0):,.2f}",
-                f"${item.get('total', 0):,.2f}"
+                item.get('description', '')[:20],
+                item.get('city_town', '')[:15],
+                str(item.get('roundtrip_miles', 0)),
+                f"${float(item.get('cost_per_mile', 0)):,.2f}",
+                str(item.get('days', 0)),
+                f"${float(item.get('total', 0)):,.2f}"
             ])
-        t = Table(trans_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        t = Table(trans_data, colWidths=[1.5*inch, 1.2*inch, 0.8*inch, 1*inch, 0.7*inch, 1.3*inch])
         t.setStyle(table_style)
         elements.append(t)
-        footer_data = [['', '', 'Total:', f"${estimate.get('total_transportation', 0):,.2f}"]]
-        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+        total_trans_sum = sum(float(item.get('total', 0)) for item in transportation)
+        footer_data = [['', '', '', '', 'Total:', f"${total_trans_sum:,.2f}"]]
+        tf = Table(footer_data, colWidths=[1.5*inch, 1.2*inch, 0.8*inch, 1*inch, 0.7*inch, 1.3*inch])
         tf.setStyle(footer_style)
         elements.append(tf)
     
