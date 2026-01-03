@@ -1809,6 +1809,34 @@ const Settings = () => {
                   </ol>
                 </div>
 
+                {/* Migrate Estimates to Client Profiles */}
+                <div className="p-6 border rounded-lg bg-blue-50 border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">📋 Migrar Estimados a Clientes</h3>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Esta función vincula los estimados existentes con perfiles de clientes. 
+                    Si un cliente no existe, se creará automáticamente con la información del estimado.
+                    <strong> Ejecutar después de actualizar la aplicación.</strong>
+                  </p>
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        toast.info('Ejecutando migración...');
+                        const response = await api.post('/migrate/estimates-to-client-profiles', {}, { withCredentials: true });
+                        const data = response.data;
+                        toast.success(
+                          `Migración completada: ${data.estimates_migrated} estimados migrados, ${data.new_profiles_created} clientes creados`
+                        );
+                      } catch (error) {
+                        toast.error(error.response?.data?.detail || 'Error al ejecutar migración');
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Migrar Estimados
+                  </Button>
+                </div>
+
                 {/* Clear Browser Cache */}
                 <div className="p-6 border rounded-lg bg-purple-50 border-purple-200">
                   <h3 className="text-lg font-semibold text-purple-900 mb-2">🔄 Limpiar Caché del Navegador</h3>
