@@ -13,9 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
 import moment from 'moment';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addTotalsSection, addNotesSection, addFooter } from '../utils/pdfGenerator';
 import { 
   Building2, Upload, Download, Trash2, FileText, ArrowLeft, Save, 
-  Plus, Mail, Phone, MapPin, DollarSign, Calendar, Eye, Edit
+  Plus, Mail, Phone, MapPin, DollarSign, Calendar, Eye, Edit, X
 } from 'lucide-react';
 
 const documentCategories = [
@@ -55,6 +58,22 @@ const ClientProfileDetail = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadForm, setUploadForm] = useState({ document_type: '', file: null });
   const [activeTab, setActiveTab] = useState('info');
+  
+  // Estimate form state
+  const [estimateDialogOpen, setEstimateDialogOpen] = useState(false);
+  const [editingEstimate, setEditingEstimate] = useState(null);
+  const [taxTypes, setTaxTypes] = useState([]);
+  const [estimateForm, setEstimateForm] = useState({
+    title: '',
+    description: '',
+    items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+    selected_taxes: [],
+    discount_percent: 0,
+    notes: '',
+    terms: 'Este estimado es válido por 30 días.',
+    valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
+    custom_number: ''
+  });
 
   useEffect(() => {
     loadData();
@@ -62,14 +81,16 @@ const ClientProfileDetail = () => {
 
   const loadData = async () => {
     try {
-      const [clientRes, estimatesRes, docsRes] = await Promise.all([
+      const [clientRes, estimatesRes, docsRes, taxRes] = await Promise.all([
         api.get(`/client-profiles/${profileId}`),
         api.get(`/client-profiles/${profileId}/estimates`),
-        api.get(`/client-profiles/${profileId}/documents`)
+        api.get(`/client-profiles/${profileId}/documents`),
+        api.get('/tax-types').catch(() => ({ data: [] }))
       ]);
       setClient(clientRes.data);
       setEstimates(estimatesRes.data || []);
       setDocuments(docsRes.data || []);
+      setTaxTypes(taxRes.data || []);
     } catch (error) {
       toast.error('Error al cargar datos del cliente');
       console.error(error);
@@ -121,15 +142,214 @@ const ClientProfileDetail = () => {
     }
   };
 
-  const navigateToNewEstimate = () => {
-    // Navigate to old estimates page with client pre-selected
-    navigate(`/estimates-legacy?client_profile_id=${profileId}&company=${encodeURIComponent(client.company_name || '')}&contact=${encodeURIComponent(client.contact_name || '')}&email=${encodeURIComponent(client.email || '')}&phone=${encodeURIComponent(client.phone || '')}&address=${encodeURIComponent(client.address || '')}`);
+  // Estimate functions
+  const resetEstimateForm = () => {
+    setEstimateForm({
+      title: '',
+      description: '',
+      items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+      selected_taxes: [],
+      discount_percent: 0,
+      notes: '',
+      terms: 'Este estimado es válido por 30 días.',
+      valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
+      custom_number: ''
+    });
+    setEditingEstimate(null);
+  };
+
+  const openNewEstimate = () => {
+    resetEstimateForm();
+    setEstimateDialogOpen(true);
+  };
+
+  const openEditEstimate = (estimate) => {
+    setEstimateForm({
+      title: estimate.title || '',
+      description: estimate.description || '',
+      items: estimate.items || [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+      selected_taxes: estimate.selected_taxes || [],
+      discount_percent: estimate.discount_percent || 0,
+      notes: estimate.notes || '',
+      terms: estimate.terms || '',
+      valid_until: estimate.valid_until || '',
+      custom_number: estimate.estimate_number || ''
+    });
+    setEditingEstimate(estimate.estimate_id);
+    setEstimateDialogOpen(true);
+  };
+
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...estimateForm.items];
+    newItems[index][field] = value;
+    if (field === 'quantity' || field === 'unit_price') {
+      newItems[index].amount = (parseFloat(newItems[index].quantity) || 0) * (parseFloat(newItems[index].unit_price) || 0);
+    }
+    setEstimateForm({ ...estimateForm, items: newItems });
+  };
+
+  const addItem = () => {
+    setEstimateForm({
+      ...estimateForm,
+      items: [...estimateForm.items, { description: '', quantity: 1, unit_price: 0, amount: 0 }]
+    });
+  };
+
+  const removeItem = (index) => {
+    if (estimateForm.items.length > 1) {
+      const newItems = estimateForm.items.filter((_, i) => i !== index);
+      setEstimateForm({ ...estimateForm, items: newItems });
+    }
+  };
+
+  const toggleTax = (tax) => {
+    const exists = estimateForm.selected_taxes.find(t => t.name === tax.name);
+    if (exists) {
+      setEstimateForm({
+        ...estimateForm,
+        selected_taxes: estimateForm.selected_taxes.filter(t => t.name !== tax.name)
+      });
+    } else {
+      setEstimateForm({
+        ...estimateForm,
+        selected_taxes: [...estimateForm.selected_taxes, { name: tax.name, percentage: tax.percentage }]
+      });
+    }
+  };
+
+  const calculateEstimateTotals = () => {
+    const subtotal = estimateForm.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    const discountAmount = subtotal * (parseFloat(estimateForm.discount_percent) || 0) / 100;
+    const taxableAmount = subtotal - discountAmount;
+    const taxAmount = estimateForm.selected_taxes.reduce((sum, t) => sum + (taxableAmount * t.percentage / 100), 0);
+    const total = taxableAmount + taxAmount;
+    return { subtotal, discountAmount, taxAmount, total };
+  };
+
+  const handleEstimateSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!estimateForm.title || estimateForm.items.length === 0) {
+      toast.error('Complete los campos requeridos');
+      return;
+    }
+
+    const totalTaxRate = estimateForm.selected_taxes.reduce((sum, t) => sum + (t.percentage || 0), 0);
+
+    try {
+      const payload = {
+        client_profile_id: profileId,
+        client_company: client.company_name || '',
+        client_name: client.contact_name || '',
+        client_email: client.email || '',
+        client_phone: client.phone || '',
+        client_address: client.address || '',
+        title: estimateForm.title,
+        description: estimateForm.description,
+        items: estimateForm.items.map(item => ({
+          ...item,
+          quantity: parseFloat(item.quantity) || 1,
+          unit_price: parseFloat(item.unit_price) || 0,
+          amount: parseFloat(item.amount) || 0
+        })),
+        tax_rate: totalTaxRate,
+        selected_taxes: estimateForm.selected_taxes,
+        discount_percent: parseFloat(estimateForm.discount_percent) || 0,
+        notes: estimateForm.notes,
+        terms: estimateForm.terms,
+        valid_until: estimateForm.valid_until,
+        custom_number: estimateForm.custom_number
+      };
+
+      if (editingEstimate) {
+        await api.put(`/estimates/${editingEstimate}`, payload, { withCredentials: true });
+        toast.success('Estimado actualizado');
+      } else {
+        await api.post(`/estimates`, payload, { withCredentials: true });
+        toast.success('Estimado creado');
+      }
+      
+      setEstimateDialogOpen(false);
+      resetEstimateForm();
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al guardar estimado');
+    }
+  };
+
+  const exportPDF = async (estimate) => {
+    try {
+      const doc = new jsPDF();
+      const company = await fetchCompanyInfo();
+      
+      let y = await addDocumentHeader(doc, company, 'ESTIMATE', estimate.estimate_number, estimate.created_at, estimate.total);
+      
+      const clientDisplayName = estimate.client_company 
+        ? `${estimate.client_company}\nAttn: ${estimate.client_name}`
+        : estimate.client_name;
+      y = addPartySection(doc, 'Bill To:', clientDisplayName, estimate.client_address || '', estimate.client_email, estimate.client_phone, y);
+      
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Valid Until: ${estimate.valid_until ? moment(estimate.valid_until).format('MMM DD, YYYY') : 'N/A'}`, 120, y - 10);
+      
+      if (estimate.title) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text(estimate.title, 15, y);
+        y += 6;
+      }
+      
+      if (estimate.description) {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const descLines = doc.splitTextToSize(estimate.description, 170);
+        doc.text(descLines, 15, y);
+        y += descLines.length * 4 + 4;
+      }
+      
+      y = addTasksTable(doc, estimate.items, y + 4);
+      
+      let taxDetails = null;
+      if (estimate.selected_taxes && estimate.selected_taxes.length > 0) {
+        const taxableAmount = estimate.subtotal - (estimate.discount_amount || 0);
+        taxDetails = estimate.selected_taxes.map(t => ({
+          name: t.name,
+          percentage: t.percentage,
+          amount: taxableAmount * t.percentage / 100
+        }));
+      }
+      y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y, taxDetails);
+      
+      addNotesSection(doc, estimate.notes, estimate.terms, y);
+      addFooter(doc, company);
+      
+      doc.save(`Estimate_${estimate.estimate_number}.pdf`);
+      toast.success('PDF descargado');
+    } catch (error) {
+      console.error('PDF Error:', error);
+      toast.error('Error al generar PDF');
+    }
+  };
+
+  const handleDeleteEstimate = async (estimateId) => {
+    if (!window.confirm('¿Eliminar este estimado?')) return;
+    try {
+      await api.delete(`/estimates/${estimateId}`);
+      toast.success('Estimado eliminado');
+      loadData();
+    } catch (error) {
+      toast.error('Error al eliminar');
+    }
   };
 
   // Calculate stats
   const totalEstimates = estimates.length;
   const totalValue = estimates.reduce((sum, e) => sum + (e.total || 0), 0);
   const approvedEstimates = estimates.filter(e => e.status === 'approved').length;
+  const estimateTotals = calculateEstimateTotals();
 
   if (loading) {
     return (
@@ -173,7 +393,7 @@ const ClientProfileDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={navigateToNewEstimate} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={openNewEstimate} className="bg-orange-500 hover:bg-orange-600">
               <Plus className="w-4 h-4 mr-2" /> Nuevo Estimado
             </Button>
           </div>
@@ -322,7 +542,7 @@ const ClientProfileDetail = () => {
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5" /> Estimados del Cliente
                   </CardTitle>
-                  <Button onClick={navigateToNewEstimate} size="sm" className="bg-orange-500 hover:bg-orange-600">
+                  <Button onClick={openNewEstimate} size="sm" className="bg-orange-500 hover:bg-orange-600">
                     <Plus className="w-4 h-4 mr-2" /> Nuevo Estimado
                   </Button>
                 </div>
@@ -332,7 +552,7 @@ const ClientProfileDetail = () => {
                   <div className="text-center py-12 border-2 border-dashed rounded-lg">
                     <FileText className="w-12 h-12 mx-auto text-slate-300 mb-2" />
                     <p className="text-slate-500">No hay estimados para este cliente</p>
-                    <Button onClick={navigateToNewEstimate} variant="outline" className="mt-4">
+                    <Button onClick={openNewEstimate} variant="outline" className="mt-4">
                       <Plus className="w-4 h-4 mr-2" /> Crear Primer Estimado
                     </Button>
                   </div>
@@ -341,8 +561,7 @@ const ClientProfileDetail = () => {
                     {estimates.map(estimate => (
                       <div 
                         key={estimate.estimate_id} 
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/estimates?view=${estimate.estimate_id}`)}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border">
@@ -357,11 +576,24 @@ const ClientProfileDetail = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-lg">${(estimate.total || 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
-                          <Badge className={statusColors[estimate.status]}>
-                            {statusLabels[estimate.status] || estimate.status}
-                          </Badge>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-bold text-lg">${(estimate.total || 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                            <Badge className={statusColors[estimate.status]}>
+                              {statusLabels[estimate.status] || estimate.status}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => exportPDF(estimate)} title="Descargar PDF">
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => openEditEstimate(estimate)} title="Editar">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteEstimate(estimate.estimate_id)} title="Eliminar">
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -455,6 +687,187 @@ const ClientProfileDetail = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Estimate Creation/Edit Dialog */}
+        <Dialog open={estimateDialogOpen} onOpenChange={setEstimateDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingEstimate ? 'Editar Estimado' : 'Nuevo Estimado'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEstimateSubmit} className="space-y-6">
+              {/* Client Info (readonly) */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <p className="text-sm font-medium text-slate-600 mb-2">Cliente</p>
+                <p className="font-semibold">{client.company_name || client.contact_name}</p>
+                <p className="text-sm text-slate-500">{client.email} • {client.phone}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Título del Estimado *</Label>
+                  <Input 
+                    value={estimateForm.title} 
+                    onChange={(e) => setEstimateForm({...estimateForm, title: e.target.value})}
+                    placeholder="Ej: Propuesta de servicios"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Válido hasta</Label>
+                  <Input 
+                    type="date"
+                    value={estimateForm.valid_until} 
+                    onChange={(e) => setEstimateForm({...estimateForm, valid_until: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Descripción</Label>
+                <Textarea 
+                  value={estimateForm.description} 
+                  onChange={(e) => setEstimateForm({...estimateForm, description: e.target.value})}
+                  placeholder="Descripción del trabajo..."
+                  className="min-h-[60px]"
+                />
+              </div>
+
+              {/* Items */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <Label>Ítems</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                    <Plus className="w-4 h-4 mr-1" /> Añadir
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {estimateForm.items.map((item, index) => (
+                    <div key={index} className="grid grid-cols-12 gap-2 items-center p-2 bg-slate-50 rounded">
+                      <div className="col-span-5">
+                        <Input 
+                          placeholder="Descripción"
+                          value={item.description}
+                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input 
+                          type="number"
+                          placeholder="Cant."
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          placeholder="Precio"
+                          value={item.unit_price}
+                          onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-2 text-right font-medium">
+                        ${(parseFloat(item.amount) || 0).toFixed(2)}
+                      </div>
+                      <div className="col-span-1">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(index)} disabled={estimateForm.items.length === 1}>
+                          <X className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Taxes */}
+              {taxTypes.length > 0 && (
+                <div>
+                  <Label>Impuestos</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {taxTypes.map(tax => (
+                      <Badge 
+                        key={tax.name}
+                        variant={estimateForm.selected_taxes.find(t => t.name === tax.name) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => toggleTax(tax)}
+                      >
+                        {tax.name} ({tax.percentage}%)
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Discount */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Descuento (%)</Label>
+                  <Input 
+                    type="number"
+                    step="0.1"
+                    value={estimateForm.discount_percent} 
+                    onChange={(e) => setEstimateForm({...estimateForm, discount_percent: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="p-4 bg-orange-50 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>${estimateTotals.subtotal.toFixed(2)}</span>
+                </div>
+                {estimateTotals.discountAmount > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>Descuento:</span>
+                    <span>-${estimateTotals.discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                {estimateTotals.taxAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span>Impuestos:</span>
+                    <span>${estimateTotals.taxAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span>Total:</span>
+                  <span>${estimateTotals.total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Notes & Terms */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Notas</Label>
+                  <Textarea 
+                    value={estimateForm.notes} 
+                    onChange={(e) => setEstimateForm({...estimateForm, notes: e.target.value})}
+                    placeholder="Notas adicionales..."
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div>
+                  <Label>Términos y Condiciones</Label>
+                  <Textarea 
+                    value={estimateForm.terms} 
+                    onChange={(e) => setEstimateForm({...estimateForm, terms: e.target.value})}
+                    className="min-h-[80px]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setEstimateDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="bg-orange-500 hover:bg-orange-600">
+                  {editingEstimate ? 'Actualizar' : 'Crear'} Estimado
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
