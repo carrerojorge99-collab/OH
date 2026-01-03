@@ -95,7 +95,15 @@ const CostEstimateDetail = () => {
         materials,
         equipment,
         transportation,
-        general_conditions: generalConditions
+        general_conditions: generalConditions,
+        profit_percentage: Number(profitPercentage),
+        overhead_percentage: Number(overheadPercentage),
+        cfse_percentage: Number(cfsePercentage),
+        liability_percentage: Number(liabilityPercentage),
+        municipal_patent_percentage: Number(municipalPatentPercentage),
+        contingency_percentage: Number(contingencyPercentage),
+        b2b_ohsms_percentage: Number(b2bOhsmsPercentage),
+        b2b_subcontractor_percentage: Number(b2bSubcontractorPercentage)
       };
 
       if (estimateId === 'new') {
