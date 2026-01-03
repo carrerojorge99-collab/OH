@@ -38,6 +38,7 @@ const CostEstimateDetail = () => {
   const [municipalPatentPercentage, setMunicipalPatentPercentage] = useState(0);
   const [contingencyPercentage, setContingencyPercentage] = useState(0);
   const [b2bOhsmsPercentage, setB2bOhsmsPercentage] = useState(0);
+  const [b2bOhsmsGlobalPercentage, setB2bOhsmsGlobalPercentage] = useState(0);
   const [b2bSubcontractorPercentage, setB2bSubcontractorPercentage] = useState(0);
 
   useEffect(() => {
