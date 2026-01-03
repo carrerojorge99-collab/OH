@@ -86,6 +86,7 @@ const Estimates = () => {
   
   const [form, setForm] = useState({
     project_id: '',
+    client_profile_id: '',
     client_company: '', // Company/Business name
     client_name: '',
     client_email: '',
