@@ -54,6 +54,7 @@ const ProjectDetail = () => {
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'kanban'
@@ -67,6 +68,7 @@ const ProjectDetail = () => {
   const [timesheetDialogOpen, setTimesheetDialogOpen] = useState(false);
   const [editTimesheetDialogOpen, setEditTimesheetDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editingExpenseId, setEditingExpenseId] = useState(null);
