@@ -297,7 +297,11 @@ const CostEstimateDetail = () => {
     setGeneralConditions(generalConditions.filter((_, i) => i !== index));
   };
 
-  // Calculate totals - Simple sum only
+  // Calculate totals - Cascading multiplication
+  // Formula: Subtotal x Profit = s, s x Overhead = w, w x CFSE = q, 
+  // q x Liability = M, M x Municipal Patent = C, C x Contingency = U,
+  // U x B2B OHSMS = TOTAL
+  // Plus: B2B Subcontractor applies only to subcontractors
   const calculateTotals = () => {
     const totalLabor = laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
     const totalSubcontractors = subcontractors.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
@@ -308,6 +312,48 @@ const CostEstimateDetail = () => {
     
     const subtotal = totalLabor + totalSubcontractors + totalMaterials + 
                      totalEquipment + totalTransportation + totalGC;
+    
+    // B2B Subcontractor - applies only to subcontractors (added separately)
+    const b2bSubcontractorAmount = totalSubcontractors * (Number(b2bSubcontractorPercentage) / 100);
+    
+    // CASCADING CALCULATION (each multiplies the previous result):
+    // Subtotal x (1 + Profit%) = s
+    const profitMultiplier = 1 + (Number(profitPercentage) / 100);
+    const afterProfit = subtotal * profitMultiplier;
+    const profitAmount = afterProfit - subtotal;
+    
+    // s x (1 + Overhead%) = w
+    const overheadMultiplier = 1 + (Number(overheadPercentage) / 100);
+    const afterOverhead = afterProfit * overheadMultiplier;
+    const overheadAmount = afterOverhead - afterProfit;
+    
+    // w x (1 + CFSE%) = q
+    const cfseMultiplier = 1 + (Number(cfsePercentage) / 100);
+    const afterCfse = afterOverhead * cfseMultiplier;
+    const cfseAmount = afterCfse - afterOverhead;
+    
+    // q x (1 + Liability%) = M
+    const liabilityMultiplier = 1 + (Number(liabilityPercentage) / 100);
+    const afterLiability = afterCfse * liabilityMultiplier;
+    const liabilityAmount = afterLiability - afterCfse;
+    
+    // M x (1 + Municipal Patent%) = C
+    const municipalPatentMultiplier = 1 + (Number(municipalPatentPercentage) / 100);
+    const afterMunicipalPatent = afterLiability * municipalPatentMultiplier;
+    const municipalPatentAmount = afterMunicipalPatent - afterLiability;
+    
+    // C x (1 + Contingency%) = U
+    const contingencyMultiplier = 1 + (Number(contingencyPercentage) / 100);
+    const afterContingency = afterMunicipalPatent * contingencyMultiplier;
+    const contingencyAmount = afterContingency - afterMunicipalPatent;
+    
+    // U x (1 + B2B OHSMS%) = TOTAL (before adding B2B subcontractor)
+    const b2bOhsmsMultiplier = 1 + (Number(b2bOhsmsPercentage) / 100);
+    const afterB2bOhsms = afterContingency * b2bOhsmsMultiplier;
+    const b2bOhsmsAmount = afterB2bOhsms - afterContingency;
+    
+    // Final total = cascaded total + B2B subcontractor
+    const grandTotal = afterB2bOhsms + b2bSubcontractorAmount;
 
     return {
       totalLabor,
@@ -317,7 +363,22 @@ const CostEstimateDetail = () => {
       totalTransportation,
       totalGC,
       subtotal,
-      grandTotal: subtotal
+      profitAmount,
+      afterProfit,
+      overheadAmount,
+      afterOverhead,
+      cfseAmount,
+      afterCfse,
+      liabilityAmount,
+      afterLiability,
+      municipalPatentAmount,
+      afterMunicipalPatent,
+      contingencyAmount,
+      afterContingency,
+      b2bOhsmsAmount,
+      afterB2bOhsms,
+      b2bSubcontractorAmount,
+      grandTotal
     };
   };
 
