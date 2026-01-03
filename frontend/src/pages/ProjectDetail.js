@@ -1003,6 +1003,35 @@ const ProjectDetail = () => {
     }
   };
 
+  // Team management functions
+  const handleAddTeamMember = async (userId) => {
+    try {
+      await api.post(`/projects/${projectId}/team`, { user_id: userId }, { withCredentials: true });
+      toast.success('Miembro añadido al equipo');
+      setTeamDialogOpen(false);
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al añadir miembro');
+    }
+  };
+
+  const handleRemoveTeamMember = async (memberId) => {
+    if (!window.confirm('¿Eliminar este miembro del equipo?')) return;
+    try {
+      await api.delete(`/projects/${projectId}/team/${memberId}`, { withCredentials: true });
+      toast.success('Miembro eliminado del equipo');
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al eliminar miembro');
+    }
+  };
+
+  // Get available users (not already in team)
+  const availableUsers = users.filter(u => 
+    !teamMembers.find(tm => tm.user_id === u.user_id) && 
+    u.role !== 'client'
+  );
+
   if (loading) {
     return (
       <Layout>
