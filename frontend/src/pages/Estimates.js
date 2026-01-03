@@ -153,6 +153,7 @@ const Estimates = () => {
   const resetForm = () => {
     setForm({
       project_id: '',
+      client_profile_id: '',
       client_company: '',
       client_name: '',
       client_email: '',
