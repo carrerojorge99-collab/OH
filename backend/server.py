@@ -7455,18 +7455,21 @@ async def export_cost_estimate_pdf(
     subcontractors = estimate.get('subcontractors', [])
     if subcontractors:
         elements.append(Paragraph("Subcontratistas", heading_style))
-        sub_data = [['Oficio', 'Descripción', 'Costo']]
+        sub_data = [['Tipo', 'Descripción', 'Costo Total', 'Mano de Obra']]
         for item in subcontractors:
             sub_data.append([
                 item.get('trade', ''),
-                item.get('description', '')[:40],
-                f"${item.get('cost', 0):,.2f}"
+                item.get('description', '')[:35],
+                f"${float(item.get('cost', 0)):,.2f}",
+                f"${float(item.get('labor_cost', 0)):,.2f}"
             ])
-        t = Table(sub_data, colWidths=[2*inch, 3*inch, 1.5*inch])
+        t = Table(sub_data, colWidths=[1.3*inch, 2.7*inch, 1.25*inch, 1.25*inch])
         t.setStyle(table_style)
         elements.append(t)
-        footer_data = [['', 'Total:', f"${estimate.get('total_subcontractors', 0):,.2f}"]]
-        tf = Table(footer_data, colWidths=[2*inch, 3*inch, 1.5*inch])
+        total_sub_sum = sum(float(item.get('cost', 0)) for item in subcontractors)
+        total_sub_labor = sum(float(item.get('labor_cost', 0)) for item in subcontractors)
+        footer_data = [['', 'Total:', f"${total_sub_sum:,.2f}", f"${total_sub_labor:,.2f}"]]
+        tf = Table(footer_data, colWidths=[1.3*inch, 2.7*inch, 1.25*inch, 1.25*inch])
         tf.setStyle(footer_style)
         elements.append(tf)
     
