@@ -120,7 +120,9 @@ const HumanResources = () => {
       toast.success('Perfil guardado');
       loadEmployees();
     } catch (error) {
-      toast.error('Error al guardar');
+      console.error('Error guardando perfil:', error);
+      const errorMsg = error.response?.data?.detail || error.message || 'Error desconocido';
+      toast.error(`Error: ${errorMsg}`);
     }
     setSaving(false);
   };
