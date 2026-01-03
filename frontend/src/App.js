@@ -193,11 +193,6 @@ function AppRouter() {
           <ClientDetail />
         </ProtectedRoute>
       } />
-      <Route path="/client-profiles/:profileId" element={
-        <ProtectedRoute>
-          <ClientProfileDetail />
-        </ProtectedRoute>
-      } />
       <Route path="/safety" element={
         <ProtectedRoute>
           <Safety />
