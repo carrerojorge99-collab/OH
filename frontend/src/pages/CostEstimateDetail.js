@@ -575,6 +575,111 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
+                  {/* Percentages Section */}
+                  <div className="space-y-4 mt-6 p-4 border rounded-lg bg-slate-50">
+                    <p className="font-semibold text-slate-700">Porcentajes (Cálculo en Cascada)</p>
+                    <p className="text-xs text-slate-500">Subtotal × Profit × Overhead × CFSE × Liability × Municipal Patent × Contingency × B2B OHSMS = TOTAL</p>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div>
+                        <Label>Profit (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={profitPercentage}
+                          onChange={(e) => setProfitPercentage(e.target.value)}
+                        />
+                        {totals.profitAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.profitAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Overhead (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={overheadPercentage}
+                          onChange={(e) => setOverheadPercentage(e.target.value)}
+                        />
+                        {totals.overheadAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.overheadAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>CFSE (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={cfsePercentage}
+                          onChange={(e) => setCfsePercentage(e.target.value)}
+                        />
+                        {totals.cfseAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.cfseAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Liability (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={liabilityPercentage}
+                          onChange={(e) => setLiabilityPercentage(e.target.value)}
+                        />
+                        {totals.liabilityAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.liabilityAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Municipal Patent (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={municipalPatentPercentage}
+                          onChange={(e) => setMunicipalPatentPercentage(e.target.value)}
+                        />
+                        {totals.municipalPatentAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.municipalPatentAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Contingency (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={contingencyPercentage}
+                          onChange={(e) => setContingencyPercentage(e.target.value)}
+                        />
+                        {totals.contingencyAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.contingencyAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label>B2B OHSMS (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={b2bOhsmsPercentage}
+                          onChange={(e) => setB2bOhsmsPercentage(e.target.value)}
+                        />
+                        {totals.b2bOhsmsAmount > 0 && (
+                          <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                        )}
+                      </div>
+                      <div className="bg-amber-50 p-2 rounded">
+                        <Label className="text-amber-700">B2B Subcontratista (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={b2bSubcontractorPercentage}
+                          onChange={(e) => setB2bSubcontractorPercentage(e.target.value)}
+                        />
+                        {totals.b2bSubcontractorAmount > 0 && (
+                          <p className="text-xs text-amber-600 mt-1">+${totals.b2bSubcontractorAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })} (solo subcontratistas)</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 rounded-lg font-bold text-xl mt-6">
                     <div>TOTAL FINAL</div>
                     <div className="text-right text-blue-600">
