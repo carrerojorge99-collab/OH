@@ -1593,19 +1593,21 @@ const ProjectDetail = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="tasks" className="space-y-6">
-          <TabsList className="bg-white border border-slate-200">
-            <TabsTrigger value="tasks" data-testid="tasks-tab">Tareas</TabsTrigger>
-            <TabsTrigger value="team" data-testid="team-tab">Equipo</TabsTrigger>
-            <TabsTrigger value="budget" data-testid="budget-tab">Presupuesto</TabsTrigger>
-            <TabsTrigger value="invoices" data-testid="invoices-tab">Facturas</TabsTrigger>
-            <TabsTrigger value="change-orders" data-testid="change-orders-tab">Change Orders</TabsTrigger>
-            <TabsTrigger value="labor" data-testid="labor-tab">Salarios</TabsTrigger>
-            <TabsTrigger value="timesheet" data-testid="timesheet-tab">Timesheet</TabsTrigger>
-            <TabsTrigger value="documents" data-testid="documents-tab">Documentos</TabsTrigger>
-            <TabsTrigger value="required-docs" data-testid="required-docs-tab">Doc. Requeridos</TabsTrigger>
-            <TabsTrigger value="logs" data-testid="logs-tab">Bitácora</TabsTrigger>
-            <TabsTrigger value="comments" data-testid="comments-tab">Comentarios</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="bg-white border border-slate-200 inline-flex min-w-max">
+              <TabsTrigger value="tasks" data-testid="tasks-tab" className="text-xs sm:text-sm whitespace-nowrap">Tareas</TabsTrigger>
+              <TabsTrigger value="team" data-testid="team-tab" className="text-xs sm:text-sm whitespace-nowrap">Equipo</TabsTrigger>
+              <TabsTrigger value="budget" data-testid="budget-tab" className="text-xs sm:text-sm whitespace-nowrap">Presupuesto</TabsTrigger>
+              <TabsTrigger value="invoices" data-testid="invoices-tab" className="text-xs sm:text-sm whitespace-nowrap">Facturas</TabsTrigger>
+              <TabsTrigger value="change-orders" data-testid="change-orders-tab" className="text-xs sm:text-sm whitespace-nowrap">Change Orders</TabsTrigger>
+              <TabsTrigger value="labor" data-testid="labor-tab" className="text-xs sm:text-sm whitespace-nowrap">Salarios</TabsTrigger>
+              <TabsTrigger value="timesheet" data-testid="timesheet-tab" className="text-xs sm:text-sm whitespace-nowrap">Timesheet</TabsTrigger>
+              <TabsTrigger value="documents" data-testid="documents-tab" className="text-xs sm:text-sm whitespace-nowrap">Docs</TabsTrigger>
+              <TabsTrigger value="required-docs" data-testid="required-docs-tab" className="text-xs sm:text-sm whitespace-nowrap">Doc. Req.</TabsTrigger>
+              <TabsTrigger value="logs" data-testid="logs-tab" className="text-xs sm:text-sm whitespace-nowrap">Bitácora</TabsTrigger>
+              <TabsTrigger value="comments" data-testid="comments-tab" className="text-xs sm:text-sm whitespace-nowrap">Comentarios</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Tasks Tab */}
           <TabsContent value="tasks" className="space-y-6">
