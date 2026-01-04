@@ -6840,7 +6840,7 @@ async def clear_audit_logs(
     
     # Verify password
     user_doc = await db.users.find_one({"id": user.id}, {"_id": 0})
-    if not user_doc or not verify_password(data.password, user_doc.get('password', '')):
+    if not user_doc or not bcrypt.checkpw(data.password.encode('utf-8'), user_doc.get('password', '').encode('utf-8')):
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
     
     # Get count before deletion
