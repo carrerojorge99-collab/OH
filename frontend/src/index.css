@@ -119,3 +119,10 @@
 .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari and Opera */
 }
+
+/* Force horizontal tabs on mobile */
+[role="tablist"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+}
