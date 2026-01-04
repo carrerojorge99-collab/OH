@@ -58,6 +58,7 @@ const ProjectDetail = () => {
   const [loading, setLoading] = useState(true);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'kanban'
+  const tabsScrollRef = useRef(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [editCategoryDialogOpen, setEditCategoryDialogOpen] = useState(false);
