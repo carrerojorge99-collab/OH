@@ -189,12 +189,19 @@ const ProjectDetail = () => {
 
   // Reset tabs scroll position to start on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (tabsScrollRef.current) {
-        tabsScrollRef.current.scrollLeft = 0;
-      }
-    }, 100);
-    return () => clearTimeout(timer);
+    // Use multiple delays to ensure scroll is reset after all renders
+    const timers = [
+      setTimeout(() => {
+        if (tabsScrollRef.current) tabsScrollRef.current.scrollLeft = 0;
+      }, 0),
+      setTimeout(() => {
+        if (tabsScrollRef.current) tabsScrollRef.current.scrollLeft = 0;
+      }, 100),
+      setTimeout(() => {
+        if (tabsScrollRef.current) tabsScrollRef.current.scrollLeft = 0;
+      }, 300)
+    ];
+    return () => timers.forEach(t => clearTimeout(t));
   }, [loading]);
 
   useEffect(() => {
