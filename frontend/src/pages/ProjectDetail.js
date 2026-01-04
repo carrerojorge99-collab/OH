@@ -1068,7 +1068,7 @@ const ProjectDetail = () => {
 
   return (
     <Layout>
-      <div className="space-y-8 fade-in">
+      <div className="space-y-6 md:space-y-8 fade-in">
         {/* Header */}
         <div>
           <Button
@@ -1078,14 +1078,15 @@ const ProjectDetail = () => {
             data-testid="back-to-projects-button"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a Proyectos
+            <span className="hidden sm:inline">Volver a Proyectos</span>
+            <span className="sm:hidden">Volver</span>
           </Button>
           
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight text-[#0F172A]">{project.name}</h1>
-              <p className="text-muted-foreground mt-2">{project.description}</p>
-              <div className="flex items-center gap-3 mt-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#0F172A]">{project.name}</h1>
+              <p className="text-muted-foreground mt-2 text-sm sm:text-base line-clamp-2">{project.description}</p>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
                 <Badge className={
                   project.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
                   project.status === 'in_progress' ? 'bg-blue-100 text-blue-700 border-blue-200' :
@@ -1093,38 +1094,41 @@ const ProjectDetail = () => {
                 }>
                   {project.status}
                 </Badge>
-                <span className="text-sm text-slate-600">
+                <span className="text-xs sm:text-sm text-slate-600">
                   {project.start_date} - {project.end_date}
                 </span>
               </div>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setEditDialogOpen(true)}
                 data-testid="edit-project-button"
-                className="rounded-full"
+                className="rounded-full text-xs sm:text-sm"
               >
-                <Pencil className="w-4 h-4 mr-2" />
+                <Pencil className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Editar
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleExport('pdf')}
                 data-testid="export-pdf-button"
-                className="rounded-full"
+                className="rounded-full text-xs sm:text-sm"
               >
-                <FileDown className="w-4 h-4 mr-2" />
+                <FileDown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 PDF
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleExport('excel')}
                 data-testid="export-excel-button"
-                className="rounded-full"
+                className="rounded-full text-xs sm:text-sm"
               >
-                <FileDown className="w-4 h-4 mr-2" />
+                <FileDown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Excel
               </Button>
               <Button
