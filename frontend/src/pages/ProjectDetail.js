@@ -1610,7 +1610,7 @@ const ProjectDetail = () => {
         <Tabs defaultValue="tasks" className="space-y-6">
           <div 
             ref={tabsScrollRef}
-            className="overflow-x-auto pb-3 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide"
+            className="overflow-x-auto pb-3 scrollbar-hide"
           >
             <TabsList className="bg-white border border-slate-200 flex flex-row flex-nowrap min-w-max p-1 h-auto gap-1">
               <TabsTrigger value="tasks" data-testid="tasks-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Tareas</TabsTrigger>
