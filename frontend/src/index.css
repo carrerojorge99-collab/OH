@@ -125,4 +125,5 @@
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
 }
