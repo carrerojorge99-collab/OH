@@ -189,9 +189,12 @@ const ProjectDetail = () => {
 
   // Reset tabs scroll position to start on mount
   useEffect(() => {
-    if (tabsScrollRef.current) {
-      tabsScrollRef.current.scrollLeft = 0;
-    }
+    const timer = setTimeout(() => {
+      if (tabsScrollRef.current) {
+        tabsScrollRef.current.scrollLeft = 0;
+      }
+    }, 100);
+    return () => clearTimeout(timer);
   }, [loading]);
 
   useEffect(() => {
