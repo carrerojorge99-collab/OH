@@ -187,6 +187,13 @@ const ProjectDetail = () => {
   const [requiredDocsToClient, setRequiredDocsToClient] = useState([]);
   const [projectDocStatus, setProjectDocStatus] = useState({});
 
+  // Reset tabs scroll position to start on mount
+  useEffect(() => {
+    if (tabsScrollRef.current) {
+      tabsScrollRef.current.scrollLeft = 0;
+    }
+  }, [loading]);
+
   useEffect(() => {
     loadProjectData();
     loadUsers();
