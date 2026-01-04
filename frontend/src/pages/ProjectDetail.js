@@ -1595,28 +1595,22 @@ const ProjectDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Tabs */}
+        {/* Tabs - Responsive scrollable */}
         <Tabs defaultValue="tasks" className="space-y-6">
-          <div className="relative">
-            {/* Scroll indicator gradient - right side */}
-            <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none z-10 md:hidden" />
-            {/* Scroll indicator gradient - left side (shows when scrolled) */}
-            <div className="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none z-10 md:hidden" />
-            <div className="overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-              <TabsList className="bg-white border border-slate-200 inline-flex min-w-max gap-1">
-                <TabsTrigger value="tasks" data-testid="tasks-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Tareas</TabsTrigger>
-                <TabsTrigger value="team" data-testid="team-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Equipo</TabsTrigger>
-                <TabsTrigger value="budget" data-testid="budget-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Presupuesto</TabsTrigger>
-                <TabsTrigger value="invoices" data-testid="invoices-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Facturas</TabsTrigger>
-                <TabsTrigger value="change-orders" data-testid="change-orders-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Cambios</TabsTrigger>
-                <TabsTrigger value="labor" data-testid="labor-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Salarios</TabsTrigger>
-                <TabsTrigger value="timesheet" data-testid="timesheet-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Tiempo</TabsTrigger>
-                <TabsTrigger value="documents" data-testid="documents-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Docs</TabsTrigger>
-                <TabsTrigger value="required-docs" data-testid="required-docs-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Doc.Req.</TabsTrigger>
-                <TabsTrigger value="logs" data-testid="logs-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Bitácora</TabsTrigger>
-                <TabsTrigger value="comments" data-testid="comments-tab" className="text-xs sm:text-sm whitespace-nowrap px-2 sm:px-3">Notas</TabsTrigger>
-              </TabsList>
-            </div>
+          <div className="overflow-x-auto pb-3 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+            <TabsList className="bg-white border border-slate-200 inline-flex min-w-max p-1 h-auto">
+              <TabsTrigger value="tasks" data-testid="tasks-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Tareas</TabsTrigger>
+              <TabsTrigger value="team" data-testid="team-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Equipo</TabsTrigger>
+              <TabsTrigger value="budget" data-testid="budget-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Presupuesto</TabsTrigger>
+              <TabsTrigger value="invoices" data-testid="invoices-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Facturas</TabsTrigger>
+              <TabsTrigger value="change-orders" data-testid="change-orders-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Cambios</TabsTrigger>
+              <TabsTrigger value="labor" data-testid="labor-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Salarios</TabsTrigger>
+              <TabsTrigger value="timesheet" data-testid="timesheet-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Tiempo</TabsTrigger>
+              <TabsTrigger value="documents" data-testid="documents-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Docs</TabsTrigger>
+              <TabsTrigger value="required-docs" data-testid="required-docs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Doc.Req.</TabsTrigger>
+              <TabsTrigger value="logs" data-testid="logs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Bitácora</TabsTrigger>
+              <TabsTrigger value="comments" data-testid="comments-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">Notas</TabsTrigger>
+            </TabsList>
           </div>
 
           {/* Tasks Tab */}
