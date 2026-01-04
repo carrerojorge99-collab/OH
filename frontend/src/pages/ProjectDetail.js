@@ -3299,7 +3299,7 @@ const ProjectDetail = () => {
                       )) : (
                         <tr>
                           <td colSpan="11" className="px-4 py-8 text-center text-slate-500">
-                            No hay registros de salarios. Añade el primero haciendo clic en "Nuevo Registro".
+                            No hay registros de salarios. Añade el primero haciendo clic en &quot;Nuevo Registro&quot;.
                           </td>
                         </tr>
                       )}
