@@ -1095,7 +1095,11 @@ const ProjectDetail = () => {
 
   const navigateToFolder = (folderId, folderName) => {
     if (folderId) {
-      setFolderPath([...folderPath, { id: currentFolderId, name: folderPath.length === 0 ? 'Raíz' : folderPath[folderPath.length - 1]?.name }]);
+      // Add current location to path before navigating
+      const currentName = currentFolderId 
+        ? documentFolders.find(f => f.folder_id === currentFolderId)?.name || 'Carpeta'
+        : 'Raíz';
+      setFolderPath([...folderPath, { id: currentFolderId, name: currentName }]);
     }
     setCurrentFolderId(folderId);
   };
