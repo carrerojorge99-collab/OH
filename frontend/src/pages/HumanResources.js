@@ -182,11 +182,6 @@ const HumanResources = () => {
     return `${process.env.REACT_APP_BACKEND_URL}/api/employees/${doc.employee_id}/documents/${doc.doc_id}/download`;
   };
 
-  // Helper to get document preview URL (inline display)
-  const getPreviewUrl = (doc) => {
-    return `${process.env.REACT_APP_BACKEND_URL}/api/employees/${doc.employee_id}/documents/${doc.doc_id}/preview`;
-  };
-
   // Check if document is previewable (images and PDFs)
   const isPreviewable = (filename) => {
     if (!filename) return false;
@@ -198,6 +193,41 @@ const HumanResources = () => {
   const getFileExtension = (filename) => {
     if (!filename) return '';
     return filename.toLowerCase().split('.').pop();
+  };
+
+  // Load document preview with authentication
+  const loadDocumentPreview = async (doc) => {
+    setPreviewDoc(doc);
+    setLoadingPreview(true);
+    setPreviewBlobUrl(null);
+    
+    try {
+      const response = await api.get(
+        `/employees/${doc.employee_id}/documents/${doc.doc_id}/preview`,
+        { 
+          responseType: 'blob',
+          withCredentials: true 
+        }
+      );
+      
+      const blobUrl = URL.createObjectURL(response.data);
+      setPreviewBlobUrl(blobUrl);
+    } catch (error) {
+      console.error('Error loading preview:', error);
+      toast.error('Error al cargar la vista previa');
+      setPreviewDoc(null);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  // Cleanup blob URL when dialog closes
+  const handleClosePreview = () => {
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+    }
+    setPreviewBlobUrl(null);
+    setPreviewDoc(null);
   };
 
   const filteredEmployees = employees.filter(e => 
