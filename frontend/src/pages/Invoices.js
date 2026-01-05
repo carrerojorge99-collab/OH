@@ -476,19 +476,51 @@ const Invoices = () => {
       doc.text(invoice.project_name, 120, y - 10);
     }
     
-    // Tasks table
+    // Tasks table FIRST (font size 12)
     const tasks = invoice.items.map(item => ({
       description: item.description,
       quantity: item.hours || 1,
       unit_price: item.rate || 0,
       amount: item.amount || 0
     }));
-    y = addTasksTable(doc, tasks, y + 4);
+    y = addTasksTable(doc, tasks, y + 4, 12);
+    
+    // Price Breakdown Section (Orange Area) - AFTER Tasks, BEFORE Totals
+    if (invoice.price_breakdown) {
+      y += 4;
+      // Header row
+      doc.setFillColor(249, 115, 22); // Orange-500
+      doc.rect(15, y, 60, 10, 'F');
+      doc.setFillColor(251, 146, 60); // Orange-400
+      doc.rect(75, y, 60, 10, 'F');
+      doc.setFillColor(234, 88, 12); // Orange-600
+      doc.rect(135, y, 60, 10, 'F');
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text('Material/Equipment', 45, y + 7, { align: 'center' });
+      doc.text('Labor', 105, y + 7, { align: 'center' });
+      doc.text('Total', 165, y + 7, { align: 'center' });
+      y += 10;
+      
+      // Values row
+      doc.setFillColor(254, 243, 199); // Orange-100
+      doc.rect(15, y, 180, 12, 'F');
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(`$${formatCurrency(invoice.price_breakdown.material_equipment || 0)}`, 45, y + 8, { align: 'center' });
+      doc.text(`$${formatCurrency(invoice.price_breakdown.labor || 0)}`, 105, y + 8, { align: 'center' });
+      doc.text(`$${formatCurrency(invoice.price_breakdown.total || 0)}`, 165, y + 8, { align: 'center' });
+      y += 18;
+    }
     
     // Build tax details from selected_taxes or fallback to single tax
     let taxDetails = null;
     if (invoice.selected_taxes && invoice.selected_taxes.length > 0) {
-      const taxableAmount = invoice.subtotal || 0;
+      const taxableAmount = invoice.price_breakdown?.total || invoice.subtotal || 0;
       taxDetails = invoice.selected_taxes.map(t => ({
         name: t.name,
         percentage: t.percentage,
@@ -497,10 +529,35 @@ const Invoices = () => {
     } else if (invoice.tax_type_name && invoice.tax_percentage) {
       taxDetails = [{ name: invoice.tax_type_name, percentage: invoice.tax_percentage, amount: invoice.tax_amount || 0 }];
     }
-    y = addTotalsSection(doc, invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y, taxDetails);
+    y = addTotalsSection(doc, invoice.price_breakdown?.total || invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y, taxDetails);
     
-    // Notes
-    addNotesSection(doc, invoice.notes, invoice.terms, y);
+    // Notes on first page (if space)
+    if (invoice.notes && y < 240) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text('Notes:', 15, y + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(12);
+      const notesLines = doc.splitTextToSize(invoice.notes, 180);
+      doc.text(notesLines, 15, y + 18);
+      y += 18 + notesLines.length * 5;
+    }
+    
+    // Terms and Conditions - ALWAYS on second page
+    if (invoice.terms) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text('Terms and Conditions', 105, 30, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      const termsLines = doc.splitTextToSize(invoice.terms, 180);
+      doc.text(termsLines, 15, 45);
+    }
     
     // Footer
     addFooter(doc, company);
