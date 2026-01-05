@@ -7862,6 +7862,245 @@ async def delete_cost_estimate(
     
     return {"message": "Estimación eliminada exitosamente"}
 
+# Convert Cost Estimate to Formal Estimate
+@api_router.post("/cost-estimates/{estimate_id}/convert-to-estimate", response_model=Estimate)
+async def convert_cost_estimate_to_estimate(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Convert a cost estimate into a formal estimate (Estimado)"""
+    user = await get_current_user(request, session_token)
+    
+    # Get the cost estimate
+    cost_estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not cost_estimate:
+        raise HTTPException(status_code=404, detail="Estimación de costo no encontrada")
+    
+    if not cost_estimate.get("project_id"):
+        raise HTTPException(status_code=400, detail="La estimación de costo debe tener un proyecto asignado")
+    
+    # Get project info
+    project = await db.projects.find_one({"project_id": cost_estimate["project_id"]}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Helper function to round
+    def round2(num):
+        return round(num, 2)
+    
+    # Calculate totals from cost estimate data
+    labor_costs = cost_estimate.get("labor_costs", [])
+    subcontractors = cost_estimate.get("subcontractors", [])
+    materials = cost_estimate.get("materials", [])
+    equipment = cost_estimate.get("equipment", [])
+    transportation = cost_estimate.get("transportation", [])
+    general_conditions = cost_estimate.get("general_conditions", [])
+    
+    # Get percentages (with defaults for fixed values)
+    profit_pct = cost_estimate.get("profit_percentage", 0)
+    overhead_pct = cost_estimate.get("overhead_percentage", 0)
+    cfse_pct = cost_estimate.get("cfse_percentage", 7)  # Fixed 7%
+    liability_pct = cost_estimate.get("liability_percentage", 7)  # Fixed 7%
+    municipal_pct = cost_estimate.get("municipal_patent_percentage", 1)  # Fixed 1%
+    contingency_pct = cost_estimate.get("contingency_percentage", 6)  # Fixed 6%
+    b2b_ohsms_pct = cost_estimate.get("b2b_ohsms_percentage", 0)
+    b2b_ohsms_labor_pct = cost_estimate.get("b2b_ohsms_labor_percentage", 4)  # Fixed 4%
+    b2b_subcontractor_pct = cost_estimate.get("b2b_subcontractor_percentage", 0)
+    
+    # Calculate subtotals
+    total_labor = round2(sum(float(item.get("subtotal", 0)) for item in labor_costs))
+    total_subcontractors = round2(sum(float(item.get("cost", 0)) for item in subcontractors))
+    total_subcontractor_labor = round2(sum(float(item.get("labor_cost", 0)) for item in subcontractors))
+    total_materials = round2(sum(float(item.get("total", 0)) for item in materials))
+    total_equipment = round2(sum(float(item.get("total", 0)) for item in equipment))
+    total_transportation = round2(sum(float(item.get("total", 0)) for item in transportation))
+    total_gc = round2(sum(float(item.get("total", 0)) for item in general_conditions))
+    
+    subtotal = round2(total_labor + total_subcontractors + total_materials + 
+                      total_equipment + total_transportation + total_gc)
+    
+    # Calculate cascading percentages
+    # Step 1: Subtotal x (1 + Profit%) = s
+    after_profit = round2(subtotal * (1 + profit_pct / 100))
+    profit_amount = round2(after_profit - subtotal)
+    
+    # Step 2: s x (1 + Overhead%) = w
+    after_overhead = round2(after_profit * (1 + overhead_pct / 100))
+    overhead_amount = round2(after_overhead - after_profit)
+    
+    # Step 3: CFSE on labor only
+    cfse_amount = round2(total_labor * (cfse_pct / 100))
+    
+    # Step 4: w + cfseAmount = combined
+    combined_total = round2(after_overhead + cfse_amount)
+    
+    # Step 5: combined x (1 + Liability%) = M
+    after_liability = round2(combined_total * (1 + liability_pct / 100))
+    liability_amount = round2(after_liability - combined_total)
+    
+    # Step 6: M x (1 + Municipal%) = C
+    after_municipal = round2(after_liability * (1 + municipal_pct / 100))
+    municipal_amount = round2(after_municipal - after_liability)
+    
+    # Step 7: C x (1 + Contingency%) = U
+    after_contingency = round2(after_municipal * (1 + contingency_pct / 100))
+    contingency_amount = round2(after_contingency - after_municipal)
+    
+    # Step 8: B2B OHSMS Global
+    b2b_ohsms_amount = round2(after_contingency * (b2b_ohsms_pct / 100))
+    after_b2b_ohsms = round2(after_contingency + b2b_ohsms_amount)
+    
+    # B2B Subcontractor
+    b2b_subcontractor_amount = round2(total_subcontractor_labor * (b2b_subcontractor_pct / 100))
+    
+    # B2B M.O. = Labor portion × 4%
+    labor_ratio = total_labor / subtotal if subtotal > 0 else 0
+    labor_portion = round2(after_b2b_ohsms * labor_ratio)
+    b2b_ohsms_labor_amount = round2(labor_portion * (b2b_ohsms_labor_pct / 100))
+    
+    # Grand total
+    grand_total = round2(after_b2b_ohsms + b2b_subcontractor_amount + b2b_ohsms_labor_amount)
+    
+    # Total percentage amounts
+    total_pct_amounts = round2(
+        profit_amount + overhead_amount + cfse_amount + liability_amount +
+        municipal_amount + contingency_amount + b2b_ohsms_amount +
+        b2b_ohsms_labor_amount + b2b_subcontractor_amount
+    )
+    
+    # Build estimate items from cost estimate data
+    estimate_items = []
+    
+    # Add labor costs
+    for item in labor_costs:
+        if float(item.get("subtotal", 0)) > 0:
+            estimate_items.append({
+                "description": f"Mano de Obra - {item.get('role_name', 'N/A')}",
+                "quantity": float(item.get("qty_personnel", 1)),
+                "unit_price": round2(float(item.get("subtotal", 0)) / max(float(item.get("qty_personnel", 1)), 1)),
+                "amount": round2(float(item.get("subtotal", 0)))
+            })
+    
+    # Add subcontractors
+    for item in subcontractors:
+        if float(item.get("cost", 0)) > 0:
+            estimate_items.append({
+                "description": f"Subcontratista ({item.get('trade', 'N/A')}) - {item.get('description', '')}",
+                "quantity": 1,
+                "unit_price": round2(float(item.get("cost", 0))),
+                "amount": round2(float(item.get("cost", 0)))
+            })
+    
+    # Add materials
+    for item in materials:
+        if float(item.get("total", 0)) > 0:
+            estimate_items.append({
+                "description": f"Material - {item.get('description', 'N/A')}",
+                "quantity": float(item.get("quantity", 1)),
+                "unit_price": round2(float(item.get("unit_cost", 0))),
+                "amount": round2(float(item.get("total", 0)))
+            })
+    
+    # Add equipment
+    for item in equipment:
+        if float(item.get("total", 0)) > 0:
+            estimate_items.append({
+                "description": f"Equipo - {item.get('description', 'N/A')}",
+                "quantity": float(item.get("quantity", 1)) * float(item.get("days", 1)),
+                "unit_price": round2(float(item.get("rate", 0))),
+                "amount": round2(float(item.get("total", 0)))
+            })
+    
+    # Add transportation
+    for item in transportation:
+        if float(item.get("total", 0)) > 0:
+            estimate_items.append({
+                "description": f"Transporte - {item.get('description', '')} ({item.get('city_town', '')})",
+                "quantity": float(item.get("days", 1)),
+                "unit_price": round2(float(item.get("roundtrip_miles", 0)) * float(item.get("cost_per_mile", 0))),
+                "amount": round2(float(item.get("total", 0)))
+            })
+    
+    # Add general conditions
+    for item in general_conditions:
+        if float(item.get("total", 0)) > 0:
+            estimate_items.append({
+                "description": f"Condición General - {item.get('description', 'N/A')}",
+                "quantity": float(item.get("quantity", 1)),
+                "unit_price": round2(float(item.get("unit_cost", 0))),
+                "amount": round2(float(item.get("total", 0)))
+            })
+    
+    # Add percentage line items
+    if profit_amount > 0:
+        estimate_items.append({"description": f"Profit ({profit_pct}%)", "quantity": 1, "unit_price": profit_amount, "amount": profit_amount})
+    if overhead_amount > 0:
+        estimate_items.append({"description": f"Overhead ({overhead_pct}%)", "quantity": 1, "unit_price": overhead_amount, "amount": overhead_amount})
+    if cfse_amount > 0:
+        estimate_items.append({"description": f"CFSE ({cfse_pct}%)", "quantity": 1, "unit_price": cfse_amount, "amount": cfse_amount})
+    if liability_amount > 0:
+        estimate_items.append({"description": f"Liability ({liability_pct}%)", "quantity": 1, "unit_price": liability_amount, "amount": liability_amount})
+    if municipal_amount > 0:
+        estimate_items.append({"description": f"Municipal Patent ({municipal_pct}%)", "quantity": 1, "unit_price": municipal_amount, "amount": municipal_amount})
+    if contingency_amount > 0:
+        estimate_items.append({"description": f"Contingency ({contingency_pct}%)", "quantity": 1, "unit_price": contingency_amount, "amount": contingency_amount})
+    if b2b_ohsms_amount > 0:
+        estimate_items.append({"description": f"B2B OHSMS Global ({b2b_ohsms_pct}%)", "quantity": 1, "unit_price": b2b_ohsms_amount, "amount": b2b_ohsms_amount})
+    if b2b_ohsms_labor_amount > 0:
+        estimate_items.append({"description": f"B2B OHSMS M.O. ({b2b_ohsms_labor_pct}%)", "quantity": 1, "unit_price": b2b_ohsms_labor_amount, "amount": b2b_ohsms_labor_amount})
+    if b2b_subcontractor_amount > 0:
+        estimate_items.append({"description": f"B2B Subcontratista ({b2b_subcontractor_pct}%)", "quantity": 1, "unit_price": b2b_subcontractor_amount, "amount": b2b_subcontractor_amount})
+    
+    # Generate estimate number
+    company_settings = await db.company_settings.find_one({}, {"_id": 0})
+    next_num = company_settings.get("next_estimate_number", 1) if company_settings else 1
+    estimate_number = f"EST-{datetime.now().year}-{str(next_num).zfill(4)}"
+    await db.company_settings.update_one({}, {"$inc": {"next_estimate_number": 1}}, upsert=True)
+    
+    new_estimate_id = f"est_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Create the estimate document
+    estimate_doc = {
+        "estimate_id": new_estimate_id,
+        "estimate_number": estimate_number,
+        "project_id": cost_estimate["project_id"],
+        "project_name": project.get("name"),
+        "client_profile_id": None,
+        "client_company": project.get("client_name", ""),
+        "client_name": project.get("client_name", "Cliente"),
+        "client_email": None,
+        "client_phone": None,
+        "client_address": None,
+        "title": f"Estimado - {cost_estimate.get('estimate_name', 'Sin nombre')}",
+        "description": f"Generado desde Estimación de Costo: {cost_estimate.get('estimate_name', '')}",
+        "items": estimate_items,
+        "subtotal": subtotal,
+        "discount_percent": 0,
+        "discount_amount": 0,
+        "tax_rate": 0,
+        "tax_amount": 0,
+        "selected_taxes": [],
+        "total": grand_total,
+        "status": "draft",
+        "notes": f"Convertido desde estimación de costo. Total de porcentajes aplicados: ${total_pct_amounts:,.2f}",
+        "terms": None,
+        "valid_until": None,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": now,
+        "sent_date": None,
+        "approved_date": None,
+        "converted_invoice_id": None
+    }
+    
+    await db.estimates.insert_one(estimate_doc)
+    await log_audit(user.user_id, user.name, "create", "estimate", new_estimate_id, estimate_number, 
+                   {"source": "cost_estimate", "cost_estimate_id": estimate_id})
+    
+    return Estimate(**estimate_doc)
+
 # ==================== COST ESTIMATE EXPORT ENDPOINTS ====================
 @api_router.get("/cost-estimates/{estimate_id}/export/pdf")
 async def export_cost_estimate_pdf(
