@@ -831,9 +831,66 @@ const ClientProfileDetail = () => {
                 </div>
               </div>
 
+              {/* Price Breakdown Section */}
+              <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                <p className="font-semibold text-orange-800 mb-3">Price Breakdown</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-orange-700">Material/Equipment</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      className="bg-white"
+                      value={estimateForm.price_breakdown?.material_equipment || ''}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        const labor = estimateForm.price_breakdown?.labor || 0;
+                        setEstimateForm({
+                          ...estimateForm, 
+                          price_breakdown: {
+                            ...estimateForm.price_breakdown,
+                            material_equipment: val,
+                            total: val + labor
+                          }
+                        });
+                      }}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-orange-700">Labor</Label>
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      className="bg-white"
+                      value={estimateForm.price_breakdown?.labor || ''}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        const matEquip = estimateForm.price_breakdown?.material_equipment || 0;
+                        setEstimateForm({
+                          ...estimateForm, 
+                          price_breakdown: {
+                            ...estimateForm.price_breakdown,
+                            labor: val,
+                            total: matEquip + val
+                          }
+                        });
+                      }}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-orange-700">Total</Label>
+                    <div className="h-9 flex items-center px-3 bg-orange-100 rounded-md font-bold text-orange-800">
+                      ${formatCurrency(estimateForm.price_breakdown?.total || 0)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Items - Task Format */}
               <div>
-                <Label className="mb-2 block">Líneas del Estimado</Label>
+                <Label className="mb-2 block">Líneas del Estimado (opcional)</Label>
                 <div className="space-y-2">
                   {estimateForm.items.map((item, idx) => (
                     <div key={idx} className="border rounded-lg p-3 space-y-2">
