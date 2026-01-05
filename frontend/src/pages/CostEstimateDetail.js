@@ -997,6 +997,14 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
+                  {/* Total of Percentage Amounts */}
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-purple-50 rounded-lg font-bold text-lg mt-4 border border-purple-200">
+                    <div className="text-purple-800">TOTAL PORCENTAJES</div>
+                    <div className="text-right text-purple-600">
+                      ${totals.totalPercentageAmounts.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 rounded-lg font-bold text-xl mt-6">
                     <div>TOTAL FINAL</div>
                     <div className="text-right text-blue-600">
