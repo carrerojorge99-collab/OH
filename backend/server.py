@@ -5453,6 +5453,225 @@ async def delete_document(document_id: str, request: Request, session_token: Opt
     await db.documents.delete_one({"document_id": document_id})
     return {"message": "Documento eliminado exitosamente"}
 
+# ============== DOCUMENT FOLDERS ==============
+
+DEFAULT_FOLDERS = ["Safety", "PO", "Estimados", "Facturas", "RFI", "RFC"]
+
+@api_router.post("/document-folders", response_model=DocumentFolder)
+async def create_document_folder(
+    folder_data: DocumentFolderCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Create a new folder for project documents"""
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": folder_data.project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Check access
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
+    
+    # Validate parent folder if provided
+    if folder_data.parent_folder_id:
+        parent_folder = await db.document_folders.find_one({
+            "folder_id": folder_data.parent_folder_id,
+            "project_id": folder_data.project_id
+        })
+        if not parent_folder:
+            raise HTTPException(status_code=404, detail="Carpeta padre no encontrada")
+    
+    # Check for duplicate folder name in same level
+    existing = await db.document_folders.find_one({
+        "project_id": folder_data.project_id,
+        "name": folder_data.name,
+        "parent_folder_id": folder_data.parent_folder_id
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya existe una carpeta con ese nombre en esta ubicación")
+    
+    folder_doc = {
+        "folder_id": f"folder_{uuid.uuid4().hex[:12]}",
+        "project_id": folder_data.project_id,
+        "name": folder_data.name,
+        "parent_folder_id": folder_data.parent_folder_id,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.document_folders.insert_one(folder_doc)
+    return DocumentFolder(**folder_doc)
+
+@api_router.get("/document-folders", response_model=List[DocumentFolder])
+async def get_document_folders(
+    project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get all folders for a project"""
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
+    
+    folders = await db.document_folders.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+    return [DocumentFolder(**f) for f in folders]
+
+@api_router.put("/document-folders/{folder_id}")
+async def update_document_folder(
+    folder_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Rename a folder"""
+    user = await get_current_user(request, session_token)
+    
+    folder_doc = await db.document_folders.find_one({"folder_id": folder_id}, {"_id": 0})
+    if not folder_doc:
+        raise HTTPException(status_code=404, detail="Carpeta no encontrada")
+    
+    project_doc = await db.projects.find_one({"project_id": folder_doc['project_id']}, {"_id": 0})
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para modificar esta carpeta")
+    
+    new_name = data.get("name")
+    if new_name:
+        # Check for duplicate name
+        existing = await db.document_folders.find_one({
+            "project_id": folder_doc['project_id'],
+            "name": new_name,
+            "parent_folder_id": folder_doc['parent_folder_id'],
+            "folder_id": {"$ne": folder_id}
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="Ya existe una carpeta con ese nombre en esta ubicación")
+        
+        await db.document_folders.update_one(
+            {"folder_id": folder_id},
+            {"$set": {"name": new_name}}
+        )
+    
+    return {"message": "Carpeta actualizada"}
+
+@api_router.delete("/document-folders/{folder_id}")
+async def delete_document_folder(
+    folder_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a folder and optionally its contents"""
+    user = await get_current_user(request, session_token)
+    
+    folder_doc = await db.document_folders.find_one({"folder_id": folder_id}, {"_id": 0})
+    if not folder_doc:
+        raise HTTPException(status_code=404, detail="Carpeta no encontrada")
+    
+    project_doc = await db.projects.find_one({"project_id": folder_doc['project_id']}, {"_id": 0})
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para eliminar esta carpeta")
+    
+    # Get all subfolders recursively
+    async def get_all_subfolder_ids(parent_id):
+        ids = [parent_id]
+        subfolders = await db.document_folders.find({"parent_folder_id": parent_id}, {"folder_id": 1}).to_list(1000)
+        for sf in subfolders:
+            ids.extend(await get_all_subfolder_ids(sf['folder_id']))
+        return ids
+    
+    folder_ids_to_delete = await get_all_subfolder_ids(folder_id)
+    
+    # Move documents in these folders to root (folder_id = None)
+    await db.documents.update_many(
+        {"folder_id": {"$in": folder_ids_to_delete}},
+        {"$set": {"folder_id": None}}
+    )
+    
+    # Delete all folders
+    await db.document_folders.delete_many({"folder_id": {"$in": folder_ids_to_delete}})
+    
+    return {"message": "Carpeta eliminada. Los documentos fueron movidos a la raíz."}
+
+@api_router.post("/document-folders/initialize-defaults/{project_id}")
+async def initialize_default_folders(
+    project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Initialize default folders for a project"""
+    user = await get_current_user(request, session_token)
+    
+    project_doc = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id:
+        raise HTTPException(status_code=403, detail="No tienes permisos")
+    
+    created_folders = []
+    for folder_name in DEFAULT_FOLDERS:
+        existing = await db.document_folders.find_one({
+            "project_id": project_id,
+            "name": folder_name,
+            "parent_folder_id": None
+        })
+        if not existing:
+            folder_doc = {
+                "folder_id": f"folder_{uuid.uuid4().hex[:12]}",
+                "project_id": project_id,
+                "name": folder_name,
+                "parent_folder_id": None,
+                "created_by": user.user_id,
+                "created_by_name": user.name,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.document_folders.insert_one(folder_doc)
+            created_folders.append(folder_name)
+    
+    return {"message": f"Carpetas creadas: {', '.join(created_folders)}" if created_folders else "Las carpetas predeterminadas ya existen"}
+
+@api_router.put("/documents/{document_id}/move")
+async def move_document_to_folder(
+    document_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Move a document to a different folder"""
+    user = await get_current_user(request, session_token)
+    
+    document_doc = await db.documents.find_one({"document_id": document_id}, {"_id": 0})
+    if not document_doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    project_doc = await db.projects.find_one({"project_id": document_doc['project_id']}, {"_id": 0})
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso")
+    
+    folder_id = data.get("folder_id")  # Can be None to move to root
+    
+    if folder_id:
+        folder = await db.document_folders.find_one({
+            "folder_id": folder_id,
+            "project_id": document_doc['project_id']
+        })
+        if not folder:
+            raise HTTPException(status_code=404, detail="Carpeta no encontrada")
+    
+    await db.documents.update_one(
+        {"document_id": document_id},
+        {"$set": {"folder_id": folder_id}}
+    )
+    
+    return {"message": "Documento movido exitosamente"}
+
 @api_router.post("/invoices/generate", response_model=Invoice)
 async def generate_invoice_from_timesheet(
     invoice_data: InvoiceCreate,
