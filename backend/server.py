@@ -8021,83 +8021,21 @@ async def convert_cost_estimate_to_estimate(
         b2b_ohsms_labor_amount + b2b_subcontractor_amount
     )
     
-    # Build estimate items from cost estimate data
-    estimate_items = []
-    
-    # Add labor costs
-    for item in labor_costs:
-        if float(item.get("subtotal", 0)) > 0:
-            estimate_items.append({
-                "description": f"Mano de Obra - {item.get('role_name', 'N/A')}",
-                "quantity": float(item.get("qty_personnel", 1)),
-                "unit_price": round2(float(item.get("subtotal", 0)) / max(float(item.get("qty_personnel", 1)), 1)),
-                "amount": round2(float(item.get("subtotal", 0)))
-            })
-    
-    # Add subcontractors
-    for item in subcontractors:
-        if float(item.get("cost", 0)) > 0:
-            estimate_items.append({
-                "description": f"Subcontratista ({item.get('trade', 'N/A')}) - {item.get('description', '')}",
-                "quantity": 1,
-                "unit_price": round2(float(item.get("cost", 0))),
-                "amount": round2(float(item.get("cost", 0)))
-            })
-    
-    # Add materials
-    for item in materials:
-        if float(item.get("total", 0)) > 0:
-            estimate_items.append({
-                "description": f"Material - {item.get('description', 'N/A')}",
-                "quantity": float(item.get("quantity", 1)),
-                "unit_price": round2(float(item.get("unit_cost", 0))),
-                "amount": round2(float(item.get("total", 0)))
-            })
-    
-    # Add equipment
-    for item in equipment:
-        if float(item.get("total", 0)) > 0:
-            estimate_items.append({
-                "description": f"Equipo - {item.get('description', 'N/A')}",
-                "quantity": float(item.get("quantity", 1)) * float(item.get("days", 1)),
-                "unit_price": round2(float(item.get("rate", 0))),
-                "amount": round2(float(item.get("total", 0)))
-            })
-    
-    # Add transportation
-    for item in transportation:
-        if float(item.get("total", 0)) > 0:
-            estimate_items.append({
-                "description": f"Transporte - {item.get('description', '')} ({item.get('city_town', '')})",
-                "quantity": float(item.get("days", 1)),
-                "unit_price": round2(float(item.get("roundtrip_miles", 0)) * float(item.get("cost_per_mile", 0))),
-                "amount": round2(float(item.get("total", 0)))
-            })
-    
-    # Add general conditions
-    for item in general_conditions:
-        if float(item.get("total", 0)) > 0:
-            estimate_items.append({
-                "description": f"Condición General - {item.get('description', 'N/A')}",
-                "quantity": float(item.get("quantity", 1)),
-                "unit_price": round2(float(item.get("unit_cost", 0))),
-                "amount": round2(float(item.get("total", 0)))
-            })
-    
-    # Add percentage line items
-    if profit_amount > 0:
-        estimate_items.append({"description": f"Profit ({profit_pct}%)", "quantity": 1, "unit_price": profit_amount, "amount": profit_amount})
-    if overhead_amount > 0:
-        estimate_items.append({"description": f"Overhead ({overhead_pct}%)", "quantity": 1, "unit_price": overhead_amount, "amount": overhead_amount})
-    if cfse_amount > 0:
-        estimate_items.append({"description": f"CFSE ({cfse_pct}%)", "quantity": 1, "unit_price": cfse_amount, "amount": cfse_amount})
-    if liability_amount > 0:
-        estimate_items.append({"description": f"Liability ({liability_pct}%)", "quantity": 1, "unit_price": liability_amount, "amount": liability_amount})
-    if municipal_amount > 0:
-        estimate_items.append({"description": f"Municipal Patent ({municipal_pct}%)", "quantity": 1, "unit_price": municipal_amount, "amount": municipal_amount})
-    if contingency_amount > 0:
-        estimate_items.append({"description": f"Contingency ({contingency_pct}%)", "quantity": 1, "unit_price": contingency_amount, "amount": contingency_amount})
-    if b2b_ohsms_amount > 0:
+    # Build estimate items - ONLY Price Breakdown (2 items: Material/Equipment and Labor)
+    estimate_items = [
+        {
+            "description": "Material/Equipment",
+            "quantity": 1,
+            "unit_price": mat_equip_with_percentages,
+            "amount": mat_equip_with_percentages
+        },
+        {
+            "description": "Labor",
+            "quantity": 1,
+            "unit_price": labor_with_percentages,
+            "amount": labor_with_percentages
+        }
+    ]
         estimate_items.append({"description": f"B2B OHSMS Global ({b2b_ohsms_pct}%)", "quantity": 1, "unit_price": b2b_ohsms_amount, "amount": b2b_ohsms_amount})
     if b2b_ohsms_labor_amount > 0:
         estimate_items.append({"description": f"B2B OHSMS M.O. ({b2b_ohsms_labor_pct}%)", "quantity": 1, "unit_price": b2b_ohsms_labor_amount, "amount": b2b_ohsms_labor_amount})
