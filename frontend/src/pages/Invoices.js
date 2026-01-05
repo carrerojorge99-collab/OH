@@ -887,6 +887,63 @@ const Invoices = () => {
                     </Button>
                   </div>
 
+                  {/* Price Breakdown Section - After Tasks, Before Totals */}
+                  <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                    <p className="font-semibold text-orange-800 mb-3">Price Breakdown</p>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-orange-700">Material/Equipment</Label>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          className="bg-white"
+                          value={manualForm.price_breakdown?.material_equipment || ''}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            const labor = manualForm.price_breakdown?.labor || 0;
+                            setManualForm({
+                              ...manualForm, 
+                              price_breakdown: {
+                                ...manualForm.price_breakdown,
+                                material_equipment: val,
+                                total: val + labor
+                              }
+                            });
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-orange-700">Labor</Label>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          className="bg-white"
+                          value={manualForm.price_breakdown?.labor || ''}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            const matEquip = manualForm.price_breakdown?.material_equipment || 0;
+                            setManualForm({
+                              ...manualForm, 
+                              price_breakdown: {
+                                ...manualForm.price_breakdown,
+                                labor: val,
+                                total: matEquip + val
+                              }
+                            });
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-orange-700">Total</Label>
+                        <div className="h-9 flex items-center px-3 bg-orange-100 rounded-md font-bold text-orange-800">
+                          ${formatCurrency(manualForm.price_breakdown?.total || 0)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Totals */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
