@@ -59,6 +59,13 @@ const ProjectDetail = () => {
   const [selectedTimesheetUser, setSelectedTimesheetUser] = useState('all');
   const [comments, setComments] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [documentFolders, setDocumentFolders] = useState([]);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [folderPath, setFolderPath] = useState([]);
+  const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [moveDocDialogOpen, setMoveDocDialogOpen] = useState(false);
+  const [docToMove, setDocToMove] = useState(null);
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
