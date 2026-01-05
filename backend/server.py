@@ -8036,11 +8036,6 @@ async def convert_cost_estimate_to_estimate(
             "amount": labor_with_percentages
         }
     ]
-        estimate_items.append({"description": f"B2B OHSMS Global ({b2b_ohsms_pct}%)", "quantity": 1, "unit_price": b2b_ohsms_amount, "amount": b2b_ohsms_amount})
-    if b2b_ohsms_labor_amount > 0:
-        estimate_items.append({"description": f"B2B OHSMS M.O. ({b2b_ohsms_labor_pct}%)", "quantity": 1, "unit_price": b2b_ohsms_labor_amount, "amount": b2b_ohsms_labor_amount})
-    if b2b_subcontractor_amount > 0:
-        estimate_items.append({"description": f"B2B Subcontratista ({b2b_subcontractor_pct}%)", "quantity": 1, "unit_price": b2b_subcontractor_amount, "amount": b2b_subcontractor_amount})
     
     # Generate estimate number
     company_settings = await db.company_settings.find_one({}, {"_id": 0})
