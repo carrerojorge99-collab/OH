@@ -670,6 +670,15 @@ const CostEstimateDetail = () => {
               <>
                 <Button
                   variant="outline"
+                  onClick={handleConvertToEstimate}
+                  disabled={convertingToEstimate || !estimate?.project_id}
+                  className="bg-purple-50 hover:bg-purple-100 border-purple-300 text-purple-700"
+                >
+                  <ArrowRightLeft className="w-4 h-4 mr-2" />
+                  {convertingToEstimate ? 'Convirtiendo...' : 'Convertir a Estimado'}
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => window.open(`${getBackendUrl()}/api/cost-estimates/${estimateId}/export/pdf`, '_blank')}
                 >
                   <FileText className="w-4 h-4 mr-2" />
