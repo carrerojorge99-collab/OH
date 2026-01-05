@@ -489,7 +489,7 @@ const HumanResources = () => {
                             </div>
                             <div className="flex gap-1">
                               <Button variant="ghost" size="sm" asChild>
-                                <a href={doc.file_url} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
+                                <a href={`${process.env.REACT_APP_BACKEND_URL}/api/employees/${doc.employee_id}/documents/${doc.doc_id}/download`} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
                               </Button>
                               <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.doc_id)}>
                                 <Trash2 className="w-4 h-4 text-red-500" />
