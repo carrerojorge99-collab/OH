@@ -195,7 +195,7 @@ const ClockHistory = () => {
         project_id: '',
         date: moment().format('YYYY-MM-DD'),
         clock_in_time: '08:00',
-        clock_out_time: '',
+        clock_out_time: '17:00',
         notes: ''
       });
       loadData(); // Reload data
