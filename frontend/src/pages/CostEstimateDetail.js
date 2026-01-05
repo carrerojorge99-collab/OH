@@ -968,17 +968,18 @@ const CostEstimateDetail = () => {
                         <p className="text-xs text-green-500">*Aplica al total</p>
                       </div>
                       <div className="bg-green-50 p-2 rounded">
-                        <Label className="text-green-700">B2B OHSMS (%) - M.O.</Label>
+                        <Label className="text-green-700">B2B OHSMS (%) - M.O. - Fijo 4%</Label>
                         <Input
                           type="number"
                           step="0.1"
                           value={b2bOhsmsLaborPercentage}
-                          onChange={(e) => setB2bOhsmsLaborPercentage(e.target.value)}
+                          readOnly
+                          className="bg-green-100 cursor-not-allowed"
                         />
                         {totals.b2bOhsmsLaborAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsLaborAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
-                        <p className="text-xs text-green-500">*Solo M.O.: ${totals.totalLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
+                        <p className="text-xs text-green-500">*Labor × 4%: ${totals.laborWithPercentages?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
                       </div>
                       <div className="bg-amber-50 p-2 rounded">
                         <Label className="text-amber-700">B2B Subcontratista (%)</Label>
