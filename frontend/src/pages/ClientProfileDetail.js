@@ -195,7 +195,8 @@ const ClientProfileDetail = () => {
       notes: '',
       terms: 'Este estimado es válido por 30 días.',
       valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
-      custom_number: ''
+      custom_number: '',
+      price_breakdown: null
     });
     setEditingEstimate(null);
     setSelectedNomenclature(null);
@@ -223,7 +224,8 @@ const ClientProfileDetail = () => {
       notes: estimate.notes || '',
       terms: estimate.terms || '',
       valid_until: estimate.valid_until || '',
-      custom_number: estimate.estimate_number || ''
+      custom_number: estimate.estimate_number || '',
+      price_breakdown: estimate.price_breakdown || null
     });
     setEditingEstimate(estimate.estimate_id);
     setEstimateDialogOpen(true);
