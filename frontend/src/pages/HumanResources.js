@@ -569,7 +569,7 @@ const HumanResources = () => {
       </div>
 
       {/* Document Preview Dialog */}
-      <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
+      <Dialog open={!!previewDoc} onOpenChange={(open) => !open && handleClosePreview()}>
         <DialogContent className="max-w-4xl max-h-[90vh] p-0">
           <DialogHeader className="p-4 border-b flex flex-row items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
