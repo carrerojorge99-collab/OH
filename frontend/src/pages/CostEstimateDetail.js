@@ -303,6 +303,194 @@ const CostEstimateDetail = () => {
     setGeneralConditions(generalConditions.filter((_, i) => i !== index));
   };
 
+  // Convert Cost Estimate to Estimate (Estimado)
+  const handleConvertToEstimate = async () => {
+    if (!estimate?.project_id) {
+      toast.error('Debe seleccionar un proyecto primero');
+      return;
+    }
+    
+    setConvertingToEstimate(true);
+    try {
+      // First save the current cost estimate
+      await handleSave();
+      
+      // Create line items from all cost categories
+      const lineItems = [];
+      
+      // Add labor costs
+      laborCosts.forEach(item => {
+        if (item.subtotal > 0) {
+          lineItems.push({
+            description: `Mano de Obra - ${item.role_name}`,
+            quantity: item.qty_personnel,
+            rate: item.subtotal / item.qty_personnel,
+            total: item.subtotal
+          });
+        }
+      });
+      
+      // Add subcontractors
+      subcontractors.forEach(item => {
+        if (item.cost > 0) {
+          lineItems.push({
+            description: `Subcontratista (${item.trade}) - ${item.description}`,
+            quantity: 1,
+            rate: item.cost,
+            total: item.cost
+          });
+        }
+      });
+      
+      // Add materials
+      materials.forEach(item => {
+        if (item.total > 0) {
+          lineItems.push({
+            description: `Material - ${item.description}`,
+            quantity: item.quantity,
+            rate: item.unit_cost,
+            total: item.total
+          });
+        }
+      });
+      
+      // Add equipment
+      equipment.forEach(item => {
+        if (item.total > 0) {
+          lineItems.push({
+            description: `Equipo - ${item.description}`,
+            quantity: item.quantity * item.days,
+            rate: item.rate,
+            total: item.total
+          });
+        }
+      });
+      
+      // Add transportation
+      transportation.forEach(item => {
+        if (item.total > 0) {
+          lineItems.push({
+            description: `Transporte - ${item.description} (${item.city_town})`,
+            quantity: item.days,
+            rate: item.roundtrip_miles * item.cost_per_mile,
+            total: item.total
+          });
+        }
+      });
+      
+      // Add general conditions
+      generalConditions.forEach(item => {
+        if (item.total > 0) {
+          lineItems.push({
+            description: `Condición General - ${item.description}`,
+            quantity: item.quantity,
+            rate: item.unit_cost,
+            total: item.total
+          });
+        }
+      });
+      
+      // Add percentage adjustments as line items
+      const totalsCalc = calculateTotals();
+      if (totalsCalc.profitAmount > 0) {
+        lineItems.push({
+          description: `Profit (${profitPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.profitAmount,
+          total: totalsCalc.profitAmount
+        });
+      }
+      if (totalsCalc.overheadAmount > 0) {
+        lineItems.push({
+          description: `Overhead (${overheadPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.overheadAmount,
+          total: totalsCalc.overheadAmount
+        });
+      }
+      if (totalsCalc.cfseAmount > 0) {
+        lineItems.push({
+          description: `CFSE (${cfsePercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.cfseAmount,
+          total: totalsCalc.cfseAmount
+        });
+      }
+      if (totalsCalc.liabilityAmount > 0) {
+        lineItems.push({
+          description: `Liability (${liabilityPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.liabilityAmount,
+          total: totalsCalc.liabilityAmount
+        });
+      }
+      if (totalsCalc.municipalPatentAmount > 0) {
+        lineItems.push({
+          description: `Municipal Patent (${municipalPatentPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.municipalPatentAmount,
+          total: totalsCalc.municipalPatentAmount
+        });
+      }
+      if (totalsCalc.contingencyAmount > 0) {
+        lineItems.push({
+          description: `Contingency (${contingencyPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.contingencyAmount,
+          total: totalsCalc.contingencyAmount
+        });
+      }
+      if (totalsCalc.b2bOhsmsAmount > 0) {
+        lineItems.push({
+          description: `B2B OHSMS Global (${b2bOhsmsPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.b2bOhsmsAmount,
+          total: totalsCalc.b2bOhsmsAmount
+        });
+      }
+      if (totalsCalc.b2bOhsmsLaborAmount > 0) {
+        lineItems.push({
+          description: `B2B OHSMS M.O. (${b2bOhsmsLaborPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.b2bOhsmsLaborAmount,
+          total: totalsCalc.b2bOhsmsLaborAmount
+        });
+      }
+      if (totalsCalc.b2bSubcontractorAmount > 0) {
+        lineItems.push({
+          description: `B2B Subcontratista (${b2bSubcontractorPercentage}%)`,
+          quantity: 1,
+          rate: totalsCalc.b2bSubcontractorAmount,
+          total: totalsCalc.b2bSubcontractorAmount
+        });
+      }
+      
+      // Create the estimate
+      const estimateData = {
+        project_id: estimate.project_id,
+        title: `Estimado - ${estimate.estimate_name || 'Sin nombre'}`,
+        description: `Generado desde Estimación de Costo: ${estimate.estimate_name}`,
+        items: lineItems,
+        subtotal: totalsCalc.subtotal,
+        tax_percentage: 0,
+        tax_amount: 0,
+        total: totalsCalc.grandTotal,
+        status: 'draft',
+        notes: `Convertido desde estimación de costo. Total de porcentajes aplicados: $${totalsCalc.totalPercentageAmounts.toLocaleString('es-PR', { minimumFractionDigits: 2 })}`
+      };
+      
+      const response = await api.post('/estimates', estimateData, { withCredentials: true });
+      
+      toast.success('Estimado creado exitosamente');
+      navigate(`/estimates/${response.data.estimate_id}`);
+    } catch (error) {
+      console.error('Error converting to estimate:', error);
+      toast.error('Error al convertir a estimado');
+    } finally {
+      setConvertingToEstimate(false);
+    }
+  };
+
   // Calculate totals - Custom cascading formula
   // Formula:
   // Subtotal x Profit = s
