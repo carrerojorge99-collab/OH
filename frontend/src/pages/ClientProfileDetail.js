@@ -637,24 +637,15 @@ const ClientProfileDetail = () => {
                             </div>
                           </div>
                         </div>
-                        {/* Price Breakdown - Orange Area */}
-                        {estimate.price_breakdown && (
-                          <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                            <p className="text-xs text-orange-600 font-medium mb-2">Price Breakdown</p>
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                              <div className="bg-orange-500 text-white p-2 rounded text-xs">
-                                <p className="font-semibold">Material/Equipment</p>
-                                <p className="text-sm font-bold">${formatCurrency(estimate.price_breakdown.material_equipment || 0)}</p>
+                        {/* Price Breakdown Display */}
+                        {estimate.items && estimate.items.length > 0 && (
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                            {estimate.items.map((item, idx) => (
+                              <div key={idx} className={`p-2 rounded ${item.description === 'Labor' ? 'bg-orange-100' : 'bg-slate-100'}`}>
+                                <span className="text-slate-600">{item.description}:</span>
+                                <span className="font-semibold ml-2">${formatCurrency(item.amount || 0)}</span>
                               </div>
-                              <div className="bg-orange-400 text-white p-2 rounded text-xs">
-                                <p className="font-semibold">Labor</p>
-                                <p className="text-sm font-bold">${formatCurrency(estimate.price_breakdown.labor || 0)}</p>
-                              </div>
-                              <div className="bg-orange-500 text-white p-2 rounded text-xs">
-                                <p className="font-semibold">Total</p>
-                                <p className="text-sm font-bold">${formatCurrency(estimate.price_breakdown.total || 0)}</p>
-                              </div>
-                            </div>
+                            ))}
                           </div>
                         )}
                       </div>
