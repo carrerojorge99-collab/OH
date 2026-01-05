@@ -525,40 +525,60 @@ const ClockHistory = () => {
                             </div>
 
                             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="flex items-center gap-3">
+                              <div className="space-y-1">
                                 <div className="flex items-center gap-2 text-sm">
                                   <Clock className="w-4 h-4 text-green-600" />
                                   <span className="font-medium">Entrada:</span>
                                   <span className="font-mono">{moment(entry.clock_in).format('HH:mm:ss')}</span>
                                 </div>
-                                {entry.clock_in_latitude && entry.clock_in_longitude && (
-                                  <a
-                                    href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline text-xs flex items-center gap-1"
-                                  >
-                                    <MapPin className="w-3 h-3" /> Ver mapa
-                                  </a>
+                                {(entry.clock_in_address || (entry.clock_in_latitude && entry.clock_in_longitude)) && (
+                                  <div className="flex items-center gap-2 text-xs text-slate-600 ml-6">
+                                    <MapPin className="w-3 h-3 text-green-500" />
+                                    {entry.clock_in_address ? (
+                                      <span className="truncate max-w-[200px]" title={entry.clock_in_address}>{entry.clock_in_address}</span>
+                                    ) : (
+                                      <span>{entry.clock_in_latitude?.toFixed(4)}, {entry.clock_in_longitude?.toFixed(4)}</span>
+                                    )}
+                                    {entry.clock_in_latitude && entry.clock_in_longitude && (
+                                      <a
+                                        href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline flex items-center gap-1"
+                                      >
+                                        (Ver mapa)
+                                      </a>
+                                    )}
+                                  </div>
                                 )}
                               </div>
 
                               {entry.clock_out && (
-                                <div className="flex items-center gap-3">
+                                <div className="space-y-1">
                                   <div className="flex items-center gap-2 text-sm">
                                     <Clock className="w-4 h-4 text-red-600" />
                                     <span className="font-medium">Salida:</span>
                                     <span className="font-mono">{moment(entry.clock_out).format('HH:mm:ss')}</span>
                                   </div>
-                                  {entry.clock_out_latitude && entry.clock_out_longitude && (
-                                    <a
-                                      href={`https://www.google.com/maps?q=${entry.clock_out_latitude},${entry.clock_out_longitude}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline text-xs flex items-center gap-1"
-                                    >
-                                      <MapPin className="w-3 h-3" /> Ver mapa
-                                    </a>
+                                  {(entry.clock_out_address || (entry.clock_out_latitude && entry.clock_out_longitude)) && (
+                                    <div className="flex items-center gap-2 text-xs text-slate-600 ml-6">
+                                      <MapPin className="w-3 h-3 text-red-500" />
+                                      {entry.clock_out_address ? (
+                                        <span className="truncate max-w-[200px]" title={entry.clock_out_address}>{entry.clock_out_address}</span>
+                                      ) : (
+                                        <span>{entry.clock_out_latitude?.toFixed(4)}, {entry.clock_out_longitude?.toFixed(4)}</span>
+                                      )}
+                                      {entry.clock_out_latitude && entry.clock_out_longitude && (
+                                        <a
+                                          href={`https://www.google.com/maps?q=${entry.clock_out_latitude},${entry.clock_out_longitude}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:underline flex items-center gap-1"
+                                        >
+                                          (Ver mapa)
+                                        </a>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               )}
