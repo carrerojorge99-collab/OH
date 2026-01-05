@@ -350,12 +350,13 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
 };
 
 // Notes section - Terms & Conditions on LEFT, Notes on RIGHT (side by side)
+// Continuous flow with 0.5 line spacing
 export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   if (!notes && !terms) return startY;
   
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const marginBottom = 30;
+  const marginBottom = 25;
   let y = startY + 5;
   
   // Draw separator line
@@ -367,7 +368,7 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   const leftColStart = 15;
   const rightColStart = pageWidth / 2 + 5;
   const columnWidth = (pageWidth / 2) - 20;
-  const lineHeight = 3.5;
+  const lineHeight = 2.5; // Reduced for 0.5 spacing between lines (font 7pt + 0.5 space)
   
   // Prepare all lines for both columns
   const termsText = terms || '';
@@ -407,72 +408,83 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
     return startY;
   }
   
-  // Calculate how many lines fit per page
-  const headerHeight = 15;
-  const availableHeight = pageHeight - marginBottom - y - headerHeight;
-  const linesPerPage = Math.floor(availableHeight / lineHeight);
-  
   let termsIdx = 0;
   let notesIdx = 0;
   let currentY = y;
   let isFirstPage = true;
   
-  // Process both columns simultaneously, page by page
+  // Process both columns simultaneously, continuous flow
   while (termsIdx < wrappedTerms.length || notesIdx < wrappedNotes.length) {
-    // Add new page if needed (not on first iteration)
-    if (!isFirstPage) {
+    // Check if we need a new page
+    if (currentY > pageHeight - marginBottom - 20) {
       doc.addPage();
       currentY = 20;
+      isFirstPage = false;
     }
     
-    // Draw headers
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...COLORS.secondary);
-    
-    const headerSuffix = isFirstPage ? '' : ' (cont.)';
-    
-    if (termsText && termsIdx < wrappedTerms.length) {
-      doc.text('Terms & Conditions' + headerSuffix, leftColStart, currentY + 3);
+    // Draw headers only once per page section
+    if (isFirstPage || currentY === 20) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.secondary);
+      
+      const headerSuffix = (isFirstPage && currentY === y) ? '' : ' (cont.)';
+      
+      if (termsText && termsIdx < wrappedTerms.length) {
+        doc.text('Terms & Conditions' + headerSuffix, leftColStart, currentY + 3);
+      }
+      if (notesText && notesIdx < wrappedNotes.length) {
+        doc.text('Notes' + headerSuffix, rightColStart, currentY + 3);
+      }
+      
+      currentY += 8;
+      
+      // Set font for content
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...COLORS.text);
     }
-    if (notesText && notesIdx < wrappedNotes.length) {
-      doc.text('Notes' + headerSuffix, rightColStart, currentY + 3);
+    
+    // Calculate how many lines fit on remaining page space
+    const remainingHeight = pageHeight - marginBottom - currentY;
+    const linesForThisSection = Math.floor(remainingHeight / lineHeight);
+    
+    if (linesForThisSection < 3) {
+      // Not enough space, go to next page
+      doc.addPage();
+      currentY = 20;
+      isFirstPage = false;
+      continue;
     }
     
-    currentY += 12;
-    
-    // Set font for content
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...COLORS.text);
-    
-    // Calculate lines for this page
-    const pageAvailableHeight = pageHeight - marginBottom - currentY;
-    const pageLinesCount = Math.floor(pageAvailableHeight / lineHeight);
-    
-    // Draw left column (Terms)
+    // Draw lines for both columns simultaneously
+    let linesDrawn = 0;
     let leftY = currentY;
-    const termsEndIdx = Math.min(termsIdx + pageLinesCount, wrappedTerms.length);
-    for (let i = termsIdx; i < termsEndIdx; i++) {
-      const text = wrappedTerms[i];
-      if (text && typeof text === 'string') {
-        doc.text(text, leftColStart, leftY);
+    let rightY = currentY;
+    
+    while (linesDrawn < linesForThisSection && (termsIdx < wrappedTerms.length || notesIdx < wrappedNotes.length)) {
+      // Draw left column (Terms)
+      if (termsIdx < wrappedTerms.length) {
+        const text = wrappedTerms[termsIdx];
+        if (text && typeof text === 'string') {
+          doc.text(text, leftColStart, leftY);
+        }
+        termsIdx++;
         leftY += lineHeight;
       }
-    }
-    termsIdx = termsEndIdx;
-    
-    // Draw right column (Notes)
-    let rightY = currentY;
-    const notesEndIdx = Math.min(notesIdx + pageLinesCount, wrappedNotes.length);
-    for (let i = notesIdx; i < notesEndIdx; i++) {
-      const text = wrappedNotes[i];
-      if (text && typeof text === 'string') {
-        doc.text(text, rightColStart, rightY);
+      
+      // Draw right column (Notes)
+      if (notesIdx < wrappedNotes.length) {
+        const text = wrappedNotes[notesIdx];
+        if (text && typeof text === 'string') {
+          doc.text(text, rightColStart, rightY);
+        }
+        notesIdx++;
         rightY += lineHeight;
       }
+      
+      linesDrawn++;
     }
-    notesIdx = notesEndIdx;
     
     currentY = Math.max(leftY, rightY);
     isFirstPage = false;
