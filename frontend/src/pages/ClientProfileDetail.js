@@ -694,6 +694,9 @@ const ClientProfileDetail = () => {
                               </Badge>
                             </div>
                             <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => setPreviewEstimate(estimate)} title="Vista Previa">
+                                <Eye className="w-4 h-4" />
+                              </Button>
                               <Button variant="ghost" size="sm" onClick={() => exportPDF(estimate)} title="Descargar PDF">
                                 <Download className="w-4 h-4" />
                               </Button>
