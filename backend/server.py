@@ -8460,9 +8460,6 @@ async def export_cost_estimate_pdf(
     # B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
     b2b_subcontractor_amount = round2(total_subcontractor_labor * (b2b_subcontractor_pct / 100))
     
-    # B2B OHSMS Labor - applies only to OHSMS labor cost (added at the end)
-    b2b_ohsms_labor_amount = round2(total_labor * (b2b_ohsms_labor_pct / 100))
-    
     # Step 1: Subtotal x (1 + Profit%) = s
     profit_multiplier = 1 + (profit_pct / 100)
     after_profit = round2(subtotal * profit_multiplier)
@@ -8499,14 +8496,22 @@ async def export_cost_estimate_pdf(
     b2b_ohsms_amount = round2(b2b_ohsms_base * (b2b_ohsms_pct / 100))
     after_b2b_ohsms = round2(after_contingency + b2b_ohsms_amount)
     
+    # Calculate Labor ratio and Labor for Price Breakdown
+    labor_ratio = total_labor / subtotal if subtotal > 0 else 0
+    
+    # Labor del Price Breakdown = (after_b2b_ohsms * labor_ratio) + cfse_amount
+    labor_for_price_breakdown = round2((after_b2b_ohsms * labor_ratio) + cfse_amount)
+    
+    # B2B OHSMS Labor = Labor (del Price Breakdown) × 4%
+    b2b_ohsms_labor_amount = round2(labor_for_price_breakdown * (b2b_ohsms_labor_pct / 100))
+    
     # Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     grand_total = round2(after_b2b_ohsms + b2b_subcontractor_amount + b2b_ohsms_labor_amount)
     
     # Calculate Material/Equipment breakdown
     total_material_equipment = round2(total_subcontractors + total_materials + total_equipment + total_transportation + total_gc)
-    labor_ratio = total_labor / subtotal if subtotal > 0 else 0
-    labor_with_percentages = round2((after_b2b_ohsms * labor_ratio) + cfse_amount + b2b_ohsms_labor_amount)
-    mat_equip_with_percentages = round2(grand_total - labor_with_percentages)
+    labor_with_percentages = labor_for_price_breakdown
+    mat_equip_with_percentages = round2(grand_total - labor_with_percentages - b2b_ohsms_labor_amount)
     
     # Build summary table
     summary_data = [
