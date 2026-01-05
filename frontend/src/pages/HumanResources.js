@@ -507,10 +507,15 @@ const HumanResources = () => {
                               </div>
                             </div>
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" asChild>
-                                <a href={`${process.env.REACT_APP_BACKEND_URL}/api/employees/${doc.employee_id}/documents/${doc.doc_id}/download`} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
+                              {isPreviewable(doc.original_filename || doc.filename) && (
+                                <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} title="Ver documento">
+                                  <Eye className="w-4 h-4 text-blue-500" />
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm" asChild title="Descargar">
+                                <a href={getDocumentUrl(doc)} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.doc_id)}>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.doc_id)} title="Eliminar">
                                 <Trash2 className="w-4 h-4 text-red-500" />
                               </Button>
                             </div>
@@ -525,6 +530,46 @@ const HumanResources = () => {
           )}
         </div>
       </div>
+
+      {/* Document Preview Dialog */}
+      <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="p-4 border-b flex flex-row items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-orange-500" />
+              {previewDoc?.original_filename || previewDoc?.filename}
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <a href={previewDoc ? getDocumentUrl(previewDoc) : '#'} target="_blank" rel="noreferrer">
+                  <Download className="w-4 h-4 mr-1" /> Descargar
+                </a>
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="p-4 overflow-auto max-h-[calc(90vh-80px)] flex items-center justify-center bg-slate-100">
+            {previewDoc && (
+              getFileExtension(previewDoc.original_filename || previewDoc.filename) === 'pdf' ? (
+                <iframe
+                  src={getDocumentUrl(previewDoc)}
+                  className="w-full h-[70vh] border-0 rounded"
+                  title="Vista previa del documento"
+                />
+              ) : (
+                <img
+                  src={getDocumentUrl(previewDoc)}
+                  alt={previewDoc.original_filename || previewDoc.filename}
+                  className="max-w-full max-h-[70vh] object-contain rounded shadow-lg"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '<p class="text-slate-500 text-center p-8">No se puede previsualizar este archivo</p>';
+                  }}
+                />
+              )
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
