@@ -556,13 +556,13 @@ const HumanResources = () => {
             {previewDoc && (
               getFileExtension(previewDoc.original_filename || previewDoc.filename) === 'pdf' ? (
                 <iframe
-                  src={getDocumentUrl(previewDoc)}
+                  src={getPreviewUrl(previewDoc)}
                   className="w-full h-[70vh] border-0 rounded"
                   title="Vista previa del documento"
                 />
               ) : (
                 <img
-                  src={getDocumentUrl(previewDoc)}
+                  src={getPreviewUrl(previewDoc)}
                   alt={previewDoc.original_filename || previewDoc.filename}
                   className="max-w-full max-h-[70vh] object-contain rounded shadow-lg"
                   onError={(e) => {
