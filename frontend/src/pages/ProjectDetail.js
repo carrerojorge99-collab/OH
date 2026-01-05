@@ -1130,7 +1130,11 @@ const ProjectDetail = () => {
 
   // Get folders and documents for current level
   const getCurrentFolders = () => {
-    return documentFolders.filter(f => f.parent_folder_id === currentFolderId);
+    console.log('documentFolders:', documentFolders);
+    console.log('currentFolderId:', currentFolderId);
+    const filtered = documentFolders.filter(f => f.parent_folder_id === currentFolderId);
+    console.log('filtered folders:', filtered);
+    return filtered;
   };
 
   const getCurrentDocuments = () => {
