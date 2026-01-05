@@ -624,6 +624,7 @@ class EstimateCreate(BaseModel):
     terms: Optional[str] = None
     valid_until: Optional[str] = None
     custom_number: Optional[str] = None
+    price_breakdown: Optional[dict] = None
 
 class Estimate(BaseModel):
     model_config = ConfigDict(extra="ignore")
