@@ -333,41 +333,105 @@ const ClientProfileDetail = () => {
         : estimate.client_name;
       y = addPartySection(doc, 'Bill To:', clientDisplayName, estimate.client_address || '', estimate.client_email, estimate.client_phone, y);
       
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       doc.setTextColor(71, 85, 105);
       doc.text(`Valid Until: ${estimate.valid_until ? moment(estimate.valid_until).format('MMM DD, YYYY') : 'N/A'}`, 120, y - 10);
       
       if (estimate.title) {
-        doc.setFontSize(10);
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
         doc.text(estimate.title, 15, y);
-        y += 6;
+        y += 8;
       }
       
       if (estimate.description) {
-        doc.setFontSize(8);
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
         const descLines = doc.splitTextToSize(estimate.description, 170);
         doc.text(descLines, 15, y);
-        y += descLines.length * 4 + 4;
+        y += descLines.length * 5 + 6;
       }
       
-      y = addTasksTable(doc, estimate.items, y + 4);
+      // Price Breakdown Section (Orange Area)
+      if (estimate.price_breakdown) {
+        y += 4;
+        // Header row
+        doc.setFillColor(249, 115, 22); // Orange-500
+        doc.rect(15, y, 60, 10, 'F');
+        doc.setFillColor(251, 146, 60); // Orange-400
+        doc.rect(75, y, 60, 10, 'F');
+        doc.setFillColor(234, 88, 12); // Orange-600
+        doc.rect(135, y, 60, 10, 'F');
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('Material/Equipment', 45, y + 7, { align: 'center' });
+        doc.text('Labor', 105, y + 7, { align: 'center' });
+        doc.text('Total', 165, y + 7, { align: 'center' });
+        y += 10;
+        
+        // Values row
+        doc.setFillColor(254, 243, 199); // Orange-100
+        doc.rect(15, y, 180, 12, 'F');
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text(`$${formatCurrency(estimate.price_breakdown.material_equipment || 0)}`, 45, y + 8, { align: 'center' });
+        doc.text(`$${formatCurrency(estimate.price_breakdown.labor || 0)}`, 105, y + 8, { align: 'center' });
+        doc.text(`$${formatCurrency(estimate.price_breakdown.total || 0)}`, 165, y + 8, { align: 'center' });
+        y += 18;
+      }
+      
+      // Items table (if any)
+      if (estimate.items && estimate.items.length > 0 && estimate.items.some(item => item.description)) {
+        y = addTasksTable(doc, estimate.items, y + 4, 12); // font size 12
+      }
       
       let taxDetails = null;
       if (estimate.selected_taxes && estimate.selected_taxes.length > 0) {
-        const taxableAmount = estimate.subtotal - (estimate.discount_amount || 0);
+        const taxableAmount = (estimate.price_breakdown?.total || estimate.subtotal) - (estimate.discount_amount || 0);
         taxDetails = estimate.selected_taxes.map(t => ({
           name: t.name,
           percentage: t.percentage,
           amount: taxableAmount * t.percentage / 100
         }));
       }
-      y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y, taxDetails);
       
-      addNotesSection(doc, estimate.notes, estimate.terms, y);
+      const totalToUse = estimate.price_breakdown?.total || estimate.total;
+      y = addTotalsSection(doc, estimate.price_breakdown?.total || estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, totalToUse, y, taxDetails);
+      
+      // Notes on first page (if space)
+      if (estimate.notes && y < 240) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('Notes:', 15, y + 10);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+        const notesLines = doc.splitTextToSize(estimate.notes, 180);
+        doc.text(notesLines, 15, y + 18);
+        y += 18 + notesLines.length * 5;
+      }
+      
+      // Terms and Conditions - ALWAYS on second page
+      if (estimate.terms) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('Terms and Conditions', 105, 30, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const termsLines = doc.splitTextToSize(estimate.terms, 180);
+        doc.text(termsLines, 15, 45);
+      }
+      
       addFooter(doc, company);
       
       doc.save(`Estimate_${estimate.estimate_number}.pdf`);
