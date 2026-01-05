@@ -662,45 +662,7 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
-                  {/* Breakdown: Material/Equipment | Labor | Total */}
-                  <div className="mt-6 p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div className="bg-orange-500 text-white p-2 rounded font-semibold">
-                        Material/Equipment
-                      </div>
-                      <div className="bg-orange-400 text-white p-2 rounded font-semibold">
-                        Labor
-                      </div>
-                      <div className="bg-orange-500 text-white p-2 rounded font-semibold">
-                        Total
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-center mt-2 bg-gray-100 p-3 rounded">
-                      <div className="font-bold text-lg">
-                        ${totals.matEquipWithPercentages.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="font-bold text-lg bg-orange-100 rounded py-1">
-                        ${totals.laborWithPercentages.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="font-bold text-lg">
-                        ${totals.grandTotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* IVU Section - below orange area */}
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 mt-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-semibold text-blue-800">IVU (11.5%) - Solo Materiales</p>
-                        <p className="text-xs text-blue-600">Subtotal Materiales: ${totals.totalMaterials.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-blue-800">${totals.ivuAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                    </div>
-                  </div>
-
+                  {/* SUBTOTAL */}
                   <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg font-bold text-lg mt-4">
                     <div>SUBTOTAL</div>
                     <div className="text-right text-blue-600">
@@ -816,7 +778,7 @@ const CostEstimateDetail = () => {
                         {totals.b2bOhsmsLaborAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsLaborAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
-                        <p className="text-xs text-green-500">*Labor × 4%: ${totals.laborWithPercentages?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
+                        <p className="text-xs text-green-500">*Labor × 4%</p>
                       </div>
                       <div className="bg-amber-50 p-2 rounded">
                         <Label className="text-amber-700">B2B Subcontratista (%)</Label>
@@ -839,6 +801,45 @@ const CostEstimateDetail = () => {
                     <div className="text-purple-800">TOTAL PORCENTAJES</div>
                     <div className="text-right text-purple-600">
                       ${totals.totalPercentageAmounts.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+
+                  {/* Breakdown: Material/Equipment | Labor | Total - MOVED HERE before TOTAL FINAL */}
+                  <div className="mt-6 p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-orange-500 text-white p-2 rounded font-semibold">
+                        Material/Equipment
+                      </div>
+                      <div className="bg-orange-400 text-white p-2 rounded font-semibold">
+                        Labor
+                      </div>
+                      <div className="bg-orange-500 text-white p-2 rounded font-semibold">
+                        Total
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-center mt-2 bg-gray-100 p-3 rounded">
+                      <div className="font-bold text-lg">
+                        ${totals.matEquipWithPercentages.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="font-bold text-lg bg-orange-100 rounded py-1">
+                        ${totals.laborWithPercentages.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="font-bold text-lg">
+                        ${totals.grandTotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* IVU Section - below orange area */}
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 mt-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-blue-800">IVU (11.5%) - Solo Materiales</p>
+                        <p className="text-xs text-blue-600">Subtotal Materiales: ${totals.totalMaterials.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-blue-800">${totals.ivuAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                      </div>
                     </div>
                   </div>
 
