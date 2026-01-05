@@ -6,15 +6,18 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Building2, Plus, Mail, Phone, Search, ChevronRight, FileText, DollarSign } from 'lucide-react';
+import { Building2, Plus, Mail, Phone, Search, ChevronRight, FileText, DollarSign, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const ClientEstimates = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState([]);
+  const [unassignedEstimates, setUnassignedEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedEstimate, setSelectedEstimate] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [form, setForm] = useState({
     company_name: '',
@@ -24,7 +27,10 @@ const ClientEstimates = () => {
     address: ''
   });
 
-  useEffect(() => { loadClients(); }, []);
+  useEffect(() => { 
+    loadClients(); 
+    loadUnassignedEstimates();
+  }, []);
 
   const loadClients = async () => {
     try {
@@ -34,6 +40,30 @@ const ClientEstimates = () => {
       toast.error('Error al cargar clientes');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUnassignedEstimates = async () => {
+    try {
+      const response = await api.get('/estimates?unassigned=true');
+      setUnassignedEstimates(response.data || []);
+    } catch (error) {
+      console.error('Error loading unassigned estimates:', error);
+    }
+  };
+
+  const handleAssignEstimate = async (clientId) => {
+    if (!selectedEstimate || !clientId) return;
+    try {
+      await api.put(`/estimates/${selectedEstimate.estimate_id}/assign`, { 
+        client_profile_id: clientId 
+      });
+      toast.success('Estimado asignado exitosamente');
+      setAssignDialogOpen(false);
+      setSelectedEstimate(null);
+      loadUnassignedEstimates();
+    } catch (error) {
+      toast.error('Error al asignar estimado');
     }
   };
 
