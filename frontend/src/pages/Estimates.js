@@ -458,8 +458,39 @@ const Estimates = () => {
     }
     y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y, taxDetails);
     
-    // Notes - with 2-column terms
-    addNotesSection(doc, estimate.notes, estimate.terms, y);
+    // Notes section - Direct approach matching preview
+    if (estimate.notes) {
+      // Check if we need a new page
+      if (y > 240) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text('Notas:', 15, y + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const notesLines = doc.splitTextToSize(estimate.notes, 180);
+      doc.text(notesLines, 15, y + 18);
+      y += 18 + notesLines.length * 4;
+    }
+    
+    // Terms and Conditions - on new page if present
+    if (estimate.terms) {
+      doc.addPage();
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text('Términos y Condiciones', 105, 30, { align: 'center' });
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      const termsLines = doc.splitTextToSize(estimate.terms, 180);
+      doc.text(termsLines, 15, 45);
+    }
     
     // Footer
     addFooter(doc, company);
