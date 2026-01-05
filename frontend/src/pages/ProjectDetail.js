@@ -71,6 +71,7 @@ const ProjectDetail = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'kanban'
   const tabsScrollRef = useRef(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
