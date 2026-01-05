@@ -60,6 +60,7 @@ const HumanResources = () => {
   const [uploadForm, setUploadForm] = useState({ document_type: '', file: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSection, setActiveSection] = useState('info');
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   // Optimized profile field update handler - prevents re-render lag
   const updateProfile = useCallback((field, value) => {
