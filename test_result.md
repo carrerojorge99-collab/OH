@@ -1,5 +1,49 @@
 # Test Results
 
+## Test Session: Cost Estimate - Formula Updates & IVU
+**Date**: 2026-01-05
+**Tester**: E1 Agent
+
+### Changes Implemented:
+1. **IVU (11.5%) on Materials Tab**
+   - Added automatic IVU calculation (11.5%) on materials only
+   - Displayed in Materials tab and Summary tab below orange area
+   
+2. **Fixed Percentages**
+   - CFSE: Fixed at 7%
+   - Liability: Fixed at 7%
+   - Municipal Patent: Fixed at 1%
+   - Contingency: Fixed at 6%
+   - B2B M.O.: Fixed at 4%
+   - Made these fields read-only with visual indication
+
+3. **B2B M.O. Formula Change**
+   - OLD: U × 0.35 × B2B%
+   - NEW: Labor (from orange area) × 4%
+
+4. **Total Percentages Display**
+   - Added "TOTAL PORCENTAJES" section showing sum of all percentage amounts
+
+5. **Convert to Estimate Button**
+   - Added "Convertir a Estimado" button to create formal estimate from cost estimate
+
+### Test Protocol:
+1. Login with Super Admin credentials
+2. Navigate to Cost Estimates (Estimaciones Costos)
+3. Open existing cost estimate
+4. Verify IVU appears in Materials tab
+5. Verify IVU appears below orange area in Summary
+6. Verify fixed percentages are read-only
+7. Verify B2B M.O. uses new formula
+8. Verify Total Percentages appears
+9. Verify Convert to Estimate button works
+
+### Credentials:
+- Email: jcarrion@ohsmspr.com
+- Password: Admin2024!
+
+---
+
 ## Test Session: Project Detail Page - Mobile Responsiveness
 **Date**: 2026-01-04
 **Tester**: E1 Agent
