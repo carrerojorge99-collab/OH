@@ -1132,28 +1132,7 @@ const ClientProfileDetail = () => {
                   </div>
                 </div>
 
-                {/* Price Breakdown */}
-                {previewEstimate.price_breakdown && (
-                  <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
-                    <h3 className="font-semibold text-orange-800 mb-3">Price Breakdown</h3>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div className="bg-orange-500 text-white p-3 rounded">
-                        <p className="text-sm">Material/Equipment</p>
-                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.material_equipment || 0)}</p>
-                      </div>
-                      <div className="bg-orange-400 text-white p-3 rounded">
-                        <p className="text-sm">Labor</p>
-                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.labor || 0)}</p>
-                      </div>
-                      <div className="bg-orange-600 text-white p-3 rounded">
-                        <p className="text-sm">Total</p>
-                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.total || 0)}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Items Table */}
+                {/* Items Table - FIRST */}
                 {previewEstimate.items && previewEstimate.items.length > 0 && previewEstimate.items.some(i => i.description) && (
                   <div>
                     <h3 className="font-semibold text-slate-700 mb-2">Líneas</h3>
@@ -1177,6 +1156,27 @@ const ClientProfileDetail = () => {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+
+                {/* Price Breakdown - AFTER Items, BEFORE Totals */}
+                {previewEstimate.price_breakdown && (
+                  <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                    <h3 className="font-semibold text-orange-800 mb-3">Price Breakdown</h3>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-orange-500 text-white p-3 rounded">
+                        <p className="text-sm">Material/Equipment</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.material_equipment || 0)}</p>
+                      </div>
+                      <div className="bg-orange-400 text-white p-3 rounded">
+                        <p className="text-sm">Labor</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.labor || 0)}</p>
+                      </div>
+                      <div className="bg-orange-600 text-white p-3 rounded">
+                        <p className="text-sm">Total</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.total || 0)}</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
