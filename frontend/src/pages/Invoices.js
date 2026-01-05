@@ -1286,6 +1286,131 @@ const Invoices = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Preview Dialog */}
+        <Dialog open={!!previewInvoice} onOpenChange={(open) => !open && setPreviewInvoice(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Vista Previa - {previewInvoice?.invoice_number}</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => { exportToPDF(previewInvoice); }}>
+                    <Download className="w-4 h-4 mr-1" /> PDF
+                  </Button>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {previewInvoice && (
+              <div className="space-y-6 p-4 bg-white border rounded-lg">
+                {/* Header */}
+                <div className="flex justify-between items-start border-b pb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-blue-600">INVOICE</h2>
+                    <p className="text-lg font-semibold">{previewInvoice.invoice_number}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-slate-500">Fecha: {moment(previewInvoice.created_at).format('DD/MM/YYYY')}</p>
+                    {previewInvoice.due_date && <p className="text-sm text-slate-500">Vence: {moment(previewInvoice.due_date).format('DD/MM/YYYY')}</p>}
+                    {getStatusBadge(previewInvoice.status)}
+                  </div>
+                </div>
+
+                {/* Client Info */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-slate-700 mb-2">Cliente</h3>
+                    <p className="font-medium">{previewInvoice.client_name}</p>
+                    {previewInvoice.client_email && <p className="text-sm text-slate-500">{previewInvoice.client_email}</p>}
+                    {previewInvoice.client_phone && <p className="text-sm text-slate-500">{previewInvoice.client_phone}</p>}
+                    {previewInvoice.client_address && <p className="text-sm text-slate-500">{previewInvoice.client_address}</p>}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-700 mb-2">Detalles</h3>
+                    {previewInvoice.project_name && <p className="font-medium">{previewInvoice.project_name}</p>}
+                    {previewInvoice.sponsor_name && <p className="text-sm text-slate-600">Sponsor: {previewInvoice.sponsor_name}</p>}
+                  </div>
+                </div>
+
+                {/* Items Table - FIRST */}
+                {previewInvoice.items && previewInvoice.items.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-slate-700 mb-2">Líneas</h3>
+                    <table className="w-full border">
+                      <thead className="bg-slate-100">
+                        <tr>
+                          <th className="p-2 text-left text-sm">Descripción</th>
+                          <th className="p-2 text-right text-sm">Cant.</th>
+                          <th className="p-2 text-right text-sm">Precio</th>
+                          <th className="p-2 text-right text-sm">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewInvoice.items.map((item, idx) => (
+                          <tr key={idx} className="border-t">
+                            <td className="p-2 text-sm">{item.description}</td>
+                            <td className="p-2 text-right text-sm">{item.hours || item.quantity || 1}</td>
+                            <td className="p-2 text-right text-sm">${formatCurrency(item.rate || item.unit_price || 0)}</td>
+                            <td className="p-2 text-right text-sm font-medium">${formatCurrency(item.amount || 0)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Price Breakdown - AFTER Items, BEFORE Totals */}
+                {previewInvoice.price_breakdown && (
+                  <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                    <h3 className="font-semibold text-orange-800 mb-3">Price Breakdown</h3>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-orange-500 text-white p-3 rounded">
+                        <p className="text-sm">Material/Equipment</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewInvoice.price_breakdown.material_equipment || 0)}</p>
+                      </div>
+                      <div className="bg-orange-400 text-white p-3 rounded">
+                        <p className="text-sm">Labor</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewInvoice.price_breakdown.labor || 0)}</p>
+                      </div>
+                      <div className="bg-orange-600 text-white p-3 rounded">
+                        <p className="text-sm">Total</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewInvoice.price_breakdown.total || 0)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Totals */}
+                <div className="flex justify-end">
+                  <div className="w-64 space-y-2">
+                    <div className="flex justify-between"><span>Subtotal:</span><span>${formatCurrency(previewInvoice.price_breakdown?.total || previewInvoice.subtotal || 0)}</span></div>
+                    {previewInvoice.tax_amount > 0 && <div className="flex justify-between"><span>Impuestos:</span><span>${formatCurrency(previewInvoice.tax_amount)}</span></div>}
+                    <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total:</span><span>${formatCurrency(previewInvoice.total || 0)}</span></div>
+                    {previewInvoice.balance_due > 0 && previewInvoice.status !== 'draft' && (
+                      <div className="flex justify-between text-red-600 font-bold"><span>Pendiente:</span><span>${formatCurrency(previewInvoice.balance_due)}</span></div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {previewInvoice.notes && (
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold text-slate-700 mb-2">Notas</h3>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{previewInvoice.notes}</p>
+                  </div>
+                )}
+
+                {/* Terms */}
+                {previewInvoice.terms && (
+                  <div className="border-t pt-4 bg-slate-50 p-4 rounded">
+                    <h3 className="font-semibold text-slate-700 mb-2">Términos y Condiciones</h3>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{previewInvoice.terms}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
