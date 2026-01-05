@@ -1085,6 +1085,130 @@ const ClientProfileDetail = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Preview Dialog */}
+        <Dialog open={!!previewEstimate} onOpenChange={(open) => !open && setPreviewEstimate(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Vista Previa - {previewEstimate?.estimate_number}</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => { exportPDF(previewEstimate); }}>
+                    <Download className="w-4 h-4 mr-1" /> PDF
+                  </Button>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {previewEstimate && (
+              <div className="space-y-6 p-4 bg-white border rounded-lg">
+                {/* Header */}
+                <div className="flex justify-between items-start border-b pb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-orange-600">ESTIMATE</h2>
+                    <p className="text-lg font-semibold">{previewEstimate.estimate_number}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-slate-500">Fecha: {moment(previewEstimate.created_at).format('DD/MM/YYYY')}</p>
+                    <p className="text-sm text-slate-500">Válido hasta: {previewEstimate.valid_until ? moment(previewEstimate.valid_until).format('DD/MM/YYYY') : 'N/A'}</p>
+                    <Badge className={statusColors[previewEstimate.status]}>{statusLabels[previewEstimate.status]}</Badge>
+                  </div>
+                </div>
+
+                {/* Client Info */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-slate-700 mb-2">Cliente</h3>
+                    <p className="font-medium">{previewEstimate.client_company || previewEstimate.client_name}</p>
+                    {previewEstimate.client_company && <p className="text-sm text-slate-600">Attn: {previewEstimate.client_name}</p>}
+                    {previewEstimate.client_email && <p className="text-sm text-slate-500 flex items-center gap-1"><Mail className="w-3 h-3" />{previewEstimate.client_email}</p>}
+                    {previewEstimate.client_phone && <p className="text-sm text-slate-500 flex items-center gap-1"><Phone className="w-3 h-3" />{previewEstimate.client_phone}</p>}
+                    {previewEstimate.client_address && <p className="text-sm text-slate-500 flex items-center gap-1"><MapPin className="w-3 h-3" />{previewEstimate.client_address}</p>}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-700 mb-2">Detalles</h3>
+                    <p className="font-medium">{previewEstimate.title}</p>
+                    {previewEstimate.description && <p className="text-sm text-slate-600 mt-1">{previewEstimate.description}</p>}
+                  </div>
+                </div>
+
+                {/* Price Breakdown */}
+                {previewEstimate.price_breakdown && (
+                  <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                    <h3 className="font-semibold text-orange-800 mb-3">Price Breakdown</h3>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-orange-500 text-white p-3 rounded">
+                        <p className="text-sm">Material/Equipment</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.material_equipment || 0)}</p>
+                      </div>
+                      <div className="bg-orange-400 text-white p-3 rounded">
+                        <p className="text-sm">Labor</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.labor || 0)}</p>
+                      </div>
+                      <div className="bg-orange-600 text-white p-3 rounded">
+                        <p className="text-sm">Total</p>
+                        <p className="text-xl font-bold">${formatCurrency(previewEstimate.price_breakdown.total || 0)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Items Table */}
+                {previewEstimate.items && previewEstimate.items.length > 0 && previewEstimate.items.some(i => i.description) && (
+                  <div>
+                    <h3 className="font-semibold text-slate-700 mb-2">Líneas</h3>
+                    <table className="w-full border">
+                      <thead className="bg-slate-100">
+                        <tr>
+                          <th className="p-2 text-left text-sm">Descripción</th>
+                          <th className="p-2 text-right text-sm">Cant.</th>
+                          <th className="p-2 text-right text-sm">Precio</th>
+                          <th className="p-2 text-right text-sm">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewEstimate.items.filter(i => i.description).map((item, idx) => (
+                          <tr key={idx} className="border-t">
+                            <td className="p-2 text-sm">{item.description}</td>
+                            <td className="p-2 text-right text-sm">{item.quantity}</td>
+                            <td className="p-2 text-right text-sm">${formatCurrency(item.unit_price)}</td>
+                            <td className="p-2 text-right text-sm font-medium">${formatCurrency(item.amount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Totals */}
+                <div className="flex justify-end">
+                  <div className="w-64 space-y-2">
+                    <div className="flex justify-between"><span>Subtotal:</span><span>${formatCurrency(previewEstimate.price_breakdown?.total || previewEstimate.subtotal)}</span></div>
+                    {previewEstimate.discount_amount > 0 && <div className="flex justify-between text-red-600"><span>Descuento:</span><span>-${formatCurrency(previewEstimate.discount_amount)}</span></div>}
+                    {previewEstimate.tax_amount > 0 && <div className="flex justify-between"><span>Impuestos:</span><span>${formatCurrency(previewEstimate.tax_amount)}</span></div>}
+                    <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total:</span><span>${formatCurrency(previewEstimate.total)}</span></div>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {previewEstimate.notes && (
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold text-slate-700 mb-2">Notas</h3>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{previewEstimate.notes}</p>
+                  </div>
+                )}
+
+                {/* Terms */}
+                {previewEstimate.terms && (
+                  <div className="border-t pt-4 bg-slate-50 p-4 rounded">
+                    <h3 className="font-semibold text-slate-700 mb-2">Términos y Condiciones</h3>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{previewEstimate.terms}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
