@@ -9627,6 +9627,44 @@ async def download_employee_document(
         filename=doc.get("original_filename", file_path.name)
     )
 
+@api_router.get("/employees/{employee_id}/documents/{doc_id}/preview")
+async def preview_employee_document(
+    employee_id: str,
+    doc_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Preview document inline without forcing download"""
+    user = await get_current_user(request, session_token)
+    
+    doc = await db.employee_documents.find_one({"doc_id": doc_id, "employee_id": employee_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    file_path = Path(doc["file_path"])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+    
+    # Determine media type
+    suffix = file_path.suffix.lower()
+    media_types = {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml'
+    }
+    media_type = media_types.get(suffix, 'application/octet-stream')
+    
+    # Return file without Content-Disposition attachment header (inline display)
+    return FileResponse(
+        file_path,
+        media_type=media_type
+        # No filename parameter = inline display instead of download
+    )
+
 app.include_router(api_router)
 
 # Middleware para prevenir caché en respuestas de API
