@@ -8038,10 +8038,14 @@ async def convert_cost_estimate_to_estimate(
     # B2B Subcontractor
     b2b_subcontractor_amount = round2(total_subcontractor_labor * (b2b_subcontractor_pct / 100))
     
-    # B2B M.O. = Labor portion × 4%
+    # Calculate Labor ratio and Labor for Price Breakdown
     labor_ratio = total_labor / subtotal if subtotal > 0 else 0
-    labor_portion = round2(after_b2b_ohsms * labor_ratio)
-    b2b_ohsms_labor_amount = round2(labor_portion * (b2b_ohsms_labor_pct / 100))
+    
+    # Labor del Price Breakdown = (after_b2b_ohsms * labor_ratio) + cfse_amount
+    labor_for_price_breakdown = round2((after_b2b_ohsms * labor_ratio) + cfse_amount)
+    
+    # B2B M.O. = Labor (del Price Breakdown) × 4%
+    b2b_ohsms_labor_amount = round2(labor_for_price_breakdown * (b2b_ohsms_labor_pct / 100))
     
     # Grand total
     grand_total = round2(after_b2b_ohsms + b2b_subcontractor_amount + b2b_ohsms_labor_amount)
@@ -8050,10 +8054,10 @@ async def convert_cost_estimate_to_estimate(
     total_material_equipment = round2(total_subcontractors + total_materials + total_equipment + total_transportation + total_gc)
     mat_equip_ratio = total_material_equipment / subtotal if subtotal > 0 else 0
     
-    # Labor with percentages = (labor portion of cascade) + CFSE + B2B OHSMS Labor
-    labor_with_percentages = round2((after_b2b_ohsms * labor_ratio) + cfse_amount + b2b_ohsms_labor_amount)
-    # Material/Equipment with percentages = grand total - labor with percentages
-    mat_equip_with_percentages = round2(grand_total - labor_with_percentages)
+    # Labor with percentages = Labor del Price Breakdown (sin B2B M.O.)
+    labor_with_percentages = labor_for_price_breakdown
+    # Material/Equipment with percentages = grand total - labor - b2b_ohsms_labor
+    mat_equip_with_percentages = round2(grand_total - labor_with_percentages - b2b_ohsms_labor_amount)
     
     # Total percentage amounts
     total_pct_amounts = round2(
