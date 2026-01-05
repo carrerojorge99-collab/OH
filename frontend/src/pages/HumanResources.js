@@ -175,6 +175,24 @@ const HumanResources = () => {
     }
   };
 
+  // Helper to get document URL
+  const getDocumentUrl = (doc) => {
+    return `${process.env.REACT_APP_BACKEND_URL}/api/employees/${doc.employee_id}/documents/${doc.doc_id}/download`;
+  };
+
+  // Check if document is previewable (images and PDFs)
+  const isPreviewable = (filename) => {
+    if (!filename) return false;
+    const ext = filename.toLowerCase().split('.').pop();
+    return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext);
+  };
+
+  // Get file extension
+  const getFileExtension = (filename) => {
+    if (!filename) return '';
+    return filename.toLowerCase().split('.').pop();
+  };
+
   const filteredEmployees = employees.filter(e => 
     (e.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (e.email || '').toLowerCase().includes(searchTerm.toLowerCase())
