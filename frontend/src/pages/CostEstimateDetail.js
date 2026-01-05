@@ -902,49 +902,53 @@ const CostEstimateDetail = () => {
                         )}
                       </div>
                       <div className="bg-blue-50 p-2 rounded">
-                        <Label className="text-blue-700">CFSE (%)</Label>
+                        <Label className="text-blue-700">CFSE (%) - Fijo</Label>
                         <Input
                           type="number"
                           step="0.1"
                           value={cfsePercentage}
-                          onChange={(e) => setCfsePercentage(e.target.value)}
+                          readOnly
+                          className="bg-blue-100 cursor-not-allowed"
                         />
                         {totals.cfseAmount > 0 && (
                           <p className="text-xs text-blue-600 mt-1">+${totals.cfseAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                         <p className="text-xs text-blue-500">*Solo M.O.: ${totals.totalLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
                       </div>
-                      <div>
-                        <Label>Liability (%)</Label>
+                      <div className="bg-gray-100 p-2 rounded">
+                        <Label className="text-gray-700">Liability (%) - Fijo</Label>
                         <Input
                           type="number"
                           step="0.1"
                           value={liabilityPercentage}
-                          onChange={(e) => setLiabilityPercentage(e.target.value)}
+                          readOnly
+                          className="bg-gray-200 cursor-not-allowed"
                         />
                         {totals.liabilityAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.liabilityAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div>
-                        <Label>Municipal Patent (%)</Label>
+                      <div className="bg-gray-100 p-2 rounded">
+                        <Label className="text-gray-700">Municipal Patent (%) - Fijo</Label>
                         <Input
                           type="number"
                           step="0.1"
                           value={municipalPatentPercentage}
-                          onChange={(e) => setMunicipalPatentPercentage(e.target.value)}
+                          readOnly
+                          className="bg-gray-200 cursor-not-allowed"
                         />
                         {totals.municipalPatentAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.municipalPatentAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div>
-                        <Label>Contingency (%)</Label>
+                      <div className="bg-gray-100 p-2 rounded">
+                        <Label className="text-gray-700">Contingency (%) - Fijo</Label>
                         <Input
                           type="number"
                           step="0.1"
                           value={contingencyPercentage}
-                          onChange={(e) => setContingencyPercentage(e.target.value)}
+                          readOnly
+                          className="bg-gray-200 cursor-not-allowed"
                         />
                         {totals.contingencyAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.contingencyAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
