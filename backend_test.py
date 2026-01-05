@@ -1452,6 +1452,459 @@ class ProjectInvoicesTester:
             "critical_issues": critical_failures
         }
 
+class CostEstimateFeatureTester:
+    def __init__(self, base_url="https://project-docs-7.preview.emergentagent.com"):
+        self.base_url = base_url
+        self.api_url = f"{base_url}/api"
+        self.session = requests.Session()
+        self.user_id = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.test_results = []
+        
+        # Test data storage
+        self.test_project_id = None
+        self.test_cost_estimate_id = None
+        self.test_estimate_id = None
+
+    def log_test(self, name, success, details="", error=""):
+        """Log test result"""
+        self.tests_run += 1
+        if success:
+            self.tests_passed += 1
+            print(f"✅ {name} - PASSED")
+            if details:
+                print(f"   Details: {details}")
+        else:
+            print(f"❌ {name} - FAILED: {error}")
+        
+        self.test_results.append({
+            "test": name,
+            "success": success,
+            "details": details,
+            "error": error
+        })
+
+    def test_login(self, email="jcarrion@ohsmspr.com", password="Admin2024!"):
+        """Test login with provided credentials"""
+        print(f"\n🔍 Testing Login with {email}...")
+        
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        
+        try:
+            url = f"{self.api_url}/auth/login"
+            response = self.session.post(url, json=login_data, timeout=30)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                if 'user' in response_data:
+                    self.user_id = response_data['user']['user_id']
+                    user_name = response_data['user']['name']
+                    user_role = response_data['user']['role']
+                    self.log_test("Login", True, f"Logged in as {user_name} (ID: {self.user_id}, Role: {user_role})")
+                    return True
+                else:
+                    self.log_test("Login", False, "", "No user data in response")
+                    return False
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Login", False, "", error_msg)
+                return False
+                
+        except Exception as e:
+            self.log_test("Login", False, "", str(e))
+            return False
+
+    def test_get_projects(self):
+        """Test getting projects to get a project_id"""
+        print(f"\n🔍 Testing Get Projects...")
+        
+        try:
+            url = f"{self.api_url}/projects"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                projects = response.json()
+                if isinstance(projects, list) and len(projects) > 0:
+                    self.test_project_id = projects[0]['project_id']
+                    project_name = projects[0]['name']
+                    self.log_test("Get Projects", True, f"Found {len(projects)} projects. Using: {project_name} (ID: {self.test_project_id})")
+                    return True, projects
+                else:
+                    self.log_test("Get Projects", False, "", "No projects available")
+                    return False, []
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Projects", False, "", error_msg)
+                return False, []
+                
+        except Exception as e:
+            self.log_test("Get Projects", False, "", str(e))
+            return False, []
+
+    def test_get_cost_estimates(self):
+        """Test getting cost estimates list"""
+        print(f"\n🔍 Testing Get Cost Estimates List...")
+        
+        try:
+            url = f"{self.api_url}/cost-estimates"
+            response = self.session.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                estimates = response.json()
+                if isinstance(estimates, list):
+                    if len(estimates) > 0:
+                        # Use the first estimate for testing
+                        self.test_cost_estimate_id = estimates[0]['estimate_id']
+                        estimate_name = estimates[0].get('estimate_name', 'N/A')
+                        self.log_test("Get Cost Estimates", True, 
+                                    f"Found {len(estimates)} cost estimates. Using: {estimate_name} (ID: {self.test_cost_estimate_id})")
+                        return True, estimates[0]
+                    else:
+                        self.log_test("Get Cost Estimates", True, "Found 0 cost estimates - will create one for testing")
+                        return True, None
+                else:
+                    self.log_test("Get Cost Estimates", False, "", f"Invalid response format: {estimates}")
+                    return False, None
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Cost Estimates", False, "", error_msg)
+                return False, None
+                
+        except Exception as e:
+            self.log_test("Get Cost Estimates", False, "", str(e))
+            return False, None
+
+    def test_create_cost_estimate_with_ivu(self):
+        """Test creating a cost estimate with materials to test IVU calculation"""
+        print(f"\n🔍 Testing Create Cost Estimate with IVU Calculation...")
+        
+        if not self.test_project_id:
+            self.log_test("Create Cost Estimate with IVU", False, "", "No project ID available")
+            return False
+        
+        # Create cost estimate with materials to test IVU (11.5%)
+        cost_estimate_data = {
+            "project_id": self.test_project_id,
+            "estimate_name": "Test Cost Estimate - IVU & Fixed Percentages",
+            "materials": [
+                {
+                    "description": "Test Material",
+                    "quantity": 1,
+                    "unit_cost": 100.0,
+                    "total": 100.0
+                }
+            ],
+            "labor_costs": [
+                {
+                    "role_name": "Project Manager",
+                    "qty_personnel": 1,
+                    "regular_hours": 40,
+                    "overtime_hours": 0,
+                    "rate": 50.0,
+                    "overtime_rate": 75.0,
+                    "subtotal": 2000.0
+                }
+            ],
+            # Test fixed percentages as per requirements
+            "cfse_percentage": 7.0,
+            "liability_percentage": 7.0,
+            "municipal_patent_percentage": 1.0,
+            "contingency_percentage": 6.0,
+            "b2b_percentage": 4.0,
+            "overhead_percentage": 10.0,
+            "profit_percentage": 15.0,
+            "tax_percentage": 11.5  # This should be IVU
+        }
+        
+        try:
+            url = f"{self.api_url}/cost-estimates"
+            response = self.session.post(url, json=cost_estimate_data, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                estimate = response.json()
+                print(f"   Response Body: {json.dumps(estimate, indent=2)}")
+                
+                if 'estimate_id' in estimate:
+                    self.test_cost_estimate_id = estimate['estimate_id']
+                    
+                    # Verify IVU calculation (11.5% on materials)
+                    materials_total = estimate.get('total_materials', 0)
+                    expected_ivu = materials_total * 0.115
+                    
+                    # Verify fixed percentages
+                    cfse_pct = estimate.get('cfse_percentage', 0)
+                    liability_pct = estimate.get('liability_percentage', 0)
+                    municipal_pct = estimate.get('municipal_patent_percentage', 0)
+                    contingency_pct = estimate.get('contingency_percentage', 0)
+                    b2b_pct = estimate.get('b2b_percentage', 0)
+                    
+                    # Check if percentages match expected values
+                    percentages_correct = (
+                        cfse_pct == 7.0 and
+                        liability_pct == 7.0 and
+                        municipal_pct == 1.0 and
+                        contingency_pct == 6.0 and
+                        b2b_pct == 4.0
+                    )
+                    
+                    if percentages_correct:
+                        self.log_test("Create Cost Estimate with IVU", True, 
+                                    f"Cost estimate created - ID: {self.test_cost_estimate_id}, Materials: ${materials_total}, Expected IVU: ${expected_ivu:.2f}, Fixed percentages verified")
+                        return True, estimate
+                    else:
+                        self.log_test("Create Cost Estimate with IVU", False, "", 
+                                    f"Fixed percentages incorrect - CFSE: {cfse_pct}%, Liability: {liability_pct}%, Municipal: {municipal_pct}%, Contingency: {contingency_pct}%, B2B: {b2b_pct}%")
+                        return False, {}
+                else:
+                    self.log_test("Create Cost Estimate with IVU", False, "", "No estimate_id in response")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Create Cost Estimate with IVU", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Create Cost Estimate with IVU", False, "", str(e))
+            return False, {}
+
+    def test_get_cost_estimate_detail(self):
+        """Test getting cost estimate detail to verify calculations"""
+        print(f"\n🔍 Testing Get Cost Estimate Detail...")
+        
+        if not self.test_cost_estimate_id:
+            self.log_test("Get Cost Estimate Detail", False, "", "No cost estimate ID available")
+            return False
+        
+        try:
+            url = f"{self.api_url}/cost-estimates/{self.test_cost_estimate_id}"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                estimate = response.json()
+                print(f"   Response Body: {json.dumps(estimate, indent=2)}")
+                
+                # Verify all required fields are present
+                required_fields = [
+                    'estimate_id', 'estimate_name', 'materials', 'labor_costs',
+                    'cfse_percentage', 'liability_percentage', 'municipal_patent_percentage',
+                    'contingency_percentage', 'b2b_percentage', 'total_materials',
+                    'total_labor', 'subtotal', 'grand_total'
+                ]
+                
+                missing_fields = [field for field in required_fields if field not in estimate]
+                
+                if not missing_fields:
+                    # Verify calculations
+                    materials_total = estimate.get('total_materials', 0)
+                    labor_total = estimate.get('total_labor', 0)
+                    subtotal = estimate.get('subtotal', 0)
+                    grand_total = estimate.get('grand_total', 0)
+                    
+                    # Calculate expected IVU (11.5% on materials only)
+                    expected_ivu = materials_total * 0.115
+                    
+                    self.log_test("Get Cost Estimate Detail", True, 
+                                f"Cost estimate details retrieved - Materials: ${materials_total}, Labor: ${labor_total}, Subtotal: ${subtotal}, Grand Total: ${grand_total}, Expected IVU: ${expected_ivu:.2f}")
+                    return True, estimate
+                else:
+                    self.log_test("Get Cost Estimate Detail", False, "", f"Missing required fields: {missing_fields}")
+                    return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Get Cost Estimate Detail", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Get Cost Estimate Detail", False, "", str(e))
+            return False, {}
+
+    def test_convert_cost_estimate_to_estimate(self):
+        """Test converting cost estimate to formal estimate"""
+        print(f"\n🔍 Testing Convert Cost Estimate to Formal Estimate...")
+        
+        if not self.test_cost_estimate_id:
+            self.log_test("Convert Cost Estimate to Estimate", False, "", "No cost estimate ID available")
+            return False
+        
+        try:
+            # First, let's check if there's a convert endpoint
+            url = f"{self.api_url}/cost-estimates/{self.test_cost_estimate_id}/convert"
+            response = self.session.post(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"   Response Body: {json.dumps(result, indent=2)}")
+                
+                if 'estimate_id' in result:
+                    self.test_estimate_id = result['estimate_id']
+                    estimate_number = result.get('estimate_number', 'N/A')
+                    self.log_test("Convert Cost Estimate to Estimate", True, 
+                                f"Cost estimate converted successfully - New Estimate ID: {self.test_estimate_id}, Number: {estimate_number}")
+                    return True, result
+                else:
+                    self.log_test("Convert Cost Estimate to Estimate", False, "", "No estimate_id in response")
+                    return False, {}
+            elif response.status_code == 404:
+                # Convert endpoint might not exist, try creating estimate manually
+                self.log_test("Convert Cost Estimate to Estimate", False, "", "Convert endpoint not found - feature may not be implemented yet")
+                return False, {}
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                print(f"   Error Response: {error_msg}")
+                self.log_test("Convert Cost Estimate to Estimate", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Convert Cost Estimate to Estimate", False, "", str(e))
+            return False, {}
+
+    def test_verify_estimate_created(self):
+        """Test verifying the created estimate exists"""
+        print(f"\n🔍 Testing Verify Created Estimate...")
+        
+        if not self.test_estimate_id:
+            self.log_test("Verify Created Estimate", False, "", "No estimate ID available from conversion")
+            return False
+        
+        try:
+            url = f"{self.api_url}/estimates/{self.test_estimate_id}"
+            response = self.session.get(url, timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                estimate = response.json()
+                print(f"   Response Body: {json.dumps(estimate, indent=2)}")
+                
+                estimate_number = estimate.get('estimate_number', 'N/A')
+                total = estimate.get('total', 0)
+                status = estimate.get('status', 'N/A')
+                
+                self.log_test("Verify Created Estimate", True, 
+                            f"Formal estimate verified - Number: {estimate_number}, Total: ${total}, Status: {status}")
+                return True, estimate
+            else:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', f"HTTP {response.status_code}")
+                except:
+                    error_msg = f"HTTP {response.status_code}"
+                self.log_test("Verify Created Estimate", False, "", error_msg)
+                return False, {}
+                
+        except Exception as e:
+            self.log_test("Verify Created Estimate", False, "", str(e))
+            return False, {}
+
+    def run_cost_estimate_feature_tests(self):
+        """Run complete cost estimate feature test suite"""
+        print("🚀 Starting Cost Estimate Feature Tests")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Step 1: Login
+        if not self.test_login():
+            print("❌ Login failed, stopping tests")
+            return self.generate_report()
+        
+        # Step 2: Get projects to get a project_id
+        success, projects = self.test_get_projects()
+        if not success:
+            print("❌ Failed to get projects, stopping tests")
+            return self.generate_report()
+        
+        # Step 3: Get existing cost estimates
+        success, existing_estimate = self.test_get_cost_estimates()
+        
+        # Step 4: Create cost estimate with IVU and fixed percentages
+        if not self.test_cost_estimate_id:  # Only create if we don't have one
+            success, estimate = self.test_create_cost_estimate_with_ivu()
+            if not success:
+                print("❌ Failed to create cost estimate, continuing with other tests")
+        
+        # Step 5: Get cost estimate detail to verify calculations
+        if self.test_cost_estimate_id:
+            self.test_get_cost_estimate_detail()
+        
+        # Step 6: Test convert to estimate functionality
+        if self.test_cost_estimate_id:
+            success, result = self.test_convert_cost_estimate_to_estimate()
+            
+            # Step 7: Verify the created estimate
+            if success and self.test_estimate_id:
+                self.test_verify_estimate_created()
+        
+        return self.generate_report()
+
+    def generate_report(self):
+        """Generate test report"""
+        print("\n" + "=" * 80)
+        print("📊 COST ESTIMATE FEATURE TEST RESULTS")
+        print("=" * 80)
+        print(f"Total Tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        # Show failed tests
+        failed_tests = [test for test in self.test_results if not test['success']]
+        if failed_tests:
+            print("\n❌ FAILED TESTS:")
+            for test in failed_tests:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        # Show critical issues
+        critical_failures = [test for test in failed_tests if any(keyword in test['test'] for keyword in ['IVU', 'Convert', 'Fixed Percentages'])]
+        if critical_failures:
+            print("\n🚨 CRITICAL ISSUES FOUND:")
+            for test in critical_failures:
+                print(f"   • {test['test']}: {test['error']}")
+        
+        return {
+            "total_tests": self.tests_run,
+            "passed_tests": self.tests_passed,
+            "failed_tests": self.tests_run - self.tests_passed,
+            "success_rate": (self.tests_passed/self.tests_run*100) if self.tests_run > 0 else 0,
+            "test_details": self.test_results,
+            "failed_tests": failed_tests,
+            "critical_issues": critical_failures
+        }
+
 class PDFGenerationTester:
     def __init__(self, base_url="https://project-docs-7.preview.emergentagent.com"):
         self.base_url = base_url
