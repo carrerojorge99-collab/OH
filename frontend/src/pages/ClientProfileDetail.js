@@ -908,7 +908,57 @@ const ClientProfileDetail = () => {
                 </div>
               </div>
 
-              {/* Price Breakdown Section */}
+              {/* Items - Task Format */}
+              <div>
+                <Label className="mb-2 block">Líneas del Estimado (opcional)</Label>
+                <div className="space-y-2">
+                  {estimateForm.items.map((item, idx) => (
+                    <div key={idx} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-slate-600">Task #{idx + 1}</span>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                      <Textarea 
+                        placeholder="Descripción del task / Scope of Work..." 
+                        className="min-h-[80px]"
+                        value={item.description}
+                        onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs">Cantidad</Label>
+                          <Input 
+                            type="number" 
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Precio Unit.</Label>
+                          <Input 
+                            type="number" 
+                            value={item.unit_price}
+                            onChange={(e) => handleItemChange(idx, 'unit_price', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Total</Label>
+                          <div className="h-9 flex items-center font-mono font-bold text-blue-600">
+                            ${formatCurrency(parseFloat(item.amount) || 0)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button type="button" variant="outline" onClick={addItem} className="mt-2 w-full">
+                  <Plus className="w-4 h-4 mr-1" /> Agregar Task
+                </Button>
+              </div>
+
+              {/* Price Breakdown Section - Below Tasks */}
               <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
                 <p className="font-semibold text-orange-800 mb-3">Price Breakdown</p>
                 <div className="grid grid-cols-3 gap-4">
@@ -963,56 +1013,6 @@ const ClientProfileDetail = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Items - Task Format */}
-              <div>
-                <Label className="mb-2 block">Líneas del Estimado (opcional)</Label>
-                <div className="space-y-2">
-                  {estimateForm.items.map((item, idx) => (
-                    <div key={idx} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-slate-600">Task #{idx + 1}</span>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                      <Textarea 
-                        placeholder="Descripción del task / Scope of Work..." 
-                        className="min-h-[80px]"
-                        value={item.description}
-                        onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
-                      />
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <Label className="text-xs">Cantidad</Label>
-                          <Input 
-                            type="number" 
-                            value={item.quantity}
-                            onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Precio Unit.</Label>
-                          <Input 
-                            type="number" 
-                            value={item.unit_price}
-                            onChange={(e) => handleItemChange(idx, 'unit_price', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Total</Label>
-                          <div className="h-9 flex items-center font-mono font-bold text-blue-600">
-                            ${formatCurrency(parseFloat(item.amount) || 0)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button type="button" variant="outline" onClick={addItem} className="mt-2 w-full">
-                  <Plus className="w-4 h-4 mr-1" /> Agregar Task
-                </Button>
               </div>
 
               {/* Totals */}
