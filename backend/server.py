@@ -7151,7 +7151,26 @@ async def get_audit_logs(
         query["entity_type"] = entity_type
     
     logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
-    return [AuditLog(**log) for log in logs]
+    
+    # Clean up any corrupted data before returning
+    clean_logs = []
+    for log in logs:
+        # Fix entity_name if it's not a string
+        if not isinstance(log.get('entity_name'), str):
+            if isinstance(log.get('entity_name'), dict):
+                # Extract meaningful info from dict or use default
+                log['details'] = log.get('details') or log.get('entity_name')
+                log['entity_name'] = "N/A"
+            else:
+                log['entity_name'] = str(log.get('entity_name', 'N/A'))
+        
+        try:
+            clean_logs.append(AuditLog(**log))
+        except Exception:
+            # Skip invalid entries
+            continue
+    
+    return clean_logs
 
 class ClearAuditLogsRequest(BaseModel):
     password: str
