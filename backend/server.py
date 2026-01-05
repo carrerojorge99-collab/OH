@@ -2097,9 +2097,11 @@ async def clock_out(
     session_token: Optional[str] = Cookie(None)
 ):
     user = await get_current_user(request, session_token)
+    print(f"🔍 Clock OUT - User: {user.user_id} ({user.name})")
     
     # Validate location data (mandatory)
     if latitude is None or longitude is None:
+        print(f"❌ Clock OUT - Location missing: lat={latitude}, lon={longitude}")
         raise HTTPException(
             status_code=400, 
             detail="La ubicación GPS es obligatoria para ponchar. Por favor, permite el acceso a tu ubicación."
@@ -2111,11 +2113,31 @@ async def clock_out(
         "status": "active"
     }, {"_id": 0})
     
+    print(f"🔍 Clock OUT - Active clock found: {active_clock is not None}")
+    if active_clock:
+        print(f"🔍 Clock OUT - Clock ID: {active_clock.get('clock_id')}, clock_in: {active_clock.get('clock_in')}, is_manual: {active_clock.get('is_manual')}")
+    
     if not active_clock:
+        # Debug: list all active clocks for this user
+        all_active = await db.clock_entries.find({"user_id": user.user_id}).to_list(10)
+        print(f"🔍 Clock OUT - All clocks for user: {len(all_active)}")
+        for c in all_active:
+            print(f"   - clock_id: {c.get('clock_id')}, status: {c.get('status')}, clock_in: {c.get('clock_in')}")
         raise HTTPException(status_code=400, detail="No tienes un ponche activo")
     
-    # Calculate hours worked
-    clock_in_time = datetime.fromisoformat(active_clock['clock_in'])
+    # Calculate hours worked - handle both timezone-aware and naive datetime strings
+    try:
+        clock_in_str = active_clock['clock_in']
+        # Handle manual entries that might not have timezone info
+        if '+' not in clock_in_str and 'Z' not in clock_in_str and len(clock_in_str) <= 19:
+            # Naive datetime string like "2026-01-05T08:00:00" - assume Puerto Rico timezone
+            clock_in_time = datetime.fromisoformat(clock_in_str).replace(tzinfo=PUERTO_RICO_TZ)
+        else:
+            clock_in_time = datetime.fromisoformat(clock_in_str)
+        print(f"✅ Clock OUT - Parsed clock_in_time: {clock_in_time}")
+    except Exception as e:
+        print(f"❌ Clock OUT - Error parsing clock_in: {active_clock['clock_in']} - {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error procesando hora de entrada: {str(e)}")
     # Usar zona horaria de Puerto Rico en lugar de UTC
     clock_out_time = datetime.now(PUERTO_RICO_TZ)
     hours_worked = (clock_out_time - clock_in_time).total_seconds() / 3600
