@@ -1162,6 +1162,15 @@ const Invoices = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setPreviewInvoice(invoice)}
+                        title="Vista Previa"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Preview
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => exportToPDF(invoice)}
                         title="Descargar PDF"
                       >
