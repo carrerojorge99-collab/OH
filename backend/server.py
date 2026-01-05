@@ -576,6 +576,7 @@ class Invoice(BaseModel):
     status: str  # draft, sent, paid, overdue, partial
     notes: Optional[str] = None
     terms: Optional[str] = None
+    price_breakdown: Optional[dict] = None  # {material_equipment: float, labor: float, total: float}
     created_by: str
     created_at: str
     due_date: Optional[str] = None
