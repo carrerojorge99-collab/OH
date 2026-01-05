@@ -5348,6 +5348,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 async def upload_document(
     project_id: str,
     file: UploadFile = File(...),
+    folder_id: Optional[str] = None,
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
@@ -5360,6 +5361,15 @@ async def upload_document(
     # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
     if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
+    
+    # Validate folder if provided
+    if folder_id:
+        folder = await db.document_folders.find_one({
+            "folder_id": folder_id,
+            "project_id": project_id
+        })
+        if not folder:
+            raise HTTPException(status_code=404, detail="Carpeta no encontrada")
     
     max_size = 10 * 1024 * 1024
     file_content = await file.read()
@@ -5379,6 +5389,7 @@ async def upload_document(
     document_doc = {
         "document_id": document_id,
         "project_id": project_id,
+        "folder_id": folder_id,
         "filename": filename,
         "original_filename": file.filename,
         "file_size": len(file_content),
