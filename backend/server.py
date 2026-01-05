@@ -6422,6 +6422,7 @@ async def create_estimate(
 async def get_estimates(
     status: Optional[str] = None,
     project_id: Optional[str] = None,
+    unassigned: Optional[bool] = None,
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
@@ -6432,9 +6433,49 @@ async def get_estimates(
         query["status"] = status
     if project_id:
         query["project_id"] = project_id
+    if unassigned:
+        query["client_profile_id"] = {"$in": [None, ""]}
     
     estimates = await db.estimates.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return [Estimate(**e) for e in estimates]
+
+@api_router.put("/estimates/{estimate_id}/assign")
+async def assign_estimate_to_client(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    client_profile_id = body.get("client_profile_id")
+    
+    if not client_profile_id:
+        raise HTTPException(status_code=400, detail="client_profile_id es requerido")
+    
+    # Verify client exists
+    client = await db.client_profiles.find_one({"profile_id": client_profile_id}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    # Update estimate
+    result = await db.estimates.update_one(
+        {"estimate_id": estimate_id},
+        {"$set": {
+            "client_profile_id": client_profile_id,
+            "client_company": client.get("company_name"),
+            "client_name": client.get("contact_name"),
+            "client_email": client.get("email"),
+            "client_phone": client.get("phone"),
+            "client_address": client.get("address")
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Estimado no encontrado")
+    
+    await log_audit(user.user_id, user.name, "update", "estimate", estimate_id, None, {"action": "assigned_to_client", "client_profile_id": client_profile_id})
+    
+    return {"message": "Estimado asignado exitosamente"}
 
 @api_router.get("/estimates/{estimate_id}", response_model=Estimate)
 async def get_estimate(
