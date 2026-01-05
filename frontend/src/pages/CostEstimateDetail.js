@@ -833,8 +833,7 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
-                  {/* Breakdown: Material/Equipment | Labor | Total - MOVED HERE before TOTAL FINAL */}
-                  <div className="mt-6 p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 rounded-lg font-bold text-xl mt-6">
                     <div>TOTAL FINAL</div>
                     <div className="text-right text-blue-600">
                       ${totals.grandTotal.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
