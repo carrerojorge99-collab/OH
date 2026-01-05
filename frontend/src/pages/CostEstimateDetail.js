@@ -319,7 +319,7 @@ const CostEstimateDetail = () => {
       const response = await api.post(`/cost-estimates/${estimateId}/convert-to-estimate`, {}, { withCredentials: true });
       
       toast.success('Estimado creado exitosamente');
-      navigate(`/estimates/${response.data.estimate_id}`);
+      navigate(`/estimates-legacy?estimate_id=${response.data.estimate_id}`);
     } catch (error) {
       console.error('Error converting to estimate:', error);
       toast.error(error.response?.data?.detail || 'Error al convertir a estimado');
