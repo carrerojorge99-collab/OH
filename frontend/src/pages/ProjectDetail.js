@@ -3999,7 +3999,22 @@ const ProjectDetail = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`relative transition-all duration-200 ${isDragging ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-lg' : ''}`}
+              >
+                {/* Drag overlay */}
+                {isDragging && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-blue-50/90 z-10 rounded-lg pointer-events-none">
+                    <div className="text-center">
+                      <Upload className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+                      <p className="text-blue-600 font-medium">Suelta los archivos aquí</p>
+                      <p className="text-blue-500 text-sm">para subirlos a {getCurrentFolderName()}</p>
+                    </div>
+                  </div>
+                )}
                 {/* Folders */}
                 {getCurrentFolders().length > 0 && (
                   <div className="mb-6">
