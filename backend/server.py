@@ -2131,7 +2131,8 @@ async def clock_out(
         # Handle manual entries that might not have timezone info
         if '+' not in clock_in_str and 'Z' not in clock_in_str and len(clock_in_str) <= 19:
             # Naive datetime string like "2026-01-05T08:00:00" - assume Puerto Rico timezone
-            clock_in_time = datetime.fromisoformat(clock_in_str).replace(tzinfo=PUERTO_RICO_TZ)
+            naive_dt = datetime.fromisoformat(clock_in_str)
+            clock_in_time = PUERTO_RICO_TZ.localize(naive_dt)
         else:
             clock_in_time = datetime.fromisoformat(clock_in_str)
         print(f"✅ Clock OUT - Parsed clock_in_time: {clock_in_time}")
