@@ -107,8 +107,12 @@ const Invoices = () => {
     discount_percent: 0,
     notes: '',
     terms: '',
-    custom_number: ''
+    custom_number: '',
+    price_breakdown: null  // {material_equipment, labor, total}
   });
+  
+  // Preview state
+  const [previewInvoice, setPreviewInvoice] = useState(null);
 
   const { nomenclatures, selectedNomenclature, generatedNumber, handleSelectNomenclature } = useNomenclature(
     (number) => setFormData(prev => ({ ...prev, custom_number: number }))
