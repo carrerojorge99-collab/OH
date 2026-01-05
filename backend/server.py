@@ -657,6 +657,8 @@ class Estimate(BaseModel):
     sent_date: Optional[str] = None
     approved_date: Optional[str] = None
     converted_invoice_id: Optional[str] = None
+    # Price Breakdown (from Cost Estimate)
+    price_breakdown: Optional[dict] = None  # {material_equipment: float, labor: float, total: float}
 
 # Purchase Order Models
 class PurchaseOrderItem(BaseModel):
