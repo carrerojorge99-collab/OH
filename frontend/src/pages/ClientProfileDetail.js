@@ -301,7 +301,8 @@ const ClientProfileDetail = () => {
         notes: estimateForm.notes,
         terms: estimateForm.terms,
         valid_until: estimateForm.valid_until,
-        custom_number: generatedNumber || estimateForm.custom_number
+        custom_number: generatedNumber || estimateForm.custom_number,
+        price_breakdown: estimateForm.price_breakdown
       };
 
       if (editingEstimate) {
