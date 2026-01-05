@@ -2367,6 +2367,7 @@ async def create_manual_clock_entry(
         "create",
         "clock_entry",
         clock_id,
+        f"Ponche manual - {target_user.get('name')}",
         {"manual_entry": True, "for_user": target_user.get('name'), "date": data.date}
     )
     
