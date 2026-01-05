@@ -397,27 +397,26 @@ const CostEstimateDetail = () => {
     const b2bOhsmsAmount = round2(afterContingency * (Number(b2bOhsmsPercentage) / 100));
     const afterB2bOhsms = round2(afterContingency + b2bOhsmsAmount);
     
-    // B2B OHSMS Labor - NEW FORMULA: Labor (from orange area breakdown) x 4% (fixed)
-    // This is calculated after all cascading, using the laborWithPercentages value
-    // We need to calculate labor proportion first
+    // B2B OHSMS Labor - FORMULA: Labor (from orange area breakdown) x 4% (fixed)
+    // Labor del Price Breakdown = (afterB2bOhsms * laborRatio) + cfseAmount
     const totalMaterialEquipment = round2(totalSubcontractors + totalMaterials + totalEquipment + totalTransportation + totalGC);
     const laborRatio = subtotal > 0 ? totalLabor / subtotal : 0;
     const matEquipRatio = subtotal > 0 ? totalMaterialEquipment / subtotal : 0;
     
-    // Labor portion after cascade (before B2B M.O.)
-    const laborPortionAfterCascade = round2(afterB2bOhsms * laborRatio);
+    // Labor del Price Breakdown (sin B2B M.O.) = proporción labor del cascade + CFSE
+    const laborForPriceBreakdown = round2((afterB2bOhsms * laborRatio) + cfseAmount);
     
-    // B2B OHSMS Labor = Labor (orange area) x 4% (fixed at 4%)
-    const b2bOhsmsLaborAmount = round2(laborPortionAfterCascade * (Number(b2bOhsmsLaborPercentage) / 100));
+    // B2B OHSMS Labor = Labor (del Price Breakdown) x 4%
+    const b2bOhsmsLaborAmount = round2(laborForPriceBreakdown * (Number(b2bOhsmsLaborPercentage) / 100));
     
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
     
-    // Labor with all percentages = (labor proportion of cascade total) + CFSE + B2B OHSMS Labor
-    const laborWithPercentages = round2((afterB2bOhsms * laborRatio) + cfseAmount + b2bOhsmsLaborAmount);
+    // Labor with all percentages = Labor del Price Breakdown (ya incluye CFSE, NO incluye B2B M.O.)
+    const laborWithPercentages = laborForPriceBreakdown;
     
-    // Material/Equipment with all percentages = grand total - labor with percentages
-    const matEquipWithPercentages = round2(grandTotal - laborWithPercentages);
+    // Material/Equipment with all percentages = grand total - labor with percentages - b2b ohsms labor
+    const matEquipWithPercentages = round2(grandTotal - laborWithPercentages - b2bOhsmsLaborAmount);
     
     // Calculate total of all percentage amounts
     const totalPercentageAmounts = round2(
