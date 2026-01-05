@@ -355,7 +355,12 @@ const ClientProfileDetail = () => {
         y += descLines.length * 5 + 6;
       }
       
-      // Price Breakdown Section (Orange Area)
+      // Items/Tasks table FIRST (if any)
+      if (estimate.items && estimate.items.length > 0 && estimate.items.some(item => item.description)) {
+        y = addTasksTable(doc, estimate.items, y + 4, 12); // font size 12
+      }
+      
+      // Price Breakdown Section (Orange Area) - AFTER Tasks, BEFORE Totals
       if (estimate.price_breakdown) {
         y += 4;
         // Header row
@@ -385,11 +390,6 @@ const ClientProfileDetail = () => {
         doc.text(`$${formatCurrency(estimate.price_breakdown.labor || 0)}`, 105, y + 8, { align: 'center' });
         doc.text(`$${formatCurrency(estimate.price_breakdown.total || 0)}`, 165, y + 8, { align: 'center' });
         y += 18;
-      }
-      
-      // Items table (if any)
-      if (estimate.items && estimate.items.length > 0 && estimate.items.some(item => item.description)) {
-        y = addTasksTable(doc, estimate.items, y + 4, 12); // font size 12
       }
       
       let taxDetails = null;
