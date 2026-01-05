@@ -72,6 +72,7 @@ const ClientProfileDetail = () => {
   const [nomenclatures, setNomenclatures] = useState([]);
   const [selectedNomenclature, setSelectedNomenclature] = useState(null);
   const [generatedNumber, setGeneratedNumber] = useState('');
+  const [previewEstimate, setPreviewEstimate] = useState(null);
   
   const [estimateForm, setEstimateForm] = useState({
     project_id: '',
