@@ -422,10 +422,26 @@ class ProjectLog(BaseModel):
     created_at: str
     updated_at: Optional[str] = None
 
+class DocumentFolder(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    folder_id: str
+    project_id: str
+    name: str
+    parent_folder_id: Optional[str] = None
+    created_by: str
+    created_by_name: str
+    created_at: str
+
+class DocumentFolderCreate(BaseModel):
+    project_id: str
+    name: str
+    parent_folder_id: Optional[str] = None
+
 class Document(BaseModel):
     model_config = ConfigDict(extra="ignore")
     document_id: str
     project_id: str
+    folder_id: Optional[str] = None
     filename: str
     original_filename: str
     file_size: int
