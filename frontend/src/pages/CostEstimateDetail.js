@@ -851,6 +851,19 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
+                  {/* IVU Section - below orange area */}
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 mt-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-blue-800">IVU (11.5%) - Solo Materiales</p>
+                        <p className="text-xs text-blue-600">Subtotal Materiales: ${totals.totalMaterials.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-blue-800">${totals.ivuAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg font-bold text-lg mt-4">
                     <div>SUBTOTAL</div>
                     <div className="text-right text-blue-600">
