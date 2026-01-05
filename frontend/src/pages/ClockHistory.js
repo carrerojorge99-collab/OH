@@ -531,7 +531,7 @@ const ClockHistory = () => {
                                   <span className="font-medium">Entrada:</span>
                                   <span className="font-mono">{moment(entry.clock_in).format('HH:mm:ss')}</span>
                                 </div>
-                                {(entry.clock_in_address || (entry.clock_in_latitude && entry.clock_in_longitude)) && (
+                                {(entry.clock_in_address || (entry.clock_in_latitude !== 0 && entry.clock_in_latitude !== null && entry.clock_in_longitude !== 0 && entry.clock_in_longitude !== null)) && (
                                   <div className="flex items-center gap-2 text-xs text-slate-600 ml-6">
                                     <MapPin className="w-3 h-3 text-green-500" />
                                     {entry.clock_in_address ? (
@@ -539,7 +539,7 @@ const ClockHistory = () => {
                                     ) : (
                                       <span>{entry.clock_in_latitude?.toFixed(4)}, {entry.clock_in_longitude?.toFixed(4)}</span>
                                     )}
-                                    {entry.clock_in_latitude && entry.clock_in_longitude && (
+                                    {entry.clock_in_latitude !== 0 && entry.clock_in_latitude !== null && entry.clock_in_longitude !== 0 && entry.clock_in_longitude !== null && (
                                       <a
                                         href={`https://www.google.com/maps?q=${entry.clock_in_latitude},${entry.clock_in_longitude}`}
                                         target="_blank"
