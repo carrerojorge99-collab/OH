@@ -8037,6 +8037,13 @@ async def convert_cost_estimate_to_estimate(
         }
     ]
     
+    # Price Breakdown data
+    price_breakdown_data = {
+        "material_equipment": mat_equip_with_percentages,
+        "labor": labor_with_percentages,
+        "total": grand_total
+    }
+    
     # Generate estimate number
     company_settings = await db.company_settings.find_one({}, {"_id": 0})
     next_num = company_settings.get("next_estimate_number", 1) if company_settings else 1
