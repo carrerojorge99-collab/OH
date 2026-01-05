@@ -987,7 +987,11 @@ const ProjectDetail = () => {
     formData.append('file', file);
 
     try {
-      await api.post(`/documents/upload?project_id=${projectId}`, formData, {
+      let url = `/documents/upload?project_id=${projectId}`;
+      if (currentFolderId) {
+        url += `&folder_id=${currentFolderId}`;
+      }
+      await api.post(url, formData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -1033,6 +1037,108 @@ const ProjectDetail = () => {
     } catch (error) {
       toast.error('Error al eliminar documento');
     }
+  };
+
+  // Folder management functions
+  const loadFolders = async () => {
+    try {
+      const res = await api.get(`/document-folders?project_id=${projectId}`, { withCredentials: true });
+      setDocumentFolders(res.data);
+    } catch (error) {
+      console.error('Error loading folders:', error);
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) {
+      toast.error('Ingresa un nombre para la carpeta');
+      return;
+    }
+    try {
+      await api.post('/document-folders', {
+        project_id: projectId,
+        name: newFolderName.trim(),
+        parent_folder_id: currentFolderId
+      }, { withCredentials: true });
+      toast.success('Carpeta creada exitosamente');
+      setNewFolderName('');
+      setFolderDialogOpen(false);
+      loadFolders();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al crear carpeta');
+    }
+  };
+
+  const handleDeleteFolder = async (folderId) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta carpeta? Los documentos se moverán a la raíz.')) return;
+    try {
+      await api.delete(`/document-folders/${folderId}`, { withCredentials: true });
+      toast.success('Carpeta eliminada');
+      loadFolders();
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al eliminar carpeta');
+    }
+  };
+
+  const handleInitializeDefaultFolders = async () => {
+    try {
+      const res = await api.post(`/document-folders/initialize-defaults/${projectId}`, {}, { withCredentials: true });
+      toast.success(res.data.message);
+      loadFolders();
+    } catch (error) {
+      toast.error('Error al crear carpetas predeterminadas');
+    }
+  };
+
+  const navigateToFolder = (folderId, folderName) => {
+    if (folderId) {
+      setFolderPath([...folderPath, { id: currentFolderId, name: folderPath.length === 0 ? 'Raíz' : folderPath[folderPath.length - 1]?.name }]);
+    }
+    setCurrentFolderId(folderId);
+  };
+
+  const navigateToRoot = () => {
+    setCurrentFolderId(null);
+    setFolderPath([]);
+  };
+
+  const navigateToBreadcrumb = (index) => {
+    if (index === -1) {
+      navigateToRoot();
+    } else {
+      const newPath = folderPath.slice(0, index + 1);
+      setCurrentFolderId(newPath[newPath.length - 1]?.id || null);
+      setFolderPath(newPath.slice(0, -1));
+    }
+  };
+
+  const handleMoveDocument = async (targetFolderId) => {
+    if (!docToMove) return;
+    try {
+      await api.put(`/documents/${docToMove}/move`, { folder_id: targetFolderId }, { withCredentials: true });
+      toast.success('Documento movido exitosamente');
+      setMoveDocDialogOpen(false);
+      setDocToMove(null);
+      loadProjectData();
+    } catch (error) {
+      toast.error('Error al mover documento');
+    }
+  };
+
+  // Get folders and documents for current level
+  const getCurrentFolders = () => {
+    return documentFolders.filter(f => f.parent_folder_id === currentFolderId);
+  };
+
+  const getCurrentDocuments = () => {
+    return documents.filter(d => d.folder_id === currentFolderId);
+  };
+
+  const getCurrentFolderName = () => {
+    if (!currentFolderId) return 'Raíz';
+    const folder = documentFolders.find(f => f.folder_id === currentFolderId);
+    return folder?.name || 'Carpeta';
   };
 
   // Team management functions
