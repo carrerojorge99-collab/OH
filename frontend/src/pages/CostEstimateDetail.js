@@ -631,10 +631,10 @@ const CostEstimateDetail = () => {
 
                   <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
-                      <p className="font-medium">Materiales</p>
+                      <p className="font-medium">Materiales (incluye IVU 11.5%)</p>
                     </div>
                     <div className="text-right text-blue-600 font-semibold">
-                      ${totals.totalMaterials.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      ${(totals.totalMaterials + totals.ivuAmount).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
