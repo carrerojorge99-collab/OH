@@ -778,7 +778,7 @@ const ClockHistory = () => {
               <div className="space-y-2">
                 <Label htmlFor="manual_clock_out" className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-red-600" />
-                  Hora Salida
+                  Hora Salida *
                 </Label>
                 <Input
                   id="manual_clock_out"
@@ -786,19 +786,18 @@ const ClockHistory = () => {
                   value={manualForm.clock_out_time}
                   onChange={(e) => setManualForm({...manualForm, clock_out_time: e.target.value})}
                   className="font-mono"
-                  placeholder="Opcional"
                 />
               </div>
             </div>
             
             {manualForm.clock_in_time && manualForm.clock_out_time && (
-              <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
-                <strong>Horas calculadas:</strong>{' '}
+              <div className="bg-green-50 p-3 rounded-lg text-sm text-green-700 border border-green-200">
+                <strong>✓ Día completo:</strong>{' '}
                 {(() => {
                   const start = moment(manualForm.clock_in_time, 'HH:mm');
                   const end = moment(manualForm.clock_out_time, 'HH:mm');
                   const diff = end.diff(start, 'hours', true);
-                  return diff > 0 ? `${diff.toFixed(2)} horas` : 'Hora inválida';
+                  return diff > 0 ? `${diff.toFixed(2)} horas trabajadas` : 'Hora inválida';
                 })()}
               </div>
             )}
