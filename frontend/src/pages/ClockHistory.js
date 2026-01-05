@@ -560,7 +560,7 @@ const ClockHistory = () => {
                                     <span className="font-medium">Salida:</span>
                                     <span className="font-mono">{moment(entry.clock_out).format('HH:mm:ss')}</span>
                                   </div>
-                                  {(entry.clock_out_address || (entry.clock_out_latitude && entry.clock_out_longitude)) && (
+                                  {(entry.clock_out_address || (entry.clock_out_latitude !== 0 && entry.clock_out_latitude !== null && entry.clock_out_longitude !== 0 && entry.clock_out_longitude !== null)) && (
                                     <div className="flex items-center gap-2 text-xs text-slate-600 ml-6">
                                       <MapPin className="w-3 h-3 text-red-500" />
                                       {entry.clock_out_address ? (
@@ -568,7 +568,7 @@ const ClockHistory = () => {
                                       ) : (
                                         <span>{entry.clock_out_latitude?.toFixed(4)}, {entry.clock_out_longitude?.toFixed(4)}</span>
                                       )}
-                                      {entry.clock_out_latitude && entry.clock_out_longitude && (
+                                      {entry.clock_out_latitude !== 0 && entry.clock_out_latitude !== null && entry.clock_out_longitude !== 0 && entry.clock_out_longitude !== null && (
                                         <a
                                           href={`https://www.google.com/maps?q=${entry.clock_out_latitude},${entry.clock_out_longitude}`}
                                           target="_blank"
