@@ -1,70 +1,98 @@
 <analysis>**original_problem_statement:**
-The user requested to add a folder management system within the Documents section of each project.
+The user initiated a series of requests to overhaul the Cost Estimation and Formal Estimate features.
 
-PRODUCT REQUIREMENTS:
-1.  Ability to create folders and sub-folders (nested structure).
-2.  A predefined set of folders should be created on demand: Safety, PO, Estimados, Facturas, RFI, and RFC.
-3.  Users should also be able to create their own custom folders.
-4.  Ability to upload documents into specific folders.
+**Initial Request (Cost Estimates):**
+1.  **IVU on Materials**: Automatically calculate and add IVU (11.5% tax) to materials.
+2.  **Formula Change**: Modify the B2B M.O. calculation to be .
+3.  **Fixed Percentages**: Set the following percentages as fixed and non-editable: Municipal (1%), CFSE (7%), Liability (7%), Contingency (6%).
+4.  **Layout Reorganization**: The final layout for the summary section should be:
+    *   Cost Items (Labor, Materials, etc.)
+    *   SUBTOTAL
+    *   Percentage-based calculations
+    *   Price Breakdown (the orange summary box)
+    *   IVU (applied to materials)
+    *   GRAND TOTAL
+5.  **Conversion to Estimate**: Add a button to convert a Cost Estimate into a formal Estimate.
+
+**Subsequent Requests (Formal Estimates):**
+1.  **Unassigned Estimates**: On the  page, create a section to display estimates not yet assigned to a client, with functionality to assign them.
+2.  **Price Breakdown**: When a cost estimate is converted, it should create a formal estimate containing a separate, editable Price Breakdown section with fields for  and .
+3.  **Client Info**: Add editable fields for , , , and  to formal estimates.
+4.  **PDF Generation**:
+    *   The generated PDF for estimates must include the Price Breakdown section.
+    *   The font size in the PDF should be 12pt.
+    *   Terms & Conditions must always start on a new, second page.
+5.  **Estimate Preview**: Add a Preview button to generate and view the PDF without downloading it.
+6.  **Form Layout**: In the estimate editing form, the Price Breakdown section must be positioned below the Tasks/Items list.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-The agent has completed the full-stack implementation of the folder management system for project documents.
--   **Backend ()**: New  model and API endpoints for creating, retrieving, and deleting folders have been added. The  model and the file upload endpoint were updated to support assigning documents to folders. Logic to create a set of default folders has also been implemented.
--   **Frontend ()**: The Documents tab has been completely redesigned to support folder navigation. It now includes a breadcrumb for displaying the current path, a list of folders and documents, and buttons to create default folders, new custom folders, and upload documents. The agent performed basic manual testing and confirmed that folder creation, display, and navigation into subfolders are working.
+The agent has implemented a significant overhaul of the cost estimate and formal estimate flows based on iterative user feedback.
+-   **Cost Estimates ()**: The page now includes automatic IVU calculation, fixed percentage fields, and a reorganized summary layout. A Convert to Estimate flow has been implemented, which requires selecting a project before conversion.
+-   **Formal Estimates (, )**:
+    -   A new section for Unassigned Estimates exists on the  page, allowing them to be assigned to clients.
+    -   The estimate editing form now includes editable fields for client contact information and a separate, editable Price Breakdown section.
+    -   PDF generation () for estimates has been updated to include the Price Breakdown, use a 12pt font, and place terms and conditions on a second page.
+    -   A Preview button and modal are implemented to view the generated PDF.
+-   **Backend ()**: New endpoints were created to convert cost estimates, fetch unassigned estimates, and assign them to clients. The  database model was updated to store client contact info and the  data.
 
 **Last working item**:
--   **Last item agent was working**: Completing the implementation of the folder management feature for project documents. The agent successfully built the UI, integrated the backend, and fixed a minor bug related to the breadcrumb navigation.
--   **Status**: USER VERIFICATION PENDING
+-   **Last item agent was working**: The agent rearranged the UI of the estimate editing dialog in . As per the user's request, the Price Breakdown section was moved to appear *below* the list of editable estimate items (tasks).
+-   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: N/A. The user has explicitly stated they will perform the testing. The next agent should await user feedback.
+-   **Which testing method agent to use?**: screenshot tool. The agent should take a screenshot of the estimate editing dialog to verify the new layout of the Price Breakdown section before informing the user.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: User Verification for Folder System (P0)
--   **Issue 2**: Deployment Failure Verification (P1)
--   **Issue 3**: RH Profile Save User Verification (P2)
--   **Issue 4**: Nomenclature selector does not display options (P3)
--   **Issue 5**: Responsive Layout on Settings, MyRequests, and MyProfile Pages (P4)
+-   **Issue 1**: Finalize Estimate Form Layout (P0)
+-   **Issue 2**: Nomenclature selector does not display options (P1)
+-   **Issue 3**: User Verification for Folder System (P2)
+-   **Issue 4**: Responsive Layout on Settings, MyRequests, and MyProfile Pages (P3)
+-   **Issue 5**: Deployment Failure Verification (P4)
+-   **Issue 6**: RH Profile Save User Verification (P4)
 
 **Issues Detail**:
--   **Issue 1: User Verification for Folder System**
-    -   **Description**: The agent has finished implementing the folder feature. The user has requested to perform the tests themselves. The agent must wait for the user's feedback or approval.
-    -   **Attempted fixes**: N/A
-    -   **Next debug checklist**: Await user feedback. If bugs are reported, analyze the user's report and debug accordingly.
-    -   **Why fix this issue and what will be achieved with the fix?**: Completes the new folder feature as requested by the user.
+-   **Issue 1: Finalize Estimate Form Layout**
+    -   **Description**: The agent moved the Price Breakdown section in the estimate editing dialog. This change needs to be visually verified and then confirmed with the user.
+    -   **Attempted fixes**: The layout was modified using .
+    -   **Next debug checklist**:
+        1.  Use the  tool to capture an image of the estimate editing dialog ().
+        2.  Verify the Price Breakdown section appears below the Items/Tasks section.
+        3.  Inform the user of the completion and await feedback.
+    -   **Why fix this issue and what will be achieved with the fix?**: Fulfills the user's latest layout request for the estimate form.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Blocked on other issue**: None
+
+-   **Issue 2: Nomenclature selector does not display options**
+    -   **Description**: A high-priority, recurring bug where newly created nomenclatures do not appear in dropdown selectors across the application. This issue was pending from the previous fork and has not been addressed.
+    -   **Next debug checklist**: Inspect the  endpoint response. Debug frontend state management in components that use this data (e.g., ).
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on other issue**: None
+
+-   **Issue 3: User Verification for Folder System**
+    -   **Description**: The folder management feature implemented in the previous session is still pending user testing and approval.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: both
     -   **Blocked on other issue**: None
 
--   **Issue 2: Deployment Failure Verification**
-    -   **Description**: From a previous session, the agent fixed two critical deployment blockers ( backend crash and  frontend build failure). The user needs to trigger a new deployment to verify the fix.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y
-    -   **Blocked on other issue**: None
-
--   **Issue 3: RH Profile Save User Verification**
-    -   **Description**: From a previous session, a fix was implemented for a bug preventing the HR role from saving employee profiles. This is pending user verification after a successful deployment.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y
-    -   **Blocked on other issue**: Issue 2
-
--   **Issue 4: Nomenclature selector does not display options**
-    -   **Description**: A high-priority, recurring bug where newly created nomenclatures do not appear in dropdown selectors.
-    -   **Next debug checklist**: Inspect the  endpoint response. Debug the frontend state management in components that use .
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on other issue**: None
-
--   **Issue 5: Responsive Layout on Settings, MyRequests, and MyProfile Pages**
-    -   **Description**: UI elements overlap on mobile screens for , , and .
+-   **Issue 4: Responsive Layout on Settings, MyRequests, and MyProfile Pages**
+    -   **Description**: UI elements overlap on mobile screens for , , and . This was not addressed.
     -   **Next debug checklist**: Use the screenshot tool with a mobile viewport to inspect the pages and apply responsive Tailwind CSS classes.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Blocked on other issue**: None
+
+-   **Issue 5 & 6**: Deployment Failure & RH Profile Save Verifications
+    -   **Description**: Two fixes from a previous session (backend crash on password verify, frontend canvas build failure, HR profile saving) are pending user verification via a new deployment.
+    -   **Status**: USER VERIFICATION PENDING
+    -   **Is recurring issue?**: Y
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
@@ -72,10 +100,8 @@ The agent has completed the full-stack implementation of the folder management s
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0 - Implement Move Document UI**: The backend endpoint and frontend logic () exist, but there is no UI button/menu to trigger moving a document between folders.
-    -   **P1 - Await user confirmation on the estimate migration process**: From a previous session, the user needs to confirm the implemented migration approach.
-    -   **P2 - Complete Task Notification Feature**: The backend email template exists, but the trigger logic in  needs to be implemented.
-    -   **P3 - Await User Verification**: For Delete Change Order and Attendee Tracking features from a previous session.
+    -   **P0 - Implement Changes for Invoices**: The user requested that the same changes made for estimates (Price Breakdown in PDF, Preview button, Font size 12, Terms & Conditions on 2nd page) be applied to **Invoices**.
+    -   **P1 - Implement Move Document UI**: (From previous fork) The backend logic exists, but no UI is present to move documents between folders in the Project Documents section.
 -   **Future Tasks**:
     -   Implement Closure Prediction for projects.
     -   Implement Alerts with blocking actions.
@@ -84,43 +110,39 @@ The agent has completed the full-stack implementation of the folder management s
     -   Refactor monolithic files: , , .
 
 **Completed work in this session**
--   **Folder Management System for Project Documents (Done, pending verification)**:
-    -   **Backend ()**: Added  model, CRUD API endpoints for folders, and updated the  model and file upload logic to be folder-aware.
-    -   **Frontend ()**: Completely rebuilt the Documents tab UI with folder hierarchy, document lists, breadcrumb navigation, and creation/upload functionality.
-    -   **Bug Fix**: Fixed a bug where the navigation breadcrumb was duplicating Raíz when entering a folder.
+-   **Cost Estimate Overhaul (Done)**: Implemented automatic IVU, fixed percentages, new calculation formulas, and a reorganized layout in .
+-   **Cost-to-Formal Estimate Conversion (Done)**: Created the full-stack flow to convert a Cost Estimate into a formal Estimate, including project selection logic.
+-   **Unassigned Estimates Area (Done)**: Implemented a new UI section and backend logic to manage and assign estimates that do not have a client.
+-   **Editable Price Breakdown in Estimates (Done)**: Implemented a separate, editable Price Breakdown section within the formal estimate form.
+-   **Estimate PDF Generation and Preview (Done)**: Enhanced PDF creation to include the Price Breakdown, increased font size, and ensured terms are on page 2. Added a Preview modal.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Nomenclature selector does not display options**
-    -   **Debug checklist**: Verify  endpoint and debug frontend state management.
-    -   **Why to solve this issue and what will be achieved with this?**: Restores a core categorization feature.
-    -   **Should Test frontend/backend/both after fix**: both
-    -   **Is recurring issue?**: Y
--   **Issue 2: Responsive Layout on Settings, MyRequests, and MyProfile Pages**
-    -   **Debug checklist**: Use the screenshot tool to identify and fix layout issues on mobile.
-    -   **Why to solve this issue and what will be achieved with this?**: Improves mobile usability.
-    -   **Should Test frontend/backend/both after fix?**: frontend
-    -   **Is recurring issue?**: Y
+-   **Issue 1: Nomenclature selector does not display options**: High-priority recurring bug.
+-   **Issue 2: Responsive Layout on Settings, MyRequests, and MyProfile Pages**: UI overlap on mobile.
 
 **Known issue recurrence from previous fork**
--   **Nomenclature Selector**: This is a long-standing, unresolved issue. The recurrence count is over 10. Status is .
+-   **Nomenclature Selector**: This is a long-standing, unresolved issue. The recurrence count is high. Status is .
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Full-Stack Feature Development**: Implemented the folder feature from the backend database model to the frontend React UI.
--   **API Design**: Designed and implemented new RESTful endpoints for folder management.
--   **React State and UI Logic**: Used  and  to manage folder/document data, UI state, and navigation. Built a recursive rendering component for the folder structure.
--   **Debugging**: Diagnosed and fixed a rendering issue where created folders were not appearing on the UI. Fixed a logic bug in the breadcrumb navigation.
+-   **Iterative Full-Stack Development**: Rapidly implementing user feedback across the stack.
+-   **Complex React Forms & State**: Managing complex, multi-section forms with dynamic calculations and conditional rendering (, ).
+-   **Client-Side PDF Generation**: Using  and  to create highly customized PDFs, including adding pages, setting fonts, and complex layouts.
+-   **FastAPI Backend Development**: Creating new REST endpoints, modifying Pydantic models, and altering database logic to support new frontend features.
 
 **key DB schema**
--   **DocumentFolder**:
-    -    (Primary Key)
+-   **Estimate**:
     -   
     -   
-    -    (Self-referencing for nesting)
--   **Document**:
-    -    (Foreign Key to DocumentFolder)
+    -   
+    -   
+    -   **** (NEW)
+    -   **** (NEW)
+    -   **** (NEW)
+    -   **** (NEW)
+    -   **** (NEW) - Stores 
 
 **changes in tech stack**
 -   None.
@@ -128,35 +150,44 @@ The agent has completed the full-stack implementation of the folder management s
 **All files of reference**
 -   
 -   
+-   
+-   
+-    (for routing reference)
 
 **Areas that need refactoring**:
--   ****: This file is critically oversized. The entire Documents tab implementation should be extracted into a separate, dedicated component to improve maintainability.
--   ****: Remains a large monolithic file. Folder-related routes should be moved to a separate router file.
+-   ****: This file has become extremely large and complex. The logic for managing and editing Estimates (including the form dialog, PDF generation, and state) should be extracted into a dedicated, reusable component.
+-   ****: The file continues to grow. Estimate-related routes should be moved to a separate FastAPI router file.
 
 **key api endpoints**
--   
--   
--   
--   
--    (Modified to accept )
+-    (NEW)
+-    (NEW functionality on existing endpoint)
+-    (NEW)
+-    (MODIFIED to accept  and client contact fields)
 
 **Critical Info for New Agent**
-1.  **AWAIT USER VERIFICATION**: Your first priority is to wait for the user's feedback on the newly implemented folder system. The user explicitly stated, **no hagas pruebas yo las hago** (don't do tests, I'll do them). **DO NOT** run any tests on this feature until the user reports a problem.
-2.  **INCOMPLETE FEATURE**: The ability to **move** documents between folders is not fully implemented. The frontend logic exists (), but there is no UI element (button/menu) to trigger it. This should be the first upcoming task.
-3.  **PENDING ISSUES**: Several high-priority issues from the previous session are still pending, including verifying the deployment fix and addressing the recurring Nomenclature selector bug. These should be prioritized after the folder feature is signed off by the user.
-4.  **LANGUAGE**: All communication with the user **MUST** be in **Spanish**.
+1.  **Follow User's Lead**: The user is driving development with rapid, iterative feedback. The agent's primary focus must be on the current request related to estimates and invoices. The priorities from the previous fork are on hold.
+2.  **Verify Last Change**: Your immediate first step is to verify the last layout change (Price Breakdown position) with a screenshot before asking the user for the next steps.
+3.  **Upcoming Task is Invoices**: The user has explicitly stated that the next major task is to apply all the recent estimate enhancements (PDF format, preview, Price Breakdown) to the **Invoices** feature.
+4.  **Language**: All communication with the user **MUST** be in **Spanish**.
 
 **documents and test reports created in this job**
--   None.
+-    (Updated for a test run that was interrupted by the user)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.   - **User requested the folder feature.** (In Progress)
-2.   - **User provided and confirmed detailed requirements for the folder feature.** (Completed)
-3.   - **User instructed the agent to stop testing and finalize the implementation, as they will do the testing.** (Completed)
+1.  : User rejected the simplified price breakdown and asked for it to be a separate section again, plus requested new client info fields. (Completed)
+2.  : User requested the price breakdown appear in the PDF and to continue with other tasks (preview, font size). (Completed)
+3.  : User requested the price breakdown section in the edit form be moved below the items list. (In Progress)
+4.  : User reported the Convert button wasn't working and the layout was wrong. (Completed)
+5.  : User reported the conversion navigated to the wrong (legacy) page and that IVU should be included directly in the material price. (Completed)
+6.  : User requested the unassigned estimates feature. (Completed)
+7.  : User requested the price breakdown to be automatically included in the converted estimate. (Completed, then revised)
+8.  : User revised the price breakdown requirement to be two simple, editable lines. (Completed, then revised again)
+9.  : User instructed the agent to stop testing and just finish the backend implementation. (Handled)
+10. : The user's initial, large request that kicked off this entire session of work. (Completed)
 
 **Project Health Check:**
 -   **Broken**:
-    -   **Nomenclature Selector**: A core categorization feature is non-functional (recurring issue).
+    -   **Nomenclature Selector**: A core categorization feature remains non-functional (recurring issue from previous forks).
 -   **Mocked**:
     -   None.
 
@@ -169,10 +200,10 @@ The agent has completed the full-stack implementation of the folder management s
 -   reportlab
 
 **Testing status**
--   **Testing agent used after significant changes**: NO (Agent was interrupted by the user before starting).
+-   **Testing agent used after significant changes**: YES, but was interrupted by the user who wanted to perform their own tests. The agent identified a missing backend endpoint before being stopped.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None
--   **Known regressions**: None.
+-   **Known regressions**: None identified.
 
 **Credentials to test flow:**
 -   **Super Admin**:
@@ -180,5 +211,5 @@ The agent has completed the full-stack implementation of the folder management s
     -   Password: 
 
 **What agent forgot to execute**
--   The agent did not add a UI element (e.g., a Move button or a drag-and-drop feature) to trigger the  function in . As a result, users cannot move documents between folders, leaving the feature incomplete.
--   The agent identified but did not fix two minor lint warnings in  related to  dependencies.</analysis>
+-   The agent did not address any of the pending issues from the previous fork (Nomenclature selector, responsive layouts, user verification for folders) because the user immediately redirected all focus to the cost estimate features. These items remain outstanding.
+-   The agent did not take a final screenshot to verify the very last UI change (moving the Price Breakdown section).</analysis>
