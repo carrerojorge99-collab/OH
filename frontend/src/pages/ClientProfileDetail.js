@@ -836,16 +836,17 @@ const ClientProfileDetail = () => {
                 onSelect={handleSelectNomenclature}
                 label="Nomenclatura de Estimado"
               />
-              {!selectedNomenclature && (
-                <div className="space-y-2">
-                  <Label>Número Manual (opcional)</Label>
-                  <Input 
-                    value={estimateForm.custom_number} 
-                    onChange={(e) => setEstimateForm({...estimateForm, custom_number: e.target.value})} 
-                    placeholder="Ej: EST-2025-0150"
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Número de Estimado {selectedNomenclature ? '(Generado)' : '(Manual)'}</Label>
+                <Input 
+                  value={estimateForm.custom_number} 
+                  onChange={(e) => setEstimateForm({...estimateForm, custom_number: e.target.value})} 
+                  placeholder="Ej: EST-2025-0150"
+                />
+                {selectedNomenclature && (
+                  <p className="text-xs text-slate-500">Puedes modificar el número generado si lo deseas</p>
+                )}
+              </div>
 
               {/* Client Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
