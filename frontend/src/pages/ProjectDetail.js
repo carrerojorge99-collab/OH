@@ -24,7 +24,8 @@ import { Progress } from '../components/ui/progress';
 import { 
   ArrowLeft, Plus, FileDown, CheckCircle2, Circle, Clock,
   DollarSign, Calendar, Tag, MessageSquare, Trash2, Pencil, TrendingUp, TrendingDown,
-  Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User, Edit, Users, UserPlus, UserMinus
+  Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User, Edit, Users, UserPlus, UserMinus,
+  Folder, FolderPlus, FolderOpen, ChevronRight, Home, MoreVertical, Move
 } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import Timer from '../components/Timer';
@@ -36,6 +37,12 @@ import {
   exportLaborToExcel, 
   exportLaborToPDF 
 } from '../utils/exportUtils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 
 
 const ProjectDetail = () => {
