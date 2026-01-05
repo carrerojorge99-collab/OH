@@ -820,10 +820,10 @@ const ClockHistory = () => {
             </Button>
             <Button 
               onClick={handleCreateManualEntry} 
-              disabled={saving || !manualForm.user_id || !manualForm.project_id || !manualForm.date || !manualForm.clock_in_time}
+              disabled={saving || !manualForm.user_id || !manualForm.project_id || !manualForm.date || !manualForm.clock_in_time || !manualForm.clock_out_time}
               className="bg-green-600 hover:bg-green-700"
             >
-              {saving ? 'Creando...' : 'Crear Ponche'}
+              {saving ? 'Creando...' : 'Registrar Día Completo'}
             </Button>
           </DialogFooter>
         </DialogContent>
