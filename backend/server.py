@@ -6583,6 +6583,10 @@ async def update_estimate(
         "price_breakdown": estimate_data.price_breakdown
     }
     
+    # Update estimate_number if custom_number is provided
+    if estimate_data.custom_number and estimate_data.custom_number.strip():
+        update_data["estimate_number"] = estimate_data.custom_number.strip()
+    
     await db.estimates.update_one({"estimate_id": estimate_id}, {"$set": update_data})
     
     updated = await db.estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
