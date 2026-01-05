@@ -1033,6 +1033,76 @@ const ProjectDetail = () => {
     e.target.value = '';
   };
 
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    // Validate all files first
+    const invalidFiles = files.filter(file => file.size > 10 * 1024 * 1024);
+    if (invalidFiles.length > 0) {
+      toast.error(`${invalidFiles.length} archivo(s) superan el límite de 10MB y serán omitidos`);
+    }
+
+    const validFiles = files.filter(file => file.size <= 10 * 1024 * 1024);
+    if (validFiles.length === 0) return;
+
+    setUploadingFile(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        let url = `/documents/upload?project_id=${projectId}`;
+        if (currentFolderId) {
+          url += `&folder_id=${currentFolderId}`;
+        }
+        await api.post(url, formData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          }
+        });
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        console.error(`Error uploading ${file.name}:`, error);
+      }
+    }
+
+    // Show appropriate message based on results
+    if (successCount > 0 && errorCount === 0) {
+      toast.success(`${successCount} documento(s) subido(s) exitosamente`);
+    } else if (successCount > 0 && errorCount > 0) {
+      toast.warning(`${successCount} subido(s), ${errorCount} fallido(s)`);
+    } else {
+      toast.error('Error al subir documentos');
+    }
+
+    loadProjectData();
+    setUploadingFile(false);
+  };
+
   const handleDownloadDocument = async (documentId, filename) => {
     try {
       const response = await api.get(`/documents/${documentId}/download`, {
