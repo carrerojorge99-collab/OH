@@ -155,7 +155,91 @@ const ClientEstimates = () => {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{unassignedEstimates.length}</p>
+                <p className="text-xs text-slate-500">Sin Asignar</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Unassigned Estimates Section */}
+        {unassignedEstimates.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              <h2 className="font-semibold text-amber-800">Estimados Sin Asignar</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {unassignedEstimates.map(est => (
+                <Card key={est.estimate_id} className="bg-white">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{est.title || est.estimate_number}</p>
+                        <p className="text-xs text-slate-500">{est.estimate_number}</p>
+                        <p className="text-sm font-semibold text-green-600 mt-1">
+                          ${(est.total || 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-amber-600 border-amber-300 hover:bg-amber-100"
+                        onClick={() => {
+                          setSelectedEstimate(est);
+                          setAssignDialogOpen(true);
+                        }}
+                      >
+                        Asignar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Assign Dialog */}
+        <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Asignar Estimado a Cliente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                Selecciona el cliente al que deseas asignar: <strong>{selectedEstimate?.title || selectedEstimate?.estimate_number}</strong>
+              </p>
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {clients.map(client => (
+                  <div 
+                    key={client.profile_id}
+                    className="p-3 border rounded-lg hover:bg-orange-50 cursor-pointer flex items-center justify-between"
+                    onClick={() => handleAssignEstimate(client.profile_id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Building2 className="w-5 h-5 text-orange-500" />
+                      <div>
+                        <p className="font-medium">{client.company_name}</p>
+                        <p className="text-xs text-slate-500">{client.contact_name}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                  </div>
+                ))}
+              </div>
+              {clients.length === 0 && (
+                <p className="text-center text-slate-500 py-4">No hay clientes. Crea uno primero.</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="relative max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
