@@ -8144,7 +8144,12 @@ async def convert_cost_estimate_to_estimate(
         "created_at": now,
         "sent_date": None,
         "approved_date": None,
-        "converted_invoice_id": None
+        "converted_invoice_id": None,
+        "price_breakdown": {
+            "material_equipment": mat_equip_with_percentages,
+            "labor": labor_with_percentages,
+            "total": grand_total
+        }
     }
     
     await db.estimates.insert_one(estimate_doc)
