@@ -2318,16 +2318,22 @@ async def create_manual_clock_entry(
     if not project:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    # Build datetime strings
-    clock_in_full = f"{data.date}T{data.clock_in_time}:00"
-    clock_out_full = f"{data.date}T{data.clock_out_time}:00" if data.clock_out_time else None
+    # Build datetime strings WITH timezone for Puerto Rico
+    clock_in_naive = datetime.strptime(f"{data.date}T{data.clock_in_time}:00", "%Y-%m-%dT%H:%M:%S")
+    clock_in_dt = PUERTO_RICO_TZ.localize(clock_in_naive)
+    clock_in_full = clock_in_dt.isoformat()
+    
+    clock_out_full = None
+    clock_out_dt = None
+    if data.clock_out_time:
+        clock_out_naive = datetime.strptime(f"{data.date}T{data.clock_out_time}:00", "%Y-%m-%dT%H:%M:%S")
+        clock_out_dt = PUERTO_RICO_TZ.localize(clock_out_naive)
+        clock_out_full = clock_out_dt.isoformat()
     
     # Calculate hours worked
     hours_worked = 0
     status = "active"
-    if clock_out_full:
-        clock_in_dt = datetime.fromisoformat(clock_in_full)
-        clock_out_dt = datetime.fromisoformat(clock_out_full)
+    if clock_out_dt:
         hours_worked = round((clock_out_dt - clock_in_dt).total_seconds() / 3600, 2)
         status = "completed"
     
