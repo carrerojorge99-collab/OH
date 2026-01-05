@@ -314,6 +314,7 @@ const CostEstimateDetail = () => {
   // C x Contingency = U
   // U x B2B OHSMS (global) = TOTAL
   // Plus: B2B Subcontractor applies only to subcontractor's labor cost
+  // B2B M.O. = Labor (from orange area) x 4% (fixed)
   const calculateTotals = () => {
     // Helper function to round to 2 decimals
     const round2 = (num) => Math.round(num * 100) / 100;
@@ -326,14 +327,15 @@ const CostEstimateDetail = () => {
     const totalTransportation = round2(transportation.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
     const totalGC = round2(generalConditions.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
     
+    // Calculate IVU (11.5%) on materials only
+    const ivuPercentage = 11.5;
+    const ivuAmount = round2(totalMaterials * (ivuPercentage / 100));
+    
     const subtotal = round2(totalLabor + totalSubcontractors + totalMaterials + 
                      totalEquipment + totalTransportation + totalGC);
     
     // B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
     const b2bSubcontractorAmount = round2(totalSubcontractorLabor * (Number(b2bSubcontractorPercentage) / 100));
-    
-    // B2B OHSMS Labor - applies only to OHSMS labor cost (added at the end)
-    const b2bOhsmsLaborAmount = round2(totalLabor * (Number(b2bOhsmsLaborPercentage) / 100));
     
     // Step 1: Subtotal x (1 + Profit%) = s
     const profitMultiplier = 1 + (Number(profitPercentage) / 100);
@@ -366,28 +368,44 @@ const CostEstimateDetail = () => {
     const afterContingency = round2(afterMunicipalPatent * contingencyMultiplier); // U
     const contingencyAmount = round2(afterContingency - afterMunicipalPatent);
     
-    // Step 8: U x 0.35 x B2B OHSMS% = B2B OHSMS Amount (se multiplica por 0.35 primero)
-    const b2bOhsmsBase = round2(afterContingency * 0.35);
-    const b2bOhsmsAmount = round2(b2bOhsmsBase * (Number(b2bOhsmsPercentage) / 100));
+    // Step 8: U x B2B OHSMS% = B2B OHSMS Amount (global - applies to total)
+    const b2bOhsmsAmount = round2(afterContingency * (Number(b2bOhsmsPercentage) / 100));
     const afterB2bOhsms = round2(afterContingency + b2bOhsmsAmount);
+    
+    // B2B OHSMS Labor - NEW FORMULA: Labor (from orange area breakdown) x 4% (fixed)
+    // This is calculated after all cascading, using the laborWithPercentages value
+    // We need to calculate labor proportion first
+    const totalMaterialEquipment = round2(totalSubcontractors + totalMaterials + totalEquipment + totalTransportation + totalGC);
+    const laborRatio = subtotal > 0 ? totalLabor / subtotal : 0;
+    const matEquipRatio = subtotal > 0 ? totalMaterialEquipment / subtotal : 0;
+    
+    // Labor portion after cascade (before B2B M.O.)
+    const laborPortionAfterCascade = round2(afterB2bOhsms * laborRatio);
+    
+    // B2B OHSMS Labor = Labor (orange area) x 4% (fixed at 4%)
+    const b2bOhsmsLaborAmount = round2(laborPortionAfterCascade * (Number(b2bOhsmsLaborPercentage) / 100));
     
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
-    
-    // Breakdown: Material/Equipment vs Labor (with percentages applied)
-    const totalMaterialEquipment = round2(totalSubcontractors + totalMaterials + totalEquipment + totalTransportation + totalGC);
-    
-    // Calculate proportional breakdown with percentages
-    // Labor gets: its proportion of cascade + CFSE + B2B OHSMS Labor
-    // Material/Equipment gets: its proportion of cascade + B2B Subcontractor
-    const laborRatio = subtotal > 0 ? totalLabor / subtotal : 0;
-    const matEquipRatio = subtotal > 0 ? totalMaterialEquipment / subtotal : 0;
     
     // Labor with all percentages = (labor proportion of cascade total) + CFSE + B2B OHSMS Labor
     const laborWithPercentages = round2((afterB2bOhsms * laborRatio) + cfseAmount + b2bOhsmsLaborAmount);
     
     // Material/Equipment with all percentages = grand total - labor with percentages
     const matEquipWithPercentages = round2(grandTotal - laborWithPercentages);
+    
+    // Calculate total of all percentage amounts
+    const totalPercentageAmounts = round2(
+      profitAmount + 
+      overheadAmount + 
+      cfseAmount + 
+      liabilityAmount + 
+      municipalPatentAmount + 
+      contingencyAmount + 
+      b2bOhsmsAmount + 
+      b2bOhsmsLaborAmount + 
+      b2bSubcontractorAmount
+    );
 
     return {
       totalLabor,
@@ -401,6 +419,8 @@ const CostEstimateDetail = () => {
       laborWithPercentages,
       matEquipWithPercentages,
       subtotal,
+      ivuAmount,
+      ivuPercentage,
       profitAmount,
       afterProfit,
       overheadAmount,
@@ -417,6 +437,7 @@ const CostEstimateDetail = () => {
       afterB2bOhsms,
       b2bOhsmsLaborAmount,
       b2bSubcontractorAmount,
+      totalPercentageAmounts,
       grandTotal
     };
   };
