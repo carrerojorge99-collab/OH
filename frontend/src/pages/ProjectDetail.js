@@ -4132,21 +4132,32 @@ const ProjectDetail = () => {
                     </div>
                   </div>
                 ) : getCurrentFolders().length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <File className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-center py-12 text-muted-foreground border-2 border-dashed border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
+                    <Upload className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p className="mb-2">No hay documentos ni carpetas aún</p>
-                    <p className="text-sm mb-4">Crea carpetas para organizar y sube contratos, diseños, especificaciones y otros archivos</p>
-                    <Button variant="outline" onClick={handleInitializeDefaultFolders}>
-                      <FolderPlus className="w-4 h-4 mr-2" />
-                      Crear Carpetas Predeterminadas
-                    </Button>
+                    <p className="text-sm mb-4">Arrastra archivos aquí o usa el botón para subir</p>
+                    <div className="flex gap-2 justify-center flex-wrap">
+                      <Button variant="outline" onClick={handleInitializeDefaultFolders}>
+                        <FolderPlus className="w-4 h-4 mr-2" />
+                        Crear Carpetas Predeterminadas
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => document.getElementById('file-upload').click()}
+                        disabled={uploadingFile}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Subir Documentos
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <File className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No hay documentos en esta carpeta</p>
+                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
+                    <Upload className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm mb-3">No hay documentos en esta carpeta</p>
+                    <p className="text-xs text-slate-400">Arrastra archivos aquí o usa el botón "Subir Documentos"</p>
                   </div>
-                )}
+                )}}
               </CardContent>
             </Card>
 
