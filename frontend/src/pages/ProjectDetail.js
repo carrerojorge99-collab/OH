@@ -3803,104 +3803,283 @@ const ProjectDetail = () => {
           <TabsContent value="documents" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold tracking-tight">Documentos del Proyecto</CardTitle>
-                  <div>
-                    <input
-                      type="file"
-                      id="file-upload"
-                      data-testid="file-upload-input"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                      disabled={uploadingFile}
-                    />
-                    <Button
-                      data-testid="upload-document-button"
-                      onClick={() => document.getElementById('file-upload').click()}
-                      disabled={uploadingFile}
-                      className="rounded-full bg-blue-600 hover:bg-blue-700"
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <CardTitle className="text-xl font-semibold tracking-tight">Documentos del Proyecto</CardTitle>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        variant="outline"
+                        onClick={handleInitializeDefaultFolders}
+                        className="text-sm"
+                      >
+                        <FolderPlus className="w-4 h-4 mr-2" />
+                        Crear Carpetas Base
+                      </Button>
+                      <Dialog open={folderDialogOpen} onOpenChange={setFolderDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="text-sm">
+                            <FolderPlus className="w-4 h-4 mr-2" />
+                            Nueva Carpeta
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Crear Nueva Carpeta</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div>
+                              <Label>Nombre de la carpeta</Label>
+                              <Input
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                                placeholder="Ej: Contratos"
+                              />
+                            </div>
+                            {currentFolderId && (
+                              <p className="text-sm text-muted-foreground">
+                                Se creará dentro de: <strong>{getCurrentFolderName()}</strong>
+                              </p>
+                            )}
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setFolderDialogOpen(false)}>
+                              Cancelar
+                            </Button>
+                            <Button onClick={handleCreateFolder} className="bg-blue-600 hover:bg-blue-700">
+                              Crear Carpeta
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                      <input
+                        type="file"
+                        id="file-upload"
+                        data-testid="file-upload-input"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        disabled={uploadingFile}
+                      />
+                      <Button
+                        data-testid="upload-document-button"
+                        onClick={() => document.getElementById('file-upload').click()}
+                        disabled={uploadingFile}
+                        className="rounded-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploadingFile ? 'Subiendo...' : 'Subir Documento'}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Breadcrumb Navigation */}
+                  <div className="flex items-center gap-1 text-sm text-slate-600 flex-wrap">
+                    <button 
+                      onClick={navigateToRoot}
+                      className="flex items-center gap-1 hover:text-blue-600 transition-colors"
                     >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {uploadingFile ? 'Subiendo...' : 'Subir Documento'}
-                    </Button>
+                      <Home className="w-4 h-4" />
+                      <span>Raíz</span>
+                    </button>
+                    {folderPath.map((folder, index) => (
+                      <React.Fragment key={index}>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                        <button
+                          onClick={() => navigateToBreadcrumb(index)}
+                          className="hover:text-blue-600 transition-colors"
+                        >
+                          {folder.name}
+                        </button>
+                      </React.Fragment>
+                    ))}
+                    {currentFolderId && (
+                      <>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                        <span className="font-medium text-slate-800">{getCurrentFolderName()}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                {documents.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {documents.map((doc) => {
-                      const getFileIcon = (fileType) => {
-                        if (fileType.startsWith('image/')) return <ImageIcon className="w-8 h-8 text-blue-600" />;
-                        if (fileType.includes('pdf')) return <FileText className="w-8 h-8 text-red-600" />;
-                        if (fileType.includes('word') || fileType.includes('document')) return <FileText className="w-8 h-8 text-blue-600" />;
-                        if (fileType.includes('excel') || fileType.includes('spreadsheet')) return <FileText className="w-8 h-8 text-green-600" />;
-                        return <File className="w-8 h-8 text-slate-600" />;
-                      };
-
-                      const formatFileSize = (bytes) => {
-                        if (bytes < 1024) return bytes + ' B';
-                        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-                        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-                      };
-
-                      return (
-                        <Card
-                          key={doc.document_id}
-                          data-testid={`document-card-${doc.document_id}`}
-                          className="border-slate-200 hover:border-blue-300 transition-colors"
+                {/* Folders */}
+                {getCurrentFolders().length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-slate-500 mb-3">Carpetas</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                      {getCurrentFolders().map((folder) => (
+                        <div
+                          key={folder.folder_id}
+                          className="group relative bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg p-3 cursor-pointer transition-all"
+                          onClick={() => navigateToFolder(folder.folder_id, folder.name)}
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0">
-                                {getFileIcon(doc.file_type)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-[#0F172A] truncate mb-1" title={doc.original_filename}>
-                                  {doc.original_filename}
-                                </h3>
-                                <p className="text-xs text-slate-500 mb-2">{formatFileSize(doc.file_size)}</p>
-                                <p className="text-xs text-slate-600 mb-3">
-                                  Subido por <span className="font-medium">{doc.uploaded_by_name}</span>
-                                </p>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDownloadDocument(doc.document_id, doc.original_filename)}
-                                    data-testid={`download-document-${doc.document_id}`}
-                                    className="text-xs"
-                                  >
-                                    <Download className="w-3 h-3 mr-1" />
-                                    Descargar
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDeleteDocument(doc.document_id)}
-                                    data-testid={`delete-document-${doc.document_id}`}
-                                    className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="w-3 h-3 mr-1" />
-                                    Eliminar
-                                  </Button>
+                          <div className="flex flex-col items-center text-center">
+                            <FolderOpen className="w-10 h-10 text-amber-500 mb-2" />
+                            <span className="text-sm font-medium text-slate-700 truncate w-full" title={folder.name}>
+                              {folder.name}
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFolder(folder.folder_id);
+                            }}
+                            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-500" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Documents */}
+                {getCurrentDocuments().length > 0 ? (
+                  <div>
+                    {getCurrentFolders().length > 0 && (
+                      <h4 className="text-sm font-medium text-slate-500 mb-3">Documentos</h4>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {getCurrentDocuments().map((doc) => {
+                        const getFileIcon = (fileType) => {
+                          if (fileType?.startsWith('image/')) return <ImageIcon className="w-8 h-8 text-blue-600" />;
+                          if (fileType?.includes('pdf')) return <FileText className="w-8 h-8 text-red-600" />;
+                          if (fileType?.includes('word') || fileType?.includes('document')) return <FileText className="w-8 h-8 text-blue-600" />;
+                          if (fileType?.includes('excel') || fileType?.includes('spreadsheet')) return <FileText className="w-8 h-8 text-green-600" />;
+                          return <File className="w-8 h-8 text-slate-600" />;
+                        };
+
+                        const formatFileSize = (bytes) => {
+                          if (bytes < 1024) return bytes + ' B';
+                          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                        };
+
+                        return (
+                          <Card
+                            key={doc.document_id}
+                            data-testid={`document-card-${doc.document_id}`}
+                            className="border-slate-200 hover:border-blue-300 transition-colors"
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0">
+                                  {getFileIcon(doc.file_type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-semibold text-[#0F172A] truncate mb-1" title={doc.original_filename}>
+                                    {doc.original_filename}
+                                  </h3>
+                                  <p className="text-xs text-slate-500 mb-2">{formatFileSize(doc.file_size)}</p>
+                                  <p className="text-xs text-slate-600 mb-3">
+                                    Subido por <span className="font-medium">{doc.uploaded_by_name}</span>
+                                  </p>
+                                  <div className="flex gap-2 flex-wrap">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleDownloadDocument(doc.document_id, doc.original_filename)}
+                                      data-testid={`download-document-${doc.document_id}`}
+                                      className="text-xs"
+                                    >
+                                      <Download className="w-3 h-3 mr-1" />
+                                      Descargar
+                                    </Button>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button size="sm" variant="outline" className="text-xs">
+                                          <MoreVertical className="w-3 h-3" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={() => {
+                                          setDocToMove(doc.document_id);
+                                          setMoveDocDialogOpen(true);
+                                        }}>
+                                          <Move className="w-4 h-4 mr-2" />
+                                          Mover a carpeta
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem 
+                                          onClick={() => handleDeleteDocument(doc.document_id)}
+                                          className="text-red-600"
+                                        >
+                                          <Trash2 className="w-4 h-4 mr-2" />
+                                          Eliminar
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
                   </div>
-                ) : (
+                ) : getCurrentFolders().length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <File className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p className="mb-2">No hay documentos subidos aún</p>
-                    <p className="text-sm">Sube contratos, diseños, especificaciones y otros archivos del proyecto</p>
+                    <p className="mb-2">No hay documentos ni carpetas aún</p>
+                    <p className="text-sm mb-4">Crea carpetas para organizar y sube contratos, diseños, especificaciones y otros archivos</p>
+                    <Button variant="outline" onClick={handleInitializeDefaultFolders}>
+                      <FolderPlus className="w-4 h-4 mr-2" />
+                      Crear Carpetas Predeterminadas
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <File className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No hay documentos en esta carpeta</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Move Document Dialog */}
+            <Dialog open={moveDocDialogOpen} onOpenChange={setMoveDocDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Mover Documento</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 py-4 max-h-[300px] overflow-y-auto">
+                  <button
+                    onClick={() => handleMoveDocument(null)}
+                    className="w-full flex items-center gap-2 p-2 hover:bg-slate-100 rounded transition-colors text-left"
+                  >
+                    <Home className="w-5 h-5 text-slate-500" />
+                    <span>Raíz (sin carpeta)</span>
+                  </button>
+                  {documentFolders.filter(f => !f.parent_folder_id).map((folder) => (
+                    <div key={folder.folder_id}>
+                      <button
+                        onClick={() => handleMoveDocument(folder.folder_id)}
+                        className="w-full flex items-center gap-2 p-2 hover:bg-slate-100 rounded transition-colors text-left"
+                      >
+                        <Folder className="w-5 h-5 text-amber-500" />
+                        <span>{folder.name}</span>
+                      </button>
+                      {/* Show subfolders */}
+                      {documentFolders.filter(sf => sf.parent_folder_id === folder.folder_id).map((subfolder) => (
+                        <button
+                          key={subfolder.folder_id}
+                          onClick={() => handleMoveDocument(subfolder.folder_id)}
+                          className="w-full flex items-center gap-2 p-2 pl-8 hover:bg-slate-100 rounded transition-colors text-left"
+                        >
+                          <Folder className="w-4 h-4 text-amber-400" />
+                          <span className="text-sm">{subfolder.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setMoveDocDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Project Logs Tab */}
