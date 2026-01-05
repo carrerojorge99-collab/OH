@@ -6517,8 +6517,11 @@ async def update_estimate(
         if project:
             project_name = project.get('name')
     
-    # Calculate totals
-    subtotal = sum(item.amount for item in estimate_data.items)
+    # Calculate totals - use price_breakdown.total if available, otherwise calculate from items
+    if estimate_data.price_breakdown and estimate_data.price_breakdown.get('total'):
+        subtotal = estimate_data.price_breakdown.get('total', 0)
+    else:
+        subtotal = sum(item.amount for item in estimate_data.items)
     discount_amount = subtotal * (estimate_data.discount_percent / 100)
     taxable_amount = subtotal - discount_amount
     tax_amount = taxable_amount * (estimate_data.tax_rate / 100)
@@ -6544,7 +6547,8 @@ async def update_estimate(
         "total": round(total, 2),
         "notes": estimate_data.notes,
         "terms": estimate_data.terms,
-        "valid_until": estimate_data.valid_until
+        "valid_until": estimate_data.valid_until,
+        "price_breakdown": estimate_data.price_breakdown
     }
     
     await db.estimates.update_one({"estimate_id": estimate_id}, {"$set": update_data})
