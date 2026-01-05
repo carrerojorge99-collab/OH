@@ -5926,6 +5926,7 @@ async def create_manual_invoice(
         "status": "draft",
         "notes": invoice_data.notes,
         "terms": invoice_data.terms,
+        "price_breakdown": invoice_data.price_breakdown,
         "created_by": user.user_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "due_date": due_date,
