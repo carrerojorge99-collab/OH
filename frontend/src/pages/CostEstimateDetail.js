@@ -1264,6 +1264,8 @@ const CostEstimateDetail = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Equipment Tab */}
           <TabsContent value="equipment">
             <Card>
               <CardHeader>
