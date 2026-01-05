@@ -175,9 +175,14 @@ const HumanResources = () => {
     }
   };
 
-  // Helper to get document URL
+  // Helper to get document download URL
   const getDocumentUrl = (doc) => {
     return `${process.env.REACT_APP_BACKEND_URL}/api/employees/${doc.employee_id}/documents/${doc.doc_id}/download`;
+  };
+
+  // Helper to get document preview URL (inline display)
+  const getPreviewUrl = (doc) => {
+    return `${process.env.REACT_APP_BACKEND_URL}/api/employees/${doc.employee_id}/documents/${doc.doc_id}/preview`;
   };
 
   // Check if document is previewable (images and PDFs)
