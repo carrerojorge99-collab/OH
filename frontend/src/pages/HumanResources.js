@@ -585,16 +585,21 @@ const HumanResources = () => {
             </div>
           </DialogHeader>
           <div className="p-4 overflow-auto max-h-[calc(90vh-80px)] flex items-center justify-center bg-slate-100">
-            {previewDoc && (
+            {loadingPreview ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-slate-500">Cargando vista previa...</p>
+              </div>
+            ) : previewBlobUrl && previewDoc ? (
               getFileExtension(previewDoc.original_filename || previewDoc.filename) === 'pdf' ? (
                 <iframe
-                  src={getPreviewUrl(previewDoc)}
+                  src={previewBlobUrl}
                   className="w-full h-[70vh] border-0 rounded"
                   title="Vista previa del documento"
                 />
               ) : (
                 <img
-                  src={getPreviewUrl(previewDoc)}
+                  src={previewBlobUrl}
                   alt={previewDoc.original_filename || previewDoc.filename}
                   className="max-w-full max-h-[70vh] object-contain rounded shadow-lg"
                   onError={(e) => {
@@ -603,6 +608,8 @@ const HumanResources = () => {
                   }}
                 />
               )
+            ) : (
+              <p className="text-slate-500">No se puede cargar la vista previa</p>
             )}
           </div>
         </DialogContent>
