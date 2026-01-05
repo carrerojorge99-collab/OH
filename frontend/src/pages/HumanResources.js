@@ -545,7 +545,7 @@ const HumanResources = () => {
                             </div>
                             <div className="flex gap-1">
                               {isPreviewable(doc.original_filename || doc.filename) && (
-                                <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)} title="Ver documento">
+                                <Button variant="ghost" size="sm" onClick={() => loadDocumentPreview(doc)} title="Ver documento">
                                   <Eye className="w-4 h-4 text-blue-500" />
                                 </Button>
                               )}
