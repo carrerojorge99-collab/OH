@@ -8,7 +8,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { Users, Upload, FileText, Trash2, Download, User, Phone, Mail, MapPin, Calendar, DollarSign, Building, CreditCard, Search, ChevronRight } from 'lucide-react';
+import { Users, Upload, FileText, Trash2, Download, User, Phone, Mail, MapPin, Calendar, DollarSign, Building, CreditCard, Search, ChevronRight, Eye, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import moment from 'moment';
