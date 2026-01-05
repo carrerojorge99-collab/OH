@@ -693,8 +693,11 @@ const ClockHistory = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5" />
-              Crear Ponche Manual
+              Crear Ponche Manual (Día Completo)
             </DialogTitle>
+            <p className="text-sm text-slate-500 mt-1">
+              Registre la entrada y salida para un día de trabajo completo
+            </p>
           </DialogHeader>
           
           <div className="space-y-4">
