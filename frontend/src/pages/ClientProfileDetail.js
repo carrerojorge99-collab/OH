@@ -405,17 +405,23 @@ const ClientProfileDetail = () => {
       const totalToUse = estimate.price_breakdown?.total || estimate.total;
       y = addTotalsSection(doc, estimate.price_breakdown?.total || estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, totalToUse, y, taxDetails);
       
-      // Notes on first page (if space)
-      if (estimate.notes && y < 240) {
+      // Notes section - always add if present
+      if (estimate.notes) {
+        // Check if we need a new page
+        if (y > 240) {
+          doc.addPage();
+          y = 20;
+        }
+        
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
-        doc.text('Notes:', 15, y + 10);
+        doc.text('Notas:', 15, y + 10);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         const notesLines = doc.splitTextToSize(estimate.notes, 180);
         doc.text(notesLines, 15, y + 18);
-        y += 18 + notesLines.length * 5;
+        y += 18 + notesLines.length * 4;
       }
       
       // Terms and Conditions - ALWAYS on second page
@@ -424,9 +430,9 @@ const ClientProfileDetail = () => {
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 41, 59);
-        doc.text('Terms and Conditions', 105, 30, { align: 'center' });
+        doc.text('Términos y Condiciones', 105, 30, { align: 'center' });
         
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
         const termsLines = doc.splitTextToSize(estimate.terms, 180);
