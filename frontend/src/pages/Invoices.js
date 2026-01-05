@@ -341,7 +341,8 @@ const Invoices = () => {
         discount_percent: 0,
         notes: '',
         terms: '',
-        custom_number: ''
+        custom_number: '',
+        price_breakdown: null
       });
       loadData();
       loadSavedClients();
