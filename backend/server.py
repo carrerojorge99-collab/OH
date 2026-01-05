@@ -9548,6 +9548,43 @@ async def delete_employee_document(
     await db.employee_documents.delete_one({"doc_id": doc_id})
     return {"message": "Documento eliminado"}
 
+@api_router.get("/employees/{employee_id}/documents/{doc_id}/download")
+async def download_employee_document(
+    employee_id: str,
+    doc_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    doc = await db.employee_documents.find_one({"doc_id": doc_id, "employee_id": employee_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    file_path = Path(doc["file_path"])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+    
+    # Determine media type
+    suffix = file_path.suffix.lower()
+    media_types = {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    }
+    media_type = media_types.get(suffix, 'application/octet-stream')
+    
+    return FileResponse(
+        file_path,
+        media_type=media_type,
+        filename=doc.get("original_filename", file_path.name)
+    )
+
 app.include_router(api_router)
 
 # Middleware para prevenir caché en respuestas de API
