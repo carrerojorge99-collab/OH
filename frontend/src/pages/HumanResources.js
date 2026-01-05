@@ -479,11 +479,11 @@ const HumanResources = () => {
                     ) : (
                       <div className="space-y-2">
                         {documents.map(doc => (
-                          <div key={doc.document_id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                          <div key={doc.doc_id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
                             <div className="flex items-center gap-3">
                               <FileText className="w-5 h-5 text-orange-500" />
                               <div>
-                                <p className="text-sm font-medium">{doc.filename}</p>
+                                <p className="text-sm font-medium">{doc.original_filename || doc.filename}</p>
                                 <p className="text-xs text-slate-500">{documentTypes.find(t => t.value === doc.document_type)?.label} • {moment(doc.uploaded_at).format('DD/MM/YY')}</p>
                               </div>
                             </div>
@@ -491,7 +491,7 @@ const HumanResources = () => {
                               <Button variant="ghost" size="sm" asChild>
                                 <a href={doc.file_url} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.document_id)}>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.doc_id)}>
                                 <Trash2 className="w-4 h-4 text-red-500" />
                               </Button>
                             </div>
