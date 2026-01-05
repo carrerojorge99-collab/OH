@@ -5848,6 +5848,7 @@ class ManualInvoiceCreate(BaseModel):
     notes: Optional[str] = None
     terms: Optional[str] = None
     custom_number: Optional[str] = None
+    price_breakdown: Optional[dict] = None  # {material_equipment: float, labor: float, total: float}
 
 @api_router.post("/invoices/manual")
 async def create_manual_invoice(
