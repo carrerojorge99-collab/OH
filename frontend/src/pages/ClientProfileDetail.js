@@ -641,14 +641,22 @@ const ClientProfileDetail = () => {
                           </div>
                         </div>
                         {/* Price Breakdown Display */}
-                        {estimate.items && estimate.items.length > 0 && (
-                          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                            {estimate.items.map((item, idx) => (
-                              <div key={idx} className={`p-2 rounded ${item.description === 'Labor' ? 'bg-orange-100' : 'bg-slate-100'}`}>
-                                <span className="text-slate-600">{item.description}:</span>
-                                <span className="font-semibold ml-2">${formatCurrency(item.amount || 0)}</span>
+                        {estimate.price_breakdown && (
+                          <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                              <div className="bg-orange-500 text-white p-2 rounded">
+                                <p className="text-xs">Material/Equipment</p>
+                                <p className="font-bold">${formatCurrency(estimate.price_breakdown.material_equipment || 0)}</p>
                               </div>
-                            ))}
+                              <div className="bg-orange-400 text-white p-2 rounded">
+                                <p className="text-xs">Labor</p>
+                                <p className="font-bold">${formatCurrency(estimate.price_breakdown.labor || 0)}</p>
+                              </div>
+                              <div className="bg-orange-600 text-white p-2 rounded">
+                                <p className="text-xs">Total</p>
+                                <p className="font-bold">${formatCurrency(estimate.price_breakdown.total || 0)}</p>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
