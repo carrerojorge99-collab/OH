@@ -61,6 +61,8 @@ const HumanResources = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSection, setActiveSection] = useState('info');
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Optimized profile field update handler - prevents re-render lag
   const updateProfile = useCallback((field, value) => {
