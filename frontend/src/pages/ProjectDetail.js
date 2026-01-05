@@ -976,38 +976,60 @@ const ProjectDetail = () => {
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('El archivo es demasiado grande (máximo 10MB)');
+    // Validate all files first
+    const invalidFiles = files.filter(file => file.size > 10 * 1024 * 1024);
+    if (invalidFiles.length > 0) {
+      toast.error(`${invalidFiles.length} archivo(s) superan el límite de 10MB y serán omitidos`);
+    }
+
+    const validFiles = files.filter(file => file.size <= 10 * 1024 * 1024);
+    if (validFiles.length === 0) {
+      e.target.value = '';
       return;
     }
 
     setUploadingFile(true);
-    const formData = new FormData();
-    formData.append('file', file);
+    let successCount = 0;
+    let errorCount = 0;
 
-    try {
-      let url = `/documents/upload?project_id=${projectId}`;
-      if (currentFolderId) {
-        url += `&folder_id=${currentFolderId}`;
-      }
-      await api.post(url, formData, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'multipart/form-data',
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        let url = `/documents/upload?project_id=${projectId}`;
+        if (currentFolderId) {
+          url += `&folder_id=${currentFolderId}`;
         }
-      });
-      toast.success('Documento subido exitosamente');
-      loadProjectData();
-    } catch (error) {
-      toast.error('Error al subir documento');
-      console.error(error);
-    } finally {
-      setUploadingFile(false);
-      e.target.value = '';
+        await api.post(url, formData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          }
+        });
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        console.error(`Error uploading ${file.name}:`, error);
+      }
     }
+
+    // Show appropriate message based on results
+    if (successCount > 0 && errorCount === 0) {
+      toast.success(`${successCount} documento(s) subido(s) exitosamente`);
+    } else if (successCount > 0 && errorCount > 0) {
+      toast.warning(`${successCount} subido(s), ${errorCount} fallido(s)`);
+    } else {
+      toast.error('Error al subir documentos');
+    }
+
+    loadProjectData();
+    setUploadingFile(false);
+    e.target.value = '';
   };
 
   const handleDownloadDocument = async (documentId, filename) => {
@@ -3863,6 +3885,7 @@ const ProjectDetail = () => {
                         className="hidden"
                         onChange={handleFileUpload}
                         disabled={uploadingFile}
+                        multiple
                       />
                       <Button
                         data-testid="upload-document-button"
@@ -3871,7 +3894,7 @@ const ProjectDetail = () => {
                         className="rounded-full bg-blue-600 hover:bg-blue-700"
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        {uploadingFile ? 'Subiendo...' : 'Subir Documento'}
+                        {uploadingFile ? 'Subiendo...' : 'Subir Documentos'}
                       </Button>
                     </div>
                   </div>
