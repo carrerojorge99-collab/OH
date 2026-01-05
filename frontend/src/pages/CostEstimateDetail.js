@@ -33,13 +33,14 @@ const CostEstimateDetail = () => {
   // Percentage fields
   const [profitPercentage, setProfitPercentage] = useState(0);
   const [overheadPercentage, setOverheadPercentage] = useState(0);
-  const [cfsePercentage, setCfsePercentage] = useState(0);
-  const [liabilityPercentage, setLiabilityPercentage] = useState(0);
-  const [municipalPatentPercentage, setMunicipalPatentPercentage] = useState(0);
-  const [contingencyPercentage, setContingencyPercentage] = useState(0);
+  const [cfsePercentage, setCfsePercentage] = useState(7); // Fixed at 7%
+  const [liabilityPercentage, setLiabilityPercentage] = useState(7); // Fixed at 7%
+  const [municipalPatentPercentage, setMunicipalPatentPercentage] = useState(1); // Fixed at 1%
+  const [contingencyPercentage, setContingencyPercentage] = useState(6); // Fixed at 6%
   const [b2bOhsmsPercentage, setB2bOhsmsPercentage] = useState(0);
-  const [b2bOhsmsLaborPercentage, setB2bOhsmsLaborPercentage] = useState(0);
+  const [b2bOhsmsLaborPercentage, setB2bOhsmsLaborPercentage] = useState(4); // Fixed at 4%
   const [b2bSubcontractorPercentage, setB2bSubcontractorPercentage] = useState(0);
+  const [convertingToEstimate, setConvertingToEstimate] = useState(false);
 
   useEffect(() => {
     loadData();
