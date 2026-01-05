@@ -601,40 +601,62 @@ const ClientProfileDetail = () => {
                     {estimates.map(estimate => (
                       <div 
                         key={estimate.estimate_id} 
-                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                        className="p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border">
-                            <FileText className="w-5 h-5 text-orange-500" />
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border">
+                              <FileText className="w-5 h-5 text-orange-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{estimate.estimate_number}</p>
+                              <p className="text-sm text-slate-500">{estimate.title || 'Sin título'}</p>
+                              <p className="text-xs text-slate-400 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {moment(estimate.created_at).format('DD/MM/YYYY')}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{estimate.estimate_number}</p>
-                            <p className="text-sm text-slate-500">{estimate.title || 'Sin título'}</p>
-                            <p className="text-xs text-slate-400 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {moment(estimate.created_at).format('DD/MM/YYYY')}
-                            </p>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="font-bold text-lg">${formatCurrency(estimate.total || 0)}</p>
+                              <Badge className={statusColors[estimate.status]}>
+                                {statusLabels[estimate.status] || estimate.status}
+                              </Badge>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => exportPDF(estimate)} title="Descargar PDF">
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => openEditEstimate(estimate)} title="Editar">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDeleteEstimate(estimate.estimate_id)} title="Eliminar">
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <p className="font-bold text-lg">${formatCurrency(estimate.total || 0)}</p>
-                            <Badge className={statusColors[estimate.status]}>
-                              {statusLabels[estimate.status] || estimate.status}
-                            </Badge>
+                        {/* Price Breakdown - Orange Area */}
+                        {estimate.price_breakdown && (
+                          <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <p className="text-xs text-orange-600 font-medium mb-2">Price Breakdown</p>
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                              <div className="bg-orange-500 text-white p-2 rounded text-xs">
+                                <p className="font-semibold">Material/Equipment</p>
+                                <p className="text-sm font-bold">${formatCurrency(estimate.price_breakdown.material_equipment || 0)}</p>
+                              </div>
+                              <div className="bg-orange-400 text-white p-2 rounded text-xs">
+                                <p className="font-semibold">Labor</p>
+                                <p className="text-sm font-bold">${formatCurrency(estimate.price_breakdown.labor || 0)}</p>
+                              </div>
+                              <div className="bg-orange-500 text-white p-2 rounded text-xs">
+                                <p className="font-semibold">Total</p>
+                                <p className="text-sm font-bold">${formatCurrency(estimate.price_breakdown.total || 0)}</p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => exportPDF(estimate)} title="Descargar PDF">
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => openEditEstimate(estimate)} title="Editar">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteEstimate(estimate.estimate_id)} title="Eliminar">
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>
