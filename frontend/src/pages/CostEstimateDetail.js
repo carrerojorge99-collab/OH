@@ -412,11 +412,11 @@ const CostEstimateDetail = () => {
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
     
-    // Labor with all percentages = Labor del Price Breakdown (ya incluye CFSE, NO incluye B2B M.O.)
-    const laborWithPercentages = laborForPriceBreakdown;
+    // Labor with all percentages = Labor del Price Breakdown + B2B OHSMS Labor
+    const laborWithPercentages = round2(laborForPriceBreakdown + b2bOhsmsLaborAmount);
     
-    // Material/Equipment with all percentages = grand total - labor with percentages - b2b ohsms labor
-    const matEquipWithPercentages = round2(grandTotal - laborWithPercentages - b2bOhsmsLaborAmount);
+    // Material/Equipment with all percentages = Grand Total - Labor con todos los porcentajes
+    const matEquipWithPercentages = round2(grandTotal - laborWithPercentages);
     
     // Calculate total of all percentage amounts
     const totalPercentageAmounts = round2(
