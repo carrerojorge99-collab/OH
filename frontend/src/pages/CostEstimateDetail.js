@@ -398,13 +398,12 @@ const CostEstimateDetail = () => {
     const afterB2bOhsms = round2(afterContingency + b2bOhsmsAmount);
     
     // B2B OHSMS Labor - FORMULA: Labor (from orange area breakdown) x 4% (fixed)
-    // Labor del Price Breakdown = (afterB2bOhsms * laborRatio) + cfseAmount
     const totalMaterialEquipment = round2(totalSubcontractors + totalMaterials + totalEquipment + totalTransportation + totalGC);
     const laborRatio = subtotal > 0 ? totalLabor / subtotal : 0;
     const matEquipRatio = subtotal > 0 ? totalMaterialEquipment / subtotal : 0;
     
-    // Labor del Price Breakdown (sin B2B M.O.) = proporción labor del cascade + CFSE
-    const laborForPriceBreakdown = round2((afterB2bOhsms * laborRatio) + cfseAmount);
+    // Labor del Price Breakdown = proporción labor del cascaded total (CFSE ya está incluido en afterB2bOhsms)
+    const laborForPriceBreakdown = round2(afterB2bOhsms * laborRatio);
     
     // B2B OHSMS Labor = Labor (del Price Breakdown) x 4%
     const b2bOhsmsLaborAmount = round2(laborForPriceBreakdown * (Number(b2bOhsmsLaborPercentage) / 100));
@@ -412,11 +411,11 @@ const CostEstimateDetail = () => {
     // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
     
-    // Labor with all percentages = Labor del Price Breakdown + B2B OHSMS Labor
+    // Labor with all percentages = Labor proporción del cascade + B2B OHSMS Labor
     const laborWithPercentages = round2(laborForPriceBreakdown + b2bOhsmsLaborAmount);
     
-    // Material/Equipment with all percentages = Grand Total - Labor con todos los porcentajes
-    const matEquipWithPercentages = round2(grandTotal - laborWithPercentages);
+    // Material/Equipment with all percentages = proporción mat/equip del cascade + B2B Subcontractor
+    const matEquipWithPercentages = round2((afterB2bOhsms * matEquipRatio) + b2bSubcontractorAmount);
     
     // Calculate total of all percentage amounts
     const totalPercentageAmounts = round2(
