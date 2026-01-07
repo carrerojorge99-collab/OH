@@ -8516,6 +8516,9 @@ async def export_cost_estimate_pdf(
     b2b_ohsms_amount = round2(b2b_ohsms_base * (b2b_ohsms_pct / 100))
     after_b2b_ohsms = round2(after_contingency + b2b_ohsms_amount)
     
+    # Calculate Material/Equipment breakdown
+    total_material_equipment = round2(total_subcontractors + total_materials + total_equipment + total_transportation + total_gc)
+    
     # Calculate Labor ratio and Labor for Price Breakdown
     labor_ratio = total_labor / subtotal if subtotal > 0 else 0
     mat_equip_ratio = total_material_equipment / subtotal if subtotal > 0 else 0
@@ -8529,8 +8532,6 @@ async def export_cost_estimate_pdf(
     # Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     grand_total = round2(after_b2b_ohsms + b2b_subcontractor_amount + b2b_ohsms_labor_amount)
     
-    # Calculate Material/Equipment breakdown
-    total_material_equipment = round2(total_subcontractors + total_materials + total_equipment + total_transportation + total_gc)
     # Labor with percentages = Labor proporción + B2B OHSMS Labor
     labor_with_percentages = round2(labor_for_price_breakdown + b2b_ohsms_labor_amount)
     # Material/Equipment with percentages = proporción mat/equip del cascade + B2B Subcontractor
