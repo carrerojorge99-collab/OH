@@ -408,16 +408,19 @@ const PurchaseOrders = () => {
                   onSelect={handleSelectNomenclature}
                   label="Nomenclatura de Orden"
                 />
-                {!selectedNomenclature && (
-                  <div className="space-y-2">
-                    <Label>Número Manual (opcional)</Label>
-                    <Input 
-                      value={form.custom_number} 
-                      onChange={(e) => setForm({...form, custom_number: e.target.value})} 
-                      placeholder="Ej: PO-2025-0150"
-                    />
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label>Número de PO {selectedNomenclature ? '(editable)' : '(manual)'}</Label>
+                  <Input 
+                    value={form.custom_number} 
+                    onChange={(e) => setForm({...form, custom_number: e.target.value})} 
+                    placeholder="Ej: PO-2025-0150"
+                  />
+                  <p className="text-xs text-slate-500">
+                    {selectedNomenclature 
+                      ? 'Número generado automáticamente. Puede editarlo si lo desea.' 
+                      : 'Ingrese un número personalizado o se generará automáticamente.'}
+                  </p>
+                </div>
 
                 {/* Supplier Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
