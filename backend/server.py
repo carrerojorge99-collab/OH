@@ -142,6 +142,7 @@ class UserRole(str, Enum):
     RRHH = "rrhh"
     EMPLEADO = "empleado"
     CLIENT = "client"
+    ACCOUNTANT = "accountant"
 
 # Role permissions helper
 ROLE_PERMISSIONS = {
@@ -160,7 +161,13 @@ ROLE_PERMISSIONS = {
         "clock_in_out", "view_own_hours", "view_own_history", 
         "view_assigned_projects", "upload_docs"
     ],
-    "client": ["view_own_profile", "upload_client_docs"]
+    "client": ["view_own_profile", "upload_client_docs"],
+    "accountant": [
+        "view_accounting", "manage_chart_of_accounts", "create_journal_entries",
+        "view_general_ledger", "view_financial_statements", "manage_ar_ap",
+        "bank_reconciliation", "view_tax_reports", "generate_reports",
+        "clock_in_out", "view_own_hours", "view_own_history"
+    ]
 }
 
 def has_permission(role: str, permission: str) -> bool:
