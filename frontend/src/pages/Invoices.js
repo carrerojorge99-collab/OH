@@ -1065,9 +1065,9 @@ const Invoices = () => {
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setManualDialogOpen(false)}>Cancelar</Button>
+                    <Button type="button" variant="outline" onClick={() => { setManualDialogOpen(false); setEditingInvoice(null); resetManualForm(); }}>Cancelar</Button>
                     <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                      Crear Factura
+                      {editingInvoice ? 'Actualizar Factura' : 'Crear Factura'}
                     </Button>
                   </div>
                 </form>
