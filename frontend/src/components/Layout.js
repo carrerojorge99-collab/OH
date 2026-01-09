@@ -110,6 +110,16 @@ const Layout = ({ children }) => {
       { name: 'Configuración', href: '/settings', icon: Settings },
     ];
 
+    const accountantNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Mi Perfil', href: '/my-profile', icon: User },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Contabilidad', href: '/accounting', icon: Landmark },
+      { name: 'Facturas', href: '/invoices', icon: DollarSign },
+      { name: 'Reportes', href: '/reports', icon: BarChart3 },
+    ];
+
     const clientNav = [
       { name: 'Mi Perfil', href: `/clients/${user?.user_id}`, icon: Building2 },
     ];
@@ -122,6 +132,8 @@ const Layout = ({ children }) => {
         return pmNav;
       case 'rrhh':
         return rrhhNav;
+      case 'accountant':
+        return accountantNav;
       case 'empleado':
         return baseEmpleado;
       case 'client':
