@@ -1283,10 +1283,21 @@ const Invoices = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => handleEditInvoice(invoice)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        title="Editar factura"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDeleteInvoice(invoice.invoice_id, invoice.invoice_number)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
+                      </Button>
                       </Button>
                     </div>
                   </div>
