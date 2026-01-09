@@ -208,11 +208,6 @@ const Login = () => {
               >
                 {loading ? 'Ingresando...' : 'Ingresar'}
               </Button>
-              
-              <div className="relative w-full">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-200" />
-                </div>
             </CardFooter>
           </form>
         </Card>
