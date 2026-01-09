@@ -89,6 +89,8 @@ const Users = () => {
         return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'rrhh':
         return 'bg-green-100 text-green-700 border-green-200';
+      case 'accountant':
+        return 'bg-teal-100 text-teal-700 border-teal-200';
       case 'empleado':
         return 'bg-gray-100 text-gray-700 border-gray-200';
       case 'client':
@@ -108,6 +110,8 @@ const Users = () => {
         return 'Project Manager';
       case 'rrhh':
         return 'RRHH';
+      case 'accountant':
+        return 'Contador';
       case 'empleado':
         return 'Empleado';
       case 'client':
