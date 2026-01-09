@@ -3401,13 +3401,17 @@ async def block_user(user_id: str, request: Request, session_token: Optional[str
 async def update_user(user_id: str, user_data: UserUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
     current_user = await get_current_user(request, session_token)
     
-    # Only admins can update users
-    if current_user.role != UserRole.SUPER_ADMIN.value:
+    # Super admin and RRHH can update users
+    if current_user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="No tienes permisos para actualizar usuarios")
     
     user_to_update = await db.users.find_one({"user_id": user_id}, {"_id": 0})
     if not user_to_update:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # RRHH cannot edit super_admin users
+    if current_user.role == UserRole.RRHH.value and user_to_update.get("role") == UserRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="No puedes editar a un Super Admin")
     
     update_data = {}
     
