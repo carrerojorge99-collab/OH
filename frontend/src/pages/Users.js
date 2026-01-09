@@ -284,12 +284,13 @@ const Users = () => {
                           <SelectItem value="super_admin">Super Admin</SelectItem>
                           <SelectItem value="project_manager">Project Manager</SelectItem>
                           <SelectItem value="rrhh">RRHH</SelectItem>
+                          <SelectItem value="accountant">Contador</SelectItem>
                           <SelectItem value="empleado">Empleado</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <p className="text-xs text-slate-500">
-                      PM: proyectos y aprobaciones | RRHH: empleados y nómina | Empleado: ponchar y ver proyectos
+                      PM: proyectos y aprobaciones | RRHH: empleados y nómina | Contador: contabilidad | Empleado: ponchar
                     </p>
                   </div>
                 </div>
