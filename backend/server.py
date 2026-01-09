@@ -154,7 +154,7 @@ ROLE_PERMISSIONS = {
     ],
     "rrhh": [
         "create_employees", "edit_employees", "view_all_hours", "view_payroll",
-        "view_employee_docs", "apply_labor_rules",
+        "view_employee_docs", "apply_labor_rules", "block_users",
         "clock_in_out", "view_own_hours", "view_own_history", "upload_docs"
     ],
     "empleado": [
