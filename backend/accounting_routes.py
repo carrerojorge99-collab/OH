@@ -83,7 +83,8 @@ TAX_RATES = {
     "fica_medicare_employee": {"rate": 0.0145, "description": "Medicare (Employee)", "type": "payroll"},
     "fica_medicare_employer": {"rate": 0.0145, "description": "Medicare (Employer)", "type": "payroll"},
     "futa": {"rate": 0.06, "description": "Federal Unemployment (FUTA)", "type": "payroll", "wage_base": 7000},
-    "pr_disability": {"rate": 0.003, "description": "PR Disability (SINOT)", "type": "payroll"},
+    "pr_disability": {"rate": 0.004, "description": "PR Incapacidad (SINOT)", "type": "payroll"},
+    "pr_unemployment": {"rate": 0.034, "description": "PR Desempleo", "type": "payroll"},
     "pr_chauffeur": {"rate": 0.0025, "description": "PR Chauffeur Insurance", "type": "payroll"},
 }
 
