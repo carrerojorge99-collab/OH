@@ -36,6 +36,7 @@ const Invoices = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState(null);
+  const [editingInvoice, setEditingInvoice] = useState(null);
   const [payments, setPayments] = useState([]);
   const [savedClients, setSavedClients] = useState([]);
   const [taxTypes, setTaxTypes] = useState([]);
