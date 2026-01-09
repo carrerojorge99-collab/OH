@@ -193,6 +193,25 @@ const Users = () => {
     }
   };
 
+  const handleBlockUser = async (userId, userName, isCurrentlyBlocked) => {
+    const action = isCurrentlyBlocked ? 'desbloquear' : 'bloquear';
+    if (!window.confirm(`¿Estás seguro de ${action} al usuario "${userName}"?${!isCurrentlyBlocked ? '\n\nEl usuario no podrá iniciar sesión mientras esté bloqueado.' : ''}`)) {
+      return;
+    }
+    
+    try {
+      const response = await api.put(`/users/${userId}/block`, {}, { withCredentials: true });
+      toast.success(response.data.message);
+      loadUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || `Error al ${action} usuario`);
+      console.error(error);
+    }
+  };
+
+  // Check if current user can block users
+  const canBlockUsers = currentUser?.role === 'super_admin' || currentUser?.role === 'rrhh';
+
   if (loading) {
     return (
       <Layout>
