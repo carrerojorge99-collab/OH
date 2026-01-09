@@ -6641,9 +6641,6 @@ async def convert_estimate_to_invoice(
     if estimate.get('status') == 'converted':
         raise HTTPException(status_code=400, detail="Este estimado ya fue convertido a factura")
     
-    if estimate.get('status') != 'approved':
-        raise HTTPException(status_code=400, detail="Solo se pueden convertir estimados aprobados")
-    
     # Generate invoice
     count = await db.invoices.count_documents({})
     invoice_number = f"INV-{datetime.now().year}-{str(count + 1).zfill(4)}"
