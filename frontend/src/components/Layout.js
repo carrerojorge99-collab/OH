@@ -34,7 +34,8 @@ import {
   User,
   Shield,
   Home,
-  ChevronUp
+  ChevronUp,
+  Landmark
 } from 'lucide-react';
 import { toast } from 'sonner';
 
