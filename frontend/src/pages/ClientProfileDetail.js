@@ -717,6 +717,17 @@ const ClientProfileDetail = () => {
                               <Button variant="ghost" size="sm" onClick={() => exportPDF(estimate)} title="Descargar PDF">
                                 <Download className="w-4 h-4" />
                               </Button>
+                              {estimate.status !== 'converted' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleConvertToInvoice(estimate.estimate_id)} 
+                                  title="Convertir a Factura"
+                                  className="text-green-600 hover:text-green-700"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button variant="ghost" size="sm" onClick={() => openEditEstimate(estimate)} title="Editar">
                                 <Edit className="w-4 h-4" />
                               </Button>
