@@ -836,12 +836,12 @@ const Invoices = () => {
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Crear Factura Manual</DialogTitle>
+                  <DialogTitle>{editingInvoice ? 'Editar Factura' : 'Crear Factura Manual'}</DialogTitle>
                   <DialogDescription>
-                    Crea una factura con items personalizados (Tasks)
+                    {editingInvoice ? 'Modifica los datos de la factura' : 'Crea una factura con items personalizados (Tasks)'}
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleManualSubmit} className="space-y-6">
+                <form onSubmit={(e) => { e.preventDefault(); editingInvoice ? handleUpdateInvoice() : handleManualSubmit(e); }} className="space-y-6">
                   {/* Client Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
