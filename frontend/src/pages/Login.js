@@ -79,11 +79,6 @@ const Login = () => {
     setLoading(false);
   };
 
-  const handleGoogleLogin = () => {
-    const redirectUrl = window.location.origin + '/dashboard';
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-  };
-
   // Password change form
   if (showPasswordChange) {
     return (
