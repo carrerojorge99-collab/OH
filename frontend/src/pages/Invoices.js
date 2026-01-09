@@ -387,6 +387,63 @@ const Invoices = () => {
     }
   };
 
+  const handleEditInvoice = (invoice) => {
+    setEditingInvoice(invoice.invoice_id);
+    setManualForm({
+      project_id: invoice.project_id || '',
+      client_name: invoice.client_name || '',
+      client_email: invoice.client_email || '',
+      client_phone: invoice.client_phone || '',
+      client_address: invoice.client_address || '',
+      sponsor_name: invoice.sponsor_name || '',
+      items: invoice.items?.map(item => ({
+        description: item.description || '',
+        quantity: item.hours || item.quantity || 1,
+        unit_price: item.rate || item.unit_price || 0,
+        amount: item.amount || 0
+      })) || [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+      tax_rate: invoice.tax_rate || 0,
+      selected_taxes: invoice.selected_taxes || [],
+      discount_percent: invoice.discount_percent || 0,
+      notes: invoice.notes || '',
+      terms: invoice.terms || '',
+      custom_number: invoice.invoice_number || '',
+      price_breakdown: invoice.price_breakdown || null
+    });
+    setManualDialogOpen(true);
+  };
+
+  const handleUpdateInvoice = async () => {
+    if (!editingInvoice) return;
+    
+    try {
+      const totals = calculateManualTotals();
+      const payload = {
+        ...manualForm,
+        items: manualForm.items.map(item => ({
+          description: item.description,
+          hours: parseFloat(item.quantity) || 1,
+          rate: parseFloat(item.unit_price) || 0,
+          amount: parseFloat(item.amount) || 0
+        })),
+        subtotal: totals.subtotal,
+        discount_amount: totals.discountAmount,
+        tax_amount: totals.taxAmount,
+        total: totals.total,
+        custom_number: manualForm.custom_number
+      };
+      
+      await api.put(`/invoices/${editingInvoice}`, payload, { withCredentials: true });
+      toast.success('Factura actualizada exitosamente');
+      setManualDialogOpen(false);
+      setEditingInvoice(null);
+      resetManualForm();
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al actualizar factura');
+    }
+  };
+
   const handleSendInvoice = async (invoiceId, clientEmail) => {
     if (!clientEmail) {
       toast.error('La factura no tiene email del cliente');
