@@ -9749,6 +9749,7 @@ async def preview_employee_document(
     )
 
 app.include_router(api_router)
+app.include_router(accounting_router)
 
 # Middleware para prevenir caché en respuestas de API
 @app.middleware("http")
