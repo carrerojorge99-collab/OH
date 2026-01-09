@@ -3432,6 +3432,9 @@ async def update_user(user_id: str, user_data: UserUpdate, request: Request, ses
             update_data["password"] = hashed_password
     
     if user_data.role is not None:
+        # RRHH cannot assign super_admin role
+        if current_user.role == UserRole.RRHH.value and user_data.role == UserRole.SUPER_ADMIN.value:
+            raise HTTPException(status_code=403, detail="No puedes asignar el rol de Super Admin")
         update_data["role"] = user_data.role
     
     if update_data:
