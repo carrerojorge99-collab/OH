@@ -463,7 +463,7 @@ const ClientProfileDetail = () => {
   const handleConvertToInvoice = async (estimateId) => {
     if (!window.confirm('¿Convertir este estimado a factura?')) return;
     try {
-      const response = await api.post(`/estimates/${estimateId}/convert-to-invoice`, {}, { withCredentials: true });
+      const response = await api.post(`/estimates/${estimateId}/convert`, {}, { withCredentials: true });
       toast.success('Estimado convertido a factura exitosamente');
       loadData();
     } catch (error) {
