@@ -6019,6 +6019,61 @@ async def get_invoice(
     
     return Invoice(**invoice)
 
+@api_router.put("/invoices/{invoice_id}", response_model=Invoice)
+async def update_invoice(
+    invoice_id: str,
+    invoice_data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    invoice = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    # Get project name if project_id provided
+    project_name = None
+    if invoice_data.get('project_id'):
+        project = await db.projects.find_one({"project_id": invoice_data['project_id']}, {"_id": 0, "name": 1})
+        if project:
+            project_name = project.get('name')
+    
+    update_data = {
+        "project_id": invoice_data.get('project_id', invoice.get('project_id')),
+        "project_name": project_name or invoice.get('project_name'),
+        "client_name": invoice_data.get('client_name', invoice.get('client_name')),
+        "client_email": invoice_data.get('client_email', invoice.get('client_email')),
+        "client_phone": invoice_data.get('client_phone', invoice.get('client_phone')),
+        "client_address": invoice_data.get('client_address', invoice.get('client_address')),
+        "sponsor_name": invoice_data.get('sponsor_name', invoice.get('sponsor_name')),
+        "items": invoice_data.get('items', invoice.get('items')),
+        "subtotal": invoice_data.get('subtotal', invoice.get('subtotal')),
+        "discount_percent": invoice_data.get('discount_percent', invoice.get('discount_percent', 0)),
+        "discount_amount": invoice_data.get('discount_amount', invoice.get('discount_amount', 0)),
+        "tax_rate": invoice_data.get('tax_rate', invoice.get('tax_rate')),
+        "tax_amount": invoice_data.get('tax_amount', invoice.get('tax_amount')),
+        "total": invoice_data.get('total', invoice.get('total')),
+        "notes": invoice_data.get('notes', invoice.get('notes')),
+        "terms": invoice_data.get('terms', invoice.get('terms')),
+        "selected_taxes": invoice_data.get('selected_taxes', invoice.get('selected_taxes', [])),
+        "price_breakdown": invoice_data.get('price_breakdown', invoice.get('price_breakdown'))
+    }
+    
+    # Update invoice_number if custom_number provided
+    if invoice_data.get('custom_number') and invoice_data['custom_number'].strip():
+        update_data["invoice_number"] = invoice_data['custom_number'].strip()
+    
+    # Recalculate balance_due
+    update_data["balance_due"] = update_data["total"] - invoice.get('amount_paid', 0)
+    
+    await db.invoices.update_one({"invoice_id": invoice_id}, {"$set": update_data})
+    
+    await log_audit(user.user_id, user.name, "update", "invoice", invoice_id, invoice.get('invoice_number'), {"total": update_data["total"]})
+    
+    updated = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    return Invoice(**updated)
+
 @api_router.put("/invoices/{invoice_id}/status", response_model=Invoice)
 async def update_invoice_status(
     invoice_id: str,
