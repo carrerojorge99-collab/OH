@@ -4,7 +4,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from './components/ui/sonner';
 import './App.css';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Setup from './pages/Setup';
 import EmergencyReset from './pages/EmergencyReset';
 import AuthCallback from './pages/AuthCallback';
@@ -50,7 +49,6 @@ function AppRouter() {
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
       <Route path="/setup" element={<Setup />} />
       <Route path="/emergency-reset" element={<EmergencyReset />} />
       
