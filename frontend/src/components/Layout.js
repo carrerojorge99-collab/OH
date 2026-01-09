@@ -100,6 +100,7 @@ const Layout = ({ children }) => {
       { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
       { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
       { name: 'Facturas', href: '/invoices', icon: DollarSign },
+      { name: 'Contabilidad', href: '/accounting', icon: Landmark },
       { name: 'Historial Auditoría', href: '/audit-log', icon: FileText },
       { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
       { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
