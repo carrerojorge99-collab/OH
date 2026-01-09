@@ -460,6 +460,17 @@ const ClientProfileDetail = () => {
     }
   };
 
+  const handleConvertToInvoice = async (estimateId) => {
+    if (!window.confirm('¿Convertir este estimado a factura?')) return;
+    try {
+      const response = await api.post(`/estimates/${estimateId}/convert-to-invoice`, {}, { withCredentials: true });
+      toast.success('Estimado convertido a factura exitosamente');
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al convertir a factura');
+    }
+  };
+
   // Calculate stats
   const totalEstimates = estimates.length;
   const totalValue = estimates.reduce((sum, e) => sum + (e.total || 0), 0);
