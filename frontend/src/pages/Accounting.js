@@ -1116,7 +1116,7 @@ const Accounting = () => {
           <CardTitle className="text-base">Tax Rates Reference (US & Puerto Rico)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div className="p-3 bg-blue-50 rounded-lg">
               <p className="text-sm font-semibold text-blue-800">PR IVU (Sales Tax)</p>
               <p className="text-2xl font-bold text-blue-600">11.5%</p>
@@ -1136,6 +1136,21 @@ const Accounting = () => {
               <p className="text-sm font-semibold text-orange-800">FUTA</p>
               <p className="text-2xl font-bold text-orange-600">6.0%</p>
               <p className="text-xs text-orange-600">First $7,000 wages</p>
+            </div>
+            <div className="p-3 bg-red-50 rounded-lg">
+              <p className="text-sm font-semibold text-red-800">PR Incapacidad (SINOT)</p>
+              <p className="text-2xl font-bold text-red-600">0.40%</p>
+              <p className="text-xs text-red-600">Patronal</p>
+            </div>
+            <div className="p-3 bg-teal-50 rounded-lg">
+              <p className="text-sm font-semibold text-teal-800">PR Desempleo</p>
+              <p className="text-2xl font-bold text-teal-600">3.40%</p>
+              <p className="text-xs text-teal-600">Patronal</p>
+            </div>
+            <div className="p-3 bg-yellow-50 rounded-lg">
+              <p className="text-sm font-semibold text-yellow-800">PR Choferil</p>
+              <p className="text-2xl font-bold text-yellow-600">0.25%</p>
+              <p className="text-xs text-yellow-600">Patronal</p>
             </div>
           </div>
         </CardContent>
