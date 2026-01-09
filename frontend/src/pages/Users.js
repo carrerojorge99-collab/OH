@@ -475,18 +475,20 @@ const Users = () => {
                           </Button>
                         )
                       )}
-                      {/* Edit and Delete - only for super_admin */}
-                      {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
-                        <>
+                      {/* Edit button - visible to super_admin and rrhh */}
+                      {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin' || currentUser?.role === 'rrhh') && (
+                        // RRHH cannot edit super_admin
+                        !(currentUser?.role === 'rrhh' && user.role === 'super_admin') && (
                           <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)} className="h-6 w-6 text-blue-600 hover:bg-blue-50">
                             <Pencil className="w-3 h-3" />
                           </Button>
-                          {currentUser?.user_id !== user.user_id && (
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.user_id, user.name)} className="h-6 w-6 text-red-600 hover:bg-red-50">
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </>
+                        )
+                      )}
+                      {/* Delete - only for super_admin */}
+                      {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && currentUser?.user_id !== user.user_id && (
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.user_id, user.name)} className="h-6 w-6 text-red-600 hover:bg-red-50">
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       )}
                     </div>
                   </div>
