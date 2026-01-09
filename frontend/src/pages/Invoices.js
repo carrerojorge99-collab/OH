@@ -842,6 +842,19 @@ const Invoices = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={(e) => { e.preventDefault(); editingInvoice ? handleUpdateInvoice() : handleManualSubmit(e); }} className="space-y-6">
+                  {/* Invoice Number */}
+                  <div className="space-y-2">
+                    <Label htmlFor="manual_custom_number">Número de Factura *</Label>
+                    <Input
+                      id="manual_custom_number"
+                      value={manualForm.custom_number}
+                      onChange={(e) => setManualForm({...manualForm, custom_number: e.target.value})}
+                      placeholder="Ej: INV-2025-0150"
+                      required
+                    />
+                    <p className="text-xs text-slate-500">Ingrese el número de factura que desee</p>
+                  </div>
+
                   {/* Client Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
