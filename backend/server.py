@@ -3356,6 +3356,43 @@ async def delete_user(user_id: str, request: Request, session_token: Optional[st
     
     return {"message": f"Usuario {user_to_delete['name']} eliminado exitosamente"}
 
+@api_router.put("/users/{user_id}/block")
+async def block_user(user_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Block or unblock a user. Admin and RRHH can do this."""
+    current_user = await get_current_user(request, session_token)
+    
+    # Admin and RRHH can block users
+    if current_user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
+        raise HTTPException(status_code=403, detail="No tienes permisos para bloquear usuarios")
+    
+    # Cannot block yourself
+    if current_user.user_id == user_id:
+        raise HTTPException(status_code=400, detail="No puedes bloquearte a ti mismo")
+    
+    user_to_block = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user_to_block:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # RRHH cannot block super_admin
+    if current_user.role == UserRole.RRHH.value and user_to_block.get("role") == UserRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="No puedes bloquear a un Super Admin")
+    
+    # Toggle block status
+    current_blocked = user_to_block.get("is_blocked", False)
+    new_blocked = not current_blocked
+    
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {"is_blocked": new_blocked, "blocked_at": datetime.now(timezone.utc).isoformat() if new_blocked else None, "blocked_by": current_user.user_id if new_blocked else None}}
+    )
+    
+    # If blocking, invalidate all user sessions
+    if new_blocked:
+        await db.user_sessions.delete_many({"user_id": user_id})
+    
+    action = "bloqueado" if new_blocked else "desbloqueado"
+    return {"message": f"Usuario {user_to_block['name']} {action} exitosamente", "is_blocked": new_blocked}
+
 @api_router.put("/users/{user_id}")
 async def update_user(user_id: str, user_data: UserUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
     current_user = await get_current_user(request, session_token)
