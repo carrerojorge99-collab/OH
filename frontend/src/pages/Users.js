@@ -424,16 +424,23 @@ const Users = () => {
               <Card
                 key={user.user_id}
                 data-testid={`user-card-${user.user_id}`}
-                className="border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                className={`border-slate-200 shadow-sm hover:shadow-md transition-shadow ${user.is_blocked ? 'opacity-60 bg-red-50' : ''}`}
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10 border border-slate-200 flex-shrink-0">
-                      <AvatarImage src={user.picture} alt={user.name} />
-                      <AvatarFallback className="bg-blue-600 text-white font-semibold text-sm">
-                        {getInitials(user.name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="w-10 h-10 border border-slate-200 flex-shrink-0">
+                        <AvatarImage src={user.picture} alt={user.name} />
+                        <AvatarFallback className="bg-blue-600 text-white font-semibold text-sm">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {user.is_blocked && (
+                        <div className="absolute -bottom-1 -right-1 bg-red-500 rounded-full p-0.5">
+                          <Ban className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
                     
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-[#0F172A] truncate">{user.name}</h3>
@@ -442,21 +449,46 @@ const Users = () => {
                   </div>
                   
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                    <Badge className={`${getRoleBadgeColor(user.role)} border text-xs px-2 py-0`}>
-                      {getRoleLabel(user.role)}
-                    </Badge>
-                    {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)} className="h-6 w-6 text-blue-600 hover:bg-blue-50">
-                          <Pencil className="w-3 h-3" />
-                        </Button>
-                        {currentUser?.user_id !== user.user_id && (
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.user_id, user.name)} className="h-6 w-6 text-red-600 hover:bg-red-50">
-                            <Trash2 className="w-3 h-3" />
+                    <div className="flex items-center gap-1">
+                      <Badge className={`${getRoleBadgeColor(user.role)} border text-xs px-2 py-0`}>
+                        {getRoleLabel(user.role)}
+                      </Badge>
+                      {user.is_blocked && (
+                        <Badge className="bg-red-100 text-red-700 border-red-200 border text-xs px-2 py-0">
+                          Bloqueado
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {/* Block/Unblock button - visible to super_admin and rrhh */}
+                      {canBlockUsers && currentUser?.user_id !== user.user_id && (
+                        // RRHH cannot block super_admin
+                        !(currentUser?.role === 'rrhh' && user.role === 'super_admin') && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleBlockUser(user.user_id, user.name, user.is_blocked)}
+                            className={`h-6 w-6 ${user.is_blocked ? 'text-green-600 hover:bg-green-50' : 'text-orange-600 hover:bg-orange-50'}`}
+                            title={user.is_blocked ? 'Desbloquear usuario' : 'Bloquear usuario'}
+                          >
+                            {user.is_blocked ? <CheckCircle className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
                           </Button>
-                        )}
-                      </div>
-                    )}
+                        )
+                      )}
+                      {/* Edit and Delete - only for super_admin */}
+                      {(currentUser?.role === 'super_admin' || currentUser?.role === 'admin') && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)} className="h-6 w-6 text-blue-600 hover:bg-blue-50">
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          {currentUser?.user_id !== user.user_id && (
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.user_id, user.name)} className="h-6 w-6 text-red-600 hover:bg-red-50">
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
