@@ -238,13 +238,6 @@ const Login = () => {
                 </svg>
                 Google
               </Button>
-
-              <p className="text-sm text-center text-muted-foreground">
-                ¿No tienes cuenta?{' '}
-                <Link to="/register" className="text-orange-500 hover:underline font-medium">
-                  Regístrate
-                </Link>
-              </p>
             </CardFooter>
           </form>
         </Card>
