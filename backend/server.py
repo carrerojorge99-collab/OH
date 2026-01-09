@@ -6933,6 +6933,10 @@ async def update_purchase_order(
         "expected_delivery_date": po_data.expected_delivery_date
     }
     
+    # Update po_number if custom_number provided
+    if po_data.custom_number and po_data.custom_number.strip():
+        update_data["po_number"] = po_data.custom_number.strip()
+    
     await db.purchase_orders.update_one({"po_id": po_id}, {"$set": update_data})
     await log_audit(user.user_id, user.name, "update", "purchase_order", po_id, po.get('po_number'), {"total": total})
     
