@@ -972,6 +972,10 @@ async def login(credentials: UserLogin, response: Response):
     if not user_doc:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     
+    # Check if user is blocked
+    if user_doc.get("is_blocked", False):
+        raise HTTPException(status_code=403, detail="Tu cuenta ha sido bloqueada. Contacta al administrador.")
+    
     print(f"Stored hash: {user_doc['password'][:60]}...")
     password_match = bcrypt.checkpw(credentials.password.encode('utf-8'), user_doc['password'].encode('utf-8'))
     print(f"Password match: {password_match}")
