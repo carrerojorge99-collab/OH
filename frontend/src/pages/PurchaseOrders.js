@@ -254,7 +254,8 @@ const PurchaseOrders = () => {
       discount_percent: po.discount_percent,
       notes: po.notes || '',
       terms: po.terms || '',
-      expected_delivery_date: po.expected_delivery_date || ''
+      expected_delivery_date: po.expected_delivery_date || '',
+      custom_number: po.po_number || ''
     });
     setDialogOpen(true);
   };
