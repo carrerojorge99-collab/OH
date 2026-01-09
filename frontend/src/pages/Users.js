@@ -394,7 +394,10 @@ const Users = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                          {/* RRHH cannot assign super_admin role */}
+                          {currentUser?.role !== 'rrhh' && (
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                          )}
                           <SelectItem value="project_manager">Project Manager</SelectItem>
                           <SelectItem value="rrhh">RRHH</SelectItem>
                           <SelectItem value="accountant">Contador</SelectItem>
