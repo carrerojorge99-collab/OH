@@ -917,7 +917,22 @@ async def emergency_password_reset(data: EmergencyResetRequest):
     return {"message": f"Contraseña actualizada para {data.email}. Ya puedes iniciar sesión."}
 
 @api_router.post("/auth/register")
-async def register(user_data: UserRegister):
+async def register(user_data: UserRegister, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Registro de usuarios - Solo Super Admin y RRHH pueden crear cuentas"""
+    # Verificar autenticación - solo admins y RRHH pueden crear usuarios
+    try:
+        current_user = await get_current_user(request, session_token)
+        if current_user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
+            raise HTTPException(status_code=403, detail="Solo Super Admin y RRHH pueden crear usuarios")
+        
+        # RRHH no puede crear super_admin
+        if current_user.role == UserRole.RRHH.value and user_data.role == UserRole.SUPER_ADMIN.value:
+            raise HTTPException(status_code=403, detail="No puedes crear usuarios Super Admin")
+    except HTTPException as e:
+        if e.status_code == 401:
+            raise HTTPException(status_code=403, detail="El registro público está deshabilitado. Contacta al administrador.")
+        raise e
+    
     # Si se proporciona email, verificar que no exista
     if user_data.email:
         existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
