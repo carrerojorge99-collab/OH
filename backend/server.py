@@ -80,7 +80,10 @@ ACCESS_TOKEN_EXPIRE_DAYS = 7
 async def create_default_admin():
     """Create default admin user if no users exist in database"""
     import asyncio
-    max_retries = 3
+    max_retries = 5
+    
+    # Wait a bit for database connection to be ready
+    await asyncio.sleep(5)
     
     for attempt in range(max_retries):
         try:
@@ -110,17 +113,22 @@ async def create_default_admin():
         except Exception as e:
             print(f"⚠️ Attempt {attempt + 1}/{max_retries} - Error creating default admin: {e}")
             if attempt < max_retries - 1:
-                await asyncio.sleep(2)  # Wait before retry
+                await asyncio.sleep(5)  # Wait longer before retry
     
     print("⚠️ Could not create default admin after retries, app will continue without it")
 
 @app.on_event("startup")
 async def startup_event():
-    # Run in background to not block app startup
+    # Run admin creation in background task to not block app startup
+    import asyncio
+    asyncio.create_task(create_default_admin_background())
+
+async def create_default_admin_background():
+    """Background task wrapper for admin creation"""
     try:
         await create_default_admin()
     except Exception as e:
-        print(f"⚠️ Startup admin creation skipped: {e}")
+        print(f"⚠️ Background admin creation failed: {e}")
         # Don't crash the app, continue without default admin
 
 # ================================================================
