@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { Checkbox } from '../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { ArrowLeft, Calculator, Clock, Users, Download, Edit2, Check, Save, FileText, Printer, History, Calendar, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Calculator, Clock, Users, Download, Edit2, Check, Save, FileText, Printer, History, Calendar, RefreshCw, Trash2, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import jsPDF from 'jspdf';
