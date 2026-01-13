@@ -810,6 +810,7 @@ const Payroll = () => {
                       <td className="p-3 text-right font-mono text-red-600">-${payrollData.reduce((a, p) => a + p.totalDeductions, 0).toFixed(2)}</td>
                       <td className="p-3 text-right font-mono text-green-600">${payrollData.reduce((a, p) => a + p.netPay, 0).toFixed(2)}</td>
                       <td className="p-3"></td>
+                      <td className="p-3"></td>
                     </tr>
                   </tfoot>
                 </table>
