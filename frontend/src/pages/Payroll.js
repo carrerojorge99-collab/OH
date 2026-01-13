@@ -684,6 +684,7 @@ const Payroll = () => {
                       <th className="text-right p-3">Salario Bruto</th>
                       <th className="text-right p-3">Deducciones</th>
                       <th className="text-right p-3">Neto a Pagar</th>
+                      <th className="text-center p-3">Método de Pago</th>
                       <th className="text-center p-3">Acciones</th>
                     </tr>
                   </thead>
