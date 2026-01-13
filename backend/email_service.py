@@ -46,8 +46,16 @@ SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', 'noreply@promanage.com')
 SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'ProManage')
 EMAIL_NOTIFICATIONS_ENABLED = os.environ.get('EMAIL_NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
 
-async def send_email(to_email: str, subject: str, html_content: str, text_content: str = None):
-    """Send an email using SMTP"""
+async def send_email(to_email: str, subject: str, html_content: str, text_content: str = None, attachments: Optional[List[dict]] = None):
+    """Send an email using SMTP with optional attachments
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        html_content: HTML body content
+        text_content: Plain text body content (optional)
+        attachments: List of dicts with 'filename', 'content' (base64), 'content_type' keys (optional)
+    """
     
     # Always read fresh config from .env file
     config = get_smtp_config()
@@ -61,17 +69,43 @@ async def send_email(to_email: str, subject: str, html_content: str, text_conten
         return False
     
     try:
-        message = MIMEMultipart('alternative')
+        # Use mixed for attachments, alternative for text only
+        message = MIMEMultipart('mixed' if attachments else 'alternative')
         message['From'] = f"{config['from_name']} <{config['from_email']}>"
         message['To'] = to_email
         message['Subject'] = subject
         
+        # Create alternative part for text/html
+        alt_part = MIMEMultipart('alternative')
+        
         if text_content:
             part1 = MIMEText(text_content, 'plain')
-            message.attach(part1)
+            alt_part.attach(part1)
         
         part2 = MIMEText(html_content, 'html')
-        message.attach(part2)
+        alt_part.attach(part2)
+        
+        message.attach(alt_part)
+        
+        # Add attachments if provided
+        if attachments:
+            for attachment in attachments:
+                try:
+                    filename = attachment.get('filename', 'attachment.pdf')
+                    content_base64 = attachment.get('content', '')
+                    content_type = attachment.get('content_type', 'application/pdf')
+                    
+                    # Decode base64 content
+                    file_data = base64.b64decode(content_base64)
+                    
+                    # Create attachment
+                    part = MIMEBase('application', 'octet-stream')
+                    part.set_payload(file_data)
+                    encoders.encode_base64(part)
+                    part.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+                    message.attach(part)
+                except Exception as e:
+                    logger.error(f"Failed to attach file {attachment.get('filename')}: {str(e)}")
         
         await aiosmtplib.send(
             message,
