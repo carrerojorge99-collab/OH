@@ -59,7 +59,10 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post(`${API}/auth/login`, {
         email,
         password
-      }, { withCredentials: true });
+      }, { 
+        withCredentials: true,
+        timeout: 15000 // 15 second timeout
+      });
       setUser(response.data.user);
       setIsAuthenticated(true);
       
@@ -73,6 +76,10 @@ export const AuthProvider = ({ children }) => {
         requiresPasswordChange: needsPasswordChange
       };
     } catch (error) {
+      console.error('Login error:', error);
+      if (error.code === 'ECONNABORTED') {
+        return { success: false, error: 'Tiempo de espera agotado. Verifica tu conexión.' };
+      }
       return { success: false, error: error.response?.data?.detail || 'Error al iniciar sesión' };
     }
   };
