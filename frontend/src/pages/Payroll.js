@@ -773,6 +773,21 @@ const Payroll = () => {
                           {p.netPay > 0 ? `$${p.netPay.toFixed(2)}` : <span className="text-slate-400">$0.00</span>}
                         </td>
                         <td className="p-3 text-center">
+                          <Select 
+                            value={p.paymentMethod || 'check'} 
+                            onValueChange={(value) => updatePaymentMethod(idx, value)}
+                          >
+                            <SelectTrigger className="w-32 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cash">Efectivo</SelectItem>
+                              <SelectItem value="check">Cheque</SelectItem>
+                              <SelectItem value="direct_deposit">Depósito Directo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="p-3 text-center">
                           <Button 
                             size="sm" 
                             variant="outline" 
