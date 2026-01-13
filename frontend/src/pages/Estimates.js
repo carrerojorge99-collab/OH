@@ -477,7 +477,7 @@ const Estimates = () => {
       y += 18 + notesLines.length * 4;
     }
     
-    // Terms and Conditions - on new page if present
+    // Terms and Conditions - on new page in two columns if present
     if (estimate.terms) {
       doc.addPage();
       doc.setFontSize(12);
@@ -485,11 +485,29 @@ const Estimates = () => {
       doc.setTextColor(30, 41, 59);
       doc.text('Términos y Condiciones', 105, 30, { align: 'center' });
       
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(71, 85, 105);
-      const termsLines = doc.splitTextToSize(estimate.terms, 180);
-      doc.text(termsLines, 15, 45);
+      
+      // Split terms into two columns
+      const pageWidth = 210; // A4 width in mm
+      const margin = 15;
+      const columnWidth = (pageWidth - (margin * 2) - 10) / 2; // 10mm gap between columns
+      const columnGap = 10;
+      
+      // Split text to fit column width
+      const allLines = doc.splitTextToSize(estimate.terms, columnWidth);
+      const halfIndex = Math.ceil(allLines.length / 2);
+      
+      // Left column
+      const leftColumnLines = allLines.slice(0, halfIndex);
+      doc.text(leftColumnLines, margin, 45);
+      
+      // Right column
+      const rightColumnLines = allLines.slice(halfIndex);
+      if (rightColumnLines.length > 0) {
+        doc.text(rightColumnLines, margin + columnWidth + columnGap, 45);
+      }
     }
     
     // Footer
