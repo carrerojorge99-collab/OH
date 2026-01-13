@@ -290,6 +290,15 @@ const Payroll = () => {
     setEditingHours(null);
   };
 
+  // Update payment method for an employee
+  const updatePaymentMethod = (idx, method) => {
+    setPayrollData(prev => {
+      const updated = [...prev];
+      updated[idx].paymentMethod = method;
+      return updated;
+    });
+  };
+
   // Toggle exemption from contractor deduction for an employee
   const toggleContractorExemption = (idx, isExempt) => {
     setPayrollData(prev => {
