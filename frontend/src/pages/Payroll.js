@@ -608,8 +608,94 @@ const Payroll = () => {
             <Button variant="outline" onClick={() => setShowHistory(!showHistory)}>
               <History className="w-4 h-4 mr-2" /> {showHistory ? 'Ocultar' : 'Ver'} Historial ({filteredPayrollHistory.length})
             </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => { 
+                setShowPayStubs(!showPayStubs); 
+                if (!showPayStubs) loadPayStubs(); 
+              }}
+            >
+              <Receipt className="w-4 h-4 mr-2" /> {showPayStubs ? 'Ocultar' : 'Gestionar'} Talonarios
+            </Button>
           </div>
         </div>
+
+        {/* Pay Stubs Management */}
+        {showPayStubs && (
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5" /> Gestión de Talonarios
+                </CardTitle>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Input
+                    placeholder="Buscar por empleado o período..."
+                    value={stubFilter}
+                    onChange={(e) => setStubFilter(e.target.value)}
+                    className="w-full sm:w-64"
+                  />
+                  <Button variant="outline" size="sm" onClick={loadPayStubs}>
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {filteredPayStubs.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Receipt className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                  <p>No hay talonarios disponibles</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="text-left p-3">Empleado</th>
+                        <th className="text-left p-3">Período</th>
+                        <th className="text-right p-3">Horas</th>
+                        <th className="text-right p-3">Bruto</th>
+                        <th className="text-right p-3">Deducciones</th>
+                        <th className="text-right p-3">Neto</th>
+                        <th className="text-left p-3">Método</th>
+                        <th className="text-left p-3">Creado</th>
+                        <th className="text-center p-3">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredPayStubs.map((stub) => (
+                        <tr key={stub.id} className="border-b hover:bg-slate-50">
+                          <td className="p-3 font-medium">{stub.employee_name}</td>
+                          <td className="p-3">{stub.period_start} - {stub.period_end}</td>
+                          <td className="p-3 text-right font-mono">{(stub.hours_worked || 0).toFixed(1)}h</td>
+                          <td className="p-3 text-right font-mono">${(stub.gross_pay || 0).toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono text-red-600">-${(stub.total_deductions || 0).toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono text-green-600 font-bold">${(stub.net_pay || 0).toFixed(2)}</td>
+                          <td className="p-3 capitalize">{stub.payment_method || 'N/A'}</td>
+                          <td className="p-3 text-xs text-slate-500">{stub.created_at ? moment(stub.created_at).format('DD/MM/YYYY HH:mm') : 'N/A'}</td>
+                          <td className="p-3 text-center">
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => deletePayStub(stub.id, stub.employee_name)}
+                              disabled={deletingStub === stub.id}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="text-xs text-slate-500 mt-3">
+                    Total: {filteredPayStubs.length} talonario(s)
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Payroll History */}
         {showHistory && filteredPayrollHistory.length > 0 && (
