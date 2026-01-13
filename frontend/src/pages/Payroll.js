@@ -424,7 +424,7 @@ const Payroll = () => {
           total_deductions: p.totalDeductions,
           netPay: p.netPay,
           net_pay: p.netPay,
-          payment_method: p.employee.profile?.payment_method || 'check'
+          payment_method: p.paymentMethod || 'check'
         })),
         totals
       };
