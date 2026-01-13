@@ -1,97 +1,97 @@
 <analysis>**original_problem_statement:**
-The user initiated a session to continue development with the specific instruction that the agent should only write, edit, and delete code, while the user would be solely responsible for all testing and verification. The session covered a wide range of feature requests and modifications:
+The user's overall goal is to continue building out their ERP/business management application.
 
-1.  **Editable Invoice Number**: The user requested that the invoice number field be made freely editable, which was implemented in the invoice creation/edit form.
-2.  **Accounting Module Implementation**: The user uploaded two files ( and ) and requested the implementation of a full accounting module. The agent successfully integrated these files, creating the necessary frontend pages, backend routes, navigation links, and a new  user role with specific permissions.
-3.  **User Blocking Feature**: A feature to block/unblock users was implemented. This allows Super Admins and HR to prevent a user from logging in. The system was also updated to invalidate active sessions of a newly blocked user.
-4.  **User Profile Restrictions**: The ability for employees to change their own names was removed. This permission is now restricted to Super Admin and HR roles.
-5.  **Disable Public Registration**: The public-facing user registration page () and the Sign up with Google functionality were completely removed from the application to ensure all user accounts are created internally.
-6.  **Tax Rate Updates**: The user provided new tax rates for Incapacidad (0.40%) and Desempleo (3.40%), which were updated in the new accounting module.
-7.  **Payroll Enhancements**: Three specific improvements to the payroll processing page were requested and implemented:
-    *   The payroll run now only includes employees who have registered hours or a fixed salary.
-    *   A new column was added to select the payment method (Cash, Check, Direct Deposit) for each employee.
-    *   The HR role was granted permission to delete clock punch entries.
+In this session, the user requested the following features and bug fixes:
+1.  **Pay Stub Deletion**: Allow Super Admin and HR users to delete employee pay stubs.
+2.  **Production Login Bug**: Fix an issue where the login page hangs indefinitely in the production environment.
+3.  **Estimate PDF Layout Bug**: Correct the layout of the Terms and Conditions section in generated estimate PDFs to be two columns on a second page.
+4.  **Purchase Order Email Enhancement**: Include the generated PDF of the Purchase Order as an attachment when it's emailed.
+5.  **Deployment Failures**: Resolve a recurring  that prevents the application from deploying successfully to a production environment using MongoDB Atlas.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-- A full-stack application (React frontend, FastAPI backend, MongoDB).
-- The invoice number field is fully editable in the invoice creation and editing forms.
-- A comprehensive accounting module is now live at the  route. It includes a chart of accounts, journal entries, AR/AP management, and reporting. A new  role with specific permissions has been created.
-- User management includes a feature for Super Admins and HR to block/unblock users, preventing them from logging in and invalidating their sessions.
-- User name editing is now restricted to Super Admins and HR.
-- Public registration and Google Social Login have been completely removed. User creation is now an internal-only function.
-- The payroll page is enhanced to only show employees with hours, allow selection of payment method per employee, and HR users can now delete clock punches.
+- A full-stack application (React frontend, FastAPI backend, MongoDB) with modules for invoicing, user management, accounting, payroll, and project management.
+- A new feature allows Super Admins and HR to view a list of all pay stubs and delete them individually from the Payroll page.
+- The Purchase Order email functionality now correctly generates and attaches the PO's PDF.
+- The PDF generation for Estimates has been fixed to correctly format the terms and conditions in a two-column layout on a separate page.
+- The backend's MongoDB connection logic has been significantly updated with increased timeouts, a non-blocking startup task, and optimized connection pool settings to improve stability with MongoDB Atlas.
 
 **Last working item**:
--   **Last item agent was working**: Implementing three user-requested features for the payroll module:
-    1.  Filter the payroll list to only show employees with registered hours.
-    2.  Add a payment method selector (Cash, Check, Direct Deposit) for each employee in the payroll run.
-    3.  Grant the HR role permission to delete clock punch entries.
+-   **Last item agent was working**: Fixing a recurring  that causes production deployments to fail. The agent identified that the application startup was being blocked by a synchronous database call () and the default MongoDB connection parameters were not robust enough for Atlas. The implemented fix makes the startup task asynchronous and non-blocking, increases connection timeouts, and optimizes the connection pool.
 -   **Status**: USER VERIFICATION PENDING
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: Manual testing by the user. The agent's role is code-only per the user's explicit instructions.
+-   **Which testing method agent to use?**: The user must attempt to deploy the application again to verify the fix. The agent cannot test this.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: User Verification for Payroll Enhancements (P0)
--   **Issue 2**: Nomenclature selector does not display options (P1)
--   **Issue 3**: User Verification for Cost Estimate Formula Fixes (P2)
--   **Issue 4**: User Verification for Folder System (P3)
+-   **Issue 1**: Deployment Failure Due to MongoDB Timeout (P0)
+-   **Issue 2**: Login Hangs in Production Environment (P1)
+-   **Issue 3**: Nomenclature selector does not display options (P1)
+-   **Issue 4**: User Verification for Payroll Enhancements (P2)
 -   **Issue 5**: Responsive Layout on HR Employee Detail Page (P3)
+-   **Issue 6**: User Verification for various older features (Cost Estimates, Folder System) (P3)
 
 **Issues Detail**:
--   **Issue 1: User Verification for Payroll Enhancements**
-    -   **Description**: The agent implemented three key features in the payroll module: filtering employees by hours, adding a payment method selector, and giving HR delete permissions for punches. The code is ready for user testing.
-    -   **Next debug checklist**: Awaiting user feedback on the payroll processing workflow.
-    -   **Why fix this issue and what will be achieved with the fix?**: Streamlines the payroll process, improves accuracy by filtering relevant employees, and adds necessary administrative controls for HR.
+-   **Issue 1: Deployment Failure Due to MongoDB Timeout**
+    -   **Attempted fixes**:
+        1.  Initial fix: Added , , and  to the MongoDB client. This failed.
+        2.  Current fix: Made the  startup function non-blocking by running it as a background task (). Further increased timeouts, optimized the connection pool settings (, ), and added a 5-second startup delay to the background task.
+    -   **Next debug checklist**: Awaiting user feedback after they re-attempt deployment. If it fails again, investigate network policies or firewall rules between the Kubernetes cluster and MongoDB Atlas, as the code-level fixes have addressed common timeout causes.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker preventing the application from being deployed and used in a production environment.
     -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: backend
     -   **Blocked on other issue**: None
 
--   **Issue 2: Nomenclature selector does not display options**
+-   **Issue 2: Login Hangs in Production Environment**
+    -   **Description**: User reported that after entering credentials in production, the login screen hangs and never proceeds to the dashboard. The agent could not reproduce this in the preview environment.
+    -   **Attempted fixes**: The agent added a  to the Axios request in the  function within  to prevent it from hanging indefinitely and improved error handling. However, the root cause is undetermined.
+    -   **Next debug checklist**: This is blocked on user feedback. The agent needs the following information:
+        1.  The exact production URL being used.
+        2.  Any errors from the browser's developer console (F12 -> Console).
+        3.  Confirmation if the issue persists in an incognito/private browser window.
+        This could be related to the backend connectivity issue (Issue #1) or a CORS/cookie domain misconfiguration specific to the production domain.
+    -   **Why fix this issue and what will be achieved with the fix?**: Users cannot access the application in production. This is a critical usability issue.
+    -   **Status**: BLOCKED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on other issue**: Potentially blocked by Issue 1.
+
+-   **Issue 3: Nomenclature selector does not display options**
     -   **Description**: A high-priority, recurring bug from a previous session where newly created nomenclatures do not appear in dropdown selectors across the application. This core feature is critical for data categorization and remains broken.
     -   **Attempted fixes**: None in this session.
     -   **Next debug checklist**:
         1.  Inspect the  endpoint response to ensure it returns newly created items.
-        2.  Debug the frontend state management (e.g., using React DevTools) in components that consume this data, such as  and . Check for caching issues or stale state.
-        3.  Verify the data fetching logic (e.g.,  dependencies) is correctly re-fetching data when it changes.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a core feature for categorization and generating reference numbers. Fixing it is critical for data integrity and usability of several modules.
+        2.  Debug the frontend state management in components that use this data. Check for stale state or incorrect data fetching logic.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a core feature for categorization. Fixing it is critical for data integrity and usability of several modules.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: both
     -   **Blocked on other issue**: None
-
--   **Issue 3, 4, 5**: Lower priority items carried over from the previous session, awaiting user verification or attention.
 
 **In progress Task List**:
 -   None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0 - Implement Security Features**: The user expressed interest in security. The agent should propose and implement the high-priority items from the list provided:
-        -   **Rate Limiting**: Block IPs/accounts after multiple failed login attempts.
-        -   **Strong Password Policies**: Enforce complexity, history, and expiration.
-        -   **Inactivity Timeout**: Automatically log out users after a period of inactivity.
+    -   **P0 - Implement Security Features**: The user expressed interest in security. The agent should propose and implement high-priority items:
+        -   Rate Limiting: Block IPs/accounts after multiple failed login attempts.
+        -   Strong Password Policies: Enforce complexity, history, and expiration.
+        -   Inactivity Timeout: Automatically log out users.
     -   **P1 - Implement Move Document UI**: The backend logic exists, but no UI is present to move documents between folders in the Project Documents section.
 -   **Future Tasks**:
-    -   Implement remaining security features (2FA, Access Auditing, Data Encryption, etc.).
+    -   Implement remaining security features (2FA, Access Auditing, etc.).
     -   Implement Closure Prediction for projects.
     -   Implement Alerts with blocking actions.
     -   Implement Profitability per employee report.
-    -   Implement Drill-Down for Delta Report v2.
-    -   Refactor monolithic files: , , , , and .
+    -   Refactor monolithic files: , , , etc.
 
 **Completed work in this session**
--   **Editable Invoice Number (DONE)**: The invoice number is now a free-text field ().
--   **Accounting Module (DONE)**: A full accounting module was integrated from user-provided files, including frontend UI (), backend routes (), navigation (), and a new  role (, ).
--   **User Blocking Feature (DONE)**: Implemented a feature for admins/HR to block users, preventing login (, ).
--   **Restricted Name Changes (DONE)**: Employees can no longer edit their own names; only Admin/HR can (, ).
--   **Public Registration Disabled (DONE)**: Removed the register page and Google login functionality (, , ).
--   **JSX Syntax Fix (DONE)**: Corrected a build error in  after removing UI elements.
--   **Tax Rate Update (DONE)**: Updated disability and unemployment tax rates in the accounting module (, ).
--   **Payroll Enhancements (DONE)**: Implemented filtering by hours, a payment method selector, and HR permissions to delete punches (, ).
+-   **Pay Stub Deletion Feature (DONE)**: Implemented backend endpoints (, ) and a frontend management UI in  for Super Admins and HR to view and delete pay stubs.
+-   **Estimate PDF Layout Fix (DONE)**: Corrected  logic in  to render terms and conditions in a two-column format on a new page.
+-   **Purchase Order Email Attachment (DONE)**: Modified , , and  to generate the PO PDF on the frontend and send it as a base64-encoded attachment in the email.
+-   **MongoDB Atlas Connectivity Fixes (DONE)**: Refactored the database connection logic in  to be non-blocking and use more robust connection parameters for Atlas.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Nomenclature selector does not display options**: High-priority recurring bug that was not worked on. This is a significant blocker for several workflows.
@@ -99,29 +99,20 @@ The user initiated a session to continue development with the specific instructi
 
 **Known issue recurrence from previous fork**
 -   **Issue recurrence in previous fork**: Nomenclature Selector Bug.
--   **Recurrence count**: At least 2 sessions.
+-   **Recurrence count**: At least 3 sessions.
 -   **Status**: NOT STARTED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Modular Feature Integration**: Integrating the  into the main FastAPI  instance in  to keep the new feature's logic separate.
--   **Advanced Role-Based Access Control (RBAC)**:
-    -   Created a new  role with a specific permission set.
-    -   Modified endpoints (, ) to handle complex authorization logic (e.g., HR can't edit/block Admins).
-    -   Conditionally rendered UI elements (edit/block buttons, form options) in React based on the logged-in user's role.
--   **Endpoint Restriction**: Disabling a public API () by adding authentication middleware and changing its internal logic to throw an error for unauthenticated access.
--   **Login Flow Modification**: Intercepting the login process in the backend to check for a new  flag on the user document before issuing a session token.
--   **Complex Frontend State Manipulation**: In , filtering the source data before rendering and managing the state of a new property () for each item in a list, then transforming the data for the final API payload.
+-   **Asynchronous Application Startup**: Modified the FastAPI startup event in  to use  to run the initial admin creation in the background, preventing it from blocking the application's launch.
+-   **Robust MongoDB Atlas Connection**: Configured the  with specific parameters (, , , ) to handle the latency and architecture of a cloud-hosted MongoDB cluster.
+-   **Frontend PDF Generation for Backend**: The  component uses  to generate a PDF, converts it to a  string, and sends it in the JSON payload to the backend.
+-   **Email with Attachments**: The  was modified to use Python's  library (, ) to construct an email with a file attachment from a  string.
 
 **key DB schema**
--   **users**: Modified to include  (defaults to ).
--   **New Collections for Accounting**: The  file implies the creation and use of several new collections, including:
-    -   
-    -   
-    -   
-    -   
+-   No new collections or schema changes were made. The session's work interacted with the  and  collections.
 
 **changes in tech stack**
 -   None.
@@ -133,48 +124,39 @@ The user initiated a session to continue development with the specific instructi
 -   
 -   
 -   
--   
--   
--   
 
 **Areas that need refactoring**:
--   : This file continues to be a massive monolith. Although the new accounting feature was modularized,  still contains thousands of lines of code for dozens of unrelated features and should be broken down into separate routers/modules.
--    and : These components have grown in complexity with significant business logic and conditional rendering. They could benefit from being broken down into smaller, more focused sub-components and custom hooks.
+-   : Remains a large monolithic file. The new pay stub endpoints were added to it, further increasing its size. It should be broken down into feature-specific routers.
+-   : This component has become very large and complex, now handling payroll processing, payroll history, and pay stub management. This logic should be split into smaller, more focused sub-components and custom hooks.
 
 **key api endpoints**
--    (NEW): Toggles the  status for a user.
--    (MODIFIED): Permissions changed to allow HR to edit users with certain restrictions.
--    (MODIFIED): Endpoint is now protected and can only be accessed by  and .
--    (MODIFIED): Now checks if  is  before authenticating.
--    (MODIFIED): The payload for each employee now includes a .
--    (MODIFIED): Permissions updated to allow access for the  role.
--    (NEW): All new endpoints for the accounting module, such as , , etc.
+-   **NEW**: : Fetches all pay stubs for admin/HR view.
+-   **NEW**: : Deletes a specific pay stub.
+-   **MODIFIED**: : The request body now accepts a  field containing the base64-encoded PDF.
 
 **Critical Info for New Agent**
-1.  **User Workflow**: The user has explicitly stated they will handle all testing. The agent's role is to understand the request, implement the code changes, and then present the completed work. **Do not run verification tests** unless it's for your own basic debugging (e.g., checking if a server starts).
+1.  **User Workflow**: The user is responsible for all testing and verification. Your role is to write, edit, and fix the code as requested. Do not perform tests beyond basic sanity checks (e.g., server restarting,  on new endpoints).
 2.  **Language**: All communication with the user **MUST** be in **Spanish**.
-3.  **Next Step**: The highest priority is to get user feedback on the last implemented features (Payroll Enhancements). After that, the agent should create a plan that prioritizes fixing the long-standing, high-priority **Nomenclature selector bug (Issue #2)**, as it's a recurring problem and a core feature.
+3.  **Top Priority**: The immediate next step is to ask the user to attempt deployment again to verify the latest fix for the MongoDB timeout issue. This is a critical blocker.
+4.  **Next Priorities**: If deployment is successful, the next focus should be the **Production Login Bug** (Issue #2), which requires more information from the user. After that, you must address the long-standing, high-priority **Nomenclature selector bug** (Issue #3).
+5.  **Planning**: The previous agent deviated from the prompt by not presenting a plan via  at the start. You must create a plan that prioritizes the items above and get user approval before starting work.
 
 **documents and test reports created in this job**
--   None.
+-   None. The agent did not create or update .
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request Payroll Features**: User asked for three payroll features: filter employees by hours, add payment method selection, and allow HR to delete punches. (Completed)
-2.  **Report Missing Taxes**: User noted that the new tax rates weren't visible on the accounting page. (Completed)
-3.  **Provide New Tax Rates**: User specified new rates for disability (0.40%) and unemployment (3.40%). (Completed)
-4.  **Request Security Implementations**: User asked for the best security improvements the agent could implement. (Agent provided a list, pending user decision).
-5.  **Report JSX Error**: User pasted a build error from  after the Google login button was removed. (Completed)
-6.  **Confirm Google Login Removal**: User asked if the Sign up with Google feature was also removed. (Completed)
-7.  **Request Public Registration Removal**: User asked to disable the ability for anyone to create an account, making it internal-only. (Completed)
-8.  **Request Name Change Restriction**: User asked to prevent employees from changing their own names, restricting it to HR and Super Admin. (Completed)
-9.  **Request User Blocking Feature**: User requested the ability to block users, with HR also having this permission. (Completed)
-10. **Provide Additional Implementation Details**: User pasted a list of follow-up changes needed for the accounting module (adding roles, permissions, nav links), which the agent then implemented. (Completed)
+1.  **User (Msg 163)**: Provided logs for the second consecutive deployment failure, showing the same MongoDB timeout error.
+2.  **User (Msg 151)**: Provided logs for the first deployment failure.
+3.  **User (Msg 122)**: Requested that when a Purchase Order is emailed, the generated PDF should be included as an attachment.
+4.  **User (Msg 113)**: Reported that the terms & conditions layout in the estimate PDF is broken and reminded the agent that the user handles all testing.
+5.  **User (Msg 71)**: Reported a critical bug where the login screen hangs indefinitely in the production environment.
+6.  **User (Msg 5)**: Requested the initial feature for this session: to allow super admins and HR to delete pay stubs.
 
 **Project Health Check:**
 -   **Broken**:
-    -   **Nomenclature Selector**: A core data categorization feature is non-functional for newly created items. This is a recurring, high-priority bug that impacts multiple modules.
--   **Mocked**:
-    -   None.
+    -   **Production Deployment**: The application is currently un-deployable due to MongoDB connection timeouts.
+    -   **Production Login**: Users are unable to log into the production application.
+    -   **Nomenclature Selector**: A core, recurring bug that prevents users from using a key categorization feature remains unfixed.
 
 **3rd Party Integrations**
 -   jsPDF & jspdf-autotable
@@ -183,12 +165,13 @@ The user initiated a session to continue development with the specific instructi
 -   pytz
 -   moment-timezone
 -   reportlab
+-   fastapi-mail
 
 **Testing status**
 -   **Testing agent used after significant changes**: NO
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None
--   **Known regressions**: None identified, but the Nomenclature selector bug remains a known, unfixed issue.
+-   **Known regressions**: None new were introduced, but the Nomenclature selector bug from previous sessions persists.
 
 **Credentials to test flow:**
 -   **Super Admin**:
@@ -196,5 +179,7 @@ The user initiated a session to continue development with the specific instructi
     -   Password: 
 
 **What agent forgot to execute**
--   The agent did not address the high-priority, recurring Nomenclature selector bug mentioned in the previous handoff summary. This should be the next major focus after user verification of the current work.
--   The responsive layout issues on various pages, also from the previous handoff, were not addressed.</analysis>
+-   **Initial Planning**: The agent failed to follow the mandatory  planning step at the beginning of the job, instead jumping directly into implementation.
+-   **Documentation**: The agent did not create or update the  file after completing tasks, despite this being a requirement of the  tool.
+-   **Address High-Priority Recurring Bug**: The agent did not address the Nomenclature selector bug, which has now been carried over for at least three sessions and is marked as high priority.
+-   **Address Responsive Issues**: The responsive layout problems mentioned in the previous handoff were ignored.</analysis>
