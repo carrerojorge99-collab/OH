@@ -102,6 +102,41 @@ const Payroll = () => {
     }
   };
 
+  const loadPayStubs = async () => {
+    try {
+      const res = await api.get('/pay-stubs/all', { withCredentials: true });
+      setPayStubs(res.data || []);
+    } catch (error) {
+      console.error('Error loading pay stubs:', error);
+      toast.error('Error al cargar talonarios');
+    }
+  };
+
+  const deletePayStub = async (stubId, employeeName) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el talonario de ${employeeName}?`)) return;
+    setDeletingStub(stubId);
+    try {
+      await api.delete(`/pay-stubs/${stubId}`, { withCredentials: true });
+      toast.success('Talonario eliminado');
+      loadPayStubs();
+    } catch (error) {
+      console.error('Error deleting pay stub:', error);
+      toast.error('Error al eliminar talonario');
+    } finally {
+      setDeletingStub(null);
+    }
+  };
+
+  const filteredPayStubs = useMemo(() => {
+    if (!stubFilter) return payStubs;
+    const filter = stubFilter.toLowerCase();
+    return payStubs.filter(stub => 
+      stub.employee_name?.toLowerCase().includes(filter) ||
+      stub.period_start?.includes(filter) ||
+      stub.period_end?.includes(filter)
+    );
+  }, [payStubs, stubFilter]);
+
   // Load saved payroll by period
   const loadSavedPayroll = (run) => {
     setPayPeriod({ start: run.period_start, end: run.period_end });
