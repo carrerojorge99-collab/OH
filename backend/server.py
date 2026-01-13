@@ -58,16 +58,25 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 mongo_url = os.environ['MONGO_URL']
-# Configure MongoDB client with robust connection settings for Atlas
+
+# Configure MongoDB client with robust connection settings for Atlas/Kubernetes
+# Key settings for cloud deployments:
+# - directConnection=False allows replica set discovery
+# - tlsAllowInvalidCertificates helps with some Atlas configurations
+# - Shorter initial timeouts prevent blocking deployment health checks
 client = AsyncIOMotorClient(
     mongo_url,
-    serverSelectionTimeoutMS=60000,
-    connectTimeoutMS=30000,
-    socketTimeoutMS=30000,
+    serverSelectionTimeoutMS=30000,  # 30 seconds for server selection
+    connectTimeoutMS=20000,          # 20 seconds for initial connection
+    socketTimeoutMS=20000,           # 20 seconds for socket operations
     retryWrites=True,
+    retryReads=True,
     w='majority',
     maxPoolSize=10,
-    minPoolSize=1
+    minPoolSize=0,                   # Allow pool to shrink to 0 when idle
+    maxIdleTimeMS=45000,             # Close idle connections after 45s
+    waitQueueTimeoutMS=10000,        # Max wait time for connection from pool
+    appName='promanage-erp'          # Identify app in Atlas logs
 )
 db = client[os.environ['DB_NAME']]
 
