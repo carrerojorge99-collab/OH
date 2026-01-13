@@ -7221,6 +7221,10 @@ async def send_purchase_order_email(
     if not po.get('supplier_email'):
         raise HTTPException(status_code=400, detail="La orden no tiene email de proveedor")
     
+    # Get PDF attachment from request body if provided
+    body = await request.json() if request.headers.get('content-type') == 'application/json' else {}
+    pdf_base64 = body.get('pdf_base64')
+    
     # Build email content
     items_html = ""
     for item in po.get('items', []):
@@ -7241,15 +7245,26 @@ async def send_purchase_order_email(
     <p><strong>Total:</strong> ${po.get('total', 0):.2f}</p>
     {f"<p><strong>Notas:</strong> {po.get('notes')}</p>" if po.get('notes') else ""}
     {f"<p><strong>Términos:</strong> {po.get('terms')}</p>" if po.get('terms') else ""}
+    <p><em>Adjunto: PDF de la Orden de Compra</em></p>
     """
     
     text_content = f"Orden de Compra {po.get('po_number')} - Total: ${po.get('total', 0):.2f}"
+    
+    # Prepare attachments if PDF provided
+    attachments = None
+    if pdf_base64:
+        attachments = [{
+            'filename': f"PO_{po.get('po_number')}.pdf",
+            'content': pdf_base64,
+            'content_type': 'application/pdf'
+        }]
     
     await send_email(
         po.get('supplier_email'),
         f"Orden de Compra {po.get('po_number')} - {po.get('title')}",
         html_content,
-        text_content
+        text_content,
+        attachments
     )
     
     # Update status to sent
