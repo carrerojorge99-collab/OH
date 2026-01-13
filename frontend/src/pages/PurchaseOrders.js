@@ -284,8 +284,60 @@ const PurchaseOrders = () => {
 
   const handleSend = async (poId) => {
     try {
-      await api.post(`/purchase-orders/${poId}/send`, {}, { withCredentials: true });
-      toast.success('Orden enviada');
+      // Find the PO to generate PDF
+      const po = purchaseOrders.find(p => p.po_id === poId);
+      if (!po) {
+        toast.error('Orden no encontrada');
+        return;
+      }
+      
+      // Generate PDF
+      const doc = new jsPDF();
+      const company = await fetchCompanyInfo();
+      
+      // Header: Empresa arriba izquierda, Doc info derecha
+      let y = await addDocumentHeader(doc, company, 'PURCHASE ORDER', po.po_number, po.created_at, po.total);
+      
+      // Vendor section - abajo de la empresa
+      y = addPartySection(doc, 'Vendor To:', po.supplier_name, po.supplier_address || '', po.supplier_email, po.supplier_phone, y);
+      
+      // Project info (derecha)
+      if (po.project_name) {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(249, 115, 22);
+        doc.text('Project:', 120, y - 16);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 41, 59);
+        doc.text(po.project_name, 120, y - 10);
+      }
+      
+      // Tasks table con espacio para descripción
+      const tasks = po.items.map(item => ({
+        description: item.description,
+        scope: item.scope || '',
+        details: item.details || '',
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        amount: item.amount
+      }));
+      y = addTasksTable(doc, tasks, y + 4);
+      
+      // Totals
+      y = addTotalsSection(doc, po.subtotal, po.discount_amount || 0, po.tax_amount || 0, po.total, y);
+      
+      // Notes
+      addNotesSection(doc, po.notes, po.terms, y);
+      
+      // Footer
+      addFooter(doc, company);
+      
+      // Get PDF as base64
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      
+      // Send with PDF attachment
+      await api.post(`/purchase-orders/${poId}/send`, { pdf_base64: pdfBase64 }, { withCredentials: true });
+      toast.success('Orden enviada con PDF adjunto');
       loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al enviar');
