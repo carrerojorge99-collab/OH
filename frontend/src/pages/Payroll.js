@@ -29,6 +29,10 @@ const Payroll = () => {
   const [saving, setSaving] = useState(false);
   const [payrollHistory, setPayrollHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showPayStubs, setShowPayStubs] = useState(false);
+  const [payStubs, setPayStubs] = useState([]);
+  const [deletingStub, setDeletingStub] = useState(null);
+  const [stubFilter, setStubFilter] = useState('');
   // Start with 'all' and update to current year if data exists
   const [yearFilter, setYearFilter] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
