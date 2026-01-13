@@ -229,13 +229,21 @@ const Payroll = () => {
           isContractor,
           isExemptFromDeduction: false, // By default, no one is exempt
           isHourly: hourlyRate > 0,
-          hasPayConfig
+          hasPayConfig,
+          paymentMethod: profile.payment_method || 'check'
         };
       }));
 
-      setPayrollData(results);
+      // Filter: Only show employees with hours worked OR fixed salary
+      const employeesWithActivity = results.filter(r => r.hoursWorked > 0 || r.fixedSalary > 0);
+      
+      if (employeesWithActivity.length === 0) {
+        toast.warning('No hay empleados con horas registradas en este período');
+      }
+
+      setPayrollData(employeesWithActivity);
       setProcessing(false);
-      toast.success('Nómina calculada');
+      toast.success(`Nómina calculada: ${employeesWithActivity.length} empleados con actividad`);
     } catch (error) {
       toast.error('Error al calcular nómina');
       setProcessing(false);
