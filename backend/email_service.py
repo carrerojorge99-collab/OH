@@ -2,9 +2,12 @@ import os
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 import aiosmtplib
-from typing import List
+from typing import List, Optional
 from pathlib import Path
+import base64
 
 logger = logging.getLogger(__name__)
 
