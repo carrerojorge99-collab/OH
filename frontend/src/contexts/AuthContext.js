@@ -28,11 +28,13 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       const response = await axios.get(`${API}/auth/me`, {
-        withCredentials: true
+        withCredentials: true,
+        timeout: 10000 // 10 second timeout
       });
       setUser(response.data);
       setIsAuthenticated(true);
     } catch (error) {
+      console.log('Auth check failed:', error.message);
       setUser(null);
       setIsAuthenticated(false);
     } finally {
