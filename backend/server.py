@@ -156,6 +156,32 @@ async def create_default_admin_background():
         # Log but never crash - this is a non-critical background task
         print(f"⚠️ Background admin creation error (non-fatal): {e}")
 
+# ==================== HEALTH CHECK ENDPOINTS ====================
+# These are critical for Kubernetes liveness/readiness probes
+
+@app.get("/health")
+@app.get("/api/health")
+async def health_check():
+    """
+    Basic health check - returns immediately without DB dependency.
+    Used by Kubernetes liveness probe to verify app is running.
+    """
+    return {"status": "healthy", "service": "promanage-erp"}
+
+@app.get("/api/health/ready")
+async def readiness_check():
+    """
+    Readiness check - verifies database connectivity.
+    Used by Kubernetes readiness probe to verify app can serve traffic.
+    """
+    try:
+        # Quick ping to verify MongoDB connection
+        await client.admin.command('ping')
+        return {"status": "ready", "database": "connected"}
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail=f"Database not ready: {str(e)}")
+
 # ================================================================
 
 class ProjectStatus(str, Enum):
