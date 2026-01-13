@@ -89,15 +89,23 @@ ACCESS_TOKEN_EXPIRE_DAYS = 7
 
 # ==================== AUTO-CREATE DEFAULT ADMIN ====================
 async def create_default_admin():
-    """Create default admin user if no users exist in database"""
+    """
+    Create default admin user if no users exist in database.
+    This function is designed to be resilient and non-blocking for production deployments.
+    """
     import asyncio
-    max_retries = 5
+    max_retries = 3  # Reduced retries to prevent long blocking
+    retry_delay = 10  # 10 seconds between retries
     
-    # Wait a bit for database connection to be ready
-    await asyncio.sleep(5)
+    # Wait for application to fully start and network to stabilize
+    await asyncio.sleep(15)
     
     for attempt in range(max_retries):
         try:
+            # Test connection first with a simple ping
+            await client.admin.command('ping')
+            print(f"✅ MongoDB connection successful on attempt {attempt + 1}")
+            
             user_count = await db.users.count_documents({})
             if user_count == 0:
                 import bcrypt
@@ -122,25 +130,31 @@ async def create_default_admin():
                 print(f"ℹ️ Database has {user_count} users, skipping default admin creation")
             return  # Success, exit function
         except Exception as e:
-            print(f"⚠️ Attempt {attempt + 1}/{max_retries} - Error creating default admin: {e}")
+            print(f"⚠️ Attempt {attempt + 1}/{max_retries} - Error in admin creation: {e}")
             if attempt < max_retries - 1:
-                await asyncio.sleep(5)  # Wait longer before retry
+                await asyncio.sleep(retry_delay)
     
-    print("⚠️ Could not create default admin after retries, app will continue without it")
+    print("⚠️ Could not create default admin after retries - app will continue normally")
+    print("ℹ️ Admin can be created manually via the registration endpoint if needed")
 
 @app.on_event("startup")
 async def startup_event():
-    # Run admin creation in background task to not block app startup
+    """
+    FastAPI startup event - runs admin creation in background.
+    IMPORTANT: This must not block application startup for health checks.
+    """
     import asyncio
+    # Fire and forget - don't await, let it run in background
     asyncio.create_task(create_default_admin_background())
+    print("🚀 Application started - admin creation running in background")
 
 async def create_default_admin_background():
-    """Background task wrapper for admin creation"""
+    """Background task wrapper for admin creation with full error isolation"""
     try:
         await create_default_admin()
     except Exception as e:
-        print(f"⚠️ Background admin creation failed: {e}")
-        # Don't crash the app, continue without default admin
+        # Log but never crash - this is a non-critical background task
+        print(f"⚠️ Background admin creation error (non-fatal): {e}")
 
 # ================================================================
 
