@@ -61,11 +61,13 @@ mongo_url = os.environ['MONGO_URL']
 # Configure MongoDB client with robust connection settings for Atlas
 client = AsyncIOMotorClient(
     mongo_url,
-    serverSelectionTimeoutMS=30000,
-    connectTimeoutMS=20000,
-    socketTimeoutMS=20000,
+    serverSelectionTimeoutMS=60000,
+    connectTimeoutMS=30000,
+    socketTimeoutMS=30000,
     retryWrites=True,
-    w='majority'
+    w='majority',
+    maxPoolSize=10,
+    minPoolSize=1
 )
 db = client[os.environ['DB_NAME']]
 
