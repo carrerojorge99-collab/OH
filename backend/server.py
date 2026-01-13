@@ -9356,6 +9356,33 @@ async def get_employee_pay_stubs(employee_id: str, request: Request, session_tok
     stubs = await db.pay_stubs.find({"employee_id": employee_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return stubs
 
+@api_router.get("/pay-stubs/all")
+async def get_all_pay_stubs(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Obtener todos los talonarios (solo super_admin y rrhh)"""
+    user = await get_current_user(request, session_token)
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    stubs = await db.pay_stubs.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return stubs
+
+@api_router.delete("/pay-stubs/{stub_id}")
+async def delete_pay_stub(stub_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Eliminar un talonario (solo super_admin y rrhh)"""
+    user = await get_current_user(request, session_token)
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    
+    # Verificar que existe el talonario
+    stub = await db.pay_stubs.find_one({"id": stub_id})
+    if not stub:
+        raise HTTPException(status_code=404, detail="Talonario no encontrado")
+    
+    await db.pay_stubs.delete_one({"id": stub_id})
+    await log_audit(user.user_id, user.name, "delete", "pay_stub", stub_id, 
+                    f"Talonario de {stub.get('employee_name', 'N/A')}", 
+                    {"period": f"{stub.get('period_start')} - {stub.get('period_end')}"})
+    return {"message": "Talonario eliminado exitosamente"}
+
 @api_router.get("/payroll/history")
 async def get_payroll_history(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
