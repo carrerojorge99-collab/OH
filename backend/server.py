@@ -2472,12 +2472,12 @@ async def delete_clock_entry(
     request: Request,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Delete a clock entry (admin only)"""
+    """Delete a clock entry (admin and RRHH only)"""
     user = await get_current_user(request, session_token)
     
-    # Only admins can delete clock entries
-    if user.role != UserRole.SUPER_ADMIN.value:
-        raise HTTPException(status_code=403, detail="Solo los administradores pueden eliminar ponches")
+    # Admin and RRHH can delete clock entries
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
+        raise HTTPException(status_code=403, detail="Solo administradores y RRHH pueden eliminar ponches")
     
     # Find the clock entry
     clock_entry = await db.clock_entries.find_one({"clock_id": clock_id}, {"_id": 0})
