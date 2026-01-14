@@ -751,6 +751,31 @@ const Invoices = () => {
                     </Select>
                   </div>
 
+                  {/* Date Range Filter for Timesheet */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="date_from">Fecha Desde</Label>
+                      <Input
+                        id="date_from"
+                        type="date"
+                        value={formData.date_from}
+                        onChange={(e) => setFormData({ ...formData, date_from: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="date_to">Fecha Hasta</Label>
+                      <Input
+                        id="date_to"
+                        type="date"
+                        value={formData.date_to}
+                        onChange={(e) => setFormData({ ...formData, date_to: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Filtra las horas del timesheet por rango de fechas. Deja vacío para incluir todas.
+                  </p>
+
                   <div className="space-y-2">
                     <Label htmlFor="client_name">Nombre del Cliente *</Label>
                     <Input
