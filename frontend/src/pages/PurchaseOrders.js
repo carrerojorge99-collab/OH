@@ -99,6 +99,7 @@ const PurchaseOrders = () => {
 
   const [form, setForm] = useState({
     project_id: '',
+    selected_vendor_id: '',
     supplier_name: '',
     supplier_email: '',
     supplier_phone: '',
