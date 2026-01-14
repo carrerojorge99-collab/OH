@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import NomenclatureSelector from '../components/NomenclatureSelector';
+import RichTextEditor from '../components/ui/RichTextEditor';
 import { toast } from 'sonner';
 import moment from 'moment';
 import jsPDF from 'jspdf';
