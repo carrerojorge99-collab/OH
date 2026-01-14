@@ -5876,7 +5876,11 @@ async def generate_invoice_from_timesheet(
         {"_id": 0}
     ).to_list(1000)
     
-    # Get labor/salary data to get rates
+    # Get ALL employee profiles to lookup hourly rates
+    employee_profiles = await db.employee_profiles.find({}, {"_id": 0, "user_id": 1, "hourly_rate": 1}).to_list(1000)
+    employee_rates = {ep.get('user_id'): ep.get('hourly_rate', 0) for ep in employee_profiles}
+    
+    # Also get labor entries as fallback for project-specific rates
     labor_entries = await db.labor.find(
         {"project_id": invoice_data.project_id},
         {"_id": 0}
@@ -5886,27 +5890,46 @@ async def generate_invoice_from_timesheet(
     items = []
     total_hours = 0
     
-    # Group timesheet by user
+    # Group timesheet by user (using user_id as key for accurate rate lookup)
     user_hours = {}
+    user_names = {}
+    user_ids_list = []
+    
     for entry in timesheet_entries:
+        user_id = entry.get('user_id', '')
         user_name = entry.get('user_name', 'Unknown')
         hours = entry.get('hours_worked', 0)
-        if user_name not in user_hours:
-            user_hours[user_name] = 0
-        user_hours[user_name] += hours
+        
+        if user_id not in user_hours:
+            user_hours[user_id] = 0
+            user_names[user_id] = user_name
+            user_ids_list.append(user_id)
+        user_hours[user_id] += hours
         total_hours += hours
     
-    # Default rate if no labor data
+    # Default rate if no employee profile data
     default_rate = 50.0
     
-    # Create items
-    for user_name, hours in user_hours.items():
-        # Try to find rate from labor data
-        rate = default_rate
-        for labor in labor_entries:
-            if labor.get('labor_category') == user_name:
-                rate = labor.get('hourly_rate', default_rate)
-                break
+    # Create items - now using employee profile rates
+    for user_id in user_ids_list:
+        hours = user_hours[user_id]
+        user_name = user_names[user_id]
+        
+        # PRIORITY 1: Get rate from employee profile (RH data)
+        rate = employee_rates.get(user_id, 0)
+        
+        # PRIORITY 2: If no rate in profile, try project-specific labor data
+        if rate <= 0:
+            for labor in labor_entries:
+                if labor.get('user_id') == user_id or labor.get('labor_category') == user_name:
+                    rate = labor.get('hourly_rate', 0)
+                    if rate > 0:
+                        break
+        
+        # PRIORITY 3: Use default rate as last resort
+        if rate <= 0:
+            rate = default_rate
+            logger.warning(f"Using default rate for user {user_name} ({user_id}) - no rate found in employee profile or labor data")
         
         items.append(InvoiceItem(
             description=f"Horas trabajadas - {user_name}",
