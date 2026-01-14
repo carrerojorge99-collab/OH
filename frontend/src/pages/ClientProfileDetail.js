@@ -974,6 +974,43 @@ const ClientProfileDetail = () => {
                 <div>
                   <Label className="flex items-center gap-1">
                     <Building2 className="w-3 h-3" />
+                    Compañía (Módulo)
+                  </Label>
+                  <Select 
+                    value={estimateForm.selected_company_id || 'none'} 
+                    onValueChange={(v) => handleSelectCompany(v === 'none' ? '' : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar compañía" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Sin seleccionar --</SelectItem>
+                      {companies.map(c => (
+                        <SelectItem key={c.company_id} value={c.company_id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {estimateForm.selected_company_id && (
+                  <div>
+                    <Label>Sponsor de la Compañía</Label>
+                    <Select onValueChange={handleSelectSponsor}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar sponsor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companies.find(c => c.company_id === estimateForm.selected_company_id)?.sponsors?.map(s => (
+                          <SelectItem key={s.sponsor_id} value={s.sponsor_id}>
+                            {s.name} {s.title && `(${s.title})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div>
+                  <Label className="flex items-center gap-1">
+                    <Building2 className="w-3 h-3" />
                     Nombre de Empresa
                   </Label>
                   <Input 
