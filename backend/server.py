@@ -647,6 +647,54 @@ class SponsorCreate(BaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
 
+# ==================== VENDORS MODELS ====================
+class VendorContact(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    contact_id: str
+    name: str
+    title: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+class VendorCreate(BaseModel):
+    name: str
+    category: Optional[str] = None  # Materials, Services, Equipment, Subcontractor, etc.
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    ein: Optional[str] = None  # Tax ID
+    payment_terms: Optional[str] = None  # e.g., "Net 30", "Net 60"
+    notes: Optional[str] = None
+
+class Vendor(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    vendor_id: str
+    name: str
+    category: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    ein: Optional[str] = None
+    payment_terms: Optional[str] = None
+    notes: Optional[str] = None
+    contacts: List[VendorContact] = []
+    created_at: str
+    updated_at: Optional[str] = None
+
+class VendorContactCreate(BaseModel):
+    name: str
+    title: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
 # =====================================================================
 
 class AuditLog(BaseModel):
