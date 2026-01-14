@@ -103,13 +103,14 @@ const ClientProfileDetail = () => {
 
   const loadData = async () => {
     try {
-      const [clientRes, estimatesRes, docsRes, taxRes, projectsRes, nomenclaturesRes] = await Promise.all([
+      const [clientRes, estimatesRes, docsRes, taxRes, projectsRes, nomenclaturesRes, companiesRes] = await Promise.all([
         api.get(`/client-profiles/${profileId}`),
         api.get(`/client-profiles/${profileId}/estimates`),
         api.get(`/client-profiles/${profileId}/documents`),
         api.get('/tax-types').catch(() => ({ data: [] })),
         api.get('/projects').catch(() => ({ data: [] })),
-        api.get('/nomenclatures').catch(() => ({ data: [] }))
+        api.get('/nomenclatures').catch(() => ({ data: [] })),
+        api.get('/companies').catch(() => ({ data: [] }))
       ]);
       setClient(clientRes.data);
       setEstimates(estimatesRes.data || []);
@@ -117,6 +118,7 @@ const ClientProfileDetail = () => {
       setTaxTypes(taxRes.data || []);
       setProjects(projectsRes.data || []);
       setNomenclatures(nomenclaturesRes.data || []);
+      setCompanies(companiesRes.data || []);
     } catch (error) {
       toast.error('Error al cargar datos del cliente');
       console.error(error);
