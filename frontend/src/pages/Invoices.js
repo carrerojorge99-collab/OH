@@ -25,6 +25,7 @@ import moment from 'moment';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import NomenclatureSelector, { useNomenclature } from '../components/NomenclatureSelector';
+import RichTextEditor from '../components/ui/RichTextEditor';
 
 
 const Invoices = () => {
