@@ -139,12 +139,14 @@ const PurchaseOrders = () => {
 
   const loadData = async () => {
     try {
-      const [posRes, projectsRes] = await Promise.all([
+      const [posRes, projectsRes, vendorsRes] = await Promise.all([
         api.get(`/purchase-orders`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/vendors`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
       setPurchaseOrders(posRes.data || []);
       setProjects(projectsRes.data || []);
+      setVendors(vendorsRes.data || []);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
