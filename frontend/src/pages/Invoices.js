@@ -538,6 +538,17 @@ const Invoices = () => {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(30, 41, 59);
       doc.text(invoice.project_name, 120, y - 10);
+      
+      // Add Sponsor below project if available
+      if (invoice.sponsor_name) {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(249, 115, 22);
+        doc.text('Sponsor:', 120, y - 4);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 41, 59);
+        doc.text(invoice.sponsor_name, 120, y + 2);
+      }
     }
     
     // Tasks table FIRST (font size 12)
