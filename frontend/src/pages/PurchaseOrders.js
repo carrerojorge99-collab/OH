@@ -57,6 +57,7 @@ const statusColors = {
 const PurchaseOrders = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPO, setEditingPO] = useState(null);
