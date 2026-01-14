@@ -59,6 +59,7 @@ const ClientProfileDetail = () => {
   const [client, setClient] = useState(null);
   const [estimates, setEstimates] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -77,11 +78,13 @@ const ClientProfileDetail = () => {
   
   const [estimateForm, setEstimateForm] = useState({
     project_id: '',
+    selected_company_id: '',
     client_company: '',
     client_name: '',
     client_email: '',
     client_phone: '',
     client_address: '',
+    sponsor_name: '',
     title: '',
     description: '',
     items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
