@@ -10264,7 +10264,7 @@ async def create_vendor(vendor: VendorCreate, request: Request, session_token: O
     }
     
     await db.vendors.insert_one(vendor_doc)
-    del vendor_doc["_id"] if "_id" in vendor_doc else None
+    vendor_doc.pop("_id", None)
     
     return {"message": "Proveedor creado exitosamente", "vendor": vendor_doc}
 
