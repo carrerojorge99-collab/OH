@@ -98,6 +98,7 @@ const Layout = ({ children }) => {
       { name: 'Seguridad', href: '/safety', icon: Shield },
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
       { name: 'Compañías', href: '/companies', icon: Building2 },
+      { name: 'Proveedores', href: '/vendors', icon: Truck },
       { name: 'Estimados', href: '/estimados', icon: FileText },
       { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
       { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
