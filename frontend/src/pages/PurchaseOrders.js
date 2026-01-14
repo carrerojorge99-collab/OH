@@ -538,11 +538,11 @@ const PurchaseOrders = () => {
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         </div>
-                        <Textarea 
+                        <RichTextEditor 
                           placeholder="Descripción del task / Scope of Work..." 
-                          className="min-h-[80px]"
                           value={item.description}
-                          onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                          onChange={(value) => handleItemChange(idx, 'description', value)}
+                          minHeight="100px"
                         />
                         <div className="grid grid-cols-3 gap-2">
                           <div>
