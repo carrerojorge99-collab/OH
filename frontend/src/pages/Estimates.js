@@ -466,6 +466,9 @@ const Estimates = () => {
       const margin = 15;
       const columnWidth = (pageWidth - (margin * 2) - 10) / 2; // 10mm gap between columns
       const columnGap = 10;
+      const pageHeight = 297; // A4 height in mm
+      const maxY = pageHeight - 20; // Leave margin at bottom
+      const lineHeight = 3.5; // Height per line of text
       let leftY = 20;
       let rightY = 20;
       
@@ -481,8 +484,18 @@ const Estimates = () => {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
         const notesLines = doc.splitTextToSize(estimate.notes, columnWidth);
-        doc.text(notesLines, margin, leftY);
-        leftY += notesLines.length * 4 + 5;
+        
+        // Render notes lines with page overflow handling
+        for (let i = 0; i < notesLines.length; i++) {
+          if (leftY > maxY) {
+            doc.addPage();
+            leftY = 20;
+            rightY = 20;
+          }
+          doc.text(notesLines[i], margin, leftY);
+          leftY += lineHeight;
+        }
+        leftY += 5;
       }
       
       // RIGHT COLUMN - Terms and Conditions
@@ -497,8 +510,24 @@ const Estimates = () => {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
         const termsLines = doc.splitTextToSize(estimate.terms, columnWidth);
-        doc.text(termsLines, margin + columnWidth + columnGap, rightY);
-        rightY += termsLines.length * 4 + 5;
+        
+        // Render terms lines with page overflow handling
+        for (let i = 0; i < termsLines.length; i++) {
+          if (rightY > maxY) {
+            // If terms overflow, continue on same page below notes or add new page
+            if (leftY < maxY) {
+              rightY = leftY + 10;
+              doc.text('Términos y Condiciones (cont.):', margin + columnWidth + columnGap, rightY);
+              rightY += 8;
+            } else {
+              doc.addPage();
+              rightY = 20;
+              leftY = 20;
+            }
+          }
+          doc.text(termsLines[i], margin + columnWidth + columnGap, rightY);
+          rightY += lineHeight;
+        }
       }
     }
     
