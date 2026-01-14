@@ -458,55 +458,47 @@ const Estimates = () => {
     }
     y = addTotalsSection(doc, estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, estimate.total, y, taxDetails);
     
-    // Notes section - Direct approach matching preview
-    if (estimate.notes) {
-      // Check if we need a new page
-      if (y > 240) {
-        doc.addPage();
-        y = 20;
-      }
-      
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text('Notas:', 15, y + 10);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      const notesLines = doc.splitTextToSize(estimate.notes, 180);
-      doc.text(notesLines, 15, y + 18);
-      y += 18 + notesLines.length * 4;
-    }
-    
-    // Terms and Conditions - on new page in two columns if present
-    if (estimate.terms) {
+    // Notes and Terms - BOTH on second page in two columns
+    if (estimate.notes || estimate.terms) {
       doc.addPage();
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text('Términos y Condiciones', 105, 30, { align: 'center' });
       
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      
-      // Split terms into two columns
       const pageWidth = 210; // A4 width in mm
       const margin = 15;
       const columnWidth = (pageWidth - (margin * 2) - 10) / 2; // 10mm gap between columns
       const columnGap = 10;
+      let leftY = 20;
+      let rightY = 20;
       
-      // Split text to fit column width
-      const allLines = doc.splitTextToSize(estimate.terms, columnWidth);
-      const halfIndex = Math.ceil(allLines.length / 2);
+      // LEFT COLUMN - Notes
+      if (estimate.notes) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('Notas:', margin, leftY);
+        leftY += 8;
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const notesLines = doc.splitTextToSize(estimate.notes, columnWidth);
+        doc.text(notesLines, margin, leftY);
+        leftY += notesLines.length * 4 + 5;
+      }
       
-      // Left column
-      const leftColumnLines = allLines.slice(0, halfIndex);
-      doc.text(leftColumnLines, margin, 45);
-      
-      // Right column
-      const rightColumnLines = allLines.slice(halfIndex);
-      if (rightColumnLines.length > 0) {
-        doc.text(rightColumnLines, margin + columnWidth + columnGap, 45);
+      // RIGHT COLUMN - Terms and Conditions
+      if (estimate.terms) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('Términos y Condiciones:', margin + columnWidth + columnGap, rightY);
+        rightY += 8;
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const termsLines = doc.splitTextToSize(estimate.terms, columnWidth);
+        doc.text(termsLines, margin + columnWidth + columnGap, rightY);
+        rightY += termsLines.length * 4 + 5;
       }
     }
     
