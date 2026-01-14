@@ -194,6 +194,37 @@ const Invoices = () => {
     }));
   };
 
+  // Handle company selection - auto-populate client info
+  const handleSelectCompany = (companyId, formSetter) => {
+    const company = companies.find(c => c.company_id === companyId);
+    if (company) {
+      const fullAddress = [company.address, company.city, company.state, company.zip_code].filter(Boolean).join(', ');
+      formSetter(prev => ({
+        ...prev,
+        selected_company_id: companyId,
+        client_name: company.name,
+        client_email: company.email || '',
+        client_phone: company.phone || '',
+        client_address: fullAddress,
+        sponsor_name: '' // Reset sponsor when company changes
+      }));
+    }
+  };
+
+  // Handle sponsor selection within a company
+  const handleSelectSponsor = (sponsorId, companyId, formSetter) => {
+    const company = companies.find(c => c.company_id === companyId);
+    const sponsor = company?.sponsors?.find(s => s.sponsor_id === sponsorId);
+    if (sponsor) {
+      formSetter(prev => ({
+        ...prev,
+        sponsor_name: sponsor.name,
+        sponsor_title: sponsor.title || '',
+        sponsor_email: sponsor.email || ''
+      }));
+    }
+  };
+
   const handleSelectTaxType = (taxId, formSetter) => {
     const tax = taxTypes.find(t => t.id === taxId);
     if (tax) {
