@@ -203,6 +203,11 @@ function AppRouter() {
           <Accounting />
         </ProtectedRoute>
       } />
+      <Route path="/companies" element={
+        <ProtectedRoute>
+          <Companies />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
