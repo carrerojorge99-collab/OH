@@ -150,12 +150,14 @@ const Invoices = () => {
 
   const loadData = async () => {
     try {
-      const [invoicesRes, projectsRes] = await Promise.all([
+      const [invoicesRes, projectsRes, companiesRes] = await Promise.all([
         api.get(`/invoices`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
-        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } })
+        api.get(`/projects`, { withCredentials: true, headers: { 'Cache-Control': 'no-cache' } }),
+        api.get(`/companies`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
       setInvoices(invoicesRes.data);
       setProjects(projectsRes.data);
+      setCompanies(companiesRes.data || []);
     } catch (error) {
       toast.error('Error al cargar datos');
       console.error(error);
