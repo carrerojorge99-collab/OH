@@ -31,6 +31,7 @@ import RichTextEditor from '../components/ui/RichTextEditor';
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
