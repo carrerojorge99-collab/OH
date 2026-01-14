@@ -157,6 +157,7 @@ const PurchaseOrders = () => {
   const resetForm = () => {
     setForm({
       project_id: '',
+      selected_vendor_id: '',
       supplier_name: '',
       supplier_email: '',
       supplier_phone: '',
