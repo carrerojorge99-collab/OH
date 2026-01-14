@@ -599,6 +599,56 @@ class ClockEntry(BaseModel):
     clock_out_longitude: Optional[float] = None
     clock_out_address: Optional[str] = None
 
+# ==================== COMPANIES & SPONSORS MODELS ====================
+class Sponsor(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    sponsor_id: str
+    name: str
+    title: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+class CompanyCreate(BaseModel):
+    name: str
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    ein: Optional[str] = None  # Tax ID
+    payment_terms: Optional[str] = None  # e.g., "Net 30", "Net 60"
+    notes: Optional[str] = None
+
+class Company(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    company_id: str
+    name: str
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip_code: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    ein: Optional[str] = None
+    payment_terms: Optional[str] = None
+    notes: Optional[str] = None
+    sponsors: List[Sponsor] = []
+    created_at: str
+    updated_at: Optional[str] = None
+
+class SponsorCreate(BaseModel):
+    name: str
+    title: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+# =====================================================================
+
 class AuditLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
     log_id: str
