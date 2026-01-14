@@ -10033,6 +10033,156 @@ async def add_no_cache_headers(request: Request, call_next):
         response.headers["Expires"] = "0"
     return response
 
+# ==================== COMPANIES ENDPOINTS ====================
+
+@api_router.get("/companies")
+async def get_companies(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all companies"""
+    user = await get_current_user(request, session_token)
+    companies = await db.companies.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return companies
+
+@api_router.get("/companies/{company_id}")
+async def get_company(company_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get a single company by ID"""
+    user = await get_current_user(request, session_token)
+    company = await db.companies.find_one({"company_id": company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Compañía no encontrada")
+    return company
+
+@api_router.post("/companies")
+async def create_company(company: CompanyCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new company"""
+    user = await get_current_user(request, session_token)
+    
+    company_id = f"comp_{uuid4().hex[:12]}"
+    company_doc = {
+        "company_id": company_id,
+        "name": company.name,
+        "address": company.address,
+        "city": company.city,
+        "state": company.state,
+        "zip_code": company.zip_code,
+        "phone": company.phone,
+        "email": company.email,
+        "website": company.website,
+        "ein": company.ein,
+        "payment_terms": company.payment_terms,
+        "notes": company.notes,
+        "sponsors": [],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": None
+    }
+    
+    await db.companies.insert_one(company_doc)
+    del company_doc["_id"] if "_id" in company_doc else None
+    return {"message": "Compañía creada exitosamente", "company": company_doc}
+
+@api_router.put("/companies/{company_id}")
+async def update_company(company_id: str, company: CompanyCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a company"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.companies.find_one({"company_id": company_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Compañía no encontrada")
+    
+    update_data = {
+        "name": company.name,
+        "address": company.address,
+        "city": company.city,
+        "state": company.state,
+        "zip_code": company.zip_code,
+        "phone": company.phone,
+        "email": company.email,
+        "website": company.website,
+        "ein": company.ein,
+        "payment_terms": company.payment_terms,
+        "notes": company.notes,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.companies.update_one({"company_id": company_id}, {"$set": update_data})
+    return {"message": "Compañía actualizada exitosamente"}
+
+@api_router.delete("/companies/{company_id}")
+async def delete_company(company_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a company"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.companies.delete_one({"company_id": company_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Compañía no encontrada")
+    
+    return {"message": "Compañía eliminada exitosamente"}
+
+# ==================== SPONSORS ENDPOINTS ====================
+
+@api_router.post("/companies/{company_id}/sponsors")
+async def add_sponsor(company_id: str, sponsor: SponsorCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Add a sponsor to a company"""
+    user = await get_current_user(request, session_token)
+    
+    company = await db.companies.find_one({"company_id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Compañía no encontrada")
+    
+    sponsor_id = f"spns_{uuid4().hex[:12]}"
+    sponsor_doc = {
+        "sponsor_id": sponsor_id,
+        "name": sponsor.name,
+        "title": sponsor.title,
+        "email": sponsor.email,
+        "phone": sponsor.phone,
+        "address": sponsor.address
+    }
+    
+    await db.companies.update_one(
+        {"company_id": company_id},
+        {"$push": {"sponsors": sponsor_doc}}
+    )
+    
+    return {"message": "Sponsor agregado exitosamente", "sponsor": sponsor_doc}
+
+@api_router.put("/companies/{company_id}/sponsors/{sponsor_id}")
+async def update_sponsor(company_id: str, sponsor_id: str, sponsor: SponsorCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a sponsor in a company"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.companies.update_one(
+        {"company_id": company_id, "sponsors.sponsor_id": sponsor_id},
+        {"$set": {
+            "sponsors.$.name": sponsor.name,
+            "sponsors.$.title": sponsor.title,
+            "sponsors.$.email": sponsor.email,
+            "sponsors.$.phone": sponsor.phone,
+            "sponsors.$.address": sponsor.address
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Compañía o sponsor no encontrado")
+    
+    return {"message": "Sponsor actualizado exitosamente"}
+
+@api_router.delete("/companies/{company_id}/sponsors/{sponsor_id}")
+async def delete_sponsor(company_id: str, sponsor_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a sponsor from a company"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.companies.update_one(
+        {"company_id": company_id},
+        {"$pull": {"sponsors": {"sponsor_id": sponsor_id}}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Compañía no encontrada")
+    
+    return {"message": "Sponsor eliminado exitosamente"}
+
+# =============================================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
