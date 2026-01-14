@@ -92,7 +92,9 @@ const Invoices = () => {
     tax_rate: 0,
     selected_taxes: [],
     notes: '',
-    custom_number: ''
+    custom_number: '',
+    date_from: '',
+    date_to: ''
   });
 
   // Form for manual invoice creation with tasks
