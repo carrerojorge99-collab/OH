@@ -405,38 +405,77 @@ const ClientProfileDetail = () => {
       const totalToUse = estimate.price_breakdown?.total || estimate.total;
       y = addTotalsSection(doc, estimate.price_breakdown?.total || estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, totalToUse, y, taxDetails);
       
-      // Notes section - always add if present
-      if (estimate.notes) {
-        // Check if we need a new page
-        if (y > 240) {
-          doc.addPage();
-          y = 20;
+      // Notes and Terms - BOTH on second page in two columns
+      if (estimate.notes || estimate.terms) {
+        doc.addPage();
+        
+        const pageWidth = 210; // A4 width in mm
+        const margin = 15;
+        const columnWidth = (pageWidth - (margin * 2) - 10) / 2; // 10mm gap between columns
+        const columnGap = 10;
+        const pageHeight = 297; // A4 height in mm
+        const maxY = pageHeight - 20; // Leave margin at bottom
+        const lineHeight = 3.5; // Height per line of text
+        let leftY = 20;
+        let rightY = 20;
+        
+        // LEFT COLUMN - Notes
+        if (estimate.notes) {
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text('Notas:', margin, leftY);
+          leftY += 8;
+          
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(71, 85, 105);
+          const notesLines = doc.splitTextToSize(estimate.notes, columnWidth);
+          
+          // Render notes lines with page overflow handling
+          for (let i = 0; i < notesLines.length; i++) {
+            if (leftY > maxY) {
+              doc.addPage();
+              leftY = 20;
+              rightY = 20;
+            }
+            doc.text(notesLines[i], margin, leftY);
+            leftY += lineHeight;
+          }
+          leftY += 5;
         }
         
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(30, 41, 59);
-        doc.text('Notas:', 15, y + 10);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        const notesLines = doc.splitTextToSize(estimate.notes, 180);
-        doc.text(notesLines, 15, y + 18);
-        y += 18 + notesLines.length * 4;
-      }
-      
-      // Terms and Conditions - ALWAYS on second page
-      if (estimate.terms) {
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(30, 41, 59);
-        doc.text('Términos y Condiciones', 105, 30, { align: 'center' });
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(71, 85, 105);
-        const termsLines = doc.splitTextToSize(estimate.terms, 180);
-        doc.text(termsLines, 15, 45);
+        // RIGHT COLUMN - Terms and Conditions
+        if (estimate.terms) {
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text('Términos y Condiciones:', margin + columnWidth + columnGap, rightY);
+          rightY += 8;
+          
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(71, 85, 105);
+          const termsLines = doc.splitTextToSize(estimate.terms, columnWidth);
+          
+          // Render terms lines with page overflow handling
+          for (let i = 0; i < termsLines.length; i++) {
+            if (rightY > maxY) {
+              // If terms overflow, continue on same page below notes or add new page
+              if (leftY < maxY) {
+                rightY = leftY + 10;
+                doc.text('Términos y Condiciones (cont.):', margin + columnWidth + columnGap, rightY);
+                rightY += 8;
+              } else {
+                doc.addPage();
+                rightY = 20;
+                leftY = 20;
+              }
+            }
+            doc.text(termsLines[i], margin + columnWidth + columnGap, rightY);
+            rightY += lineHeight;
+          }
+        }
       }
       
       addFooter(doc, company);
