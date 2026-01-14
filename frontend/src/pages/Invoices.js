@@ -959,7 +959,41 @@ const Invoices = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label>Cliente Guardado</Label>
+                      <Label className="flex items-center gap-1"><Building2 className="w-4 h-4" /> Compañía (Módulo)</Label>
+                      <Select 
+                        value={manualForm.selected_company_id || 'none'} 
+                        onValueChange={(v) => handleSelectCompany(v === 'none' ? '' : v, setManualForm)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar compañía" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Sin seleccionar --</SelectItem>
+                          {companies.map(c => (
+                            <SelectItem key={c.company_id} value={c.company_id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {manualForm.selected_company_id && (
+                      <div>
+                        <Label>Sponsor de la Compañía</Label>
+                        <Select onValueChange={(v) => handleSelectSponsor(v, manualForm.selected_company_id, setManualForm)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar sponsor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {companies.find(c => c.company_id === manualForm.selected_company_id)?.sponsors?.map(s => (
+                              <SelectItem key={s.sponsor_id} value={s.sponsor_id}>
+                                {s.name} {s.title && `(${s.title})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div>
+                      <Label>Cliente Guardado (Legacy)</Label>
                       <Select onValueChange={(v) => {
                         const client = savedClients.find(c => c.id === v);
                         if (client) handleSelectSavedClient(client, setManualForm);
