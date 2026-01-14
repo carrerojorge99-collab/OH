@@ -34,6 +34,7 @@ import ClientEstimates from './pages/ClientEstimates';
 import Safety from './pages/Safety';
 import Accounting from './pages/Accounting';
 import Companies from './pages/Companies';
+import Vendors from './pages/Vendors';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
