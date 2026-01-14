@@ -251,7 +251,9 @@ const Invoices = () => {
         tax_type_id: '',
         tax_type_name: '',
         notes: '',
-        custom_number: ''
+        custom_number: '',
+        date_from: '',
+        date_to: ''
       });
       loadData();
       loadSavedClients();
