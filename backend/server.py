@@ -5872,11 +5872,29 @@ async def generate_invoice_from_timesheet(
     if not project:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    # Get timesheet entries for this project
+    # Build timesheet query with optional date range filter
+    timesheet_query = {"project_id": invoice_data.project_id}
+    
+    # Add date range filter if provided
+    if invoice_data.date_from or invoice_data.date_to:
+        date_filter = {}
+        if invoice_data.date_from:
+            # Parse date and set to start of day
+            date_filter["$gte"] = invoice_data.date_from
+        if invoice_data.date_to:
+            # Parse date and set to end of day
+            date_filter["$lte"] = invoice_data.date_to + "T23:59:59"
+        if date_filter:
+            timesheet_query["date"] = date_filter
+    
+    # Get timesheet entries for this project (filtered by date if provided)
     timesheet_entries = await db.timesheet.find(
-        {"project_id": invoice_data.project_id},
+        timesheet_query,
         {"_id": 0}
     ).to_list(1000)
+    
+    # Log for debugging
+    logger.info(f"Invoice generation - Project: {invoice_data.project_id}, Date range: {invoice_data.date_from} to {invoice_data.date_to}, Entries found: {len(timesheet_entries)}")
     
     # Get ALL employee profiles to lookup hourly rates
     employee_profiles = await db.employee_profiles.find({}, {"_id": 0, "user_id": 1, "hourly_rate": 1}).to_list(1000)
