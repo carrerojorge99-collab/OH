@@ -498,6 +498,43 @@ const PurchaseOrders = () => {
                     </Select>
                   </div>
                   <div>
+                    <Label className="flex items-center gap-1">
+                      <Truck className="w-3 h-3" />
+                      Proveedor (Módulo)
+                    </Label>
+                    <Select 
+                      value={form.selected_vendor_id || 'none'} 
+                      onValueChange={(v) => {
+                        const vendor = vendors.find(ven => ven.vendor_id === v);
+                        if (vendor) {
+                          const fullAddress = [vendor.address, vendor.city, vendor.state, vendor.zip_code].filter(Boolean).join(', ');
+                          setForm({
+                            ...form,
+                            selected_vendor_id: v,
+                            supplier_name: vendor.name,
+                            supplier_email: vendor.email || '',
+                            supplier_phone: vendor.phone || '',
+                            supplier_address: fullAddress
+                          });
+                        } else {
+                          setForm({ ...form, selected_vendor_id: '' });
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar proveedor..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Sin seleccionar --</SelectItem>
+                        {vendors.map(v => (
+                          <SelectItem key={v.vendor_id} value={v.vendor_id}>
+                            {v.name} {v.category && `(${v.category})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label>Nombre del Proveedor *</Label>
                     <Input value={form.supplier_name} onChange={(e) => setForm({...form, supplier_name: e.target.value})} required />
                   </div>
