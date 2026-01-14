@@ -629,6 +629,8 @@ class InvoiceCreate(BaseModel):
     tax_type_name: Optional[str] = None
     notes: Optional[str] = None
     custom_number: Optional[str] = None
+    date_from: Optional[str] = None  # Filter timesheet from this date (ISO format)
+    date_to: Optional[str] = None    # Filter timesheet to this date (ISO format)
 
 class Invoice(BaseModel):
     model_config = ConfigDict(extra="ignore")
