@@ -5926,16 +5926,20 @@ async def generate_invoice_from_timesheet(
     timesheet_query = {"project_id": invoice_data.project_id}
     
     # Add date range filter if provided
+    # Note: The 'date' field in timesheet is stored as "YYYY-MM-DD" string format
     if invoice_data.date_from or invoice_data.date_to:
         date_filter = {}
         if invoice_data.date_from:
-            # Parse date and set to start of day
-            date_filter["$gte"] = invoice_data.date_from
+            # Use date string directly (format: YYYY-MM-DD)
+            date_filter["$gte"] = invoice_data.date_from[:10]  # Ensure only date part
         if invoice_data.date_to:
-            # Parse date and set to end of day
-            date_filter["$lte"] = invoice_data.date_to + "T23:59:59"
+            # Use date string directly (format: YYYY-MM-DD) - no need for time suffix
+            date_filter["$lte"] = invoice_data.date_to[:10]  # Ensure only date part
         if date_filter:
             timesheet_query["date"] = date_filter
+    
+    # Log query for debugging
+    logger.info(f"Invoice generation query: {timesheet_query}")
     
     # Get timesheet entries for this project (filtered by date if provided)
     timesheet_entries = await db.timesheet.find(
