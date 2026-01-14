@@ -191,11 +191,13 @@ const ClientProfileDetail = () => {
   const resetEstimateForm = () => {
     setEstimateForm({
       project_id: '',
+      selected_company_id: '',
       client_company: client?.company_name || '',
       client_name: client?.contact_name || '',
       client_email: client?.email || '',
       client_phone: client?.phone || '',
       client_address: client?.address || '',
+      sponsor_name: '',
       title: '',
       description: '',
       items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
@@ -210,6 +212,36 @@ const ClientProfileDetail = () => {
     setEditingEstimate(null);
     setSelectedNomenclature(null);
     setGeneratedNumber('');
+  };
+
+  // Handle company selection - auto-populate client info for estimates
+  const handleSelectCompany = (companyId) => {
+    const company = companies.find(c => c.company_id === companyId);
+    if (company) {
+      const fullAddress = [company.address, company.city, company.state, company.zip_code].filter(Boolean).join(', ');
+      setEstimateForm(prev => ({
+        ...prev,
+        selected_company_id: companyId,
+        client_company: company.name,
+        client_email: company.email || prev.client_email,
+        client_phone: company.phone || prev.client_phone,
+        client_address: fullAddress || prev.client_address,
+        sponsor_name: '' // Reset sponsor when company changes
+      }));
+    }
+  };
+
+  // Handle sponsor selection within a company
+  const handleSelectSponsor = (sponsorId) => {
+    const company = companies.find(c => c.company_id === estimateForm.selected_company_id);
+    const sponsor = company?.sponsors?.find(s => s.sponsor_id === sponsorId);
+    if (sponsor) {
+      setEstimateForm(prev => ({
+        ...prev,
+        client_name: sponsor.name,
+        sponsor_name: sponsor.name + (sponsor.title ? ` - ${sponsor.title}` : '')
+      }));
+    }
   };
 
   const openNewEstimate = () => {
