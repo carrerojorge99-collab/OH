@@ -10076,7 +10076,7 @@ async def create_company(company: CompanyCreate, request: Request, session_token
     }
     
     await db.companies.insert_one(company_doc)
-    del company_doc["_id"] if "_id" in company_doc else None
+    company_doc.pop("_id", None)
     return {"message": "Compañía creada exitosamente", "company": company_doc}
 
 @api_router.put("/companies/{company_id}")
