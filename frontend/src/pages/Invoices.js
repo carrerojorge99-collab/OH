@@ -736,7 +736,8 @@ const Invoices = () => {
                         setFormData({
                           ...formData,
                           project_id: value,
-                          client_name: project?.client || ''
+                          client_name: project?.client || '',
+                          sponsor_name: project?.sponsor || ''
                         });
                       }}
                     >
@@ -751,6 +752,17 @@ const Invoices = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {/* Sponsor field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="sponsor_name">Patrocinador / Sponsor</Label>
+                    <Input
+                      id="sponsor_name"
+                      value={formData.sponsor_name}
+                      onChange={(e) => setFormData({ ...formData, sponsor_name: e.target.value })}
+                      placeholder="Nombre del patrocinador"
+                    />
                   </div>
 
                   {/* Date Range Filter for Timesheet */}
