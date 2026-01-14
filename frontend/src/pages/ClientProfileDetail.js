@@ -166,12 +166,14 @@ const ClientProfileDetail = () => {
   };
 
   // Nomenclature handling
-  const handleSelectNomenclature = async (nom) => {
-    setSelectedNomenclature(nom);
-    if (nom) {
+  const handleSelectNomenclature = async (nomenclatureId) => {
+    setSelectedNomenclature(nomenclatureId);
+    if (nomenclatureId) {
       try {
-        const res = await api.get(`/nomenclatures/${nom.id}/next-number`);
-        setGeneratedNumber(res.data.next_number);
+        const res = await api.get(`/nomenclatures/next-number/${nomenclatureId}`);
+        setGeneratedNumber(res.data.number);
+        // Auto-fill the estimate number
+        setEstimateForm(prev => ({ ...prev, custom_number: res.data.number }));
       } catch (error) {
         toast.error('Error al generar número');
       }
