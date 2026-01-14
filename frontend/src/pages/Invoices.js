@@ -342,6 +342,28 @@ const Invoices = () => {
     return { subtotal, discountAmount, taxAmount, total, taxDetails };
   };
 
+  const resetManualForm = () => {
+    setManualForm({
+      project_id: '',
+      selected_company_id: '',
+      client_name: '',
+      client_email: '',
+      client_phone: '',
+      client_address: '',
+      sponsor_name: '',
+      sponsor_title: '',
+      sponsor_email: '',
+      items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
+      tax_rate: 0,
+      selected_taxes: [],
+      discount_percent: 0,
+      notes: '',
+      terms: '',
+      custom_number: '',
+      price_breakdown: null
+    });
+  };
+
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     
