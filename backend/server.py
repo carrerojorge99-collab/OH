@@ -10220,6 +10220,155 @@ async def delete_sponsor(company_id: str, sponsor_id: str, request: Request, ses
     
     return {"message": "Sponsor eliminado exitosamente"}
 
+# ==================== VENDORS ENDPOINTS ====================
+
+@api_router.get("/vendors")
+async def get_vendors(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all vendors"""
+    user = await get_current_user(request, session_token)
+    vendors = await db.vendors.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return vendors
+
+@api_router.get("/vendors/{vendor_id}")
+async def get_vendor(vendor_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get a single vendor by ID"""
+    user = await get_current_user(request, session_token)
+    vendor = await db.vendors.find_one({"vendor_id": vendor_id}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    return vendor
+
+@api_router.post("/vendors")
+async def create_vendor(vendor: VendorCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new vendor"""
+    user = await get_current_user(request, session_token)
+    
+    vendor_id = f"vend_{uuid4().hex[:12]}"
+    vendor_doc = {
+        "vendor_id": vendor_id,
+        "name": vendor.name,
+        "category": vendor.category,
+        "address": vendor.address,
+        "city": vendor.city,
+        "state": vendor.state,
+        "zip_code": vendor.zip_code,
+        "phone": vendor.phone,
+        "email": vendor.email,
+        "website": vendor.website,
+        "ein": vendor.ein,
+        "payment_terms": vendor.payment_terms,
+        "notes": vendor.notes,
+        "contacts": [],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": None
+    }
+    
+    await db.vendors.insert_one(vendor_doc)
+    del vendor_doc["_id"] if "_id" in vendor_doc else None
+    
+    return {"message": "Proveedor creado exitosamente", "vendor": vendor_doc}
+
+@api_router.put("/vendors/{vendor_id}")
+async def update_vendor(vendor_id: str, vendor: VendorCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a vendor"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.vendors.find_one({"vendor_id": vendor_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    update_data = {
+        "name": vendor.name,
+        "category": vendor.category,
+        "address": vendor.address,
+        "city": vendor.city,
+        "state": vendor.state,
+        "zip_code": vendor.zip_code,
+        "phone": vendor.phone,
+        "email": vendor.email,
+        "website": vendor.website,
+        "ein": vendor.ein,
+        "payment_terms": vendor.payment_terms,
+        "notes": vendor.notes,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vendors.update_one({"vendor_id": vendor_id}, {"$set": update_data})
+    return {"message": "Proveedor actualizado exitosamente"}
+
+@api_router.delete("/vendors/{vendor_id}")
+async def delete_vendor(vendor_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a vendor"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.vendors.delete_one({"vendor_id": vendor_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    return {"message": "Proveedor eliminado exitosamente"}
+
+# ==================== VENDOR CONTACTS ENDPOINTS ====================
+
+@api_router.post("/vendors/{vendor_id}/contacts")
+async def add_vendor_contact(vendor_id: str, contact: VendorContactCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Add a contact to a vendor"""
+    user = await get_current_user(request, session_token)
+    
+    vendor = await db.vendors.find_one({"vendor_id": vendor_id})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    contact_id = f"vcnt_{uuid4().hex[:12]}"
+    contact_doc = {
+        "contact_id": contact_id,
+        "name": contact.name,
+        "title": contact.title,
+        "email": contact.email,
+        "phone": contact.phone
+    }
+    
+    await db.vendors.update_one(
+        {"vendor_id": vendor_id},
+        {"$push": {"contacts": contact_doc}}
+    )
+    
+    return {"message": "Contacto agregado exitosamente", "contact": contact_doc}
+
+@api_router.put("/vendors/{vendor_id}/contacts/{contact_id}")
+async def update_vendor_contact(vendor_id: str, contact_id: str, contact: VendorContactCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a contact in a vendor"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.vendors.update_one(
+        {"vendor_id": vendor_id, "contacts.contact_id": contact_id},
+        {"$set": {
+            "contacts.$.name": contact.name,
+            "contacts.$.title": contact.title,
+            "contacts.$.email": contact.email,
+            "contacts.$.phone": contact.phone
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Proveedor o contacto no encontrado")
+    
+    return {"message": "Contacto actualizado exitosamente"}
+
+@api_router.delete("/vendors/{vendor_id}/contacts/{contact_id}")
+async def delete_vendor_contact(vendor_id: str, contact_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a contact from a vendor"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.vendors.update_one(
+        {"vendor_id": vendor_id},
+        {"$pull": {"contacts": {"contact_id": contact_id}}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    return {"message": "Contacto eliminado exitosamente"}
+
 # =============================================================
 
 app.include_router(api_router)
