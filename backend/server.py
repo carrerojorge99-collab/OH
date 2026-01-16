@@ -2208,6 +2208,10 @@ async def create_timesheet(timesheet_data: TimesheetCreate, request: Request, se
     }
     
     await db.timesheet.insert_one(timesheet_doc)
+    
+    # Sincronizar horas consumidas en Labor automáticamente
+    await sync_project_labor_hours(timesheet_data.project_id)
+    
     return Timesheet(**timesheet_doc)
 
 @api_router.get("/timesheet", response_model=List[Timesheet])
