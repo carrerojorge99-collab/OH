@@ -2243,6 +2243,11 @@ async def update_timesheet(timesheet_id: str, timesheet_data: TimesheetCreate, r
     
     await db.timesheet.update_one({"timesheet_id": timesheet_id}, {"$set": update_data})
     
+    # Sincronizar horas consumidas en Labor automáticamente
+    project_id = timesheet.get('project_id') or timesheet_data.project_id
+    if project_id:
+        await sync_project_labor_hours(project_id)
+    
     updated_timesheet = await db.timesheet.find_one({"timesheet_id": timesheet_id}, {"_id": 0})
     return Timesheet(**updated_timesheet)
 
@@ -2254,7 +2259,14 @@ async def delete_timesheet(timesheet_id: str, request: Request, session_token: O
     if not timesheet:
         raise HTTPException(status_code=404, detail="Registro de timesheet no encontrado")
     
+    project_id = timesheet.get('project_id')
+    
     await db.timesheet.delete_one({"timesheet_id": timesheet_id})
+    
+    # Sincronizar horas consumidas en Labor automáticamente
+    if project_id:
+        await sync_project_labor_hours(project_id)
+    
     return {"message": "Registro de timesheet eliminado exitosamente"}
 
 @api_router.post("/clock/in", response_model=ClockEntry)
