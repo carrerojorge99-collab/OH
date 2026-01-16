@@ -1047,10 +1047,6 @@ const ClientProfileDetail = () => {
                   <Label>Válido Hasta</Label>
                   <Input type="date" value={estimateForm.valid_until} onChange={(e) => setEstimateForm({...estimateForm, valid_until: e.target.value})} />
                 </div>
-                <div className="md:col-span-2">
-                  <Label>Descripción</Label>
-                  <Textarea value={estimateForm.description} onChange={(e) => setEstimateForm({...estimateForm, description: e.target.value})} rows={2} />
-                </div>
               </div>
 
               {/* Items - Task Format */}
