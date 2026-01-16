@@ -167,10 +167,64 @@ async def sync_hours_on_startup():
     await asyncio.sleep(20)
     try:
         print("🔄 Iniciando sincronización de horas de proyectos...")
+        
+        # Primero, crear timesheets para ponches que no los tengan
+        await migrate_clock_entries_to_timesheets()
+        
+        # Luego sincronizar las horas consumidas en Labor
         result = await sync_all_projects_hours()
         print(f"✅ Sincronización de horas completada: {result}")
     except Exception as e:
         print(f"⚠️ Error en sincronización de horas al startup (non-fatal): {e}")
+
+async def migrate_clock_entries_to_timesheets():
+    """
+    Busca todos los ponches completados que NO tienen un timesheet asociado
+    y crea los timesheets correspondientes.
+    """
+    try:
+        # Obtener todos los ponches completados
+        completed_clocks = await db.clock_entries.find(
+            {"status": "completed", "hours_worked": {"$gt": 0}},
+            {"_id": 0}
+        ).to_list(10000)
+        
+        created_count = 0
+        for clock in completed_clocks:
+            clock_id = clock.get('clock_id')
+            
+            # Verificar si ya existe un timesheet para este ponche
+            existing_ts = await db.timesheet.find_one({"clock_id": clock_id}, {"_id": 0})
+            
+            if not existing_ts:
+                # Crear el timesheet
+                timesheet_id = f"ts_migrated_{uuid4().hex[:12]}"
+                timesheet_doc = {
+                    "timesheet_id": timesheet_id,
+                    "project_id": clock.get('project_id'),
+                    "project_name": clock.get('project_name', ''),
+                    "user_id": clock.get('user_id'),
+                    "user_name": clock.get('user_name'),
+                    "date": clock.get('date'),
+                    "hours_worked": clock.get('hours_worked', 0),
+                    "description": clock.get('notes') or f"Migrado desde ponche del {clock.get('date')}",
+                    "task_id": None,
+                    "clock_id": clock_id,
+                    "created_at": clock.get('clock_out') or datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.timesheet.insert_one(timesheet_doc)
+                created_count += 1
+        
+        if created_count > 0:
+            print(f"✅ Migrados {created_count} ponches a timesheets")
+        else:
+            print("ℹ️ No hay ponches pendientes de migrar a timesheets")
+        
+        return created_count
+    except Exception as e:
+        print(f"⚠️ Error migrando ponches a timesheets: {e}")
+        return 0
 
 # ==================== HEALTH CHECK ENDPOINTS ====================
 # These are critical for Kubernetes liveness/readiness probes
