@@ -541,57 +541,55 @@ const CostEstimateDetail = () => {
           </div>
         </div>
 
-        {/* Basic Info - shows for new estimates OR existing estimates without project */}
-        {(estimateId === 'new' || !estimate?.project_id) && (
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Nombre de la Estimación</Label>
-                  <Input
-                    value={estimate?.estimate_name || ''}
-                    onChange={(e) => setEstimate({ ...estimate, estimate_name: e.target.value })}
-                    placeholder="Ej: Estimación Proyecto ABC"
-                  />
-                </div>
-                <div>
-                  <Label>Proyecto</Label>
-                  <select
-                    className="w-full px-3 py-2 border rounded-md"
-                    value={estimate?.project_id || ''}
-                    onChange={(e) => {
-                      const proj = projects.find(p => p.project_id === e.target.value);
-                      setEstimate({ 
-                        ...estimate, 
-                        project_id: e.target.value,
-                        project_name: proj?.name || ''
-                      });
-                    }}
-                  >
-                    <option value="">Sin proyecto (opcional)</option>
-                    {projects.map(p => (
-                      <option key={p.project_id} value={p.project_id}>{p.name}</option>
-                    ))}
-                  </select>
-                  {!estimate?.project_id && (
-                    <p className="text-xs text-amber-600 mt-1">* Opcional - requerido solo para convertir a estimado</p>
-                  )}
-                </div>
-                <div>
-                  <Label>Estatus</Label>
-                  <select
-                    className="w-full px-3 py-2 border rounded-md"
-                    value={estimate?.status || 'en_proceso'}
-                    onChange={(e) => setEstimate({ ...estimate, status: e.target.value })}
-                  >
-                    <option value="en_proceso">En Proceso</option>
-                    <option value="final">Final</option>
-                  </select>
-                </div>
+        {/* Basic Info - Always show for editing status and name */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Nombre de la Estimación</Label>
+                <Input
+                  value={estimate?.estimate_name || ''}
+                  onChange={(e) => setEstimate({ ...estimate, estimate_name: e.target.value })}
+                  placeholder="Ej: Estimación Proyecto ABC"
+                />
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div>
+                <Label>Proyecto</Label>
+                <select
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={estimate?.project_id || ''}
+                  onChange={(e) => {
+                    const proj = projects.find(p => p.project_id === e.target.value);
+                    setEstimate({ 
+                      ...estimate, 
+                      project_id: e.target.value,
+                      project_name: proj?.name || ''
+                    });
+                  }}
+                >
+                  <option value="">Sin proyecto (opcional)</option>
+                  {projects.map(p => (
+                    <option key={p.project_id} value={p.project_id}>{p.name}</option>
+                  ))}
+                </select>
+                {!estimate?.project_id && (
+                  <p className="text-xs text-amber-600 mt-1">* Opcional - requerido solo para convertir a estimado</p>
+                )}
+              </div>
+              <div>
+                <Label>Estatus</Label>
+                <select
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={estimate?.status || 'en_proceso'}
+                  onChange={(e) => setEstimate({ ...estimate, status: e.target.value })}
+                >
+                  <option value="en_proceso">En Proceso</option>
+                  <option value="final">Final</option>
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Tabs */}
         <Tabs defaultValue="summary" className="space-y-6">
