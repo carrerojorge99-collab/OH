@@ -8327,6 +8327,7 @@ class CostEstimate(BaseModel):
     municipal_patent_percentage: float = 0
     total_labor: float = 0
     total_subcontractors: float = 0
+    total_subcontractor_labor: float = 0
     total_materials: float = 0
     total_equipment: float = 0
     total_transportation: float = 0
