@@ -33,26 +33,86 @@ const stripHtml = (html) => {
   const temp = document.createElement('div');
   temp.innerHTML = html;
   
-  // Procesar listas ordenadas (ol) - convertir a números
-  let listCounter = 0;
-  let text = temp.innerHTML
-    // Manejar inicio de lista ordenada
-    .replace(/<ol[^>]*>/gi, () => { listCounter = 0; return '\n'; })
-    .replace(/<\/ol>/gi, '\n')
-    // Manejar inicio de lista desordenada
-    .replace(/<ul[^>]*>/gi, '\n')
-    .replace(/<\/ul>/gi, '\n')
-    // Reemplazar <li> en listas ordenadas con números
-    .replace(/<li[^>]*>/gi, () => { listCounter++; return `${listCounter}. `; })
-    .replace(/<\/li>/gi, '\n')
-    // Manejar párrafos y saltos de línea
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<p[^>]*>/gi, '')
-    // Manejar encabezados
-    .replace(/<\/h[1-6]>/gi, '\n\n')
-    .replace(/<h[1-6][^>]*>/gi, '')
-    // Manejar entidades HTML
+  // Función recursiva para procesar nodos y preservar formato
+  const processNode = (node, listType = null, listIndex = 0) => {
+    let result = '';
+    
+    for (let child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        // Nodo de texto
+        result += child.textContent;
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        const tagName = child.tagName.toLowerCase();
+        
+        switch (tagName) {
+          case 'ol':
+            // Lista ordenada - procesar hijos con índice
+            let olIndex = 0;
+            for (let li of child.children) {
+              if (li.tagName.toLowerCase() === 'li') {
+                olIndex++;
+                result += `\n${olIndex}. ${processNode(li, 'ol', olIndex)}`;
+              }
+            }
+            result += '\n';
+            break;
+            
+          case 'ul':
+            // Lista desordenada
+            for (let li of child.children) {
+              if (li.tagName.toLowerCase() === 'li') {
+                result += `\n• ${processNode(li, 'ul')}`;
+              }
+            }
+            result += '\n';
+            break;
+            
+          case 'li':
+            // Si llegamos aquí directamente, procesar contenido
+            result += processNode(child);
+            break;
+            
+          case 'p':
+            result += processNode(child) + '\n\n';
+            break;
+            
+          case 'br':
+            result += '\n';
+            break;
+            
+          case 'h1':
+          case 'h2':
+          case 'h3':
+          case 'h4':
+          case 'h5':
+          case 'h6':
+            result += '\n' + processNode(child) + '\n\n';
+            break;
+            
+          case 'strong':
+          case 'b':
+          case 'em':
+          case 'i':
+          case 'u':
+          case 'span':
+          case 'div':
+            result += processNode(child);
+            if (tagName === 'div') result += '\n';
+            break;
+            
+          default:
+            result += processNode(child);
+        }
+      }
+    }
+    
+    return result;
+  };
+  
+  let result = processNode(temp);
+  
+  // Decodificar entidades HTML
+  result = result
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
@@ -60,14 +120,11 @@ const stripHtml = (html) => {
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'");
   
-  // Remover todas las demás etiquetas HTML
-  temp.innerHTML = text;
-  let result = temp.textContent || temp.innerText || '';
-  
   // Limpiar espacios múltiples y líneas vacías excesivas
   result = result
-    .replace(/\n{3,}/g, '\n\n')  // Máximo 2 saltos de línea
+    .replace(/\n{3,}/g, '\n\n')  // Máximo 2 saltos de línea consecutivos
     .replace(/[ \t]+/g, ' ')     // Espacios múltiples a uno solo
+    .replace(/\n /g, '\n')       // Espacio al inicio de línea
     .trim();
   
   return result;
