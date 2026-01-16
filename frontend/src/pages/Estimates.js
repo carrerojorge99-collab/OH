@@ -25,6 +25,27 @@ import NomenclatureSelector, { useNomenclature } from '../components/Nomenclatur
 
 moment.locale('es');
 
+// Función para limpiar HTML y convertir a texto plano
+const stripHtml = (html) => {
+  if (!html) return '';
+  // Crear un elemento temporal para parsear HTML
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  // Reemplazar <br>, <p>, <li> con saltos de línea
+  let text = temp.innerHTML
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<li>/gi, '• ')
+    .replace(/<\/h[1-6]>/gi, '\n')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+  // Remover todas las demás etiquetas HTML
+  temp.innerHTML = text;
+  return temp.textContent || temp.innerText || '';
+};
 
 const statusColors = {
   draft: 'bg-slate-100 text-slate-700',
