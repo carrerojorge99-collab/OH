@@ -855,17 +855,84 @@ const Estimates = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {['draft', 'sent', 'approved', 'rejected', 'converted'].map(status => (
-            <Card key={status}>
+        {/* Summary Cards */}
+        {estimates.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Total Cotizado */}
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
               <CardContent className="p-4">
-                <div className="text-2xl font-bold">{estimates.filter(e => e.status === status).length}</div>
-                <div className="text-sm text-slate-600">{statusLabels[status]}</div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <DollarSign className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-600 font-medium">Total Cotizado</p>
+                    <p className="text-xl font-bold text-blue-800">
+                      ${summaryStats.total.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+
+            {/* Total Estimados */}
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-500 rounded-lg">
+                    <Calculator className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-600 font-medium">Total Estimados</p>
+                    <p className="text-xl font-bold text-slate-800">
+                      {estimates.length}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Aprobados */}
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500 rounded-lg">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-green-600 font-medium">Aprobados</p>
+                    <p className="text-xl font-bold text-green-800">
+                      {summaryStats.approved.length}
+                      <span className="text-sm font-normal ml-2">
+                        (${summaryStats.approvedTotal.toLocaleString('es-PR', { minimumFractionDigits: 0 })})
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pendientes */}
+            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-500 rounded-lg">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-amber-600 font-medium">Pendientes/Enviados</p>
+                    <p className="text-xl font-bold text-amber-800">
+                      {summaryStats.pending.length}
+                      <span className="text-sm font-normal ml-2">
+                        (${summaryStats.pendingTotal.toLocaleString('es-PR', { minimumFractionDigits: 0 })})
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Estimates List */}
         <div className="space-y-4">
