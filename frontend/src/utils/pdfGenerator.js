@@ -283,7 +283,7 @@ export const addTasksTable = (doc, tasks, startY) => {
 // Standard items table
 export const addItemsTable = (doc, items, startY, columns = ['Descripción', 'Cant.', 'Precio', 'Total']) => {
   const tableData = items.map((item, idx) => [
-    `${idx + 1}. ${item.description || item.name || ''}`,
+    `${idx + 1}. ${stripHtml(item.description || item.name || '')}`,
     (item.quantity || 1).toString(),
     `$${formatCurrency(item.unit_price || item.rate || 0)}`,
     `$${formatCurrency(item.amount || item.total || 0)}`
