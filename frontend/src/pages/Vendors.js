@@ -586,6 +586,46 @@ const Vendors = () => {
                     )}
                   </div>
 
+                  {/* Bank Information Section */}
+                  {(selectedVendor.bank_name || selectedVendor.bank_account || selectedVendor.routing_number) && (
+                    <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-100">
+                      <h4 className="font-medium text-green-800 mb-3 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        Información Bancaria
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {selectedVendor.bank_name && (
+                          <div>
+                            <p className="text-green-600">Banco</p>
+                            <p className="text-slate-800 font-medium">{selectedVendor.bank_name}</p>
+                          </div>
+                        )}
+                        {selectedVendor.account_type && (
+                          <div>
+                            <p className="text-green-600">Tipo de Cuenta</p>
+                            <p className="text-slate-800 font-medium">
+                              {selectedVendor.account_type === 'checking' ? 'Corriente' : 'Ahorro'}
+                            </p>
+                          </div>
+                        )}
+                        {selectedVendor.bank_account && (
+                          <div>
+                            <p className="text-green-600">Número de Cuenta</p>
+                            <p className="text-slate-800 font-medium">{selectedVendor.bank_account}</p>
+                          </div>
+                        )}
+                        {selectedVendor.routing_number && (
+                          <div>
+                            <p className="text-green-600">Número de Ruta</p>
+                            <p className="text-slate-800 font-medium">{selectedVendor.routing_number}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {selectedVendor.notes && (
                     <div className="mb-6 p-3 bg-slate-50 rounded-lg">
                       <p className="text-sm text-slate-500 mb-1">Notas</p>
