@@ -225,10 +225,10 @@ export const addPartySection = (doc, title, name, address, email, phone, startY)
 // Task-based table for PO (large description area)
 export const addTasksTable = (doc, tasks, startY) => {
   const tableData = tasks.map((task, idx) => {
-    // Build description with scope and details
-    let desc = `${idx + 1}. ${task.description || task.name || ''}`;
-    if (task.scope) desc += `\n\nScope of Work:\n${task.scope}`;
-    if (task.details) desc += `\n\nConsidered Tasks:\n${task.details}`;
+    // Build description with scope and details - strip HTML
+    let desc = `${idx + 1}. ${stripHtml(task.description || task.name || '')}`;
+    if (task.scope) desc += `\n\nScope of Work:\n${stripHtml(task.scope)}`;
+    if (task.details) desc += `\n\nConsidered Tasks:\n${stripHtml(task.details)}`;
     
     return [
       { content: desc, styles: { cellWidth: 120, minCellHeight: 25 } },
