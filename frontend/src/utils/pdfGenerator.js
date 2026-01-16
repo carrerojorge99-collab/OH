@@ -13,6 +13,28 @@ const COLORS = {
   white: [255, 255, 255]
 };
 
+// Helper function to strip HTML tags and convert to plain text
+export const stripHtml = (html) => {
+  if (!html) return '';
+  // Crear un elemento temporal para parsear HTML
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  // Reemplazar <br>, <p>, <li> con saltos de línea o espacios
+  let text = temp.innerHTML
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, ' ')
+    .replace(/<\/li>/gi, ' ')
+    .replace(/<li>/gi, '• ')
+    .replace(/<\/h[1-6]>/gi, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+  // Remover todas las demás etiquetas HTML
+  temp.innerHTML = text;
+  return (temp.textContent || temp.innerText || '').replace(/\s+/g, ' ').trim();
+};
+
 // Helper function to format currency with thousands separator
 export const formatCurrency = (amount) => {
   const num = parseFloat(amount) || 0;
