@@ -66,6 +66,9 @@ const ProjectDetail = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [moveDocDialogOpen, setMoveDocDialogOpen] = useState(false);
   const [docToMove, setDocToMove] = useState(null);
+  const [renameDocDialogOpen, setRenameDocDialogOpen] = useState(false);
+  const [docToRename, setDocToRename] = useState(null);
+  const [newDocName, setNewDocName] = useState('');
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
