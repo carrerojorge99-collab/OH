@@ -543,7 +543,8 @@ const Estimates = () => {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
-        const notesLines = doc.splitTextToSize(estimate.notes, columnWidth);
+        const cleanNotes = stripHtml(estimate.notes);
+        const notesLines = doc.splitTextToSize(cleanNotes, columnWidth);
         
         // Render notes lines with page overflow handling
         for (let i = 0; i < notesLines.length; i++) {
