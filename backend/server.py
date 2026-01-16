@@ -8649,6 +8649,7 @@ async def update_cost_estimate(
         "municipal_patent_percentage": estimate_data.municipal_patent_percentage,
         "total_labor": round(total_labor, 2),
         "total_subcontractors": round(total_subcontractors, 2),
+        "total_subcontractor_labor": round(total_subcontractor_labor, 2),
         "total_materials": round(total_materials, 2),
         "total_equipment": round(total_equipment, 2),
         "total_transportation": round(total_transportation, 2),
