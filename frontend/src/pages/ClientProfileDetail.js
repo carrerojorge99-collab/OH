@@ -1042,10 +1042,24 @@ const ClientProfileDetail = () => {
               </div>
 
               {/* Estimate Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label>Título del Estimado *</Label>
                   <Input value={estimateForm.title} onChange={(e) => setEstimateForm({...estimateForm, title: e.target.value})} required />
+                </div>
+                <div>
+                  <Label>Preparado por *</Label>
+                  <Input 
+                    value={estimateForm.prepared_by} 
+                    onChange={(e) => setEstimateForm({...estimateForm, prepared_by: e.target.value})} 
+                    placeholder="Nombre del empleado"
+                    disabled={!!editingEstimate}
+                    className={editingEstimate ? 'bg-slate-100' : ''}
+                    required={!editingEstimate}
+                  />
+                  {editingEstimate && (
+                    <p className="text-xs text-slate-500 mt-1">Este campo no se puede modificar</p>
+                  )}
                 </div>
                 <div>
                   <Label>Válido Hasta</Label>
