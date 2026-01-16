@@ -93,6 +93,7 @@ const CostEstimateDetail = () => {
     try {
       const data = {
         project_id: estimate?.project_id || null,
+        project_name: estimate?.project_name || '',
         estimate_name: estimate.estimate_name || 'Nueva Estimación',
         status: estimate?.status || 'en_proceso',
         labor_costs: laborCosts,
