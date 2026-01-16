@@ -208,7 +208,8 @@ const ClientProfileDetail = () => {
       terms: 'Este estimado es válido por 30 días.',
       valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
       custom_number: '',
-      price_breakdown: null
+      price_breakdown: null,
+      prepared_by: ''
     });
     setEditingEstimate(null);
     setSelectedNomenclature(null);
