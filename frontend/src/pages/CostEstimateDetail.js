@@ -1019,7 +1019,7 @@ const CostEstimateDetail = () => {
                               step="0.01"
                               className="text-right border-amber-300"
                               value={item.labor_cost || 0}
-                              onChange={(e) => updateSubcontractorRow(idx, 'labor_cost', e.target.value)}
+                              onChange={(e) => updateSubcontractorRow(idx, 'labor_cost', parseFloat(e.target.value) || 0)}
                               placeholder="Mano de obra"
                             />
                           </td>
