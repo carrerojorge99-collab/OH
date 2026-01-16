@@ -1137,6 +1137,35 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleRenameDocument = async () => {
+    if (!newDocName.trim()) {
+      toast.error('Ingresa un nombre para el documento');
+      return;
+    }
+    try {
+      await api.put(`/documents/${docToRename}/rename`, { 
+        new_name: newDocName.trim() 
+      }, { withCredentials: true });
+      toast.success('Documento renombrado exitosamente');
+      setRenameDocDialogOpen(false);
+      setDocToRename(null);
+      setNewDocName('');
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al renombrar documento');
+    }
+  };
+
+  const openRenameDialog = (doc) => {
+    setDocToRename(doc.document_id);
+    // Get the name without extension
+    const nameParts = doc.original_filename.split('.');
+    const ext = nameParts.length > 1 ? nameParts.pop() : '';
+    const nameWithoutExt = nameParts.join('.');
+    setNewDocName(nameWithoutExt);
+    setRenameDocDialogOpen(true);
+  };
+
   // Folder management functions
   const loadFolders = async () => {
     try {
