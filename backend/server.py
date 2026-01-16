@@ -8280,6 +8280,7 @@ class CostEstimate(BaseModel):
     project_id: Optional[str] = None
     project_name: Optional[str] = ""
     estimate_name: str
+    status: str = "en_proceso"  # en_proceso, final
     labor_costs: List[LaborCostItem] = []
     subcontractors: List[SubcontractorItem] = []
     materials: List[MaterialItem] = []
@@ -8309,6 +8310,7 @@ class CostEstimate(BaseModel):
 class CostEstimateCreate(BaseModel):
     project_id: Optional[str] = None
     estimate_name: str
+    status: str = "en_proceso"  # en_proceso, final
     labor_costs: List[LaborCostItem] = []
     subcontractors: List[SubcontractorItem] = []
     materials: List[MaterialItem] = []
@@ -8323,6 +8325,7 @@ class CostEstimateCreate(BaseModel):
     cfse_percentage: float = 0
     liability_percentage: float = 0
     municipal_patent_percentage: float = 0
+    grand_total: float = 0  # Recibir el total calculado desde el frontend
 
 # ==================== LABOR RATES ENDPOINTS ====================
 @api_router.get("/labor-rates", response_model=List[LaborRate])
