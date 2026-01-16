@@ -652,6 +652,7 @@ class Timesheet(BaseModel):
     hours_worked: float
     description: str
     task_id: Optional[str]
+    clock_id: Optional[str] = None  # Vinculación con ponche
     created_at: str
     updated_at: str
 
