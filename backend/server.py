@@ -8494,6 +8494,7 @@ async def create_cost_estimate(
     # Calculate totals
     total_labor = sum(item.subtotal for item in estimate_data.labor_costs)
     total_subcontractors = sum(item.cost for item in estimate_data.subcontractors)
+    total_subcontractor_labor = sum(item.labor_cost for item in estimate_data.subcontractors)
     total_materials = sum(item.total for item in estimate_data.materials)
     total_equipment = sum(item.total for item in estimate_data.equipment)
     total_transportation = sum(item.total for item in estimate_data.transportation)
@@ -8582,6 +8583,7 @@ async def update_cost_estimate(
     # Calculate totals
     total_labor = sum(item.subtotal for item in estimate_data.labor_costs)
     total_subcontractors = sum(item.cost for item in estimate_data.subcontractors)
+    total_subcontractor_labor = sum(item.labor_cost for item in estimate_data.subcontractors)
     total_materials = sum(item.total for item in estimate_data.materials)
     total_equipment = sum(item.total for item in estimate_data.equipment)
     total_transportation = sum(item.total for item in estimate_data.transportation)
