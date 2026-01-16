@@ -154,7 +154,8 @@ const Vendors = () => {
   const resetVendorForm = () => {
     setVendorForm({
       name: '', category: '', address: '', city: '', state: '', zip_code: '',
-      phone: '', email: '', website: '', ein: '', payment_terms: '', notes: ''
+      phone: '', email: '', website: '', ein: '', payment_terms: '',
+      bank_name: '', bank_account: '', routing_number: '', account_type: '', notes: ''
     });
   };
 
