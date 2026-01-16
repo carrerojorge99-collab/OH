@@ -990,48 +990,64 @@ async def sync_project_labor_hours(project_id: str):
     Sincroniza automáticamente las horas consumidas (consumed_hours) 
     en los registros de Labor basándose en los timesheets del proyecto.
     
-    Suma todas las hours_worked de los timesheets del proyecto y actualiza
-    los registros de labor correspondientes.
+    Asigna las horas COMPLETAS de cada usuario al registro de Labor correspondiente.
+    NO distribuye proporcionalmente.
     """
     try:
         # Obtener todos los timesheets del proyecto
         timesheets = await db.timesheet.find({"project_id": project_id}, {"_id": 0}).to_list(10000)
         
-        # Calcular total de horas por usuario
+        # Calcular total de horas por usuario (user_id y user_name)
         hours_by_user = {}
         total_project_hours = 0
         for ts in timesheets:
             user_id = ts.get('user_id', '')
-            user_name = ts.get('user_name', '')
+            user_name = ts.get('user_name', '').strip()
             hours = ts.get('hours_worked', 0) or 0
             total_project_hours += hours
             
             if user_id:
                 if user_id not in hours_by_user:
-                    hours_by_user[user_id] = {'hours': 0, 'name': user_name}
+                    hours_by_user[user_id] = {'hours': 0, 'name': user_name, 'name_lower': user_name.lower()}
                 hours_by_user[user_id]['hours'] += hours
         
         # Obtener registros de labor del proyecto
         labor_records = await db.labor.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
         
         if labor_records:
-            # Estrategia: Si hay categorías de labor, intentar asignar horas por usuario/categoría
-            # Si no coincide, distribuir las horas totales al primer registro o proporcialmente
-            
             for labor in labor_records:
                 labor_id = labor.get('labor_id')
-                labor_category = labor.get('labor_category', '')
-                hourly_rate = labor.get('hourly_rate', 0)
+                labor_category = labor.get('labor_category', '').strip()
+                labor_category_lower = labor_category.lower()
+                hourly_rate = labor.get('hourly_rate', 0) or 0
+                user_id_in_labor = labor.get('user_id', '')  # Si el labor tiene user_id directo
                 
-                # Buscar horas del usuario que coincida con la categoría (nombre)
+                # Buscar las horas COMPLETAS del usuario que coincida
                 matched_hours = 0
-                for user_id, user_data in hours_by_user.items():
-                    if user_data['name'].lower() in labor_category.lower() or labor_category.lower() in user_data['name'].lower():
-                        matched_hours += user_data['hours']
+                matched = False
                 
-                # Si no hay match específico, usar el total del proyecto dividido entre registros
-                if matched_hours == 0 and len(labor_records) > 0:
-                    matched_hours = total_project_hours / len(labor_records)
+                # Primero: intentar match por user_id directo
+                if user_id_in_labor and user_id_in_labor in hours_by_user:
+                    matched_hours = hours_by_user[user_id_in_labor]['hours']
+                    matched = True
+                    print(f"  📌 Match por user_id: {user_id_in_labor} -> {matched_hours} hrs")
+                
+                # Segundo: intentar match por nombre exacto o parcial
+                if not matched:
+                    for user_id, user_data in hours_by_user.items():
+                        user_name_lower = user_data['name_lower']
+                        # Match exacto o parcial del nombre
+                        if (user_name_lower == labor_category_lower or 
+                            user_name_lower in labor_category_lower or 
+                            labor_category_lower in user_name_lower):
+                            matched_hours = user_data['hours']
+                            matched = True
+                            print(f"  📌 Match por nombre: '{user_data['name']}' -> '{labor_category}' = {matched_hours} hrs")
+                            break
+                
+                # Si no hay match, dejar en 0 (NO distribuir)
+                if not matched:
+                    matched_hours = 0
                 
                 # Calcular costo consumido
                 consumed_cost = matched_hours * hourly_rate
