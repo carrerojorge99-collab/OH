@@ -463,7 +463,8 @@ const Estimates = () => {
       notes: estimate.notes || '',
       terms: estimate.terms || '',
       valid_until: estimate.valid_until || '',
-      custom_number: estimate.estimate_number || ''
+      custom_number: estimate.estimate_number || '',
+      prepared_by: estimate.prepared_by || ''
     });
     setDialogOpen(true);
   };
