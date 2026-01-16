@@ -312,7 +312,8 @@ const Estimates = () => {
       notes: '',
       terms: 'Este estimado es válido por 30 días.',
       valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
-      custom_number: ''
+      custom_number: '',
+      prepared_by: ''
     });
     setEditingEstimate(null);
   };
