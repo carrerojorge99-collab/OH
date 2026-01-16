@@ -1557,6 +1557,35 @@ async def get_projects(request: Request, session_token: Optional[str] = Cookie(N
     
     return [Project(**p) for p in projects]
 
+@api_router.post("/projects/sync-hours")
+async def sync_all_labor_hours(request: Request, session_token: Optional[str] = Cookie(None)):
+    """
+    Sincroniza las horas consumidas de todos los proyectos.
+    Solo administradores pueden ejecutar esta acción.
+    Útil después de migración de datos o para corregir inconsistencias.
+    """
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden sincronizar horas")
+    
+    result = await sync_all_projects_hours()
+    return {"message": "Sincronización completada", "result": result}
+
+@api_router.post("/projects/{project_id}/sync-hours")
+async def sync_project_hours(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """
+    Sincroniza las horas consumidas de un proyecto específico.
+    """
+    user = await get_current_user(request, session_token)
+    
+    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    hours = await sync_project_labor_hours(project_id)
+    return {"message": "Horas sincronizadas", "project_id": project_id, "total_hours": hours}
+
 @api_router.get("/projects/{project_id}", response_model=Project)
 async def get_project(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
