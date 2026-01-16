@@ -916,6 +916,7 @@ class EstimateCreate(BaseModel):
     valid_until: Optional[str] = None
     custom_number: Optional[str] = None
     price_breakdown: Optional[dict] = None
+    prepared_by: Optional[str] = None  # Nombre del empleado que realiza el estimado
 
 class Estimate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -943,6 +944,7 @@ class Estimate(BaseModel):
     notes: Optional[str] = None
     terms: Optional[str] = None
     valid_until: Optional[str] = None
+    prepared_by: Optional[str] = None  # Nombre del empleado que realiza el estimado
     created_by: str
     created_by_name: str
     created_at: str
