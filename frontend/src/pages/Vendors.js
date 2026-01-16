@@ -177,6 +177,10 @@ const Vendors = () => {
       website: vendor.website || '',
       ein: vendor.ein || '',
       payment_terms: vendor.payment_terms || '',
+      bank_name: vendor.bank_name || '',
+      bank_account: vendor.bank_account || '',
+      routing_number: vendor.routing_number || '',
+      account_type: vendor.account_type || '',
       notes: vendor.notes || ''
     });
     setSelectedVendor(vendor);
