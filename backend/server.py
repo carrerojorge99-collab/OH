@@ -146,7 +146,8 @@ async def startup_event():
     import asyncio
     # Fire and forget - don't await, let it run in background
     asyncio.create_task(create_default_admin_background())
-    print("🚀 Application started - admin creation running in background")
+    asyncio.create_task(sync_hours_on_startup())
+    print("🚀 Application started - admin creation and hours sync running in background")
 
 async def create_default_admin_background():
     """Background task wrapper for admin creation with full error isolation"""
@@ -155,6 +156,21 @@ async def create_default_admin_background():
     except Exception as e:
         # Log but never crash - this is a non-critical background task
         print(f"⚠️ Background admin creation error (non-fatal): {e}")
+
+async def sync_hours_on_startup():
+    """
+    Sincroniza las horas de todos los proyectos al iniciar la aplicación.
+    Esto asegura que los datos históricos estén actualizados.
+    """
+    import asyncio
+    # Esperar a que la conexión a la base de datos esté lista
+    await asyncio.sleep(20)
+    try:
+        print("🔄 Iniciando sincronización de horas de proyectos...")
+        result = await sync_all_projects_hours()
+        print(f"✅ Sincronización de horas completada: {result}")
+    except Exception as e:
+        print(f"⚠️ Error en sincronización de horas al startup (non-fatal): {e}")
 
 # ==================== HEALTH CHECK ENDPOINTS ====================
 # These are critical for Kubernetes liveness/readiness probes
