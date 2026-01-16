@@ -94,7 +94,8 @@ const ClientProfileDetail = () => {
     terms: 'Este estimado es válido por 30 días.',
     valid_until: moment().add(30, 'days').format('YYYY-MM-DD'),
     custom_number: '',
-    price_breakdown: null  // {material_equipment, labor, total}
+    price_breakdown: null,  // {material_equipment, labor, total}
+    prepared_by: ''
   });
 
   useEffect(() => {
