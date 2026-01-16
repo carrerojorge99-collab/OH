@@ -13,26 +13,113 @@ const COLORS = {
   white: [255, 255, 255]
 };
 
-// Helper function to strip HTML tags and convert to plain text
+// Helper function to strip HTML tags and convert to plain text with proper formatting
 export const stripHtml = (html) => {
   if (!html) return '';
+  
   // Crear un elemento temporal para parsear HTML
   const temp = document.createElement('div');
   temp.innerHTML = html;
-  // Reemplazar <br>, <p>, <li> con saltos de línea o espacios
-  let text = temp.innerHTML
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<\/p>/gi, ' ')
-    .replace(/<\/li>/gi, ' ')
-    .replace(/<li>/gi, '• ')
-    .replace(/<\/h[1-6]>/gi, ' ')
+  
+  // Función recursiva para procesar nodos y preservar formato
+  const processNode = (node) => {
+    let result = '';
+    
+    for (let child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        result += child.textContent;
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        const tagName = child.tagName.toLowerCase();
+        
+        switch (tagName) {
+          case 'ol':
+            let olIndex = 0;
+            for (let li of child.children) {
+              if (li.tagName.toLowerCase() === 'li') {
+                olIndex++;
+                result += `\n${olIndex}. ${processNode(li).trim()}`;
+              }
+            }
+            result += '\n';
+            break;
+            
+          case 'ul':
+            for (let li of child.children) {
+              if (li.tagName.toLowerCase() === 'li') {
+                result += `\n• ${processNode(li).trim()}`;
+              }
+            }
+            result += '\n';
+            break;
+            
+          case 'li':
+            result += processNode(child);
+            break;
+            
+          case 'p':
+            const pContent = processNode(child).trim();
+            if (pContent) {
+              result += pContent + '\n\n';
+            }
+            break;
+            
+          case 'br':
+            result += '\n';
+            break;
+            
+          case 'h1':
+          case 'h2':
+          case 'h3':
+          case 'h4':
+          case 'h5':
+          case 'h6':
+            result += processNode(child).trim() + '\n\n';
+            break;
+            
+          case 'strong':
+          case 'b':
+            result += processNode(child);
+            break;
+            
+          case 'em':
+          case 'i':
+          case 'u':
+          case 'span':
+            result += processNode(child);
+            break;
+            
+          case 'div':
+            result += processNode(child) + '\n';
+            break;
+            
+          default:
+            result += processNode(child);
+        }
+      }
+    }
+    
+    return result;
+  };
+  
+  let result = processNode(temp);
+  
+  // Decodificar entidades HTML
+  result = result
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>');
-  // Remover todas las demás etiquetas HTML
-  temp.innerHTML = text;
-  return (temp.textContent || temp.innerText || '').replace(/\s+/g, ' ').trim();
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+  
+  // Limpiar formato
+  result = result
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n /g, '\n')
+    .trim();
+  
+  return result;
 };
 
 // Helper function to format currency with thousands separator
