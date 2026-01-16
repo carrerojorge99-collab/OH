@@ -2702,8 +2702,12 @@ async def update_clock_entry(
     if "hours_worked" in update_data:
         await db.timesheet.update_one(
             {"clock_id": clock_id},
-            {"$set": {"hours": update_data["hours_worked"]}}
+            {"$set": {"hours_worked": update_data["hours_worked"]}}
         )
+        # Sincronizar horas consumidas en Labor automáticamente
+        project_id = clock_entry.get('project_id')
+        if project_id:
+            await sync_project_labor_hours(project_id)
     
     # Log audit
     await log_audit(
@@ -2737,6 +2741,8 @@ async def delete_clock_entry(
     if not clock_entry:
         raise HTTPException(status_code=404, detail="Ponche no encontrado")
     
+    project_id = clock_entry.get('project_id')
+    
     # Delete the clock entry
     await db.clock_entries.delete_one({"clock_id": clock_id})
     
@@ -2753,6 +2759,10 @@ async def delete_clock_entry(
                 "project_id": clock_entry.get('project_id'),
                 "description": {"$regex": "ponche", "$options": "i"}
             })
+    
+    # Sincronizar horas consumidas en Labor automáticamente
+    if project_id:
+        await sync_project_labor_hours(project_id)
     
     # Log audit
     await log_audit(
