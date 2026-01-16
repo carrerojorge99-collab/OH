@@ -570,7 +570,8 @@ const Estimates = () => {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
-        const termsLines = doc.splitTextToSize(estimate.terms, columnWidth);
+        const cleanTerms = stripHtml(estimate.terms);
+        const termsLines = doc.splitTextToSize(cleanTerms, columnWidth);
         
         // Render terms lines with page overflow handling
         for (let i = 0; i < termsLines.length; i++) {
