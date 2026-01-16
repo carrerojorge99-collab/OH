@@ -787,7 +787,7 @@ const CostEstimateDetail = () => {
                           type="number"
                           step="0.1"
                           value={b2bSubcontractorPercentage}
-                          onChange={(e) => setB2bSubcontractorPercentage(e.target.value)}
+                          onChange={(e) => setB2bSubcontractorPercentage(parseFloat(e.target.value) || 0)}
                         />
                         {totals.b2bSubcontractorAmount > 0 && (
                           <p className="text-xs text-amber-600 mt-1">+${totals.b2bSubcontractorAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
