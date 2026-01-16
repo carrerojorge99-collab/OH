@@ -174,8 +174,34 @@ async def sync_hours_on_startup():
         # Luego sincronizar las horas consumidas en Labor
         result = await sync_all_projects_hours()
         print(f"✅ Sincronización de horas completada: {result}")
+        
+        # Actualizar nomenclaturas a sus valores correctos
+        await sync_nomenclature_numbers()
     except Exception as e:
         print(f"⚠️ Error en sincronización de horas al startup (non-fatal): {e}")
+
+async def sync_nomenclature_numbers():
+    """
+    Sincroniza los números de nomenclaturas a sus valores correctos.
+    Esto asegura que el próximo número generado sea el correcto.
+    """
+    try:
+        # Nomenclatura "I" (Ingeniería) - próximo debe ser 17, así que current_number = 16
+        nomenclature_i = await db.nomenclatures.find_one({"prefix": "I"}, {"_id": 0})
+        if nomenclature_i:
+            current = nomenclature_i.get('current_number', 1)
+            if current < 16:
+                await db.nomenclatures.update_one(
+                    {"prefix": "I"},
+                    {"$set": {"current_number": 16}}
+                )
+                print(f"✅ Nomenclatura I actualizada: current_number = 16 (próximo será 17)")
+            else:
+                print(f"ℹ️ Nomenclatura I ya tiene current_number = {current}")
+        else:
+            print("⚠️ Nomenclatura I no encontrada")
+    except Exception as e:
+        print(f"⚠️ Error sincronizando nomenclaturas: {e}")
 
 async def migrate_clock_entries_to_timesheets():
     """
