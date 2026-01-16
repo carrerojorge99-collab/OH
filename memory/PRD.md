@@ -10,8 +10,16 @@ Sistema ERP completo para gestión de proyectos, empleados, facturas, estimados 
 - Estimados y órdenes de compra
 - Módulo de Compañías para gestión de clientes
 - Módulo de Proveedores para gestión de vendors
+- Sincronización automática de horas trabajadas
 
 ## What's Been Implemented
+
+### Session: January 16, 2026
+- **Sincronización Automática de Horas en Proyectos (COMPLETADO)**:
+  - Las "Horas Consumidas" (`consumed_hours`) en los registros de Labor se actualizan automáticamente
+  - Se sincroniza al: crear/editar/eliminar timesheet, clock out, crear/editar/eliminar ponches manuales
+  - Función helper `sync_project_labor_hours()` suma todas las horas del timesheet del proyecto
+  - Asignación inteligente: coincide nombre de usuario con categoría de labor
 
 ### Session: January 14, 2026 (Continued)
 - **Módulo de Vendors (COMPLETADO)**:
@@ -42,20 +50,24 @@ Sistema ERP completo para gestión de proyectos, empleados, facturas, estimados 
 - ✅ Módulo de Vendors con categorías y contactos
 - ✅ Integración de Vendors en Órdenes de Compra
 - ✅ Fix filtro de fechas en facturas automáticas
+- ✅ Sincronización automática de horas en proyectos
 
 ### P1 - Pendiente
-- Fix del bug de Nomenclature Selector en Settings
+- Testing completo del módulo de Vendors
+- Categorías de Vendors (UI para gestionar categorías)
 
 ### P2 - Futuro
 - Rate Limiting y políticas de contraseñas
 - UI para "Mover Documento"
+- Verificación de deployment MongoDB timeout fix
 
 ### P3 - Backlog
 - Problemas de layout responsivo
-- Refactorizar server.py
+- Refactorizar server.py en routers separados
 
 ## Key Files
-- `/app/backend/server.py` - API (vendors lines 10235-10390)
+- `/app/backend/server.py` - API principal (sync_project_labor_hours lines 911-976)
 - `/app/frontend/src/pages/Vendors.js` - Módulo de proveedores
 - `/app/frontend/src/pages/PurchaseOrders.js` - Con selector de vendors
 - `/app/frontend/src/pages/Companies.js` - Módulo de compañías
+- `/app/frontend/src/pages/ProjectDetail.js` - Detalle de proyecto con Labor y Timesheet
