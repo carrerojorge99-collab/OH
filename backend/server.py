@@ -8340,6 +8340,7 @@ class CostEstimate(BaseModel):
 
 class CostEstimateCreate(BaseModel):
     project_id: Optional[str] = None
+    project_name: Optional[str] = None  # Campo de texto libre para proyecto
     estimate_name: str
     status: str = "en_proceso"  # en_proceso, final
     labor_costs: List[LaborCostItem] = []
