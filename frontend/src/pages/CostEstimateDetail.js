@@ -545,7 +545,7 @@ const CostEstimateDetail = () => {
         {(estimateId === 'new' || !estimate?.project_id) && (
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Nombre de la Estimación</Label>
                   <Input
@@ -555,7 +555,7 @@ const CostEstimateDetail = () => {
                   />
                 </div>
                 <div>
-                  <Label>Proyecto {!estimate?.project_id && <span className="text-red-500">*</span>}</Label>
+                  <Label>Proyecto</Label>
                   <select
                     className="w-full px-3 py-2 border rounded-md"
                     value={estimate?.project_id || ''}
@@ -568,14 +568,25 @@ const CostEstimateDetail = () => {
                       });
                     }}
                   >
-                    <option value="">Selecciona un proyecto</option>
+                    <option value="">Sin proyecto (opcional)</option>
                     {projects.map(p => (
                       <option key={p.project_id} value={p.project_id}>{p.name}</option>
                     ))}
                   </select>
                   {!estimate?.project_id && (
-                    <p className="text-xs text-amber-600 mt-1">* Selecciona un proyecto para poder convertir a estimado</p>
+                    <p className="text-xs text-amber-600 mt-1">* Opcional - requerido solo para convertir a estimado</p>
                   )}
+                </div>
+                <div>
+                  <Label>Estatus</Label>
+                  <select
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={estimate?.status || 'en_proceso'}
+                    onChange={(e) => setEstimate({ ...estimate, status: e.target.value })}
+                  >
+                    <option value="en_proceso">En Proceso</option>
+                    <option value="final">Final</option>
+                  </select>
                 </div>
               </div>
             </CardContent>
