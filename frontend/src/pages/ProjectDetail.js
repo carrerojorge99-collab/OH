@@ -4241,6 +4241,47 @@ const ProjectDetail = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+            {/* Rename Document Dialog */}
+            <Dialog open={renameDocDialogOpen} onOpenChange={(open) => {
+              setRenameDocDialogOpen(open);
+              if (!open) {
+                setDocToRename(null);
+                setNewDocName('');
+              }
+            }}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Renombrar Documento</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <Label>Nuevo nombre</Label>
+                  <Input
+                    value={newDocName}
+                    onChange={(e) => setNewDocName(e.target.value)}
+                    placeholder="Nombre del documento"
+                    className="mt-2"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleRenameDocument();
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-slate-500 mt-2">
+                    La extensión del archivo se mantendrá automáticamente.
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setRenameDocDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleRenameDocument} className="bg-blue-500 hover:bg-blue-600">
+                    Renombrar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Project Logs Tab */}
