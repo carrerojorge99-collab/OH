@@ -908,6 +908,73 @@ async def log_audit(user_id: str, user_name: str, action: str, entity_type: str,
     }
     await db.audit_logs.insert_one(log_entry)
 
+async def sync_project_labor_hours(project_id: str):
+    """
+    Sincroniza automáticamente las horas consumidas (consumed_hours) 
+    en los registros de Labor basándose en los timesheets del proyecto.
+    
+    Suma todas las hours_worked de los timesheets del proyecto y actualiza
+    los registros de labor correspondientes.
+    """
+    try:
+        # Obtener todos los timesheets del proyecto
+        timesheets = await db.timesheet.find({"project_id": project_id}, {"_id": 0}).to_list(10000)
+        
+        # Calcular total de horas por usuario
+        hours_by_user = {}
+        total_project_hours = 0
+        for ts in timesheets:
+            user_id = ts.get('user_id', '')
+            user_name = ts.get('user_name', '')
+            hours = ts.get('hours_worked', 0) or 0
+            total_project_hours += hours
+            
+            if user_id:
+                if user_id not in hours_by_user:
+                    hours_by_user[user_id] = {'hours': 0, 'name': user_name}
+                hours_by_user[user_id]['hours'] += hours
+        
+        # Obtener registros de labor del proyecto
+        labor_records = await db.labor.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
+        
+        if labor_records:
+            # Estrategia: Si hay categorías de labor, intentar asignar horas por usuario/categoría
+            # Si no coincide, distribuir las horas totales al primer registro o proporcialmente
+            
+            for labor in labor_records:
+                labor_id = labor.get('labor_id')
+                labor_category = labor.get('labor_category', '')
+                hourly_rate = labor.get('hourly_rate', 0)
+                
+                # Buscar horas del usuario que coincida con la categoría (nombre)
+                matched_hours = 0
+                for user_id, user_data in hours_by_user.items():
+                    if user_data['name'].lower() in labor_category.lower() or labor_category.lower() in user_data['name'].lower():
+                        matched_hours += user_data['hours']
+                
+                # Si no hay match específico, usar el total del proyecto dividido entre registros
+                if matched_hours == 0 and len(labor_records) > 0:
+                    matched_hours = total_project_hours / len(labor_records)
+                
+                # Calcular costo consumido
+                consumed_cost = matched_hours * hourly_rate
+                
+                # Actualizar el registro de labor
+                await db.labor.update_one(
+                    {"labor_id": labor_id},
+                    {"$set": {
+                        "consumed_hours": round(matched_hours, 2),
+                        "consumed_cost": round(consumed_cost, 2),
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+        
+        print(f"✅ Horas sincronizadas para proyecto {project_id}: {total_project_hours} horas totales")
+        return total_project_hours
+    except Exception as e:
+        print(f"⚠️ Error sincronizando horas del proyecto {project_id}: {e}")
+        return 0
+
 class IntegrationConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     integration_id: str
