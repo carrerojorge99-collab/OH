@@ -8273,6 +8273,7 @@ class SubcontractorItem(BaseModel):
     trade: str  # Civil, Mechanical, Electrical
     description: str = ""
     cost: float = 0
+    labor_cost: float = 0  # Mano de obra del subcontratista para cálculo B2B
 
 class MaterialItem(BaseModel):
     description: str
