@@ -621,7 +621,7 @@ const Estimates = () => {
                   <Plus className="w-4 h-4 mr-2" /> Nuevo Estimado
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingEstimate ? 'Editar Estimado' : 'Nuevo Estimado'}</DialogTitle>
               </DialogHeader>
