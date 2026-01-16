@@ -8483,12 +8483,13 @@ async def create_cost_estimate(
 ):
     user = await get_current_user(request, session_token)
     
-    # Get project name if project_id is provided
-    project_name = ""
+    # Usar project_name directamente del request (campo de texto libre)
+    # Si hay project_id, buscar el nombre del proyecto, de lo contrario usar el project_name enviado
+    project_name = estimate_data.project_name or ""
     if estimate_data.project_id:
         project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0})
         if project:
-            project_name = project.get("name", "")
+            project_name = project.get("name", "") or project_name
     
     estimate_id = f"ce_{uuid4().hex[:16]}"
     now = datetime.now(PUERTO_RICO_TZ).isoformat()
