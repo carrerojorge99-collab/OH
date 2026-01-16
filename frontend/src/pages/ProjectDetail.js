@@ -4138,6 +4138,10 @@ const ProjectDetail = () => {
                                         </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={() => openRenameDialog(doc)}>
+                                          <Edit className="w-4 h-4 mr-2" />
+                                          Renombrar
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => {
                                           setDocToMove(doc.document_id);
                                           setMoveDocDialogOpen(true);
