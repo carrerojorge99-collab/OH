@@ -268,7 +268,8 @@ const ClientProfileDetail = () => {
       terms: estimate.terms || '',
       valid_until: estimate.valid_until || '',
       custom_number: estimate.estimate_number || '',
-      price_breakdown: estimate.price_breakdown || null
+      price_breakdown: estimate.price_breakdown || null,
+      prepared_by: estimate.prepared_by || ''
     });
     setEditingEstimate(estimate.estimate_id);
     setEstimateDialogOpen(true);
