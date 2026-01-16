@@ -771,6 +771,11 @@ class VendorCreate(BaseModel):
     website: Optional[str] = None
     ein: Optional[str] = None  # Tax ID
     payment_terms: Optional[str] = None  # e.g., "Net 30", "Net 60"
+    # Bank information
+    bank_name: Optional[str] = None
+    bank_account: Optional[str] = None
+    routing_number: Optional[str] = None
+    account_type: Optional[str] = None  # checking, savings
     notes: Optional[str] = None
 
 class Vendor(BaseModel):
@@ -787,6 +792,11 @@ class Vendor(BaseModel):
     website: Optional[str] = None
     ein: Optional[str] = None
     payment_terms: Optional[str] = None
+    # Bank information
+    bank_name: Optional[str] = None
+    bank_account: Optional[str] = None
+    routing_number: Optional[str] = None
+    account_type: Optional[str] = None
     notes: Optional[str] = None
     contacts: List[VendorContact] = []
     created_at: str
