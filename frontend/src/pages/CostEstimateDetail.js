@@ -1010,7 +1010,7 @@ const CostEstimateDetail = () => {
                               step="0.01"
                               className="text-right"
                               value={item.cost}
-                              onChange={(e) => updateSubcontractorRow(idx, 'cost', e.target.value)}
+                              onChange={(e) => updateSubcontractorRow(idx, 'cost', parseFloat(e.target.value) || 0)}
                             />
                           </td>
                           <td className="p-2 bg-amber-50">
