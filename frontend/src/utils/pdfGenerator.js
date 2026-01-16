@@ -318,10 +318,10 @@ export const addTasksTable = (doc, tasks, startY) => {
     if (task.details) desc += `\n\nConsidered Tasks:\n${stripHtml(task.details)}`;
     
     return [
-      { content: desc, styles: { cellWidth: 120, minCellHeight: 25 } },
-      { content: (task.quantity || 1).toString(), styles: { halign: 'center' } },
-      { content: `$${formatCurrency(task.unit_price || task.rate || 0)}`, styles: { halign: 'right' } },
-      { content: `$${formatCurrency(task.amount || task.total || 0)}`, styles: { halign: 'right' } }
+      desc,
+      (task.quantity || 1).toString(),
+      `$${formatCurrency(task.unit_price || task.rate || 0)}`,
+      `$${formatCurrency(task.amount || task.total || 0)}`
     ];
   });
   
@@ -343,11 +343,12 @@ export const addTasksTable = (doc, tasks, startY) => {
       fontSize: 8,
       cellPadding: 5,
       textColor: COLORS.text,
-      lineHeight: 1.4,
-      lineWidth: 0
+      lineWidth: 0,
+      overflow: 'linebreak',
+      cellWidth: 'wrap'
     },
     columnStyles: {
-      0: { cellWidth: 120 },
+      0: { cellWidth: 120, overflow: 'linebreak' },
       1: { cellWidth: 18, halign: 'center' },
       2: { cellWidth: 25, halign: 'right' },
       3: { cellWidth: 25, halign: 'right' }
@@ -355,13 +356,7 @@ export const addTasksTable = (doc, tasks, startY) => {
     alternateRowStyles: {
       fillColor: [252, 252, 253]
     },
-    showHead: 'firstPage',
-    didParseCell: (data) => {
-      // Allow line breaks in description
-      if (data.column.index === 0 && data.cell.raw?.content) {
-        data.cell.styles.cellWidth = 120;
-      }
-    }
+    showHead: 'firstPage'
   });
   
   return doc.lastAutoTable.finalY;
