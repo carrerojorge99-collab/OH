@@ -8620,12 +8620,12 @@ async def update_cost_estimate(
             estimate_data.municipal_patent_percentage / 100
         ) + b2b_amount
     
-    # Get project name if project_id is provided
-    project_name = ""
+    # Usar project_name directamente del request (campo de texto libre)
+    project_name = estimate_data.project_name or ""
     if estimate_data.project_id:
         project = await db.projects.find_one({"project_id": estimate_data.project_id}, {"_id": 0})
         if project:
-            project_name = project.get("name", "")
+            project_name = project.get("name", "") or project_name
     
     update_doc = {
         "project_id": estimate_data.project_id or "",
