@@ -2642,6 +2642,29 @@ async def create_manual_clock_entry(
     
     await db.clock_entries.insert_one(clock_doc)
     
+    # Si el ponche está completado, crear timesheet automáticamente
+    if status == "completed" and hours_worked > 0:
+        timesheet_id = f"ts_{uuid4().hex[:16]}"
+        timesheet_doc = {
+            "timesheet_id": timesheet_id,
+            "project_id": data.project_id,
+            "project_name": project.get('name', ''),
+            "user_id": data.user_id,
+            "user_name": target_user.get('name', 'Sin nombre'),
+            "date": data.date,
+            "hours_worked": hours_worked,
+            "description": data.notes or f"Entrada manual ({data.clock_in_time} - {data.clock_out_time})",
+            "task_id": None,
+            "clock_id": clock_id,
+            "created_at": datetime.now(PUERTO_RICO_TZ).isoformat(),
+            "updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+        }
+        await db.timesheet.insert_one(timesheet_doc)
+        print(f"✅ Timesheet creado desde ponche manual: {timesheet_id}")
+        
+        # Sincronizar horas consumidas en Labor automáticamente
+        await sync_project_labor_hours(data.project_id)
+    
     # Log audit
     await log_audit(
         current_user.user_id,
