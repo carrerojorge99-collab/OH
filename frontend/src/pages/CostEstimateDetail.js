@@ -94,6 +94,7 @@ const CostEstimateDetail = () => {
       const data = {
         project_id: estimate?.project_id || null,
         estimate_name: estimate.estimate_name || 'Nueva Estimación',
+        status: estimate?.status || 'en_proceso',
         labor_costs: laborCosts,
         subcontractors,
         materials,
@@ -108,7 +109,8 @@ const CostEstimateDetail = () => {
         contingency_percentage: Number(contingencyPercentage),
         b2b_ohsms_percentage: Number(b2bOhsmsPercentage),
         b2b_ohsms_labor_percentage: Number(b2bOhsmsLaborPercentage),
-        b2b_subcontractor_percentage: Number(b2bSubcontractorPercentage)
+        b2b_subcontractor_percentage: Number(b2bSubcontractorPercentage),
+        grand_total: totals.grandTotal  // Enviar el total calculado
       };
 
       if (estimateId === 'new') {
