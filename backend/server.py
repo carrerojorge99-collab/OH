@@ -6268,9 +6268,21 @@ async def generate_invoice_from_timesheet(
     # Log for debugging
     logger.info(f"Invoice generation - Project: {invoice_data.project_id}, Date range: {invoice_data.date_from} to {invoice_data.date_to}, Entries found: {len(timesheet_entries)}")
     
-    # Get ALL employee profiles to lookup hourly rates
-    employee_profiles = await db.employee_profiles.find({}, {"_id": 0, "user_id": 1, "hourly_rate": 1}).to_list(1000)
-    employee_rates = {ep.get('user_id'): ep.get('hourly_rate', 0) for ep in employee_profiles}
+    # Get ALL employee profiles to lookup position (cargo)
+    employee_profiles = await db.employee_profiles.find({}, {"_id": 0, "user_id": 1, "position": 1, "hourly_rate": 1}).to_list(1000)
+    employee_positions = {ep.get('user_id'): ep.get('position', '') for ep in employee_profiles}
+    employee_direct_rates = {ep.get('user_id'): ep.get('hourly_rate', 0) for ep in employee_profiles}
+    
+    # Get labor rates from Settings (tarifas por cargo)
+    labor_rates = await db.labor_rates.find({}, {"_id": 0}).to_list(1000)
+    # Create lookup by role_name (case-insensitive)
+    rates_by_position = {}
+    for lr in labor_rates:
+        role_name = (lr.get('role_name') or '').strip().lower()
+        if role_name:
+            rates_by_position[role_name] = lr.get('quoted_rate', 0) or 0
+    
+    logger.info(f"Labor rates loaded: {len(rates_by_position)} positions configured")
     
     # Also get labor entries as fallback for project-specific rates
     labor_entries = await db.labor.find(
@@ -6299,29 +6311,44 @@ async def generate_invoice_from_timesheet(
         user_hours[user_id] += hours
         total_hours += hours
     
-    # Default rate if no employee profile data
+    # Default rate if no rate found
     default_rate = 50.0
     
-    # Create items - now using employee profile rates
+    # Create items - using position-based rates from Settings
     for user_id in user_ids_list:
         hours = user_hours[user_id]
         user_name = user_names[user_id]
+        rate = 0
+        rate_source = "default"
         
-        # PRIORITY 1: Get rate from employee profile (RH data)
-        rate = employee_rates.get(user_id, 0)
+        # PRIORITY 1: Get position from employee profile, then lookup rate in labor_rates
+        position = employee_positions.get(user_id, '').strip()
+        if position:
+            position_lower = position.lower()
+            rate = rates_by_position.get(position_lower, 0)
+            if rate > 0:
+                rate_source = f"labor_rates ({position})"
+                logger.info(f"Rate for {user_name}: ${rate}/hr from labor_rates (position: {position})")
         
-        # PRIORITY 2: If no rate in profile, try project-specific labor data
+        # PRIORITY 2: If no rate from position, try employee profile direct rate
+        if rate <= 0:
+            rate = employee_direct_rates.get(user_id, 0)
+            if rate > 0:
+                rate_source = "employee_profile"
+        
+        # PRIORITY 3: If no rate in profile, try project-specific labor data
         if rate <= 0:
             for labor in labor_entries:
                 if labor.get('user_id') == user_id or labor.get('labor_category') == user_name:
                     rate = labor.get('hourly_rate', 0)
                     if rate > 0:
+                        rate_source = "labor_entry"
                         break
         
-        # PRIORITY 3: Use default rate as last resort
+        # PRIORITY 4: Use default rate as last resort
         if rate <= 0:
             rate = default_rate
-            logger.warning(f"Using default rate for user {user_name} ({user_id}) - no rate found in employee profile or labor data")
+            logger.warning(f"Using default rate for user {user_name} ({user_id}) - no rate found in labor_rates, employee profile, or labor data")
         
         items.append(InvoiceItem(
             description=f"Horas trabajadas - {user_name}",
@@ -6329,6 +6356,7 @@ async def generate_invoice_from_timesheet(
             rate=rate,
             amount=round(hours * rate, 2)
         ))
+        logger.info(f"Invoice item: {user_name} - {hours}hrs x ${rate}/hr = ${round(hours * rate, 2)} (source: {rate_source})")
     
     # Calculate totals
     subtotal = sum(item.amount for item in items)
