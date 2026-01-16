@@ -264,19 +264,11 @@ const CostEstimates = () => {
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div>
-                          <p className="text-xs text-slate-500">Costo Total</p>
-                          <p className="text-xl font-bold text-blue-600">
-                            ${(estimate.grand_total || 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500">Creada</p>
-                          <p className="text-sm text-slate-700">
-                            {moment(estimate.created_at).format('DD MMM YYYY')}
-                          </p>
-                        </div>
+                      <div className="mt-4">
+                        <p className="text-xs text-slate-500">Creada</p>
+                        <p className="text-sm text-slate-700">
+                          {moment(estimate.created_at).format('DD MMM YYYY')}
+                        </p>
                       </div>
                     </div>
 
