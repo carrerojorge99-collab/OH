@@ -389,10 +389,12 @@ export const addItemsTable = (doc, items, startY, columns = ['Descripción', 'Ca
       fontSize: 9,
       cellPadding: 4,
       textColor: COLORS.text,
-      lineWidth: 0
+      lineWidth: 0,
+      overflow: 'linebreak',
+      cellWidth: 'wrap'
     },
     columnStyles: {
-      0: { cellWidth: 100 },
+      0: { cellWidth: 100, overflow: 'linebreak' },
       1: { cellWidth: 20, halign: 'center' },
       2: { cellWidth: 30, halign: 'right' },
       3: { cellWidth: 30, halign: 'right' }
