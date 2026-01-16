@@ -2456,6 +2456,9 @@ async def clock_out(
     await db.timesheet.insert_one(timesheet_doc)
     print(f"✅ Timesheet creado automáticamente: {timesheet_id} para proyecto {active_clock['project_id']}")
     
+    # Sincronizar horas consumidas en Labor automáticamente
+    await sync_project_labor_hours(active_clock['project_id'])
+    
     # Get updated clock entry
     updated_clock = await db.clock_entries.find_one({"clock_id": active_clock['clock_id']}, {"_id": 0})
     
