@@ -975,6 +975,29 @@ async def sync_project_labor_hours(project_id: str):
         print(f"⚠️ Error sincronizando horas del proyecto {project_id}: {e}")
         return 0
 
+async def sync_all_projects_hours():
+    """
+    Sincroniza las horas consumidas de TODOS los proyectos.
+    Útil para migración de datos o cuando se despliega a producción.
+    """
+    try:
+        # Obtener todos los proyectos
+        projects = await db.projects.find({}, {"project_id": 1, "name": 1, "_id": 0}).to_list(10000)
+        total_synced = 0
+        
+        for project in projects:
+            project_id = project.get('project_id')
+            if project_id:
+                hours = await sync_project_labor_hours(project_id)
+                if hours > 0:
+                    total_synced += 1
+        
+        print(f"✅ Sincronización masiva completada: {total_synced} proyectos con horas actualizadas de {len(projects)} totales")
+        return {"synced": total_synced, "total": len(projects)}
+    except Exception as e:
+        print(f"⚠️ Error en sincronización masiva: {e}")
+        return {"error": str(e)}
+
 class IntegrationConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     integration_id: str
