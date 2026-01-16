@@ -8318,6 +8318,9 @@ class CostEstimate(BaseModel):
     contingency_percentage: float = 0
     tax_percentage: float = 0
     b2b_percentage: float = 0
+    b2b_ohsms_percentage: float = 0
+    b2b_ohsms_labor_percentage: float = 4
+    b2b_subcontractor_percentage: float = 0
     cfse_percentage: float = 0
     liability_percentage: float = 0
     municipal_patent_percentage: float = 0
