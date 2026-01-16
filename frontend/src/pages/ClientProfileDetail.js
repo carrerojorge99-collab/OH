@@ -446,6 +446,7 @@ const ClientProfileDetail = () => {
       y = addTotalsSection(doc, estimate.price_breakdown?.total || estimate.subtotal, estimate.discount_amount || 0, estimate.tax_amount || 0, totalToUse, y, taxDetails);
       
       // Notes and Terms - BOTH on second page in two columns
+      // LEFT: Terms, RIGHT: Notes
       if (estimate.notes || estimate.terms) {
         doc.addPage();
         
@@ -459,39 +460,13 @@ const ClientProfileDetail = () => {
         let leftY = 20;
         let rightY = 20;
         
-        // LEFT COLUMN - Notes
-        if (estimate.notes) {
-          doc.setFontSize(11);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(30, 41, 59);
-          doc.text('Notas:', margin, leftY);
-          leftY += 8;
-          
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(71, 85, 105);
-          const notesLines = doc.splitTextToSize(estimate.notes, columnWidth);
-          
-          // Render notes lines with page overflow handling
-          for (let i = 0; i < notesLines.length; i++) {
-            if (leftY > maxY) {
-              doc.addPage();
-              leftY = 20;
-              rightY = 20;
-            }
-            doc.text(notesLines[i], margin, leftY);
-            leftY += lineHeight;
-          }
-          leftY += 5;
-        }
-        
-        // RIGHT COLUMN - Terms and Conditions
+        // LEFT COLUMN - Terms and Conditions
         if (estimate.terms) {
           doc.setFontSize(11);
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(30, 41, 59);
-          doc.text('Términos y Condiciones:', margin + columnWidth + columnGap, rightY);
-          rightY += 8;
+          doc.text('Términos y Condiciones:', margin, leftY);
+          leftY += 8;
           
           doc.setFontSize(8);
           doc.setFont('helvetica', 'normal');
@@ -500,11 +475,37 @@ const ClientProfileDetail = () => {
           
           // Render terms lines with page overflow handling
           for (let i = 0; i < termsLines.length; i++) {
+            if (leftY > maxY) {
+              doc.addPage();
+              leftY = 20;
+              rightY = 20;
+            }
+            doc.text(termsLines[i], margin, leftY);
+            leftY += lineHeight;
+          }
+          leftY += 5;
+        }
+        
+        // RIGHT COLUMN - Notes
+        if (estimate.notes) {
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text('Notas:', margin + columnWidth + columnGap, rightY);
+          rightY += 8;
+          
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(71, 85, 105);
+          const notesLines = doc.splitTextToSize(estimate.notes, columnWidth);
+          
+          // Render notes lines with page overflow handling
+          for (let i = 0; i < notesLines.length; i++) {
             if (rightY > maxY) {
-              // If terms overflow, continue on same page below notes or add new page
+              // If notes overflow, continue on same page below terms or add new page
               if (leftY < maxY) {
                 rightY = leftY + 10;
-                doc.text('Términos y Condiciones (cont.):', margin + columnWidth + columnGap, rightY);
+                doc.text('Notas (cont.):', margin + columnWidth + columnGap, rightY);
                 rightY += 8;
               } else {
                 doc.addPage();
@@ -512,7 +513,7 @@ const ClientProfileDetail = () => {
                 leftY = 20;
               }
             }
-            doc.text(termsLines[i], margin + columnWidth + columnGap, rightY);
+            doc.text(notesLines[i], margin + columnWidth + columnGap, rightY);
             rightY += lineHeight;
           }
         }
