@@ -8475,25 +8475,31 @@ async def create_cost_estimate(
         total_general_conditions
     )
     
-    # Apply B2B percentage only to subcontractors
-    b2b_amount = total_subcontractors * (estimate_data.b2b_percentage / 100)
-    
-    # Apply other percentages to subtotal
-    grand_total = subtotal * (
-        1 + estimate_data.overhead_percentage / 100 +
-        estimate_data.profit_percentage / 100 +
-        estimate_data.contingency_percentage / 100 +
-        estimate_data.tax_percentage / 100 +
-        estimate_data.cfse_percentage / 100 +
-        estimate_data.liability_percentage / 100 +
-        estimate_data.municipal_patent_percentage / 100
-    ) + b2b_amount
+    # Usar el grand_total del frontend si está disponible (cálculo complejo con cascadeo)
+    # De lo contrario, usar cálculo simple
+    if estimate_data.grand_total and estimate_data.grand_total > 0:
+        grand_total = estimate_data.grand_total
+    else:
+        # Apply B2B percentage only to subcontractors
+        b2b_amount = total_subcontractors * (estimate_data.b2b_percentage / 100)
+        
+        # Apply other percentages to subtotal
+        grand_total = subtotal * (
+            1 + estimate_data.overhead_percentage / 100 +
+            estimate_data.profit_percentage / 100 +
+            estimate_data.contingency_percentage / 100 +
+            estimate_data.tax_percentage / 100 +
+            estimate_data.cfse_percentage / 100 +
+            estimate_data.liability_percentage / 100 +
+            estimate_data.municipal_patent_percentage / 100
+        ) + b2b_amount
     
     estimate_doc = {
         "estimate_id": estimate_id,
         "project_id": estimate_data.project_id or "",
         "project_name": project_name,
         "estimate_name": estimate_data.estimate_name,
+        "status": estimate_data.status or "en_proceso",
         "labor_costs": [item.dict() for item in estimate_data.labor_costs],
         "subcontractors": [item.dict() for item in estimate_data.subcontractors],
         "materials": [item.dict() for item in estimate_data.materials],
