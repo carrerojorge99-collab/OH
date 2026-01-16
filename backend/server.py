@@ -8847,19 +8847,13 @@ async def convert_cost_estimate_to_estimate(
         b2b_ohsms_labor_amount + b2b_subcontractor_amount
     )
     
-    # Build estimate items - ONLY Price Breakdown (2 items: Material/Equipment and Labor)
+    # Build estimate items - Single consolidated item with grand total
     estimate_items = [
         {
-            "description": "Material/Equipment",
+            "description": cost_estimate.get('estimate_name', 'Servicios'),
             "quantity": 1,
-            "unit_price": mat_equip_with_percentages,
-            "amount": mat_equip_with_percentages
-        },
-        {
-            "description": "Labor",
-            "quantity": 1,
-            "unit_price": labor_with_percentages,
-            "amount": labor_with_percentages
+            "unit_price": grand_total,
+            "amount": grand_total
         }
     ]
     
