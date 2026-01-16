@@ -7153,6 +7153,7 @@ async def create_estimate(
         "notes": estimate_data.notes,
         "terms": estimate_data.terms,
         "valid_until": estimate_data.valid_until,
+        "prepared_by": estimate_data.prepared_by,
         "created_by": user.user_id,
         "created_by_name": user.name,
         "created_at": now,
