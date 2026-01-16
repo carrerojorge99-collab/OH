@@ -175,8 +175,13 @@ const CostEstimates = () => {
                         <h3 className="text-xl font-semibold text-slate-900">
                           {estimate.estimate_name}
                         </h3>
-                        <Badge variant="outline" className="text-xs">
-                          {getProjectName(estimate.project_id)}
+                        {estimate.project_id && (
+                          <Badge variant="outline" className="text-xs">
+                            {getProjectName(estimate.project_id)}
+                          </Badge>
+                        )}
+                        <Badge className={estimate.status === 'final' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}>
+                          {estimate.status === 'final' ? 'Final' : 'En Proceso'}
                         </Badge>
                       </div>
                       
