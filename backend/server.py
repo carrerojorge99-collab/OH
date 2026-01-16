@@ -183,15 +183,20 @@ async def migrate_clock_entries_to_timesheets():
     y crea los timesheets correspondientes.
     """
     try:
-        # Obtener todos los ponches completados
+        # Obtener todos los ponches completados (con cualquier valor de horas)
         completed_clocks = await db.clock_entries.find(
-            {"status": "completed", "hours_worked": {"$gt": 0}},
+            {"status": "completed", "hours_worked": {"$ne": None}},
             {"_id": 0}
         ).to_list(10000)
         
         created_count = 0
         for clock in completed_clocks:
             clock_id = clock.get('clock_id')
+            hours = clock.get('hours_worked', 0) or 0
+            
+            # Solo procesar si tiene horas positivas
+            if hours <= 0:
+                continue
             
             # Verificar si ya existe un timesheet para este ponche
             existing_ts = await db.timesheet.find_one({"clock_id": clock_id}, {"_id": 0})
@@ -206,7 +211,7 @@ async def migrate_clock_entries_to_timesheets():
                     "user_id": clock.get('user_id'),
                     "user_name": clock.get('user_name'),
                     "date": clock.get('date'),
-                    "hours_worked": clock.get('hours_worked', 0),
+                    "hours_worked": hours,
                     "description": clock.get('notes') or f"Migrado desde ponche del {clock.get('date')}",
                     "task_id": None,
                     "clock_id": clock_id,
@@ -215,6 +220,7 @@ async def migrate_clock_entries_to_timesheets():
                 }
                 await db.timesheet.insert_one(timesheet_doc)
                 created_count += 1
+                print(f"  📝 Timesheet creado para ponche {clock_id}: {hours} hrs")
         
         if created_count > 0:
             print(f"✅ Migrados {created_count} ponches a timesheets")
