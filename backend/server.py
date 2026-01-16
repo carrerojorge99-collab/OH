@@ -1623,7 +1623,13 @@ async def sync_all_labor_hours(request: Request, session_token: Optional[str] = 
     if user.role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(status_code=403, detail="Solo administradores pueden sincronizar horas")
     
+    # Primero migrar ponches a timesheets
+    migrated = await migrate_clock_entries_to_timesheets()
+    
+    # Luego sincronizar horas en labor
     result = await sync_all_projects_hours()
+    result["timesheets_migrated"] = migrated
+    
     return {"message": "Sincronización completada", "result": result}
 
 @api_router.post("/projects/{project_id}/sync-hours")
