@@ -457,7 +457,8 @@ const Estimates = () => {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(71, 85, 105);
-      const descLines = doc.splitTextToSize(estimate.description, 170);
+      const cleanDescription = stripHtml(estimate.description);
+      const descLines = doc.splitTextToSize(cleanDescription, 170);
       doc.text(descLines, 15, y);
       y += descLines.length * 4 + 4;
     }
