@@ -28,23 +28,49 @@ moment.locale('es');
 // Función para limpiar HTML y convertir a texto plano
 const stripHtml = (html) => {
   if (!html) return '';
+  
   // Crear un elemento temporal para parsear HTML
   const temp = document.createElement('div');
   temp.innerHTML = html;
-  // Reemplazar <br>, <p>, <li> con saltos de línea
+  
+  // Procesar listas ordenadas (ol) - convertir a números
+  let listCounter = 0;
   let text = temp.innerHTML
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
+    // Manejar inicio de lista ordenada
+    .replace(/<ol[^>]*>/gi, () => { listCounter = 0; return '\n'; })
+    .replace(/<\/ol>/gi, '\n')
+    // Manejar inicio de lista desordenada
+    .replace(/<ul[^>]*>/gi, '\n')
+    .replace(/<\/ul>/gi, '\n')
+    // Reemplazar <li> en listas ordenadas con números
+    .replace(/<li[^>]*>/gi, () => { listCounter++; return `${listCounter}. `; })
     .replace(/<\/li>/gi, '\n')
-    .replace(/<li>/gi, '• ')
-    .replace(/<\/h[1-6]>/gi, '\n')
+    // Manejar párrafos y saltos de línea
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<p[^>]*>/gi, '')
+    // Manejar encabezados
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<h[1-6][^>]*>/gi, '')
+    // Manejar entidades HTML
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>');
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+  
   // Remover todas las demás etiquetas HTML
   temp.innerHTML = text;
-  return temp.textContent || temp.innerText || '';
+  let result = temp.textContent || temp.innerText || '';
+  
+  // Limpiar espacios múltiples y líneas vacías excesivas
+  result = result
+    .replace(/\n{3,}/g, '\n\n')  // Máximo 2 saltos de línea
+    .replace(/[ \t]+/g, ' ')     // Espacios múltiples a uno solo
+    .trim();
+  
+  return result;
 };
 
 const statusColors = {
