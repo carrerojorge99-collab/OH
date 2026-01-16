@@ -76,6 +76,18 @@ const Estimates = () => {
   const [yearFilter, setYearFilter] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
 
+  // Calculate summary stats
+  const summaryStats = useMemo(() => {
+    const total = estimates.reduce((sum, e) => sum + (e.total || 0), 0);
+    const approved = estimates.filter(e => e.status === 'approved');
+    const approvedTotal = approved.reduce((sum, e) => sum + (e.total || 0), 0);
+    const pending = estimates.filter(e => e.status === 'pending' || e.status === 'sent');
+    const pendingTotal = pending.reduce((sum, e) => sum + (e.total || 0), 0);
+    const draft = estimates.filter(e => e.status === 'draft');
+    const draftTotal = draft.reduce((sum, e) => sum + (e.total || 0), 0);
+    return { total, approved, approvedTotal, pending, pendingTotal, draft, draftTotal };
+  }, [estimates]);
+
   // Generate available years from estimates
   const availableYears = useMemo(() => {
     const years = new Set();
