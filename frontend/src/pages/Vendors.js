@@ -59,6 +59,10 @@ const Vendors = () => {
     website: '',
     ein: '',
     payment_terms: '',
+    bank_name: '',
+    bank_account: '',
+    routing_number: '',
+    account_type: '',
     notes: ''
   });
   
