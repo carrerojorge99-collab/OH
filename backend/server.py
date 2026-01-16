@@ -6263,6 +6263,43 @@ async def move_document_to_folder(
     
     return {"message": "Documento movido exitosamente"}
 
+@api_router.put("/documents/{document_id}/rename")
+async def rename_document(
+    document_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Rename a document"""
+    user = await get_current_user(request, session_token)
+    
+    document_doc = await db.documents.find_one({"document_id": document_id}, {"_id": 0})
+    if not document_doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    project_doc = await db.projects.find_one({"project_id": document_doc['project_id']}, {"_id": 0})
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+        raise HTTPException(status_code=403, detail="No tienes acceso")
+    
+    new_name = data.get("new_name", "").strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="El nombre no puede estar vacío")
+    
+    # Get original extension
+    original_filename = document_doc.get("original_filename", "")
+    if "." in original_filename:
+        extension = original_filename.rsplit(".", 1)[-1]
+        new_filename = f"{new_name}.{extension}"
+    else:
+        new_filename = new_name
+    
+    await db.documents.update_one(
+        {"document_id": document_id},
+        {"$set": {"original_filename": new_filename}}
+    )
+    
+    return {"message": "Documento renombrado exitosamente", "new_filename": new_filename}
+
 @api_router.post("/invoices/generate", response_model=Invoice)
 async def generate_invoice_from_timesheet(
     invoice_data: InvoiceCreate,
