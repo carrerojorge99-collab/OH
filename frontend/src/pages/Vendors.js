@@ -364,6 +364,48 @@ const Vendors = () => {
                     placeholder="00-0000000"
                   />
                 </div>
+                
+                {/* Bank Information Section */}
+                <div className="col-span-2 border-t pt-4 mt-2">
+                  <h4 className="font-medium text-slate-700 mb-3">Información Bancaria</h4>
+                </div>
+                <div>
+                  <Label>Nombre del Banco</Label>
+                  <Input
+                    value={vendorForm.bank_name}
+                    onChange={(e) => setVendorForm({ ...vendorForm, bank_name: e.target.value })}
+                    placeholder="Ej: Banco Popular"
+                  />
+                </div>
+                <div>
+                  <Label>Tipo de Cuenta</Label>
+                  <select
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                    value={vendorForm.account_type}
+                    onChange={(e) => setVendorForm({ ...vendorForm, account_type: e.target.value })}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="checking">Corriente (Checking)</option>
+                    <option value="savings">Ahorro (Savings)</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Número de Cuenta</Label>
+                  <Input
+                    value={vendorForm.bank_account}
+                    onChange={(e) => setVendorForm({ ...vendorForm, bank_account: e.target.value })}
+                    placeholder="Número de cuenta bancaria"
+                  />
+                </div>
+                <div>
+                  <Label>Número de Ruta (Routing)</Label>
+                  <Input
+                    value={vendorForm.routing_number}
+                    onChange={(e) => setVendorForm({ ...vendorForm, routing_number: e.target.value })}
+                    placeholder="Número de ruta"
+                  />
+                </div>
+                
                 <div className="col-span-2">
                   <Label>Notas</Label>
                   <Textarea
