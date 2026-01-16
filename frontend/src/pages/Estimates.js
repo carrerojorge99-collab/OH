@@ -811,10 +811,6 @@ const Estimates = () => {
                     <Label>Válido Hasta</Label>
                     <Input type="date" value={form.valid_until} onChange={(e) => setForm({...form, valid_until: e.target.value})} />
                   </div>
-                  <div className="md:col-span-2">
-                    <Label>Descripción</Label>
-                    <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} rows={2} />
-                  </div>
                 </div>
 
                 {/* Items - Task Format */}
