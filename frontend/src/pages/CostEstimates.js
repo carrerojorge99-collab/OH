@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, FileText, DollarSign, ArrowRight, Trash2, Pencil, Download, Calendar, RefreshCw } from 'lucide-react';
+import { Plus, FileText, DollarSign, Trash2, Pencil, Calendar, RefreshCw, Clock, CheckCircle, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
