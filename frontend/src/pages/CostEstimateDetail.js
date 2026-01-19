@@ -308,11 +308,6 @@ const CostEstimateDetail = () => {
 
   // Convert Cost Estimate to Estimate (Estimado)
   const handleConvertToEstimate = async () => {
-    if (!estimate?.project_id) {
-      toast.error('Debe seleccionar un proyecto primero');
-      return;
-    }
-    
     setConvertingToEstimate(true);
     try {
       // First save the current cost estimate
