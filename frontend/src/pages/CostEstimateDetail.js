@@ -504,7 +504,7 @@ const CostEstimateDetail = () => {
                 <Button
                   variant="outline"
                   onClick={handleConvertToEstimate}
-                  disabled={convertingToEstimate || !estimate?.project_id}
+                  disabled={convertingToEstimate}
                   className="bg-purple-50 hover:bg-purple-100 border-purple-300 text-purple-700"
                 >
                   <ArrowRightLeft className="w-4 h-4 mr-2" />
