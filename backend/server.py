@@ -8745,13 +8745,13 @@ async def convert_cost_estimate_to_estimate(
     if not cost_estimate:
         raise HTTPException(status_code=404, detail="Estimación de costo no encontrada")
     
-    if not cost_estimate.get("project_id"):
-        raise HTTPException(status_code=400, detail="La estimación de costo debe tener un proyecto asignado")
-    
-    # Get project info
-    project = await db.projects.find_one({"project_id": cost_estimate["project_id"]}, {"_id": 0})
-    if not project:
-        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    # Get project info if project_id exists
+    project = None
+    project_name = cost_estimate.get("project_name", "")
+    if cost_estimate.get("project_id"):
+        project = await db.projects.find_one({"project_id": cost_estimate["project_id"]}, {"_id": 0})
+        if project:
+            project_name = project.get("name", project_name)
     
     # Helper function to round
     def round2(num):
