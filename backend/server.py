@@ -6467,6 +6467,7 @@ async def generate_invoice_from_timesheet(
         "client_phone": invoice_data.client_phone,
         "client_address": invoice_data.client_address,
         "sponsor_name": sponsor_name,
+        "po_number": invoice_data.po_number,
         "items": [item.model_dump() for item in items],
         "subtotal": subtotal,
         "tax_rate": invoice_data.tax_rate,
