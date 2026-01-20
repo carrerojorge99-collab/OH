@@ -6709,6 +6709,7 @@ async def update_invoice(
         "client_phone": invoice_data.get('client_phone', invoice.get('client_phone')),
         "client_address": invoice_data.get('client_address', invoice.get('client_address')),
         "sponsor_name": invoice_data.get('sponsor_name', invoice.get('sponsor_name')),
+        "po_number": invoice_data.get('po_number', invoice.get('po_number')),
         "items": invoice_data.get('items', invoice.get('items')),
         "subtotal": invoice_data.get('subtotal', invoice.get('subtotal')),
         "discount_percent": invoice_data.get('discount_percent', invoice.get('discount_percent', 0)),
