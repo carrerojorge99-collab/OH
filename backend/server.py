@@ -6531,6 +6531,7 @@ class ManualInvoiceCreate(BaseModel):
     client_phone: Optional[str] = None
     client_address: Optional[str] = None
     sponsor_name: Optional[str] = None
+    po_number: Optional[str] = None
     items: List[ManualInvoiceItem]
     tax_rate: float = 0.0
     selected_taxes: Optional[List[dict]] = []
