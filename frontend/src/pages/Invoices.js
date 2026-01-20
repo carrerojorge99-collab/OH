@@ -844,6 +844,17 @@ const Invoices = () => {
                     />
                   </div>
 
+                  {/* PO Number field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="po_number">Número de PO</Label>
+                    <Input
+                      id="po_number"
+                      value={formData.po_number}
+                      onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                      placeholder="Número de orden de compra"
+                    />
+                  </div>
+
                   {/* Date Range Filter for Timesheet */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
