@@ -1069,6 +1069,10 @@ const Invoices = () => {
                       <Label>Sponsor</Label>
                       <Input value={manualForm.sponsor_name} onChange={(e) => setManualForm({...manualForm, sponsor_name: e.target.value})} placeholder="Nombre del sponsor" />
                     </div>
+                    <div>
+                      <Label>Número de PO</Label>
+                      <Input value={manualForm.po_number} onChange={(e) => setManualForm({...manualForm, po_number: e.target.value})} placeholder="Número de orden de compra" />
+                    </div>
                     <div className="md:col-span-2">
                       <Label>Dirección</Label>
                       <Input value={manualForm.client_address} onChange={(e) => setManualForm({...manualForm, client_address: e.target.value})} />
