@@ -286,6 +286,7 @@ const Invoices = () => {
         client_phone: '',
         client_address: '',
         sponsor_name: '',
+        po_number: '',
         tax_rate: 0,
         tax_type_id: '',
         tax_type_name: '',
