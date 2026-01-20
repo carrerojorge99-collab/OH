@@ -468,6 +468,7 @@ const Invoices = () => {
       client_phone: invoice.client_phone || '',
       client_address: invoice.client_address || '',
       sponsor_name: invoice.sponsor_name || '',
+      po_number: invoice.po_number || '',
       items: invoice.items?.map(item => ({
         description: item.description || '',
         quantity: item.hours || item.quantity || 1,
