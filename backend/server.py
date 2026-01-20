@@ -6604,6 +6604,7 @@ async def create_manual_invoice(
         "client_phone": invoice_data.client_phone,
         "client_address": invoice_data.client_address,
         "sponsor_name": sponsor_name,
+        "po_number": invoice_data.po_number,
         "items": invoice_items,
         "subtotal": subtotal,
         "discount_percent": invoice_data.discount_percent,
