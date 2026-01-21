@@ -3816,8 +3816,8 @@ async def get_users(request: Request, session_token: Optional[str] = Cookie(None
 async def delete_user(user_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     current_user = await get_current_user(request, session_token)
     
-    # Only admins can delete users
-    if current_user.role != UserRole.SUPER_ADMIN.value:
+    # Only admins and RRHH can delete users
+    if current_user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value]:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar usuarios")
     
     # Cannot delete yourself
@@ -3827,6 +3827,10 @@ async def delete_user(user_id: str, request: Request, session_token: Optional[st
     user_to_delete = await db.users.find_one({"user_id": user_id}, {"_id": 0})
     if not user_to_delete:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # RRHH cannot delete Super Admins
+    if current_user.role == UserRole.RRHH.value and user_to_delete.get('role') == UserRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="No puedes eliminar un Super Admin")
     
     # Delete user sessions
     await db.user_sessions.delete_many({"user_id": user_id})
