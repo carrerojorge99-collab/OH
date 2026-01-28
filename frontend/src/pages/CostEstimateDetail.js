@@ -89,6 +89,12 @@ const CostEstimateDetail = () => {
   };
 
   const handleSave = async () => {
+    // Validar que "Preparado por" esté presente al crear
+    if (estimateId === 'new' && !estimate?.prepared_by?.trim()) {
+      toast.error('El campo "Preparado por" es requerido');
+      return;
+    }
+    
     setSaving(true);
     try {
       const data = {
@@ -96,6 +102,7 @@ const CostEstimateDetail = () => {
         project_name: estimate?.project_name || '',
         estimate_name: estimate.estimate_name || 'Nueva Estimación',
         status: estimate?.status || 'en_proceso',
+        prepared_by: estimate?.prepared_by || null,  // Incluir el preparador
         labor_costs: laborCosts,
         subcontractors,
         materials,
