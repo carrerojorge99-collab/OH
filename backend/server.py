@@ -8914,6 +8914,7 @@ async def convert_cost_estimate_to_estimate(
         "notes": cost_estimate.get("notes") or f"Price Breakdown desde estimación de costo: {cost_estimate.get('estimate_name', '')}",
         "terms": cost_estimate.get("terms"),
         "valid_until": None,
+        "prepared_by": cost_estimate.get("prepared_by"),  # Transferir el preparador desde el Cost Estimate
         "created_by": user.user_id,
         "created_by_name": user.name,
         "created_at": now,
