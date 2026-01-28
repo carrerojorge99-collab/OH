@@ -8598,6 +8598,7 @@ async def create_cost_estimate(
         "project_name": project_name,
         "estimate_name": estimate_data.estimate_name,
         "status": estimate_data.status or "en_proceso",
+        "prepared_by": estimate_data.prepared_by,  # Nombre del preparador
         "labor_costs": [item.dict() for item in estimate_data.labor_costs],
         "subcontractors": [item.dict() for item in estimate_data.subcontractors],
         "materials": [item.dict() for item in estimate_data.materials],
