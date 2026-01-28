@@ -8367,6 +8367,7 @@ class CostEstimate(BaseModel):
     project_name: Optional[str] = ""
     estimate_name: str
     status: str = "en_proceso"  # en_proceso, final
+    prepared_by: Optional[str] = None  # Nombre del preparador
     labor_costs: List[LaborCostItem] = []
     subcontractors: List[SubcontractorItem] = []
     materials: List[MaterialItem] = []
@@ -8402,6 +8403,7 @@ class CostEstimateCreate(BaseModel):
     project_name: Optional[str] = None  # Campo de texto libre para proyecto
     estimate_name: str
     status: str = "en_proceso"  # en_proceso, final
+    prepared_by: Optional[str] = None  # Nombre del preparador (requerido en creación)
     labor_costs: List[LaborCostItem] = []
     subcontractors: List[SubcontractorItem] = []
     materials: List[MaterialItem] = []
