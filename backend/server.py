@@ -10799,6 +10799,7 @@ async def delete_vendor_contact(vendor_id: str, contact_id: str, request: Reques
 
 app.include_router(api_router)
 app.include_router(accounting_router)
+app.include_router(cloudinary_router, prefix="/api")
 
 # Middleware para prevenir caché en respuestas de API
 @app.middleware("http")
