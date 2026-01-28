@@ -25,6 +25,9 @@ from openpyxl.styles import Font, Alignment, PatternFill
 # Import accounting router
 from accounting_routes import accounting_router
 
+# Import Cloudinary router
+from cloudinary_routes import cloudinary_router
+
 # Zona horaria de Puerto Rico (GMT-4)
 PUERTO_RICO_TZ = pytz.timezone('America/Puerto_Rico')
 
