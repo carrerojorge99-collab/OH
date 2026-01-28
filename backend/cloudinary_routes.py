@@ -4,6 +4,8 @@ Handles image uploads for: user profiles, project documents, company logos
 With automatic web optimization
 """
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 import time
 import cloudinary
 import cloudinary.uploader
@@ -11,6 +13,10 @@ import cloudinary.utils
 from fastapi import APIRouter, Query, HTTPException, Request, Cookie
 from typing import Optional
 from pydantic import BaseModel
+
+# Load environment variables
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
 # Initialize Cloudinary
 cloudinary.config(
