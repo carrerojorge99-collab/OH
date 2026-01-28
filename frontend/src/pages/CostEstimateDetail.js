@@ -540,7 +540,7 @@ const CostEstimateDetail = () => {
         {/* Basic Info - Always show for editing status and name */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <Label>Nombre de la Estimación</Label>
                 <Input
@@ -561,6 +561,21 @@ const CostEstimateDetail = () => {
                   placeholder="Escribe el nombre del proyecto"
                 />
                 <p className="text-xs text-slate-500 mt-1">Campo de texto libre</p>
+              </div>
+              <div>
+                <Label>
+                  Preparado por {estimateId === 'new' && <span className="text-red-500">*</span>}
+                </Label>
+                <Input
+                  value={estimate?.prepared_by || ''}
+                  onChange={(e) => setEstimate({ ...estimate, prepared_by: e.target.value })}
+                  placeholder="Nombre del preparador"
+                  disabled={estimateId !== 'new' && estimate?.prepared_by}
+                  className={estimateId !== 'new' && estimate?.prepared_by ? 'bg-slate-100 cursor-not-allowed' : ''}
+                />
+                {estimateId !== 'new' && estimate?.prepared_by && (
+                  <p className="text-xs text-slate-500 mt-1">No editable después de crear</p>
+                )}
               </div>
               <div>
                 <Label>Estatus</Label>
