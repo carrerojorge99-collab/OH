@@ -3936,6 +3936,9 @@ async def update_user(user_id: str, user_data: UserUpdate, request: Request, ses
             raise HTTPException(status_code=403, detail="No puedes asignar el rol de Super Admin")
         update_data["role"] = user_data.role
     
+    if user_data.picture is not None:
+        update_data["picture"] = user_data.picture
+    
     if update_data:
         await db.users.update_one({"user_id": user_id}, {"$set": update_data})
     
