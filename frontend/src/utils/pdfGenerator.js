@@ -198,11 +198,13 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   let leftY = 15;
   
   // Add company logo - use company's logo if available, otherwise fallback to default
-  // LARGER LOGO: Stretched more vertically for better visibility (60 width x 45 height)
+  // Reduced logo size for smaller PDF file size
   const logoToUse = company?.logoBase64 || LOGO_BASE64;
   try {
-    doc.addImage(logoToUse, 'PNG', 15, 6, 60, 45);
-    leftY = 54;
+    // Detect image format from base64 data
+    const imageFormat = logoToUse.includes('image/jpeg') ? 'JPEG' : 'PNG';
+    doc.addImage(logoToUse, imageFormat, 15, 6, 50, 38);
+    leftY = 47;
   } catch (e) {
     // If logo fails, just continue
     leftY = 15;
