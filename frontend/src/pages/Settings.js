@@ -95,6 +95,7 @@ const Settings = () => {
     geofence_radius: 100,
     geofence_enabled: false,
     minimum_margin_percent: 15,
+    max_punch_hours: 8,
     // Cost Estimate default percentages
     default_b2b_percentage: 4,
     default_cfse_percentage: 7,
