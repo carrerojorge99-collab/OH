@@ -804,7 +804,7 @@ const Invoices = () => {
                         id="custom_number"
                         value={formData.custom_number}
                         onChange={(e) => setFormData({ ...formData, custom_number: e.target.value })}
-                        placeholder="Ej: INV-2025-0150"
+                        placeholder="Ej: 001"
                       />
                     </div>
                   )}
