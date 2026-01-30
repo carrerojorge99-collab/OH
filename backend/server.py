@@ -171,7 +171,10 @@ async def sync_hours_on_startup():
     try:
         print("🔄 Iniciando sincronización de horas de proyectos...")
         
-        # Primero, crear timesheets para ponches que no los tengan
+        # Primero, cerrar ponches abiertos que excedan el máximo de horas
+        await auto_close_expired_punches()
+        
+        # Luego, crear timesheets para ponches que no los tengan
         await migrate_clock_entries_to_timesheets()
         
         # Luego sincronizar las horas consumidas en Labor
