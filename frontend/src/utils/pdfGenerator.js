@@ -128,18 +128,32 @@ export const formatCurrency = (amount) => {
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-// Helper function to load image as base64
-const loadImageAsBase64 = (url) => {
+// Helper function to load image as base64 with compression
+const loadImageAsBase64 = (url, maxWidth = 200, maxHeight = 150, quality = 0.7) => {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
+      // Calculate new dimensions maintaining aspect ratio
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      if (height > maxHeight) {
+        width = (width * maxHeight) / height;
+        height = maxHeight;
+      }
+      
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
+      ctx.drawImage(img, 0, 0, width, height);
+      // Use JPEG with compression for smaller file size
+      resolve(canvas.toDataURL('image/jpeg', quality));
     };
     img.onerror = () => resolve(null);
     img.src = url;
