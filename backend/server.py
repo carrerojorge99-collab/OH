@@ -7373,7 +7373,7 @@ async def convert_estimate_to_invoice(
     invoice_id = f"inv_{uuid4().hex[:16]}"
     now = datetime.now(timezone.utc).isoformat()
     
-    # Convert estimate items to invoice items
+    # Convert estimate items to invoice items (preserving all data)
     invoice_items = []
     for item in estimate.get('items', []):
         invoice_items.append({
@@ -7383,22 +7383,33 @@ async def convert_estimate_to_invoice(
             "amount": item.get('amount')
         })
     
+    # Create invoice with ALL fields from estimate
     invoice_doc = {
         "invoice_id": invoice_id,
         "invoice_number": invoice_number,
         "project_id": estimate.get('project_id') or '',
         "project_name": estimate.get('project_name') or estimate.get('title'),
+        # Client info - transfer ALL client fields
         "client_name": estimate.get('client_name'),
         "client_email": estimate.get('client_email'),
+        "client_phone": estimate.get('client_phone'),
+        "client_address": estimate.get('client_address'),
+        "sponsor_name": estimate.get('client_company'),  # client_company -> sponsor_name
+        # Items and totals
         "items": invoice_items,
         "subtotal": estimate.get('subtotal'),
-        "tax_rate": estimate.get('tax_rate'),
-        "tax_amount": estimate.get('tax_amount'),
+        "tax_rate": estimate.get('tax_rate', 0),
+        "tax_amount": estimate.get('tax_amount', 0),
+        "selected_taxes": estimate.get('selected_taxes', []),  # Transfer selected taxes
         "total": estimate.get('total'),
         "amount_paid": 0,
         "balance_due": estimate.get('total'),
         "status": "draft",
+        # Notes, terms and price breakdown
         "notes": estimate.get('notes'),
+        "terms": estimate.get('terms'),  # Transfer terms
+        "price_breakdown": estimate.get('price_breakdown'),  # Transfer price breakdown
+        # Metadata
         "created_by": user.user_id,
         "created_at": now,
         "due_date": None,
