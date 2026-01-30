@@ -358,6 +358,19 @@ const Users = () => {
               </DialogHeader>
               <form onSubmit={handleUpdateUser}>
                 <div className="space-y-4 py-4">
+                  {/* Foto de Perfil */}
+                  <div className="flex justify-center">
+                    <CloudinaryUpload
+                      folder="users"
+                      currentImage={editFormData.picture}
+                      label="Cambiar foto"
+                      previewSize="md"
+                      onUploadComplete={(result) => {
+                        setEditFormData({ ...editFormData, picture: result?.url || '' });
+                      }}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="edit-name">Nombre Completo *</Label>
                     <div className="relative">
