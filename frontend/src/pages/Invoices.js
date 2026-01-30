@@ -1075,7 +1075,12 @@ const Invoices = () => {
                     </div>
                     <div className="md:col-span-2">
                       <Label>Dirección</Label>
-                      <Input value={manualForm.client_address} onChange={(e) => setManualForm({...manualForm, client_address: e.target.value})} />
+                      <Textarea 
+                        value={manualForm.client_address} 
+                        onChange={(e) => setManualForm({...manualForm, client_address: e.target.value})} 
+                        placeholder="Calle, Número&#10;Ciudad, Estado&#10;Código Postal"
+                        rows={3}
+                      />
                     </div>
                   </div>
 
