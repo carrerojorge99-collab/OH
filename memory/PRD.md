@@ -14,6 +14,34 @@ Sistema ERP completo para gestión de proyectos, empleados, facturas, estimados 
 
 ## What's Been Implemented
 
+### Session: January 30, 2026
+- **Formato de Número de Factura Simplificado (COMPLETADO)**:
+  - Números de factura ahora usan formato simple: "001", "002", "003"
+  - Eliminado prefijo "INV" y año "2026" del número
+  - Modificado en 3 lugares: facturas automáticas, manuales y conversión estimado→factura
+
+- **Dirección del Cliente en Múltiples Líneas (COMPLETADO)**:
+  - Campo de dirección cambiado a Textarea en formularios de Invoice y Estimate
+  - PDF genera dirección separada por líneas (split por coma, newline, pipe)
+  - Preview UI muestra dirección con saltos de línea correctos
+
+- **Optimización de Tamaño de PDF (COMPLETADO)**:
+  - Habilitada compresión en jsPDF ({compress: true})
+  - Logo reducido de 60x45 a 50x38
+  - Imágenes comprimidas con calidad JPEG 0.7
+  - Detección automática de formato de imagen
+
+- **Integración Cloudinary (FUNCIONAL, NO IMPLEMENTADO EN UI)**:
+  - Rutas API: /api/cloudinary/sign-upload, /api/cloudinary/delete-asset
+  - Componente CloudinaryUpload.jsx listo para uso
+
+- **Campo "Preparado por" en Presupuestos de Costo (VERIFICACIÓN PENDIENTE)**:
+  - Campo prepared_by añadido a CostEstimateDetail.js
+  - Se transfiere al Estimado al convertir
+
+- **Conversión Estimado → Factura Corregida (VERIFICACIÓN PENDIENTE)**:
+  - Todos los campos se transfieren: client_phone, client_address, sponsor_name, etc.
+
 ### Session: January 16, 2026
 - **Sincronización Automática de Horas en Proyectos (COMPLETADO)**:
   - Las "Horas Consumidas" (`consumed_hours`) en los registros de Labor se actualizan automáticamente
@@ -51,6 +79,9 @@ Sistema ERP completo para gestión de proyectos, empleados, facturas, estimados 
 - ✅ Integración de Vendors en Órdenes de Compra
 - ✅ Fix filtro de fechas en facturas automáticas
 - ✅ Sincronización automática de horas en proyectos
+- ✅ Formato de número de factura simplificado
+- ✅ Dirección del cliente en múltiples líneas
+- ✅ Optimización de tamaño de PDF
 
 ### P1 - Pendiente
 - Testing completo del módulo de Vendors
