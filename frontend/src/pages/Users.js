@@ -153,7 +153,8 @@ const Users = () => {
     try {
       const updateData = {
         name: editFormData.name,
-        role: editFormData.role
+        role: editFormData.role,
+        picture: editFormData.picture || null
       };
       
       // Solo incluir email si no está vacío
@@ -173,7 +174,8 @@ const Users = () => {
         name: '',
         email: '',
         password: '',
-        role: 'empleado'
+        role: 'empleado',
+        picture: ''
       });
       setEditingUserId(null);
       loadUsers();
