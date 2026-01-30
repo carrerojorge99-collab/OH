@@ -186,8 +186,30 @@ const MyProfile = () => {
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-            <User className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
+          <div className="flex-shrink-0">
+            {editingProfile ? (
+              <CloudinaryUpload
+                folder="users"
+                currentImage={profile.picture || user?.picture}
+                label="Cambiar foto"
+                previewSize="sm"
+                onUploadComplete={(result) => {
+                  handleProfileChange('picture', result?.url || '');
+                }}
+              />
+            ) : (
+              profile.picture || user?.picture ? (
+                <img 
+                  src={profile.picture || user?.picture} 
+                  alt={user?.name}
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-orange-100 flex items-center justify-center">
+                  <User className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
+                </div>
+              )
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{user?.name || 'Mi Perfil'}</h1>
