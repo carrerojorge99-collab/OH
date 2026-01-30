@@ -261,6 +261,105 @@ async def migrate_clock_entries_to_timesheets():
         print(f"⚠️ Error migrando ponches a timesheets: {e}")
         return 0
 
+async def auto_close_expired_punches():
+    """
+    Cierra automáticamente los ponches que han estado abiertos más tiempo
+    del máximo configurado (por defecto 8 horas).
+    Esta función se ejecuta al iniciar el servidor.
+    """
+    try:
+        # Obtener configuración de horas máximas
+        company_settings = await db.company_settings.find_one({}, {"_id": 0})
+        max_hours = 8  # Default
+        if company_settings:
+            max_hours = company_settings.get("max_punch_hours", 8)
+        
+        print(f"🔍 Buscando ponches abiertos por más de {max_hours} horas...")
+        
+        # Buscar todos los ponches activos (sin clock_out)
+        active_punches = await db.clock_entries.find(
+            {"status": "active", "clock_out": None},
+            {"_id": 0}
+        ).to_list(1000)
+        
+        closed_count = 0
+        now = datetime.now(PUERTO_RICO_TZ)
+        
+        for punch in active_punches:
+            try:
+                clock_in_str = punch.get('clock_in')
+                if not clock_in_str:
+                    continue
+                
+                # Parsear clock_in
+                if '+' not in clock_in_str and 'Z' not in clock_in_str and len(clock_in_str) <= 19:
+                    naive_dt = datetime.fromisoformat(clock_in_str)
+                    clock_in_time = PUERTO_RICO_TZ.localize(naive_dt)
+                else:
+                    clock_in_time = datetime.fromisoformat(clock_in_str)
+                    if clock_in_time.tzinfo is None:
+                        clock_in_time = PUERTO_RICO_TZ.localize(clock_in_time)
+                
+                # Calcular horas transcurridas
+                hours_elapsed = (now - clock_in_time).total_seconds() / 3600
+                
+                if hours_elapsed >= max_hours:
+                    # Calcular la hora de cierre (clock_in + max_hours)
+                    clock_out_time = clock_in_time + timedelta(hours=max_hours)
+                    hours_worked = max_hours
+                    
+                    # Actualizar el ponche
+                    await db.clock_entries.update_one(
+                        {"clock_id": punch['clock_id']},
+                        {"$set": {
+                            "clock_out": clock_out_time.isoformat(),
+                            "status": "completed",
+                            "hours_worked": round(hours_worked, 2),
+                            "notes": f"Cierre automático - {int(max_hours)} horas máximo",
+                            "auto_closed": True,
+                            "updated_at": datetime.now(timezone.utc).isoformat()
+                        }}
+                    )
+                    
+                    # Crear timesheet automáticamente
+                    timesheet_id = f"ts_auto_{uuid4().hex[:12]}"
+                    timesheet_doc = {
+                        "timesheet_id": timesheet_id,
+                        "project_id": punch.get('project_id'),
+                        "project_name": punch.get('project_name', ''),
+                        "user_id": punch.get('user_id'),
+                        "user_name": punch.get('user_name'),
+                        "date": punch.get('date'),
+                        "hours_worked": round(hours_worked, 2),
+                        "description": f"Cierre automático - {int(max_hours)} horas máximo",
+                        "task_id": None,
+                        "clock_id": punch['clock_id'],
+                        "created_at": clock_out_time.isoformat(),
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }
+                    await db.timesheet.insert_one(timesheet_doc)
+                    
+                    # Sincronizar horas del proyecto
+                    if punch.get('project_id'):
+                        await sync_project_labor_hours(punch['project_id'])
+                    
+                    closed_count += 1
+                    print(f"  ⏰ Ponche cerrado automáticamente: {punch['clock_id']} - Usuario: {punch.get('user_name')} - {round(hours_elapsed, 1)}h abierto")
+                    
+            except Exception as e:
+                print(f"  ⚠️ Error procesando ponche {punch.get('clock_id')}: {e}")
+                continue
+        
+        if closed_count > 0:
+            print(f"✅ Se cerraron {closed_count} ponches automáticamente")
+        else:
+            print("ℹ️ No hay ponches que necesiten cierre automático")
+        
+        return closed_count
+    except Exception as e:
+        print(f"⚠️ Error en cierre automático de ponches: {e}")
+        return 0
+
 # ==================== HEALTH CHECK ENDPOINTS ====================
 # These are critical for Kubernetes liveness/readiness probes
 
