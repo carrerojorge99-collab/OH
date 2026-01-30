@@ -19,7 +19,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Plus, FileText, Download, Eye, Trash2, DollarSign, RefreshCw, Send, User, Calendar, Edit, Building2 } from 'lucide-react';
-import { fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addTotalsSection, addNotesSection, addFooter, formatCurrency } from '../utils/pdfGenerator';
+import { fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addTotalsSection, addNotesSection, addFooter, formatCurrency, stripHtml } from '../utils/pdfGenerator';
 import { toast } from 'sonner';
 import moment from 'moment';
 import { jsPDF } from 'jspdf';
