@@ -1345,7 +1345,7 @@ async def register(user_data: UserRegister, request: Request, session_token: Opt
         "name": user_data.name,
         "email": user_data.email or "",
         "role": user_data.role,
-        "picture": None,
+        "picture": user_data.picture or None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
