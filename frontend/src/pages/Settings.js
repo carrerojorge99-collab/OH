@@ -1026,6 +1026,29 @@ const Settings = () => {
                     )}
                   </div>
 
+                  {/* Cierre Automático de Ponches */}
+                  <div className="p-4 border rounded-lg bg-orange-50 space-y-4">
+                    <div>
+                      <Label className="text-base font-medium">⏰ Cierre Automático de Ponches</Label>
+                      <p className="text-sm text-slate-500">Si un empleado no poncha salida, el sistema cerrará automáticamente el ponche después del tiempo configurado</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        type="number"
+                        min="1"
+                        max="24"
+                        className="w-24"
+                        value={company.max_punch_hours || 8}
+                        onChange={(e) => setCompany(prev => ({ ...prev, max_punch_hours: parseInt(e.target.value) || 8 }))}
+                      />
+                      <span className="text-sm text-slate-600">horas</span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      💡 El cierre automático se ejecuta una vez al día al iniciar el servidor. Los ponches cerrados automáticamente 
+                      tendrán la nota: "Cierre automático - X horas máximo"
+                    </p>
+                  </div>
+
                   {/* Margen Mínimo */}
                   <div className="space-y-4 pt-4 border-t">
                     <div>
