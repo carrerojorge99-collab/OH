@@ -1,59 +1,55 @@
 <analysis>**original_problem_statement:**
 The user's primary goal is to enhance their ERP application by fixing critical bugs and adding new features.
 
-**Original Requests (from previous forks):**
+**Original Requests (from previous forks & handoff):**
 1.  **Cost Estimate Fixes**: Project field as free-text, save subcontractor labor cost, fix total amount mismatch, remove total cost from list view, and allow conversion to Estimate without a project.
-2.  **Estimate Module**: Consolidate items on conversion, remove main Descripción field, add a Preparado por (Prepared by) field.
+2.  **Estimate Module**: Consolidate items on conversion, remove Descripción field, add Preparado por field.
 3.  **PDF Generation**: Fix HTML rendering issues (especially numbered lists) and adjust layout.
 4.  **Vendor Module**: Add and save bank information.
 5.  **Project Module**: Allow renaming of uploaded documents.
-6.  **Invoice Module**: Add a Número de PO (PO Number) field.
+6.  **Invoice Module**: Add Número de PO (PO Number) field.
 7.  **Permissions**: Allow RRHH (HR) role to delete users.
 8.  **Platform Concerns**: User is frustrated with server instability and wants to migrate to DigitalOcean.
 
 **Requests from this session:**
-1.  Add a Preparado por (Prepared by) field to the **Cost Estimate** creation form and transfer the name to the Estimate upon conversion.
-2.  Integrate **Cloudinary** for image storage, transformation, and web optimization.
-3.  Ensure that when an **Estimate is converted to an Invoice**, all data fields are transferred identically, leaving nothing out.
+1.  **Invoice Number Format**: Change format from  to just the sequential number (e.g., ).
+2.  **Client Address**: Must be a multi-line field in the UI (Invoices & Estimates) and render correctly on the PDF.
+3.  **PDF Size**: Invoice and Estimate PDFs should not exceed 1.5 MB.
+4.  **Cloudinary Integration**: Implement the existing  component in the **Users (RRHH)**, **Project Documents**, and **My Profile** modules.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-A full-stack ERP application with a React frontend and FastAPI backend.
-
--   A Preparado por field has been added to the Cost Estimate creation form. The backend logic was updated to save this field and transfer it to the corresponding Estimate upon conversion.
--   Cloudinary has been fully integrated. This includes backend configuration with user-provided credentials, new API endpoints for generating upload signatures and deleting assets, and a reusable React component () for handling uploads. The integration is tested and functional but not yet implemented in any specific user-facing forms.
--   The conversion logic from an Estimate to an Invoice has been fixed. The backend now transfers all relevant fields, including client details (, , ), financial data (, ), and text fields (, ), ensuring data integrity between the two modules.
+- A full-stack ERP application with a React frontend and FastAPI backend.
+- The invoice number generation logic in  has been updated to produce simple sequential numbers (e.g., , ).
+- The client address fields in the Invoice and Estimate creation forms (, ) have been converted from single-line  to multi-line  components.
+- The PDF generation utility () was modified to render multi-line addresses correctly and to use image compression (JPEG format, smaller logo) to reduce file size.
+- The Cloudinary upload component () has been successfully integrated into the **Users (RRHH)** and **My Profile** pages, allowing users to upload and change profile pictures. The backend was updated accordingly to save the image URL.
 
 **Last working item**:
--   **Last item agent was working**: Fixing the conversion process from an Estimate to an Invoice to ensure all data fields are transferred completely. The agent identified missing fields (, , , , , ), updated the conversion endpoint in , debugged an issue where  wasn't being saved on the initial estimate, and re-tested the entire flow successfully.
--   **Status**: USER VERIFICATION PENDING
--   **Agent Testing Done**: Y
--   **Which testing method agent to use?**: both. The frontend agent should create an estimate with all fields filled, convert it to an invoice, and verify all data appears correctly on the new invoice page. The backend agent can verify the data in the database.
+-   **Last item agent was working**: Implementing Cloudinary integration for uploading user profile pictures and project documents. The agent successfully added the feature to the  (RRHH) and  pages. The agent correctly reasoned that Cloudinary (optimized for images) was not a good fit for , which handles various document types (PDF, DOCX), and paused to ask the user for confirmation.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: Y (Verified UI changes on Users and My Profile pages via screenshots)
+-   **Which testing method agent to use?**: Frontend testing agent. The agent should test the full user flow: 1. Create a new user with a profile picture on the Users page. 2. Edit an existing user to change their picture. 3. Go to the My Profile page and change the current user's picture. Verify the image updates correctly in all locations.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
 -   Issue 1: Multiple Core Features and Bug Fixes Pending User Verification (P0)
--   Issue 2: PDF Formatting for Estimates (P0)
+-   Issue 2: PDF Formatting for Numbered Lists (P0)
 -   Issue 3: Deployment Failure Due to MongoDB Timeout (P2)
 -   Issue 4: Responsive Layout Issues (P3)
 
 **Issues Detail**:
 -   **Issue 1: Multiple Core Features and Bug Fixes Pending User Verification**
-    -   **Description**: A large number of features and fixes from this and previous sessions have been implemented but not yet confirmed as resolved by the user. This is the highest priority to establish a stable baseline.
-        -   **From this session**: 'Prepared by' field in Cost Estimates, Estimate-to-Invoice full data transfer.
-        -   **From previous sessions**: Subcontractor cost saving, vendor bank info, document renaming, invoice PO number, HR user deletion permission, removal of 'Description' field, converting cost estimates without a project.
-    -   **Next debug checklist**: Systematically create a list of all unverified items, present it to the user in Spanish, and ask for them to test and confirm each one.
+    -   **Description**: A large backlog of implemented features and fixes from this and previous sessions have not been confirmed as resolved by the user. This is the highest priority to establish a stable baseline before adding more features.
+    -   **Next debug checklist**: Create a consolidated list (in Spanish) of all unverified items (including the invoice/estimate changes and Cloudinary integration from this session) and ask the user to test and confirm each one.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: both
 
--   **Issue 2: PDF Formatting for Estimates**
-    -   **Description**: A recurring issue where the PDF output for estimates does not correctly format text from rich text fields, especially numbered lists. The user has reported this multiple times.
-    -   **Next debug checklist**:
-        1.  Ask the user to generate a PDF for an estimate containing a numbered list to confirm if the last fix from the *previous* fork worked.
-        2.  If not, obtain the exact HTML content from the database for an example item.
-        3.  Inspect the output of the  function in  to see how it processes the HTML.
+-   **Issue 2: PDF Formatting for Numbered Lists**
+    -   **Description**: A recurring issue where numbered lists created in the rich text editor do not render correctly in the generated PDF. The user was reminded of this issue during the session.
+    -   **Next debug checklist**: Ask the user to create an estimate with a numbered list in its description and generate a PDF to confirm if the problem persists. If it does, inspect the HTML content from the database and trace it through the  function in .
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
@@ -71,13 +67,17 @@ A full-stack ERP application with a React frontend and FastAPI backend.
     -   **Should Test frontend/backend/both after fix?**: frontend
 
 **In progress Task List**:
--   None.
+-   Task 1: Finalize Cloudinary Integration Strategy (P1)
+    -   **Where to resume**: The user requested Cloudinary for Project Documents. The agent correctly identified that Cloudinary is for images/videos, while project documents can be other file types (PDF, DOCX). The agent has asked the user for a decision. The next step is to get the user's response and either proceed with a limited implementation for images-only in projects or confirm keeping the existing file upload system.
+    -   **What will be achieved with this?**: A clear strategy for handling file uploads across the application.
+    -   **Status**: BLOCKED (Waiting on user feedback)
+    -   **Should Test frontend/backend/both after fix?**: frontend
+    -   **Blocked on something**: User decision.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0 - Verify All Pending Fixes**: Go through the list in Issue 1 and get user confirmation on each item.
-    -   **P1 - Integrate Cloudinary Upload Component**: Use the new  component in relevant forms where image uploads are needed (e.g., user profiles, project documents, etc.).
-    -   **P1 - Prepare for Migration**: Address the user's request to move to DigitalOcean. This may involve creating a , , and a database export script.
+    -   **P0 - Verify All Pending Fixes**: The most critical task. Go through the list in Issue 1 and get user confirmation on each item.
+    -   **P1 - Prepare for Migration to DigitalOcean**: Address the user's request by preparing a , , and a database export script.
     -   **P2 - Implement Vendor Categories**: Add a categorization system for vendors.
     -   **P2 - Implement Move Document UI**: The backend logic exists, but the UI was not built.
 -   **Future Tasks**:
@@ -87,80 +87,79 @@ A full-stack ERP application with a React frontend and FastAPI backend.
     -   Refactor monolithic files: , , .
 
 **Completed work in this session**
--   **'Prepared By' Field in Cost Estimates (USER VERIFICATION PENDING)**: Added  field to the Cost Estimate creation form and ensured it transfers to the Estimate upon conversion.
--   **Cloudinary Integration (FUNCTIONAL, NOT IMPLEMENTED IN UI)**: Fully integrated Cloudinary for image management, including backend API routes, frontend utilities, and a reusable upload component.
--   **Estimate to Invoice Conversion Fix (USER VERIFICATION PENDING)**: Corrected the conversion process to ensure all data fields from an Estimate are transferred completely to a new Invoice.
+-   **Invoice/Estimate Enhancements (USER VERIFICATION PENDING)**:
+    -   **Invoice Number Format**: Changed from  to just  ().
+    -   **Multi-line Client Address**: Updated UI to use  and enabled multi-line rendering in PDF (, , ).
+    -   **PDF Size Optimization**: Added  flag to  and optimized logo image handling to reduce file size.
+-   **Cloudinary for Profile Pictures (USER VERIFICATION PENDING)**:
+    -   Successfully integrated the  component into  (RRHH) and  to allow uploading and changing user profile pictures.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Responsive Layout issues**: Several responsive layout problems on pages like HR, Settings, MyRequests, and MyProfile remain unaddressed.
 
 **Known issue recurrence from previous fork**
--   **PDF Generation Formatting**: This issue was reported as recurring in the previous handoff and remains a primary point of concern, pending user verification of the last fix.
+-   **PDF Generation Formatting**: This recurring issue, specifically with numbered lists, was brought up again and is pending user verification.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Data Integrity on Conversion**: Ensured full data mapping between  and  Pydantic models during the conversion process to prevent data loss.
--   **Modular Routing**: The creation of  and its inclusion in  is a good pattern for breaking down the monolithic  file.
--   **Third-Party Integration Playbook**: Successfully used the  to implement Cloudinary, including configuration, dependency management, and API endpoint creation.
--   **End-to-End Testing**: Used chained  commands to simulate a full user workflow (create -> convert -> verify) on the backend, which was critical for catching bugs in the conversion logic.
+-   **Backend Logic Modification**: Altering string formatting in Python for invoice numbering and updating Pydantic models (, ) to include new fields.
+-   **Frontend State Management**: Using  to manage form data, including the new  URL returned from the Cloudinary component's  callback.
+-   **UI Rendering**: Using  in CSS to correctly display multi-line text from database strings containing newline characters ().
+-   **PDF Generation (jsPDF)**: Utilizing the  option in the  constructor and changing image formats ( to ) to significantly reduce output file size.
+-   **Conditional Integration**: Recognizing that a third-party service (Cloudinary) is optimized for a specific data type (images) and is not a one-size-fits-all solution for general file uploads, then pausing to confirm with the user.
 
 **key DB schema**
--   **CostEstimate**: added .
--   **Invoice**: The conversion logic now correctly populates all fields from the source , including , , , , , and . No schema change was needed, but data population was fixed.
+-    collection: The  field (string URL) is now actively populated and updated via the Users and My Profile modules. No schema change was required, but the field is now in use.
 
 **All files of reference**
 -   
 -   
--    (New)
--    (New)
--    (New)
+-   
+-   
+-   
+-   
 -   
 -   
 
 **Areas that need refactoring**:
--    remains monolithic. The creation of  is a positive step; this pattern should be applied to other modules (users, projects, estimates).
--   The duplicated PDF generation logic across multiple components is still a high-risk area and a prime candidate for consolidation into a single shared utility.
+-    continues to grow, reinforcing the need to break it down into modular routers (like  from the previous session).
+-   Multiple pages (, , , etc.) instantiate  independently. The compression logic and other settings should be consolidated into a shared utility to ensure consistency and avoid missing an update in the future.
 
 **key api endpoints**
--   **NEW**:
-    -   : Generates a signature for direct-to-Cloudinary uploads.
-    -   : Deletes an asset from Cloudinary.
-    -   : Provides frontend with Cloudinary configuration.
 -   **MODIFIED**:
-    -   : Now saves the  field.
-    -   : Now transfers the  field.
-    -   : (Correct endpoint for Estimate -> Invoice) Logic completely overhauled to transfer all relevant fields.
-    -   , : Now correctly saves the  field.
+    -   : Logic for generating  was changed.
+    -   : Modified to accept and save a  URL.
+    -   : Modified to accept and save a  URL.
 
 **Critical Info for New Agent**
 1.  **Language**: All communication with the user **MUST** be in **Spanish**.
-2.  **User Trust is Low**: The user is frustrated with recurring bugs and server instability. The absolute highest priority is to **verify all pending fixes** before starting new work. Create a clear, consolidated list of all pending items and ask the user to test them one by one. Do not assume any fix is working until the user confirms it.
-3.  **Migration Request is Serious**: The user's request to move to DigitalOcean is driven by frustration. Be prepared to discuss this and provide the necessary support (e.g., Docker files) if they push for it. Stabilizing the current app is the best way to regain their trust.
-4.  **Cloudinary is Ready but not Used**: The Cloudinary integration is complete and tested, but the  component has not been placed in any forms yet. The next step is to ask the user where they want to use it.
-5.  **Refactoring is Needed**: Be mindful of the monolithic  and duplicated code. When touching a feature, consider if it can be modularized like the Cloudinary routes. Always check for duplicated logic (especially for PDF generation) when fixing a bug.
+2.  **Priority 1: User Verification**: Do not start any new feature work. The most critical next step is to present a consolidated list of all completed but unverified tasks (from this session and previous ones) to the user and get their explicit confirmation that each item is working as expected. This is essential for rebuilding user trust.
+3.  **Cloudinary Decision Pending**: The user needs to decide about the Cloudinary integration for **Project Documents**. Explain the trade-off: using Cloudinary is fast for images but won't support other document types like PDF/DOCX. The current system supports all file types. Await their decision before proceeding.
 
 **documents and test reports created in this job**
--   None.
+-    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: We need to work on the estimates area. When an estimate is converted to an invoice, it has to pass identically. (COMPLETED, PENDING VERIFICATION)
-2.  **User**: My Cloudinary credentials are... (COMPLETED)
-3.  **User**: (In response to Cloudinary questions) Storage, yes optimization. (COMPLETED)
-4.  **User**: I need to integrate Cloudinary. (COMPLETED)
-5.  **User**: In the cost estimate, I need you to request the preparer's name and when it's converted to an estimate, transfer the name. (COMPLETED, PENDING VERIFICATION)
-6.  (From previous fork) Give the HR role permission to delete users. (PENDING VERIFICATION)
-7.  (From previous fork) The server crashes constantly, I need to get it out of here. (PENDING)
-8.  (From previous fork) What service does this app need on DigitalOcean? (PENDING)
-9.  (From previous fork) In invoices, I don't see the PO number field. (PENDING VERIFICATION)
-10. (From previous fork) I can't convert a cost estimate to an estimate. (PENDING VERIFICATION)
+1.  **User**: I want Cloudinary implemented in user profiles, project documents, and my profile. (IN PROGRESS)
+2.  **Agent**: I will implement Cloudinary in all 3 modules.
+3.  **User**: 4 (in response to which module to implement Cloudinary in first). (COMPLETED)
+4.  **Agent**: Where do you want me to implement Cloudinary? (COMPLETED)
+5.  **User**: It's already integrated, but I don't know if it's implemented in projects and HR. (COMPLETED)
+6.  **Agent**: What would you like to do now? (COMPLETED)
+7.  **User**: Clarified which tasks were done and which were pending, and asked about the numbered lists in PDF issue. (COMPLETED)
+8.  **Agent**: Finished implementing the invoice changes. (COMPLETED)
+9.  **User**: For invoices, I don't want inv or 2026, just the number. The client address should be multiline. PDF size < 1.5MB. (COMPLETED)
+10. **Agent**: Waiting for user response on the initial plan.
 
 **Project Health Check:**
 -   **Broken**:
-    -   **PDF Generation**: Highly likely still contains formatting issues, pending user verification.
+    -   **PDF Numbered List Formatting**: Highly likely still contains formatting issues for numbered lists, pending user verification.
 -   **User Verification Pending**:
-    -   A significant portion of the application's core features are in this state. This includes all work from the previous session plus the three major features from this session:  field, Estimate-to-Invoice conversion, and the general fixes for cost estimates, vendors, and documents.
+    -   **Invoice/Estimate Changes**: Invoice number format, multi-line address, PDF size optimization.
+    -   **Cloudinary Integration**: For User and My Profile pages.
+    -   **All items from previous handoff**: A large backlog of features and fixes.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
@@ -169,13 +168,13 @@ A full-stack ERP application with a React frontend and FastAPI backend.
 -   XLSX / openpyxl
 -   React Big Calendar
 -   fastapi-mail
--   **cloudinary** (New)
+-   **cloudinary** (Actively used in UI)
 
 **Testing status**
 -   **Testing agent used after significant changes**: NO
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: PDF formatting issues have been a recurring problem.
+-   **Known regressions**: PDF formatting issues with rich text content (specifically lists) are a known recurring problem.
 
 **Credentials to test flow:**
 -   **Super Admin**:
@@ -184,9 +183,8 @@ A full-stack ERP application with a React frontend and FastAPI backend.
 -   **Cloudinary**:
     -   Cloud name: 
     -   API Key: 
-    -   API Secret: 
+    -   API Secret: Provided in previous logs, can be found in  files.
 
 **What agent forgot to execute**
--   The agent did not use the  tool to confirm the plan of action before implementing the user's new requests, which is a violation of the specified workflow.
--   The agent did not update the  file after completing tasks.
--   The agent did not address the large backlog of items pending user verification from the previous session, instead prioritizing new requests. While this is a common pattern when directed by the user, it increases project risk.</analysis>
+-   The agent did not use the  tool to confirm the initial plan for the invoice/estimate changes, proceeding directly to implementation. It corrected this behavior later in the conversation.
+-   The agent updated  at the end but did not systematically address the large list of USER VERIFICATION PENDING items from the initial handoff summary, which remains the highest priority task.</analysis>
