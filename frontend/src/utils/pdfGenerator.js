@@ -302,7 +302,16 @@ export const addPartySection = (doc, title, name, address, email, phone, startY)
   
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.secondary);
-  if (address) { doc.text(address, 15, y); y += 4; }
+  
+  // Split address into multiple lines (by comma, newline, or pipe separator)
+  if (address) {
+    // Split by common separators: newline, comma, pipe
+    const addressParts = address.split(/[\n|,]/).map(part => part.trim()).filter(part => part);
+    addressParts.forEach(part => {
+      doc.text(part, 15, y);
+      y += 4;
+    });
+  }
   if (email) { doc.text(email, 15, y); y += 4; }
   if (phone) { doc.text(phone, 15, y); y += 4; }
   
