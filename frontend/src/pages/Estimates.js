@@ -525,7 +525,10 @@ const Estimates = () => {
   };
 
   const exportPDF = async (estimate) => {
-    const doc = new jsPDF();
+    // Create PDF with compression enabled
+    const doc = new jsPDF({
+      compress: true
+    });
     const company = await fetchCompanyInfo();
     
     // Header: Empresa izquierda, Doc derecha
