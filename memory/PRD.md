@@ -31,15 +31,18 @@ Sistema ERP completo para gestión de proyectos, empleados, facturas, estimados 
   - Imágenes comprimidas con calidad JPEG 0.7
   - Detección automática de formato de imagen
 
-- **Integración Cloudinary (FUNCIONAL, NO IMPLEMENTADO EN UI)**:
+- **Integración Cloudinary en UI (COMPLETADO)**:
   - Rutas API: /api/cloudinary/sign-upload, /api/cloudinary/delete-asset
-  - Componente CloudinaryUpload.jsx listo para uso
+  - Componente CloudinaryUpload.jsx implementado en:
+    - Users.js: Crear/editar usuarios con foto de perfil
+    - MyProfile.js: Usuario puede cambiar su propia foto
+  - Backend actualizado: UserRegister y UserUpdate ahora incluyen campo picture
 
-- **Campo "Preparado por" en Presupuestos de Costo (VERIFICACIÓN PENDIENTE)**:
+- **Campo "Preparado por" en Presupuestos de Costo (COMPLETADO)**:
   - Campo prepared_by añadido a CostEstimateDetail.js
   - Se transfiere al Estimado al convertir
 
-- **Conversión Estimado → Factura Corregida (VERIFICACIÓN PENDIENTE)**:
+- **Conversión Estimado → Factura Corregida (COMPLETADO)**:
   - Todos los campos se transfieren: client_phone, client_address, sponsor_name, etc.
 
 ### Session: January 16, 2026
