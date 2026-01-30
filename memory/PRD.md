@@ -11,10 +11,22 @@ Sistema ERP completo para gestión de proyectos, empleados, facturas, estimados 
 - Módulo de Compañías para gestión de clientes
 - Módulo de Proveedores para gestión de vendors
 - Sincronización automática de horas trabajadas
+- **Cierre automático de ponches** (después de X horas configurables)
 
 ## What's Been Implemented
 
-### Session: January 30, 2026
+### Session: January 30, 2026 (Part 2)
+- **Cierre Automático de Ponches (COMPLETADO)**:
+  - El sistema cierra automáticamente los ponches abiertos después del tiempo máximo configurado (default: 8 horas)
+  - Ejecuta una vez al día al iniciar el servidor
+  - Campo configurable `max_punch_hours` en Settings → Empresa
+  - Nota automática: "Cierre automático - X horas máximo"
+  - Crea timesheet automáticamente al cerrar el ponche
+  - Sincroniza horas del proyecto afectado
+  - Backend: función `auto_close_expired_punches()` en `server.py`
+  - Frontend: sección "⏰ Cierre Automático de Ponches" en Settings.js
+
+### Session: January 30, 2026 (Part 1)
 - **Formato de Número de Factura Simplificado (COMPLETADO)**:
   - Números de factura ahora usan formato simple: "001", "002", "003"
   - Eliminado prefijo "INV" y año "2026" del número
