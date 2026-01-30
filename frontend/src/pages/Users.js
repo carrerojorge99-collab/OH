@@ -256,6 +256,19 @@ const Users = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4 py-4">
+                  {/* Foto de Perfil */}
+                  <div className="flex justify-center">
+                    <CloudinaryUpload
+                      folder="users"
+                      currentImage={formData.picture}
+                      label="Subir foto"
+                      previewSize="md"
+                      onUploadComplete={(result) => {
+                        setFormData({ ...formData, picture: result?.url || '' });
+                      }}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="name">Nombre Completo *</Label>
                     <div className="relative">
