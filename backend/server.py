@@ -5821,8 +5821,12 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
             "default_b2b_percentage": 4,
             "default_cfse_percentage": 7,
             "default_liability_percentage": 7,
-            "default_municipal_patent_percentage": 1
+            "default_municipal_patent_percentage": 1,
+            "max_punch_hours": 8
         }
+    # Asegurar que exista max_punch_hours
+    if "max_punch_hours" not in company:
+        company["max_punch_hours"] = 8
     # Asegurar que exista minimum_margin_percent
     if "minimum_margin_percent" not in company:
         company["minimum_margin_percent"] = 15
@@ -5875,6 +5879,7 @@ async def update_company_settings(
         "default_cfse_percentage": company_data.get("default_cfse_percentage", 7),
         "default_liability_percentage": company_data.get("default_liability_percentage", 7),
         "default_municipal_patent_percentage": company_data.get("default_municipal_patent_percentage", 1),
+        "max_punch_hours": company_data.get("max_punch_hours", 8),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
