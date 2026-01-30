@@ -576,7 +576,10 @@ const Invoices = () => {
   };
 
   const exportToPDF = async (invoice) => {
-    const doc = new jsPDF();
+    // Create PDF with compression enabled
+    const doc = new jsPDF({
+      compress: true
+    });
     const company = await fetchCompanyInfo();
     
     // Get PO# from project if available
