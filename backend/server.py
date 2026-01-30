@@ -6453,7 +6453,7 @@ async def generate_invoice_from_timesheet(
         # Get next number from company settings or count
         company_settings = await db.company_settings.find_one({}, {"_id": 0})
         next_num = company_settings.get("next_invoice_number", 1) if company_settings else 1
-        invoice_number = f"INV-{datetime.now().year}-{str(next_num).zfill(4)}"
+        invoice_number = str(next_num).zfill(3)
         # Increment the counter
         await db.company_settings.update_one({}, {"$inc": {"next_invoice_number": 1}}, upsert=True)
     
@@ -6577,7 +6577,7 @@ async def create_manual_invoice(
     else:
         company_settings = await db.company_settings.find_one({}, {"_id": 0})
         next_num = company_settings.get("next_invoice_number", 1) if company_settings else 1
-        invoice_number = f"INV-{datetime.now().year}-{str(next_num).zfill(4)}"
+        invoice_number = str(next_num).zfill(3)
         await db.company_settings.update_one({}, {"$inc": {"next_invoice_number": 1}}, upsert=True)
     
     invoice_id = f"inv_{uuid4().hex[:16]}"
@@ -7368,9 +7368,11 @@ async def convert_estimate_to_invoice(
     if estimate.get('status') == 'converted':
         raise HTTPException(status_code=400, detail="Este estimado ya fue convertido a factura")
     
-    # Generate invoice
-    count = await db.invoices.count_documents({})
-    invoice_number = f"INV-{datetime.now().year}-{str(count + 1).zfill(4)}"
+    # Generate invoice - get next number from company settings
+    company_settings = await db.company_settings.find_one({}, {"_id": 0})
+    next_num = company_settings.get("next_invoice_number", 1) if company_settings else 1
+    invoice_number = str(next_num).zfill(3)
+    await db.company_settings.update_one({}, {"$inc": {"next_invoice_number": 1}}, upsert=True)
     invoice_id = f"inv_{uuid4().hex[:16]}"
     now = datetime.now(timezone.utc).isoformat()
     
