@@ -367,6 +367,7 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
     password: Optional[str] = None
     role: Optional[str] = None
+    picture: Optional[str] = None
 
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
