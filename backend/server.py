@@ -7166,6 +7166,7 @@ async def create_estimate(
         "terms": estimate_data.terms,
         "valid_until": estimate_data.valid_until,
         "prepared_by": estimate_data.prepared_by,
+        "price_breakdown": estimate_data.price_breakdown,  # Price breakdown (material/labor/total)
         "created_by": user.user_id,
         "created_by_name": user.name,
         "created_at": now,
