@@ -597,39 +597,36 @@ const Invoices = () => {
       poNumber: poNumber
     });
     
-    // Client section debajo de empresa - include all client info
-    y = addPartySection(doc, 'Bill To:', invoice.client_name, invoice.client_address || '', invoice.client_email || '', invoice.client_phone || '', y);
+    // Client section - include company name if available (like Estimate)
+    const clientDisplayName = invoice.client_company 
+      ? `${invoice.client_company}\nAttn: ${invoice.client_name}`
+      : invoice.client_name;
+    y = addPartySection(doc, 'Bill To:', clientDisplayName, invoice.client_address || '', invoice.client_email || '', invoice.client_phone || '', y);
     
-    // Project info derecha
-    if (invoice.project_name) {
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(249, 115, 22);
-      doc.text('Project:', 120, y - 16);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(30, 41, 59);
-      doc.text(invoice.project_name, 120, y - 10);
-      
-      // Add Sponsor below project if available
-      if (invoice.sponsor_name) {
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(249, 115, 22);
-        doc.text('Sponsor:', 120, y - 4);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(30, 41, 59);
-        doc.text(invoice.sponsor_name, 120, y + 2);
-      }
+    // Valid until / Due Date derecha (like Estimate)
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    if (invoice.due_date) {
+      doc.text(`Due Date: ${moment(invoice.due_date).format('MMM DD, YYYY')}`, 120, y - 10);
     }
     
-    // Tasks table FIRST (font size 12)
+    // Title (project name with quotes like Estimate)
+    if (invoice.project_name) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(`"${invoice.project_name}"`, 15, y);
+      y += 6;
+    }
+    
+    // Tasks table (like Estimate)
     const tasks = invoice.items.map(item => ({
       description: item.description,
       quantity: item.hours || 1,
       unit_price: item.rate || 0,
       amount: item.amount || 0
     }));
-    y = addTasksTable(doc, tasks, y + 4, 12);
+    y = addTasksTable(doc, tasks, y + 4);
     
     // Price Breakdown Section (Orange Area) - AFTER Tasks, BEFORE Totals
     if (invoice.price_breakdown) {
@@ -677,32 +674,80 @@ const Invoices = () => {
     }
     y = addTotalsSection(doc, invoice.price_breakdown?.total || invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y, taxDetails);
     
-    // Notes on first page (if space)
-    if (invoice.notes && y < 240) {
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text('Notes:', 15, y + 10);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(12);
-      const notesLines = doc.splitTextToSize(invoice.notes, 180);
-      doc.text(notesLines, 15, y + 18);
-      y += 18 + notesLines.length * 5;
-    }
-    
-    // Terms and Conditions - ALWAYS on second page
-    if (invoice.terms) {
+    // Notes and Terms - BOTH on second page in two columns (like Estimate)
+    // LEFT: Terms, RIGHT: Notes
+    if (invoice.notes || invoice.terms) {
       doc.addPage();
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text('Terms and Conditions', 105, 30, { align: 'center' });
       
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      const termsLines = doc.splitTextToSize(invoice.terms, 180);
-      doc.text(termsLines, 15, 45);
+      const pageWidth = 210; // A4 width in mm
+      const margin = 15;
+      const columnWidth = (pageWidth - (margin * 2) - 10) / 2; // 10mm gap between columns
+      const columnGap = 10;
+      const pageHeight = 297; // A4 height in mm
+      const maxY = pageHeight - 20; // Leave margin at bottom
+      const lineHeight = 3.5; // Height per line of text
+      let leftY = 20;
+      let rightY = 20;
+      
+      // LEFT COLUMN - Terms and Conditions
+      if (invoice.terms) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('Términos y Condiciones:', margin, leftY);
+        leftY += 8;
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const cleanTerms = stripHtml(invoice.terms);
+        const termsLines = doc.splitTextToSize(cleanTerms, columnWidth);
+        
+        // Render terms lines with page overflow handling
+        for (let i = 0; i < termsLines.length; i++) {
+          if (leftY > maxY) {
+            doc.addPage();
+            leftY = 20;
+            rightY = 20;
+          }
+          doc.text(termsLines[i], margin, leftY);
+          leftY += lineHeight;
+        }
+        leftY += 5;
+      }
+      
+      // RIGHT COLUMN - Notes
+      if (invoice.notes) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text('Notas:', margin + columnWidth + columnGap, rightY);
+        rightY += 8;
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        const cleanNotes = stripHtml(invoice.notes);
+        const notesLines = doc.splitTextToSize(cleanNotes, columnWidth);
+        
+        // Render notes lines with page overflow handling
+        for (let i = 0; i < notesLines.length; i++) {
+          if (rightY > maxY) {
+            // If notes overflow, continue on same page below terms or add new page
+            if (leftY < maxY) {
+              rightY = leftY + 10;
+              doc.text('Notas (cont.):', margin + columnWidth + columnGap, rightY);
+              rightY += 8;
+            } else {
+              doc.addPage();
+              rightY = 20;
+              leftY = 20;
+            }
+          }
+          doc.text(notesLines[i], margin + columnWidth + columnGap, rightY);
+          rightY += lineHeight;
+        }
+      }
     }
     
     // Footer
