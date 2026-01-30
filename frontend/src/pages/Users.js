@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Plus, Mail, Shield, User, Trash2, Pencil, Ban, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import CloudinaryUpload from '../components/CloudinaryUpload';
 
 
 const Users = () => {
