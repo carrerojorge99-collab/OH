@@ -357,6 +357,7 @@ class UserRegister(BaseModel):
     email: Optional[str] = None
     password: Optional[str] = None
     role: str = "empleado"
+    picture: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
