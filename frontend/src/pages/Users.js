@@ -141,7 +141,8 @@ const Users = () => {
       name: user.name,
       email: user.email || '',
       password: '',
-      role: user.role
+      role: user.role,
+      picture: user.picture || ''
     });
     setEditDialogOpen(true);
   };
