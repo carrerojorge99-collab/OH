@@ -35,14 +35,16 @@ const Users = () => {
     name: '',
     email: '',
     password: '',
-    role: 'empleado'
+    role: 'empleado',
+    picture: ''
   });
 
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'empleado'
+    role: 'empleado',
+    picture: ''
   });
 
   useEffect(() => {
