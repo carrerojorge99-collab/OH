@@ -1583,7 +1583,9 @@ const Invoices = () => {
                     <p className="font-medium">{previewInvoice.client_name}</p>
                     {previewInvoice.client_email && <p className="text-sm text-slate-500">{previewInvoice.client_email}</p>}
                     {previewInvoice.client_phone && <p className="text-sm text-slate-500">{previewInvoice.client_phone}</p>}
-                    {previewInvoice.client_address && <p className="text-sm text-slate-500">{previewInvoice.client_address}</p>}
+                    {previewInvoice.client_address && (
+                      <div className="text-sm text-slate-500 whitespace-pre-line">{previewInvoice.client_address}</div>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-700 mb-2">Detalles</h3>
