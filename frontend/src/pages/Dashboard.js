@@ -135,7 +135,8 @@ const Dashboard = () => {
     );
   }
 
-  const statCards = [
+  // Base stat cards (visible to all)
+  const baseStatCards = [
     {
       title: 'Total Proyectos',
       value: filteredStats?.total_projects || 0,
@@ -159,17 +160,22 @@ const Dashboard = () => {
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       testId: 'stat-completed-projects'
-    },
-    {
-      title: 'Ganancia Total',
-      value: `$${(filteredStats?.total_profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-      icon: TrendingUp,
-      color: filteredStats?.total_profit >= 0 ? 'text-green-600' : 'text-red-600',
-      bgColor: filteredStats?.total_profit >= 0 ? 'bg-green-50' : 'bg-red-50',
-      testId: 'stat-total-profit',
-      isCurrency: true
     }
   ];
+
+  // Financial stat card (only for users who can view money)
+  const financialStatCard = {
+    title: 'Ganancia Total',
+    value: `$${(filteredStats?.total_profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+    icon: TrendingUp,
+    color: filteredStats?.total_profit >= 0 ? 'text-green-600' : 'text-red-600',
+    bgColor: filteredStats?.total_profit >= 0 ? 'bg-green-50' : 'bg-red-50',
+    testId: 'stat-total-profit',
+    isCurrency: true
+  };
+
+  // Combine stat cards based on permissions
+  const statCards = showMoney ? [...baseStatCards, financialStatCard] : baseStatCards;
 
   const budgetData = [
     { name: 'Gastado', value: filteredStats?.total_spent || 0, color: '#EF4444' },
