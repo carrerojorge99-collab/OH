@@ -566,12 +566,14 @@ const Dashboard = () => {
                       <p className="text-sm text-slate-600 line-clamp-1">{project.description}</p>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-slate-600">Presupuesto</p>
-                        <p className="text-lg font-bold font-mono text-[#0F172A]">
-                          ${project.budget_total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </p>
-                      </div>
+                      {showMoney && (
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-slate-600">Presupuesto</p>
+                          <p className="text-lg font-bold font-mono text-[#0F172A]">
+                            ${project.budget_total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         project.status === 'completed' ? 'bg-green-100 text-green-700' :
                         project.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
