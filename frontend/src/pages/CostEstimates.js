@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
+import { canViewMoney } from '../utils/permissions';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -22,6 +24,10 @@ const CostEstimates = () => {
   // Start with 'all' and update to current year if data exists
   const [yearFilter, setYearFilter] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
+  
+  // Get user role for permission checks
+  const { user } = useAuth();
+  const showMoney = canViewMoney(user?.role);
 
   // Generate available years from estimates
   const availableYears = useMemo(() => {
