@@ -1075,7 +1075,7 @@ const Estimates = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-600">${formatCurrency(estimate.total)}</div>
+                      <div className="text-2xl font-bold text-blue-600">{showMoney ? `$${formatCurrency(estimate.total)}` : '---'}</div>
                       <div className="flex gap-1 mt-2">
                         <Button variant="ghost" size="sm" onClick={() => exportPDF(estimate)} title="Descargar PDF">
                           <Download className="w-4 h-4" />
