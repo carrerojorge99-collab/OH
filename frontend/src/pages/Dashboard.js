@@ -386,6 +386,7 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* Projects by Status */}
           <Card className="border-slate-200 shadow-sm">
