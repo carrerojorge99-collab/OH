@@ -12,55 +12,64 @@ The user's primary goal is to enhance their ERP application by fixing critical b
 8.  **Platform Concerns**: User is frustrated with server instability and wants to migrate to DigitalOcean.
 
 **Requests from this session:**
-1.  **Invoice Number Format**: Change format from  to just the sequential number (e.g., ).
-2.  **Client Address**: Must be a multi-line field in the UI (Invoices & Estimates) and render correctly on the PDF.
-3.  **PDF Size**: Invoice and Estimate PDFs should not exceed 1.5 MB.
-4.  **Cloudinary Integration**: Implement the existing  component in the **Users (RRHH)**, **Project Documents**, and **My Profile** modules.
+1.  **Automatic Punch Closure**: If an employee clocks in but doesn't clock out, the system should automatically close the punch after 8 hours. This time limit should be configurable.
+2.  **Invoice PDF Layout**: The generated PDF for invoices must have the exact same layout and format as the PDF for estimates. The user provided examples of both.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
 - A full-stack ERP application with a React frontend and FastAPI backend.
-- The invoice number generation logic in  has been updated to produce simple sequential numbers (e.g., , ).
-- The client address fields in the Invoice and Estimate creation forms (, ) have been converted from single-line  to multi-line  components.
-- The PDF generation utility () was modified to render multi-line addresses correctly and to use image compression (JPEG format, smaller logo) to reduce file size.
-- The Cloudinary upload component () has been successfully integrated into the **Users (RRHH)** and **My Profile** pages, allowing users to upload and change profile pictures. The backend was updated accordingly to save the image URL.
+- A new feature for automatically closing open time punches has been implemented. The backend contains a function () that runs on server startup to close any punches that have been open longer than a configured duration.
+- The frontend  page has a new UI section under the Company tab allowing administrators to configure the maximum number of hours a punch can remain open (defaulting to 8).
+- The code for generating Invoice PDFs in  has been overwritten with the logic from  to make their layouts match.
 
 **Last working item**:
--   **Last item agent was working**: Implementing Cloudinary integration for uploading user profile pictures and project documents. The agent successfully added the feature to the  (RRHH) and  pages. The agent correctly reasoned that Cloudinary (optimized for images) was not a good fit for , which handles various document types (PDF, DOCX), and paused to ask the user for confirmation.
+-   **Last item agent was working**: Making the Invoice PDF layout identical to the Estimate PDF layout. The agent replaced the  function in  with the one from .
 -   **Status**: IN PROGRESS
--   **Agent Testing Done**: Y (Verified UI changes on Users and My Profile pages via screenshots)
--   **Which testing method agent to use?**: Frontend testing agent. The agent should test the full user flow: 1. Create a new user with a profile picture on the Users page. 2. Edit an existing user to change their picture. 3. Go to the My Profile page and change the current user's picture. Verify the image updates correctly in all locations.
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: Frontend testing agent. The agent must navigate to the invoices page, generate a PDF for an existing invoice, and visually verify that its layout (two-column notes/terms on page 2, project title placement, etc.) perfectly matches the  file provided by the user.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Multiple Core Features and Bug Fixes Pending User Verification (P0)
--   Issue 2: PDF Formatting for Numbered Lists (P0)
--   Issue 3: Deployment Failure Due to MongoDB Timeout (P2)
--   Issue 4: Responsive Layout Issues (P3)
+-   Issue 1: Invoice PDF Layout Does Not Match Estimate (P0)
+-   Issue 2: Multiple Core Features and Bug Fixes Pending User Verification (P0)
+-   Issue 3: PDF Formatting for Numbered Lists (P1)
+-   Issue 4: Deployment Failure Due to MongoDB Timeout (P2)
+-   Issue 5: Responsive Layout Issues (P3)
 
 **Issues Detail**:
--   **Issue 1: Multiple Core Features and Bug Fixes Pending User Verification**
-    -   **Description**: A large backlog of implemented features and fixes from this and previous sessions have not been confirmed as resolved by the user. This is the highest priority to establish a stable baseline before adding more features.
-    -   **Next debug checklist**: Create a consolidated list (in Spanish) of all unverified items (including the invoice/estimate changes and Cloudinary integration from this session) and ask the user to test and confirm each one.
+-   **Issue 1: Invoice PDF Layout Does Not Match Estimate**
+    -   **Description**: The user reported that generated Invoice PDFs have a different layout than Estimate PDFs and wants them to be identical. The agent has replaced the PDF generation code in  but has not yet verified the output.
+    -   **Next debug checklist**:
+        1.  Navigate to the Invoices page in the application.
+        2.  Click the Download PDF button for any invoice.
+        3.  Compare the generated PDF with the user-provided .
+        4.  Pay close attention to the second-page layout (should be two columns for terms and notes), project title placement, and the summary bar.
+        5.  If discrepancies remain, debug the  function in .
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+
+-   **Issue 2: Multiple Core Features and Bug Fixes Pending User Verification**
+    -   **Description**: A large backlog of implemented features and fixes from previous sessions have not been confirmed as resolved by the user. This is a high priority to establish a stable baseline.
+    -   **Next debug checklist**: Create a consolidated list (in Spanish) of all unverified items (including the new punch-out feature) and ask the user to test and confirm each one.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: both
 
--   **Issue 2: PDF Formatting for Numbered Lists**
-    -   **Description**: A recurring issue where numbered lists created in the rich text editor do not render correctly in the generated PDF. The user was reminded of this issue during the session.
-    -   **Next debug checklist**: Ask the user to create an estimate with a numbered list in its description and generate a PDF to confirm if the problem persists. If it does, inspect the HTML content from the database and trace it through the  function in .
+-   **Issue 3: PDF Formatting for Numbered Lists**
+    -   **Description**: A recurring issue where numbered lists from the rich text editor do not render correctly in the generated PDF.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
 
--   **Issue 3: Deployment Failure Due to MongoDB Timeout**
-    -   **Description**: A critical deployment blocker () from a previous session. A fix was implemented but never verified by deploying to production.
+-   **Issue 4: Deployment Failure Due to MongoDB Timeout**
+    -   **Description**: A critical deployment blocker () from a previous session. A fix was implemented but never verified by deploying.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: backend (via user deployment)
 
--   **Issue 4: Responsive Layout Issues**
+-   **Issue 5: Responsive Layout Issues**
     -   **Description**: Several responsive layout problems on pages like HR, Settings, MyRequests, and MyProfile remain unaddressed.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: N
@@ -68,7 +77,7 @@ The user's primary goal is to enhance their ERP application by fixing critical b
 
 **In progress Task List**:
 -   Task 1: Finalize Cloudinary Integration Strategy (P1)
-    -   **Where to resume**: The user requested Cloudinary for Project Documents. The agent correctly identified that Cloudinary is for images/videos, while project documents can be other file types (PDF, DOCX). The agent has asked the user for a decision. The next step is to get the user's response and either proceed with a limited implementation for images-only in projects or confirm keeping the existing file upload system.
+    -   **Where to resume**: Waiting for the user's decision on how to handle non-image file uploads in the Project Documents section. The agent correctly identified that Cloudinary is for images/videos and asked for clarification.
     -   **What will be achieved with this?**: A clear strategy for handling file uploads across the application.
     -   **Status**: BLOCKED (Waiting on user feedback)
     -   **Should Test frontend/backend/both after fix?**: frontend
@@ -76,7 +85,7 @@ The user's primary goal is to enhance their ERP application by fixing critical b
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0 - Verify All Pending Fixes**: The most critical task. Go through the list in Issue 1 and get user confirmation on each item.
+    -   **P0 - Verify All Pending Fixes**: Go through the list in Issue 2 and get user confirmation on each item.
     -   **P1 - Prepare for Migration to DigitalOcean**: Address the user's request by preparing a , , and a database export script.
     -   **P2 - Implement Vendor Categories**: Add a categorization system for vendors.
     -   **P2 - Implement Move Document UI**: The backend logic exists, but the UI was not built.
@@ -87,31 +96,29 @@ The user's primary goal is to enhance their ERP application by fixing critical b
     -   Refactor monolithic files: , , .
 
 **Completed work in this session**
--   **Invoice/Estimate Enhancements (USER VERIFICATION PENDING)**:
-    -   **Invoice Number Format**: Changed from  to just  ().
-    -   **Multi-line Client Address**: Updated UI to use  and enabled multi-line rendering in PDF (, , ).
-    -   **PDF Size Optimization**: Added  flag to  and optimized logo image handling to reduce file size.
--   **Cloudinary for Profile Pictures (USER VERIFICATION PENDING)**:
-    -   Successfully integrated the  component into  (RRHH) and  to allow uploading and changing user profile pictures.
+-   **Automatic Punch Closure (USER VERIFICATION PENDING)**:
+    -   **Backend**: Created a function in  () that finds and closes open punches after a set time. This function is triggered once on server startup.
+    -   **Database**: Added  to the  collection, with a default of 8.
+    -   **Frontend**: Added a new section and input field in  for admins to configure .
+    -   **Agent Testing**: Verified via backend logs,  to the API endpoint, and a screenshot of the new UI in the Settings page.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Responsive Layout issues**: Several responsive layout problems on pages like HR, Settings, MyRequests, and MyProfile remain unaddressed.
 
 **Known issue recurrence from previous fork**
--   **PDF Generation Formatting**: This recurring issue, specifically with numbered lists, was brought up again and is pending user verification.
+-   **PDF Generation Formatting**: The general problem of PDF formatting consistency continues. While the agent is addressing the Invoice/Estimate layout, the underlying issue of lists rendering incorrectly is still pending.
 
 **Code Architecture**
-
+max_punch_hoursauto_close_expired_punchesexportToPDFstripHtml
 
 **Key Technical Concepts**
--   **Backend Logic Modification**: Altering string formatting in Python for invoice numbering and updating Pydantic models (, ) to include new fields.
--   **Frontend State Management**: Using  to manage form data, including the new  URL returned from the Cloudinary component's  callback.
--   **UI Rendering**: Using  in CSS to correctly display multi-line text from database strings containing newline characters ().
--   **PDF Generation (jsPDF)**: Utilizing the  option in the  constructor and changing image formats ( to ) to significantly reduce output file size.
--   **Conditional Integration**: Recognizing that a third-party service (Cloudinary) is optimized for a specific data type (images) and is not a one-size-fits-all solution for general file uploads, then pausing to confirm with the user.
+-   **FastAPI Startup Events**: Using the  decorator to run a background task () when the server starts.
+-   **Configurable Business Logic**: Adding a field () to a settings model in the database and providing a UI for administrators to change its value, making the automatic punch closure feature flexible.
+-   **Code Duplication (for immediate fix)**: Copying a large block of component logic (the  function) from one file () to another () to quickly resolve a visual inconsistency, with the known trade-off of creating technical debt.
 
 **key DB schema**
--    collection: The  field (string URL) is now actively populated and updated via the Users and My Profile modules. No schema change was required, but the field is now in use.
+-    (single document collection): Now contains the key .
+-   : The  function updates entries in this collection, setting  and .
 
 **All files of reference**
 -   
@@ -120,46 +127,39 @@ The user's primary goal is to enhance their ERP application by fixing critical b
 -   
 -   
 -   
--   
--   
 
 **Areas that need refactoring**:
--    continues to grow, reinforcing the need to break it down into modular routers (like  from the previous session).
--   Multiple pages (, , , etc.) instantiate  independently. The compression logic and other settings should be consolidated into a shared utility to ensure consistency and avoid missing an update in the future.
+-   **PDF Generation Logic**: The  function is now duplicated in  and . This is a significant source of technical debt. This logic should be extracted into a more generic function within  that can be called by both components with appropriate parameters.
+-    continues to grow, reinforcing the need to break it down into modular routers.
 
 **key api endpoints**
--   **MODIFIED**:
-    -   : Logic for generating  was changed.
-    -   : Modified to accept and save a  URL.
-    -   : Modified to accept and save a  URL.
+-   ****: This endpoint is now used to update the  value from the Settings page.
+-   ****: This endpoint now returns the  value.
 
 **Critical Info for New Agent**
 1.  **Language**: All communication with the user **MUST** be in **Spanish**.
-2.  **Priority 1: User Verification**: Do not start any new feature work. The most critical next step is to present a consolidated list of all completed but unverified tasks (from this session and previous ones) to the user and get their explicit confirmation that each item is working as expected. This is essential for rebuilding user trust.
-3.  **Cloudinary Decision Pending**: The user needs to decide about the Cloudinary integration for **Project Documents**. Explain the trade-off: using Cloudinary is fast for images but won't support other document types like PDF/DOCX. The current system supports all file types. Await their decision before proceeding.
+2.  **Priority 1: Verify Invoice PDF Fix**: Immediately finish the last task. Generate a PDF from the Invoices page and confirm it visually matches the user's Estimate PDF example.
+3.  **Priority 2: User Verification Backlog**: The list of features and fixes awaiting user confirmation is large and growing. After fixing the PDF issue, the next step should be to present a consolidated list to the user to get their sign-off and establish a stable baseline.
+4.  **Blocked Task**: The Cloudinary integration for Project Documents is blocked pending a decision from the user. Do not proceed with it until the user clarifies how to handle non-image files.
 
 **documents and test reports created in this job**
--    (updated)
+-    (updated with the punch-out feature)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: I want Cloudinary implemented in user profiles, project documents, and my profile. (IN PROGRESS)
-2.  **Agent**: I will implement Cloudinary in all 3 modules.
-3.  **User**: 4 (in response to which module to implement Cloudinary in first). (COMPLETED)
-4.  **Agent**: Where do you want me to implement Cloudinary? (COMPLETED)
-5.  **User**: It's already integrated, but I don't know if it's implemented in projects and HR. (COMPLETED)
-6.  **Agent**: What would you like to do now? (COMPLETED)
-7.  **User**: Clarified which tasks were done and which were pending, and asked about the numbered lists in PDF issue. (COMPLETED)
-8.  **Agent**: Finished implementing the invoice changes. (COMPLETED)
-9.  **User**: For invoices, I don't want inv or 2026, just the number. The client address should be multiline. PDF size < 1.5MB. (COMPLETED)
-10. **Agent**: Waiting for user response on the initial plan.
+1.  **User**: Invoices must look like estimates. (Provided 2 PDF files) - IN PROGRESS
+2.  **Agent**: Submitted summary for the auto punch-out feature. - COMPLETED
+3.  **User**: Confirmed choices for auto punch-out feature (run daily, add note, no notification, configurable). - COMPLETED
+4.  **Agent**: Asked for clarification on how the auto punch-out feature should work. - COMPLETED
+5.  **User**: I need the system to automatically clock out employees after 8 hours if they forget. - COMPLETED
 
 **Project Health Check:**
 -   **Broken**:
-    -   **PDF Numbered List Formatting**: Highly likely still contains formatting issues for numbered lists, pending user verification.
+    -   **Invoice PDF Layout**: The layout is currently being fixed but is unverified and potentially still broken or inconsistent.
+    -   **PDF Numbered List Formatting**: Highly likely still contains formatting issues, pending user verification.
 -   **User Verification Pending**:
-    -   **Invoice/Estimate Changes**: Invoice number format, multi-line address, PDF size optimization.
-    -   **Cloudinary Integration**: For User and My Profile pages.
-    -   **All items from previous handoff**: A large backlog of features and fixes.
+    -   **Automatic Punch Closure**: The feature is implemented and agent-tested but not yet confirmed by the user.
+    -   **Invoice/Estimate PDF Layout Fix**: Once completed, will require user verification.
+    -   **All items from the previous handoff**: A large backlog including invoice numbering, multi-line addresses, PDF size, and Cloudinary for profiles.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
@@ -168,7 +168,7 @@ The user's primary goal is to enhance their ERP application by fixing critical b
 -   XLSX / openpyxl
 -   React Big Calendar
 -   fastapi-mail
--   **cloudinary** (Actively used in UI)
+-   cloudinary (Actively used in UI)
 
 **Testing status**
 -   **Testing agent used after significant changes**: NO
@@ -183,8 +183,7 @@ The user's primary goal is to enhance their ERP application by fixing critical b
 -   **Cloudinary**:
     -   Cloud name: 
     -   API Key: 
-    -   API Secret: Provided in previous logs, can be found in  files.
 
 **What agent forgot to execute**
--   The agent did not use the  tool to confirm the initial plan for the invoice/estimate changes, proceeding directly to implementation. It corrected this behavior later in the conversation.
--   The agent updated  at the end but did not systematically address the large list of USER VERIFICATION PENDING items from the initial handoff summary, which remains the highest priority task.</analysis>
+-   The agent has not yet verified the result of the invoice PDF layout change. It modified the code but did not generate a new PDF to confirm the fix.
+-   The agent correctly implemented the new user request for automatic punch closure but has not yet addressed the large, high-priority list of USER VERIFICATION PENDING items from the initial handoff summary.</analysis>
