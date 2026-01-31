@@ -544,6 +544,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Recent Projects */}
         <Card className="border-slate-200 shadow-sm">
