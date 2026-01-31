@@ -99,6 +99,10 @@ const PurchaseOrders = () => {
     }
   }, [purchaseOrders, availableYears, yearInitialized]);
 
+  // Get user role for permission checks
+  const { user } = useAuth();
+  const showMoney = canViewMoney(user?.role);
+
   const [form, setForm] = useState({
     project_id: '',
     selected_vendor_id: '',
