@@ -155,21 +155,23 @@ const CostEstimates = () => {
         {estimates.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {/* Total Cotizado */}
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500 rounded-lg">
-                    <DollarSign className="w-6 h-6 text-white" />
+            {showMoney && (
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500 rounded-lg">
+                      <DollarSign className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-600 font-medium">Total Cotizado</p>
+                      <p className="text-xl font-bold text-blue-800">
+                        ${filteredEstimates.reduce((sum, e) => sum + (e.grand_total || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-blue-600 font-medium">Total Cotizado</p>
-                    <p className="text-xl font-bold text-blue-800">
-                      ${filteredEstimates.reduce((sum, e) => sum + (e.grand_total || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Total Estimaciones */}
             <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
@@ -199,9 +201,11 @@ const CostEstimates = () => {
                     <p className="text-xs text-amber-600 font-medium">En Proceso</p>
                     <p className="text-xl font-bold text-amber-800">
                       {filteredEstimates.filter(e => e.status !== 'final').length}
-                      <span className="text-sm font-normal ml-2">
-                        (${filteredEstimates.filter(e => e.status !== 'final').reduce((sum, e) => sum + (e.grand_total || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 0 })})
-                      </span>
+                      {showMoney && (
+                        <span className="text-sm font-normal ml-2">
+                          (${filteredEstimates.filter(e => e.status !== 'final').reduce((sum, e) => sum + (e.grand_total || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 0 })})
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -219,9 +223,11 @@ const CostEstimates = () => {
                     <p className="text-xs text-green-600 font-medium">Finalizadas</p>
                     <p className="text-xl font-bold text-green-800">
                       {filteredEstimates.filter(e => e.status === 'final').length}
-                      <span className="text-sm font-normal ml-2">
-                        (${filteredEstimates.filter(e => e.status === 'final').reduce((sum, e) => sum + (e.grand_total || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 0 })})
-                      </span>
+                      {showMoney && (
+                        <span className="text-sm font-normal ml-2">
+                          (${filteredEstimates.filter(e => e.status === 'final').reduce((sum, e) => sum + (e.grand_total || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 0 })})
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
