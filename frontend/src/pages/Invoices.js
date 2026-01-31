@@ -1449,7 +1449,7 @@ const Invoices = () => {
                         <div>
                           <p className="text-xs text-slate-600">Total</p>
                           <p className="text-lg font-bold font-mono text-blue-600">
-                            ${invoice.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            {showMoney ? `$${invoice.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '---'}
                           </p>
                         </div>
                         <div>
@@ -1513,7 +1513,7 @@ const Invoices = () => {
                         </Button>
                       )}
 
-                      {invoice.balance_due > 0 && invoice.status !== 'draft' && (
+                      {showMoney && invoice.balance_due > 0 && invoice.status !== 'draft' && (
                         <div className="text-xs text-center py-1">
                           <p className="text-slate-600">Pendiente:</p>
                           <p className="font-bold text-red-600">
