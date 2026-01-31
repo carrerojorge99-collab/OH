@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
+import { canViewMoney } from '../utils/permissions';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -46,6 +48,10 @@ const Invoices = () => {
   const [yearFilter, setYearFilter] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
   const navigate = useNavigate();
+  
+  // Get user role for permission checks
+  const { user } = useAuth();
+  const showMoney = canViewMoney(user?.role);
 
   // Generate available years from invoices
   const availableYears = React.useMemo(() => {
