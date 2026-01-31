@@ -1424,6 +1424,7 @@ const Invoices = () => {
               </form>
             </DialogContent>
           </Dialog>
+          )}
         </div>
 
         {/* Invoices List */}
