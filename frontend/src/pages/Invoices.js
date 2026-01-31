@@ -1247,18 +1247,12 @@ const Invoices = () => {
                       </div>
                     </div>
                   )}
-                        <div className="h-9 flex items-center px-3 bg-orange-100 rounded-md font-bold text-orange-800">
-                          ${formatCurrency(manualForm.price_breakdown?.total || 0)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Totals */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Descuento (%)</Label>
-                      <Input type="number" value={manualForm.discount_percent} onChange={(e) => setManualForm({...manualForm, discount_percent: e.target.value})} />
+                      <Input type="number" value={manualForm.discount_percent} onChange={(e) => setManualForm({...manualForm, discount_percent: e.target.value})} disabled={!showMoney} />
                     </div>
                     <div>
                       <Label>Impuestos (seleccione múltiples)</Label>
@@ -1276,6 +1270,7 @@ const Invoices = () => {
                                 }
                               }}
                               className="w-4 h-4 rounded border-slate-300"
+                              disabled={!showMoney}
                             />
                             <span className="text-sm">{tax.name} ({tax.percentage}%)</span>
                           </label>
@@ -1290,17 +1285,19 @@ const Invoices = () => {
                         </p>
                       )}
                     </div>
-                    <div className="bg-slate-50 p-4 rounded-lg">
-                      <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${formatCurrency(calculateManualTotals().subtotal)}</span></div>
-                      {calculateManualTotals().discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${formatCurrency(calculateManualTotals().discountAmount)}</span></div>}
-                      {calculateManualTotals().taxDetails && calculateManualTotals().taxDetails.map((tax, idx) => (
-                        <div key={idx} className="flex justify-between text-sm text-slate-600">
-                          <span>{tax.name} ({tax.percentage}%):</span>
-                          <span>${formatCurrency(tax.amount)}</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${formatCurrency(calculateManualTotals().total)}</span></div>
-                    </div>
+                    {showMoney && (
+                      <div className="bg-slate-50 p-4 rounded-lg">
+                        <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${formatCurrency(calculateManualTotals().subtotal)}</span></div>
+                        {calculateManualTotals().discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${formatCurrency(calculateManualTotals().discountAmount)}</span></div>}
+                        {calculateManualTotals().taxDetails && calculateManualTotals().taxDetails.map((tax, idx) => (
+                          <div key={idx} className="flex justify-between text-sm text-slate-600">
+                            <span>{tax.name} ({tax.percentage}%):</span>
+                            <span>${formatCurrency(tax.amount)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${formatCurrency(calculateManualTotals().total)}</span></div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Notes & Terms */}
