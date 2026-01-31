@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api, { getBackendUrl } from '../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
+import { canViewMoney } from '../utils/permissions';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -21,6 +23,10 @@ const CostEstimateDetail = () => {
   const [estimate, setEstimate] = useState(null);
   const [laborRates, setLaborRates] = useState([]);
   const [projects, setProjects] = useState([]);
+  
+  // Get user role for permission checks
+  const { user } = useAuth();
+  const showMoney = canViewMoney(user?.role);
   
   // Forms for each section
   const [laborCosts, setLaborCosts] = useState([]);
