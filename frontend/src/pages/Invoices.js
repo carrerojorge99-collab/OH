@@ -1510,7 +1510,7 @@ const Invoices = () => {
                         </Button>
                       )}
 
-                      {(invoice.status === 'sent' || invoice.status === 'partial') && (
+                      {showMoney && (invoice.status === 'sent' || invoice.status === 'partial') && (
                         <Button
                           variant="outline"
                           size="sm"
