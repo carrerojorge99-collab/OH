@@ -624,6 +624,7 @@ const CostEstimateDetail = () => {
                 <CardTitle>Resumen de Costos</CardTitle>
               </CardHeader>
               <CardContent>
+                {showMoney ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
                     <div>
