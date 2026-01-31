@@ -486,7 +486,8 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Charts Row 3 */}
+        {/* Charts Row 3 - Financial Charts (only visible to users who can view money) */}
+        {showMoney && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ROI Chart */}
           <Card className="border-slate-200 shadow-sm">
