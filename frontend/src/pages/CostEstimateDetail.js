@@ -864,6 +864,11 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
                 </div>
+                ) : (
+                  <div className="text-center py-12 text-slate-500">
+                    <p className="text-lg">No tiene permisos para ver información de costos</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
