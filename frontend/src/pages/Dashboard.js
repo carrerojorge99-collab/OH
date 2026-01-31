@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import Layout from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
+import { canViewMoney } from '../utils/permissions';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import AlertsBanner from '../components/AlertsBanner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -18,6 +20,10 @@ const Dashboard = () => {
   // Start with 'all' and update to current year if data exists
   const [selectedYear, setSelectedYear] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
+  
+  // Get user role for permission checks
+  const { user } = useAuth();
+  const showMoney = canViewMoney(user?.role);
 
   // Extract year from project_number (format: "2026-001" or "YYYY-XXX")
   const getProjectYear = (project) => {
