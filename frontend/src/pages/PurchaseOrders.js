@@ -607,12 +607,13 @@ const PurchaseOrders = () => {
                               type="number" 
                               value={item.unit_price}
                               onChange={(e) => handleItemChange(idx, 'unit_price', e.target.value)}
+                              disabled={!showMoney}
                             />
                           </div>
                           <div>
                             <Label className="text-xs">Total</Label>
                             <div className="h-9 flex items-center font-mono font-bold text-orange-600">
-                              ${(parseFloat(item.amount) || 0).toFixed(2)}
+                              {showMoney ? `$${(parseFloat(item.amount) || 0).toFixed(2)}` : '---'}
                             </div>
                           </div>
                         </div>
@@ -628,18 +629,20 @@ const PurchaseOrders = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <Label>Descuento (%)</Label>
-                    <Input type="number" value={form.discount_percent} onChange={(e) => setForm({...form, discount_percent: e.target.value})} />
+                    <Input type="number" value={form.discount_percent} onChange={(e) => setForm({...form, discount_percent: e.target.value})} disabled={!showMoney} />
                   </div>
                   <div>
                     <Label>Impuesto (%)</Label>
-                    <Input type="number" value={form.tax_rate} onChange={(e) => setForm({...form, tax_rate: e.target.value})} />
+                    <Input type="number" value={form.tax_rate} onChange={(e) => setForm({...form, tax_rate: e.target.value})} disabled={!showMoney} />
                   </div>
-                  <div className="md:col-span-2 bg-green-50 p-4 rounded-lg">
-                    <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${totals.subtotal.toFixed(2)}</span></div>
-                    {totals.discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${totals.discountAmount.toFixed(2)}</span></div>}
-                    {totals.taxAmount > 0 && <div className="flex justify-between text-sm"><span>Impuesto:</span><span>${totals.taxAmount.toFixed(2)}</span></div>}
-                    <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${totals.total.toFixed(2)}</span></div>
-                  </div>
+                  {showMoney && (
+                    <div className="md:col-span-2 bg-green-50 p-4 rounded-lg">
+                      <div className="flex justify-between text-sm"><span>Subtotal:</span><span>${totals.subtotal.toFixed(2)}</span></div>
+                      {totals.discountAmount > 0 && <div className="flex justify-between text-sm text-red-600"><span>Descuento:</span><span>-${totals.discountAmount.toFixed(2)}</span></div>}
+                      {totals.taxAmount > 0 && <div className="flex justify-between text-sm"><span>Impuesto:</span><span>${totals.taxAmount.toFixed(2)}</span></div>}
+                      <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2"><span>Total:</span><span>${totals.total.toFixed(2)}</span></div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Notes & Terms */}
