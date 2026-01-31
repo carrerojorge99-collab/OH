@@ -1006,9 +1006,11 @@ const Estimates = () => {
                     <p className="text-xs text-green-600 font-medium">Aprobados</p>
                     <p className="text-xl font-bold text-green-800">
                       {summaryStats.approved.length}
-                      <span className="text-sm font-normal ml-2">
-                        (${summaryStats.approvedTotal.toLocaleString('es-PR', { minimumFractionDigits: 0 })})
-                      </span>
+                      {showMoney && (
+                        <span className="text-sm font-normal ml-2">
+                          (${summaryStats.approvedTotal.toLocaleString('es-PR', { minimumFractionDigits: 0 })})
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1026,9 +1028,11 @@ const Estimates = () => {
                     <p className="text-xs text-amber-600 font-medium">Pendientes/Enviados</p>
                     <p className="text-xl font-bold text-amber-800">
                       {summaryStats.pending.length}
-                      <span className="text-sm font-normal ml-2">
-                        (${summaryStats.pendingTotal.toLocaleString('es-PR', { minimumFractionDigits: 0 })})
-                      </span>
+                      {showMoney && (
+                        <span className="text-sm font-normal ml-2">
+                          (${summaryStats.pendingTotal.toLocaleString('es-PR', { minimumFractionDigits: 0 })})
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
