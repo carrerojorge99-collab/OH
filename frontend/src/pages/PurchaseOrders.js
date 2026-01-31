@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import moment from 'moment';
 import Layout from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
+import { canViewMoney } from '../utils/permissions';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
