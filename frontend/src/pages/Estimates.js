@@ -160,6 +160,10 @@ const Estimates = () => {
   // Start with 'all' and update to current year if data exists
   const [yearFilter, setYearFilter] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
+  
+  // Get user role for permission checks
+  const { user } = useAuth();
+  const showMoney = canViewMoney(user?.role);
 
   // Calculate summary stats
   const summaryStats = useMemo(() => {
