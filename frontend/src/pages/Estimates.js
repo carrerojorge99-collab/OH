@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import Layout from '../components/Layout';
+import { useAuth } from '../contexts/AuthContext';
+import { canViewMoney } from '../utils/permissions';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
