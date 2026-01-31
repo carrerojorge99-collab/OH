@@ -708,7 +708,7 @@ const PurchaseOrders = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-green-600">${po.total.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-green-600">{showMoney ? `$${po.total.toFixed(2)}` : '---'}</div>
                       <div className="flex gap-1 mt-2">
                         <Button variant="ghost" size="sm" onClick={() => exportPDF(po)} title="Descargar PDF">
                           <Download className="w-4 h-4" />
@@ -766,7 +766,12 @@ const PurchaseOrders = () => {
                         {po.items.map((item, idx) => (
                           <div key={idx} className="flex justify-between text-sm">
                             <span>{item.description}</span>
-                            <span className="font-mono">{item.quantity} x ${item.unit_price} = ${item.amount.toFixed(2)}</span>
+                            <span className="font-mono">
+                              {showMoney 
+                                ? `${item.quantity} x $${item.unit_price} = $${item.amount.toFixed(2)}`
+                                : `${item.quantity} unidades`
+                              }
+                            </span>
                           </div>
                         ))}
                       </div>
