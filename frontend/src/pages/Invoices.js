@@ -1654,8 +1654,8 @@ const Invoices = () => {
                         <tr>
                           <th className="p-2 text-left text-sm">Descripción</th>
                           <th className="p-2 text-right text-sm">Cant.</th>
-                          <th className="p-2 text-right text-sm">Precio</th>
-                          <th className="p-2 text-right text-sm">Total</th>
+                          {showMoney && <th className="p-2 text-right text-sm">Precio</th>}
+                          {showMoney && <th className="p-2 text-right text-sm">Total</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -1663,8 +1663,8 @@ const Invoices = () => {
                           <tr key={idx} className="border-t">
                             <td className="p-2 text-sm">{item.description}</td>
                             <td className="p-2 text-right text-sm">{item.hours || item.quantity || 1}</td>
-                            <td className="p-2 text-right text-sm">${formatCurrency(item.rate || item.unit_price || 0)}</td>
-                            <td className="p-2 text-right text-sm font-medium">${formatCurrency(item.amount || 0)}</td>
+                            {showMoney && <td className="p-2 text-right text-sm">${formatCurrency(item.rate || item.unit_price || 0)}</td>}
+                            {showMoney && <td className="p-2 text-right text-sm font-medium">${formatCurrency(item.amount || 0)}</td>}
                           </tr>
                         ))}
                       </tbody>
@@ -1673,7 +1673,7 @@ const Invoices = () => {
                 )}
 
                 {/* Price Breakdown - AFTER Items, BEFORE Totals */}
-                {previewInvoice.price_breakdown && (
+                {showMoney && previewInvoice.price_breakdown && (
                   <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
                     <h3 className="font-semibold text-orange-800 mb-3">Price Breakdown</h3>
                     <div className="grid grid-cols-3 gap-4 text-center">
@@ -1694,16 +1694,18 @@ const Invoices = () => {
                 )}
 
                 {/* Totals */}
-                <div className="flex justify-end">
-                  <div className="w-64 space-y-2">
-                    <div className="flex justify-between"><span>Subtotal:</span><span>${formatCurrency(previewInvoice.price_breakdown?.total || previewInvoice.subtotal || 0)}</span></div>
-                    {previewInvoice.tax_amount > 0 && <div className="flex justify-between"><span>Impuestos:</span><span>${formatCurrency(previewInvoice.tax_amount)}</span></div>}
-                    <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total:</span><span>${formatCurrency(previewInvoice.total || 0)}</span></div>
-                    {previewInvoice.balance_due > 0 && previewInvoice.status !== 'draft' && (
-                      <div className="flex justify-between text-red-600 font-bold"><span>Pendiente:</span><span>${formatCurrency(previewInvoice.balance_due)}</span></div>
-                    )}
+                {showMoney && (
+                  <div className="flex justify-end">
+                    <div className="w-64 space-y-2">
+                      <div className="flex justify-between"><span>Subtotal:</span><span>${formatCurrency(previewInvoice.price_breakdown?.total || previewInvoice.subtotal || 0)}</span></div>
+                      {previewInvoice.tax_amount > 0 && <div className="flex justify-between"><span>Impuestos:</span><span>${formatCurrency(previewInvoice.tax_amount)}</span></div>}
+                      <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Total:</span><span>${formatCurrency(previewInvoice.total || 0)}</span></div>
+                      {previewInvoice.balance_due > 0 && previewInvoice.status !== 'draft' && (
+                        <div className="flex justify-between text-red-600 font-bold"><span>Pendiente:</span><span>${formatCurrency(previewInvoice.balance_due)}</span></div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Notes */}
                 {previewInvoice.notes && (
