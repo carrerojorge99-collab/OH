@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import Layout from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
-import { canViewMoney } from '../utils/permissions';
+import useFinancialPermissions from '../hooks/useFinancialPermissions';
 import PWAInstallBanner from '../components/PWAInstallBanner';
 import AlertsBanner from '../components/AlertsBanner';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -23,7 +23,7 @@ const Dashboard = () => {
   
   // Get user role for permission checks
   const { user } = useAuth();
-  const showMoney = canViewMoney(user?.role);
+  const { showMoney } = useFinancialPermissions();
 
   // Extract year from project_number (format: "2026-001" or "YYYY-XXX")
   const getProjectYear = (project) => {
