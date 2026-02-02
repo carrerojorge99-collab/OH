@@ -25,9 +25,10 @@ import {
   ArrowLeft, Plus, FileDown, CheckCircle2, Circle, Clock,
   DollarSign, Calendar, Tag, MessageSquare, Trash2, Pencil, TrendingUp, TrendingDown,
   Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User, Edit, Users, UserPlus, UserMinus,
-  Folder, FolderPlus, FolderOpen, ChevronRight, Home, MoreVertical, Move
+  Folder, FolderPlus, FolderOpen, ChevronRight, Home, MoreVertical, Move, Shield
 } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
+import ProjectSafety from '../components/ProjectSafety';
 import Timer from '../components/Timer';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -1882,6 +1883,7 @@ const ProjectDetail = () => {
                 <TabsTrigger value="documents" data-testid="documents-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Docs</TabsTrigger>
                 <TabsTrigger value="required-docs" data-testid="required-docs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Doc.Req.</TabsTrigger>
                 <TabsTrigger value="logs" data-testid="logs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Bitácora</TabsTrigger>
+                <TabsTrigger value="safety" data-testid="safety-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Seguridad</TabsTrigger>
                 <TabsTrigger value="comments" data-testid="comments-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Notas</TabsTrigger>
               </TabsList>
             </div>
