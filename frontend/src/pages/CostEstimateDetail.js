@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Checkbox } from '../components/ui/checkbox';
 import { ArrowLeft, Plus, Trash2, Save, Download, FileSpreadsheet, FileText, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
