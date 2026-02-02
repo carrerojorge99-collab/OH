@@ -5610,6 +5610,86 @@ async def delete_daily_log_media(
     
     return {"message": "Archivo eliminado"}
 
+# ==================== DAILY NOTES ====================
+@api_router.get("/daily-logs/notes")
+async def get_daily_notes(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    notes = await db.daily_notes.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return notes
+
+@api_router.get("/daily-logs/notes/{note_id}")
+async def get_daily_note(note_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    note = await db.daily_notes.find_one({"note_id": note_id}, {"_id": 0})
+    if not note:
+        raise HTTPException(status_code=404, detail="Note no encontrada")
+    return note
+
+@api_router.post("/daily-logs/notes")
+async def create_daily_note(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    note_id = f"note_{uuid4().hex[:12]}"
+    note = {
+        "note_id": note_id,
+        "project_id": data.get("project_id"),
+        "category": data.get("category", "general_notes"),
+        "description": data.get("description", ""),
+        "attachments": data.get("attachments", []),
+        "date": data.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d")),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.daily_notes.insert_one(note)
+    await log_audit(user.user_id, user.name, "create", "daily_note", note_id, data.get("category", ""), {})
+    
+    created = await db.daily_notes.find_one({"note_id": note_id}, {"_id": 0})
+    return created
+
+@api_router.put("/daily-logs/notes/{note_id}")
+async def update_daily_note(note_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.daily_notes.find_one({"note_id": note_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Note no encontrada")
+    
+    update_data = {
+        "category": data.get("category", existing.get("category")),
+        "description": data.get("description", existing.get("description")),
+        "attachments": data.get("attachments", existing.get("attachments", [])),
+        "date": data.get("date", existing.get("date")),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.daily_notes.update_one({"note_id": note_id}, {"$set": update_data})
+    await log_audit(user.user_id, user.name, "update", "daily_note", note_id, data.get("category", ""), {})
+    
+    updated = await db.daily_notes.find_one({"note_id": note_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/daily-logs/notes/{note_id}")
+async def delete_daily_note(note_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.daily_notes.delete_one({"note_id": note_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Note no encontrada")
+    
+    await log_audit(user.user_id, user.name, "delete", "daily_note", note_id, "", {})
+    return {"message": "Note eliminada"}
+
 # ==================== CLIENT PORTAL ====================
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
