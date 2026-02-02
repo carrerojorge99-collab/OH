@@ -26,7 +26,7 @@ import {
   ThumbsUp, ThumbsDown, AlertCircle,
   BookOpen, Upload, Camera, Video, X,
   Download, FileText, StickyNote, Paperclip,
-  Cloud, Sun, CloudRain, Thermometer
+  Cloud, Sun, CloudRain, Thermometer, Pen
 } from 'lucide-react';
 import {
   generateSafetyDashboardReport,
@@ -43,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { toast } from 'sonner';
+import SignaturePad from './SignaturePad';
 
 const categoryLabels = {
   general: 'General',
