@@ -4519,6 +4519,15 @@ const ProjectDetail = () => {
             </div>
           </TabsContent>
 
+          {/* Safety Tab */}
+          <TabsContent value="safety" className="space-y-6">
+            <ProjectSafety 
+              projectId={projectId} 
+              projectName={project?.name}
+              users={users}
+            />
+          </TabsContent>
+
           {/* Comments Tab */}
           <TabsContent value="comments" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
