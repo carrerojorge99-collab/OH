@@ -25,7 +25,7 @@ import {
   MoreVertical, Clock,
   ThumbsUp, ThumbsDown, AlertCircle,
   BookOpen, Upload, Camera, Video, X,
-  Download
+  Download, FileText, StickyNote, Paperclip
 } from 'lucide-react';
 import {
   generateSafetyDashboardReport,
