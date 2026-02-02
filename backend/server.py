@@ -6207,6 +6207,81 @@ async def delete_survey_question_photo(photo_id: str, request: Request, session_
     
     return {"message": "Foto eliminada"}
 
+# Daily Log Signature Endpoints
+@api_router.post("/daily-logs/signature")
+async def save_daily_log_signature(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Save a drawn signature for the daily log"""
+    user = await get_current_user(request, session_token)
+    
+    body = await request.json()
+    project_id = body.get("project_id")
+    date = body.get("date")
+    signature_data = body.get("signature_data")  # Base64 image data
+    signer_name = body.get("signer_name", user.name)
+    
+    if not project_id or not date or not signature_data:
+        raise HTTPException(status_code=400, detail="Faltan datos requeridos")
+    
+    signature_id = f"sig_{uuid4().hex[:12]}"
+    
+    signature_doc = {
+        "signature_id": signature_id,
+        "project_id": project_id,
+        "date": date,
+        "signature_data": signature_data,
+        "signer_name": signer_name,
+        "signer_id": user.user_id,
+        "signed_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Upsert - update if exists for same project/date, otherwise insert
+    await db.daily_log_signatures.update_one(
+        {"project_id": project_id, "date": date},
+        {"$set": signature_doc},
+        upsert=True
+    )
+    
+    return {"message": "Firma guardada", "signature_id": signature_id}
+
+@api_router.get("/daily-logs/signature")
+async def get_daily_log_signature(
+    project_id: str = Query(...),
+    date: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get the signature for a specific daily log"""
+    user = await get_current_user(request, session_token)
+    
+    signature = await db.daily_log_signatures.find_one(
+        {"project_id": project_id, "date": date},
+        {"_id": 0}
+    )
+    
+    return signature or None
+
+@api_router.delete("/daily-logs/signature")
+async def delete_daily_log_signature(
+    project_id: str = Query(...),
+    date: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a signature from a daily log"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.daily_log_signatures.delete_one(
+        {"project_id": project_id, "date": date}
+    )
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Firma no encontrada")
+    
+    return {"message": "Firma eliminada"}
+
 # ==================== CLIENT PORTAL ====================
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
