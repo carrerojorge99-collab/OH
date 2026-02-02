@@ -3353,6 +3353,223 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     );
   };
 
+  // Render Survey
+  const renderSurvey = () => {
+    return (
+      <div className="space-y-6">
+        {/* Header with date selector and add question button */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm font-medium">Fecha:</Label>
+            <Input
+              type="date"
+              value={surveyDate}
+              onChange={(e) => setSurveyDate(e.target.value)}
+              className="w-auto"
+            />
+          </div>
+          <Button size="sm" onClick={() => { setNewQuestionText(''); setEditingQuestion(null); setQuestionDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Pregunta
+          </Button>
+        </div>
+
+        {/* Questions */}
+        <div className="space-y-4">
+          {surveyQuestions.map((question, index) => (
+            <Card key={question.question_id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-medium text-gray-600">{index + 1}.</span>
+                      <span className="font-medium">{question.question_text}</span>
+                    </div>
+                    
+                    {/* Answer buttons */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <Button
+                        size="sm"
+                        variant={surveyResponses[question.question_id]?.answer === 'yes' ? 'default' : 'outline'}
+                        className={surveyResponses[question.question_id]?.answer === 'yes' 
+                          ? 'bg-green-500 hover:bg-green-600 text-white' 
+                          : 'hover:bg-green-50 hover:text-green-600 hover:border-green-500'}
+                        onClick={() => handleSurveyResponse(question.question_id, 'yes')}
+                      >
+                        Yes
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={surveyResponses[question.question_id]?.answer === 'no' ? 'default' : 'outline'}
+                        className={surveyResponses[question.question_id]?.answer === 'no' 
+                          ? 'bg-red-500 hover:bg-red-600 text-white' 
+                          : 'hover:bg-red-50 hover:text-red-600 hover:border-red-500'}
+                        onClick={() => handleSurveyResponse(question.question_id, 'no')}
+                      >
+                        No
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={surveyResponses[question.question_id]?.answer === 'na' ? 'default' : 'outline'}
+                        className={surveyResponses[question.question_id]?.answer === 'na' 
+                          ? 'bg-gray-500 hover:bg-gray-600 text-white' 
+                          : 'hover:bg-gray-100'}
+                        onClick={() => handleSurveyResponse(question.question_id, 'na')}
+                      >
+                        N/A
+                      </Button>
+                    </div>
+                    
+                    {/* Description textarea */}
+                    <div>
+                      <Label className="text-sm text-gray-500">Description</Label>
+                      <Textarea
+                        value={surveyResponses[question.question_id]?.description || ''}
+                        onChange={(e) => handleSurveyDescription(question.question_id, e.target.value)}
+                        onBlur={() => saveSurveyDescription(question.question_id)}
+                        placeholder="Agregar descripción..."
+                        rows={2}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Question actions */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        setEditingQuestion(question);
+                        setNewQuestionText(question.question_text);
+                        setQuestionDialogOpen(true);
+                      }}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar Pregunta
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteQuestion(question.question_id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar Pregunta
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          
+          {surveyQuestions.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <ClipboardCheck className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">No hay preguntas de survey</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => { setNewQuestionText(''); setEditingQuestion(null); setQuestionDialogOpen(true); }}
+                >
+                  Crear primera pregunta
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Photo Gallery for Survey */}
+        <div className="border-t pt-6">
+          <Label className="text-sm font-medium mb-3 block">Fotos del Survey</Label>
+          <div 
+            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer mb-4"
+            onDragOver={(e) => { e.preventDefault(); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+              if (files.length > 0) {
+                handleUploadSurveyPhoto(files);
+              }
+            }}
+          >
+            <Camera className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+            <p className="text-sm text-gray-500">Arrastra fotos aquí</p>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files);
+                  if (files.length > 0) {
+                    handleUploadSurveyPhoto(files);
+                  }
+                  e.target.value = '';
+                }}
+                disabled={uploadingSurveyPhoto}
+              />
+              <Button variant="outline" size="sm" className="mt-2" disabled={uploadingSurveyPhoto} asChild>
+                <span>
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploadingSurveyPhoto ? 'Subiendo...' : 'Seleccionar Fotos'}
+                </span>
+              </Button>
+            </label>
+          </div>
+
+          {surveyPhotos.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+              {surveyPhotos.map(photo => (
+                <div key={photo.photo_id} className="relative group">
+                  <img
+                    src={photo.url}
+                    alt={photo.original_filename}
+                    className="w-full h-24 object-cover rounded-lg shadow-sm"
+                  />
+                  <button
+                    onClick={() => handleDeleteSurveyPhoto(photo.photo_id)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Question Dialog */}
+        <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingQuestion ? 'Editar Pregunta' : 'Nueva Pregunta'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Texto de la pregunta *</Label>
+                <Input
+                  value={newQuestionText}
+                  onChange={(e) => setNewQuestionText(e.target.value)}
+                  placeholder="Ej: Any accidents on site today?"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setQuestionDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveQuestion} disabled={!newQuestionText.trim()}>
+                {editingQuestion ? 'Guardar' : 'Crear Pregunta'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
+
   // Render Daily Logs Tab with sub-tabs
   const renderDailyLogs = () => {
     return (
