@@ -9298,6 +9298,16 @@ class CostEstimate(BaseModel):
     cfse_percentage: float = 0
     liability_percentage: float = 0
     municipal_patent_percentage: float = 0
+    # Include/Exclude flags for percentages
+    include_profit: bool = True
+    include_overhead: bool = True
+    include_cfse: bool = True
+    include_liability: bool = True
+    include_municipal_patent: bool = True
+    include_contingency: bool = True
+    include_b2b_ohsms: bool = True
+    include_b2b_ohsms_labor: bool = True
+    include_b2b_subcontractor: bool = True
     total_labor: float = 0
     total_subcontractors: float = 0
     total_subcontractor_labor: float = 0
@@ -9334,6 +9344,16 @@ class CostEstimateCreate(BaseModel):
     cfse_percentage: float = 0
     liability_percentage: float = 0
     municipal_patent_percentage: float = 0
+    # Include/Exclude flags for percentages
+    include_profit: bool = True
+    include_overhead: bool = True
+    include_cfse: bool = True
+    include_liability: bool = True
+    include_municipal_patent: bool = True
+    include_contingency: bool = True
+    include_b2b_ohsms: bool = True
+    include_b2b_ohsms_labor: bool = True
+    include_b2b_subcontractor: bool = True
     grand_total: float = 0  # Recibir el total calculado desde el frontend
 
 # ==================== LABOR RATES ENDPOINTS ====================
