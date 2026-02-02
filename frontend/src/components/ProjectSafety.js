@@ -3607,13 +3607,7 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
           </TabsContent>
 
           <TabsContent value="survey" className="mt-6">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <ClipboardCheck className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 font-medium">Survey</p>
-                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
-              </CardContent>
-            </Card>
+            {renderSurvey()}
           </TabsContent>
         </Tabs>
       </div>
