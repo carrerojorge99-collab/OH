@@ -2637,9 +2637,20 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
       });
       setSurveyResponses(responsesMap);
       
-      // Load photos for the selected date
+      // Load photos for the selected date (general survey photos)
       const photosRes = await api.get(`/daily-logs/survey/photos?project_id=${projectId}&date=${surveyDate}`);
       setSurveyPhotos(photosRes.data);
+      
+      // Load question-specific photos for the selected date
+      const questionPhotosRes = await api.get(`/daily-logs/survey/question-photos?project_id=${projectId}&date=${surveyDate}`);
+      const photosMap = {};
+      questionPhotosRes.data.forEach(photo => {
+        if (!photosMap[photo.question_id]) {
+          photosMap[photo.question_id] = [];
+        }
+        photosMap[photo.question_id].push(photo);
+      });
+      setSurveyQuestionPhotos(photosMap);
     } catch (error) {
       console.error('Error loading survey data:', error);
       toast.error('Error al cargar survey');
