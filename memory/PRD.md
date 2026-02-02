@@ -1,119 +1,125 @@
 # ProManage ERP - Product Requirements Document
 
 ## Original Problem Statement
-Sistema ERP completo para gestión de proyectos, empleados, facturas, estimados y órdenes de compra.
+Sistema ERP completo para gestión de proyectos, facturación, estimados, recursos humanos, y operaciones de una empresa de servicios profesionales.
 
 ## Core Requirements
-- Gestión de proyectos con presupuestos y timesheet
-- Módulo de RRHH con perfiles de empleados
-- Facturación automática desde timesheet
-- Estimados y órdenes de compra
-- Módulo de Compañías para gestión de clientes
-- Módulo de Proveedores para gestión de vendors
-- Sincronización automática de horas trabajadas
-- **Cierre automático de ponches** (después de X horas configurables)
+1. Gestión de proyectos con presupuestos y seguimiento
+2. Sistema de estimados y cotizaciones
+3. Facturación con generación de PDF
+4. Gestión de órdenes de compra
+5. Control de tiempo (ponches) de empleados
+6. Gestión de proveedores
+7. Sistema de permisos por roles
+
+## User Roles
+- **Super Admin**: Acceso completo a todo el sistema
+- **Admin**: Acceso administrativo
+- **Project Manager**: Acceso operacional SIN información monetaria
+- **RRHH**: Recursos humanos
+- **Empleado**: Acceso básico
 
 ## What's Been Implemented
 
-### Session: January 30, 2026 (Part 2)
-- **Cierre Automático de Ponches (COMPLETADO)**:
-  - El sistema cierra automáticamente los ponches abiertos después del tiempo máximo configurado (default: 8 horas)
-  - Ejecuta una vez al día al iniciar el servidor
-  - Campo configurable `max_punch_hours` en Settings → Empresa
-  - Nota automática: "Cierre automático - X horas máximo"
-  - Crea timesheet automáticamente al cerrar el ponche
-  - Sincroniza horas del proyecto afectado
-  - Backend: función `auto_close_expired_punches()` en `server.py`
-  - Frontend: sección "⏰ Cierre Automático de Ponches" en Settings.js
+### December 2025 - January 2026
 
-### Session: January 30, 2026 (Part 1)
-- **Formato de Número de Factura Simplificado (COMPLETADO)**:
-  - Números de factura ahora usan formato simple: "001", "002", "003"
-  - Eliminado prefijo "INV" y año "2026" del número
-  - Modificado en 3 lugares: facturas automáticas, manuales y conversión estimado→factura
+#### Project Manager Money Restrictions (2026-01-31)
+- ✅ Creado sistema de permisos centralizado (`/app/frontend/src/utils/permissions.js`)
+- ✅ Dashboard: Oculta tarjeta "Ganancia Total" y gráficos financieros para PM
+- ✅ Facturas: Oculta totales, precios y registro de pagos para PM
+- ✅ Estimados: Oculta montos y totales para PM
+- ✅ Órdenes de Compra: Oculta precios para PM
+- ✅ Estimaciones de Costos: Oculta toda info de costos para PM
+- ✅ Usuario de prueba: pm@test.com / Test123!
 
-- **Dirección del Cliente en Múltiples Líneas (COMPLETADO)**:
-  - Campo de dirección cambiado a Textarea en formularios de Invoice y Estimate
-  - PDF genera dirección separada por líneas (split por coma, newline, pipe)
-  - Preview UI muestra dirección con saltos de línea correctos
+#### Automatic Punch Closure (2026-01-31)
+- ✅ Backend: Función `auto_close_expired_punches` en server.py
+- ✅ Database: Campo `max_punch_hours` en company_settings
+- ✅ Frontend: UI de configuración en Settings.js
+- ⏳ PENDIENTE: Verificación del usuario
 
-- **Optimización de Tamaño de PDF (COMPLETADO)**:
-  - Habilitada compresión en jsPDF ({compress: true})
-  - Logo reducido de 60x45 a 50x38
-  - Imágenes comprimidas con calidad JPEG 0.7
-  - Detección automática de formato de imagen
+#### Previous Session Features (PENDING USER VERIFICATION)
+- Invoice numbering system
+- Multi-line addresses in PDFs
+- Reduced PDF size
+- Cloudinary integration for profile photos
+- PDF formatting for numbered lists
 
-- **Integración Cloudinary en UI (COMPLETADO)**:
-  - Rutas API: /api/cloudinary/sign-upload, /api/cloudinary/delete-asset
-  - Componente CloudinaryUpload.jsx implementado en:
-    - Users.js: Crear/editar usuarios con foto de perfil
-    - MyProfile.js: Usuario puede cambiar su propia foto
-  - Backend actualizado: UserRegister y UserUpdate ahora incluyen campo picture
+## Current Architecture
 
-- **Campo "Preparado por" en Presupuestos de Costo (COMPLETADO)**:
-  - Campo prepared_by añadido a CostEstimateDetail.js
-  - Se transfiere al Estimado al convertir
+```
+/app/
+├── backend/
+│   └── server.py              # FastAPI main server
+├── frontend/
+│   └── src/
+│       ├── pages/
+│       │   ├── Dashboard.js   # MODIFIED: Role-based money visibility
+│       │   ├── Estimates.js   # MODIFIED: Role-based money visibility
+│       │   ├── Invoices.js    # MODIFIED: Role-based money visibility
+│       │   ├── PurchaseOrders.js # MODIFIED: Role-based money visibility
+│       │   ├── CostEstimates.js  # MODIFIED: Role-based money visibility
+│       │   ├── CostEstimateDetail.js # MODIFIED: Role-based money visibility
+│       │   └── Settings.js    # MODIFIED: Auto punch config
+│       └── utils/
+│           └── permissions.js # NEW: Centralized permission utilities
+└── memory/
+    └── PRD.md
+```
 
-- **Conversión Estimado → Factura Corregida (COMPLETADO)**:
-  - Todos los campos se transfieren: client_phone, client_address, sponsor_name, etc.
+## Database Schema (Key Collections)
+- **users**: User accounts with roles
+- **projects**: Project data with budgets
+- **estimates**: Quote documents
+- **invoices**: Invoice documents
+- **purchase_orders**: PO documents
+- **cost_estimates**: Cost estimation documents
+- **clock_entries**: Time punch records
+- **company_settings**: System configuration including `max_punch_hours`
 
-### Session: January 16, 2026
-- **Sincronización Automática de Horas en Proyectos (COMPLETADO)**:
-  - Las "Horas Consumidas" (`consumed_hours`) en los registros de Labor se actualizan automáticamente
-  - Se sincroniza al: crear/editar/eliminar timesheet, clock out, crear/editar/eliminar ponches manuales
-  - Función helper `sync_project_labor_hours()` suma todas las horas del timesheet del proyecto
-  - Asignación inteligente: coincide nombre de usuario con categoría de labor
+## Key API Endpoints
+- `POST /api/auth/login` - Authentication
+- `GET /api/company-settings` - Get settings (includes max_punch_hours)
+- `PUT /api/company-settings` - Update settings
+- `GET /api/invoices` - List invoices
+- `GET /api/estimates` - List estimates
+- `GET /api/purchase-orders` - List POs
+- `GET /api/cost-estimates` - List cost estimates
 
-### Session: January 14, 2026 (Continued)
-- **Módulo de Vendors (COMPLETADO)**:
-  - CRUD completo para proveedores (crear, ver, editar, eliminar)
-  - Categorías de proveedores (Materiales, Servicios, Equipos, Subcontratista, etc.)
-  - CRUD para contactos múltiples por proveedor
-  - Integración con Órdenes de Compra (selector de vendor auto-rellena datos)
-  - Filtro por categoría y búsqueda
-
-- **Fix Facturas Automáticas (COMPLETADO)**:
-  - Corregido filtro de fechas que no traía horas correctas
-  - Ajustado formato de comparación de fechas (YYYY-MM-DD sin hora)
-
-- **Módulo de Compañías (COMPLETADO)**:
-  - CRUD completo para compañías y sponsors anidados
-  - Integración con Facturas y Estimados
-
-### Previous Sessions
-- Rich Text Editor (TipTap) en descripciones de items
-- Fix de PDF de estimados (layout dos columnas)
-- Filtro de fechas en generación automática de facturas
-- Health endpoints para Kubernetes (/health, /ready)
+## Third-Party Integrations
+- jsPDF & jspdf-autotable (PDF generation)
+- Cloudinary (Image hosting)
+- fastapi-mail (Email sending)
+- @tiptap/react (Rich text editor)
+- React Big Calendar (Calendar UI)
 
 ## Prioritized Backlog
 
-### P0 - Completado
-- ✅ Módulo de Compañías
-- ✅ Módulo de Vendors con categorías y contactos
-- ✅ Integración de Vendors en Órdenes de Compra
-- ✅ Fix filtro de fechas en facturas automáticas
-- ✅ Sincronización automática de horas en proyectos
-- ✅ Formato de número de factura simplificado
-- ✅ Dirección del cliente en múltiples líneas
-- ✅ Optimización de tamaño de PDF
+### P0 - Critical
+1. ⏳ Verify Invoice PDF layout matches Estimate PDF
+2. ⏳ Verify all pending fixes from previous sessions
+3. ✅ PM money restrictions
 
-### P1 - Pendiente
-- Testing completo del módulo de Vendors
-- Categorías de Vendors (UI para gestionar categorías)
+### P1 - High Priority
+1. Prepare DigitalOcean migration (Dockerfile, docker-compose)
+2. Cloudinary integration decision for non-image files
 
-### P2 - Futuro
-- Rate Limiting y políticas de contraseñas
-- UI para "Mover Documento"
-- Verificación de deployment MongoDB timeout fix
+### P2 - Medium Priority
+1. Vendor categories
+2. "Move Document" UI
+3. Responsive layout fixes
 
-### P3 - Backlog
-- Problemas de layout responsivo
-- Refactorizar server.py en routers separados
+### P3 - Future
+1. Security features (2FA, rate limiting)
+2. Closure prediction for projects
+3. Profitability per employee report
+4. Refactor monolithic files
 
-## Key Files
-- `/app/backend/server.py` - API principal (sync_project_labor_hours lines 911-976)
-- `/app/frontend/src/pages/Vendors.js` - Módulo de proveedores
-- `/app/frontend/src/pages/PurchaseOrders.js` - Con selector de vendors
-- `/app/frontend/src/pages/Companies.js` - Módulo de compañías
-- `/app/frontend/src/pages/ProjectDetail.js` - Detalle de proyecto con Labor y Timesheet
+## Known Issues
+1. PDF formatting with numbered lists may not render correctly
+2. Responsive layout issues on HR, Settings, MyRequests, MyProfile pages
+
+## Test Credentials
+- **Super Admin**: jcarrion@ohsmspr.com / Admin2024!
+- **Project Manager**: pm@test.com / Test123!
+- **Cloudinary**: Cloud name: dobwd06je, API Key: 894275145838962
