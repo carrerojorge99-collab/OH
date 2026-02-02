@@ -2309,6 +2309,11 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
   
   // Daily Log date (shared across all tabs)
   const [dailyLogDate, setDailyLogDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Signature state
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
+  const [dailyLogSignature, setDailyLogSignature] = useState(null);
+  const [loadingSignature, setLoadingSignature] = useState(false);
 
   // Load work logs when daily-logs tab is active
   useEffect(() => {
