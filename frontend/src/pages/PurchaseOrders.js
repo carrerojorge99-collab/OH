@@ -3,7 +3,7 @@ import api from '../utils/api';
 import moment from 'moment';
 import Layout from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
-import { canViewMoney } from '../utils/permissions';
+import useFinancialPermissions from '../hooks/useFinancialPermissions';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -101,7 +101,7 @@ const PurchaseOrders = () => {
 
   // Get user role for permission checks
   const { user } = useAuth();
-  const showMoney = canViewMoney(user?.role);
+  const { showMoney } = useFinancialPermissions();
 
   const [form, setForm] = useState({
     project_id: '',
