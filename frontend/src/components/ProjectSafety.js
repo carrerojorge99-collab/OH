@@ -2305,6 +2305,10 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
         <TabsContent value="incidents" className="mt-6">
           {renderIncidents()}
         </TabsContent>
+
+        <TabsContent value="daily-logs" className="mt-6">
+          {renderDailyLogs()}
+        </TabsContent>
       </Tabs>
     </div>
   );
