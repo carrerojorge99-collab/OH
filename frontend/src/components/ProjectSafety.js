@@ -2589,6 +2589,147 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     }
   };
 
+  // ==================== SURVEY FUNCTIONS ====================
+  const loadSurveyData = async () => {
+    try {
+      // Load questions
+      const questionsRes = await api.get(`/daily-logs/survey/questions?project_id=${projectId}`);
+      setSurveyQuestions(questionsRes.data);
+      
+      // Load responses for the selected date
+      const responsesRes = await api.get(`/daily-logs/survey/responses?project_id=${projectId}&date=${surveyDate}`);
+      const responsesMap = {};
+      responsesRes.data.forEach(r => {
+        responsesMap[r.question_id] = r;
+      });
+      setSurveyResponses(responsesMap);
+      
+      // Load photos for the selected date
+      const photosRes = await api.get(`/daily-logs/survey/photos?project_id=${projectId}&date=${surveyDate}`);
+      setSurveyPhotos(photosRes.data);
+    } catch (error) {
+      console.error('Error loading survey data:', error);
+      toast.error('Error al cargar survey');
+    }
+  };
+
+  const handleSaveQuestion = async () => {
+    try {
+      if (editingQuestion) {
+        await api.put(`/daily-logs/survey/questions/${editingQuestion.question_id}`, {
+          question_text: newQuestionText
+        });
+        toast.success('Pregunta actualizada');
+      } else {
+        await api.post('/daily-logs/survey/questions', {
+          project_id: projectId,
+          question_text: newQuestionText
+        });
+        toast.success('Pregunta creada');
+      }
+      setQuestionDialogOpen(false);
+      setNewQuestionText('');
+      setEditingQuestion(null);
+      loadSurveyData();
+    } catch (error) {
+      console.error('Error saving question:', error);
+      toast.error('Error al guardar pregunta');
+    }
+  };
+
+  const handleDeleteQuestion = async (questionId) => {
+    if (!window.confirm('¿Eliminar esta pregunta?')) return;
+    try {
+      await api.delete(`/daily-logs/survey/questions/${questionId}`);
+      toast.success('Pregunta eliminada');
+      loadSurveyData();
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      toast.error('Error al eliminar pregunta');
+    }
+  };
+
+  const handleSurveyResponse = async (questionId, answer) => {
+    try {
+      const response = await api.post('/daily-logs/survey/responses', {
+        project_id: projectId,
+        question_id: questionId,
+        date: surveyDate,
+        answer: answer,
+        description: surveyResponses[questionId]?.description || ''
+      });
+      setSurveyResponses(prev => ({
+        ...prev,
+        [questionId]: response.data
+      }));
+    } catch (error) {
+      console.error('Error saving response:', error);
+      toast.error('Error al guardar respuesta');
+    }
+  };
+
+  const handleSurveyDescription = async (questionId, description) => {
+    // Update local state immediately
+    setSurveyResponses(prev => ({
+      ...prev,
+      [questionId]: {
+        ...prev[questionId],
+        description: description
+      }
+    }));
+  };
+
+  const saveSurveyDescription = async (questionId) => {
+    const response = surveyResponses[questionId];
+    if (!response?.answer) return; // Need to select an answer first
+    
+    try {
+      await api.post('/daily-logs/survey/responses', {
+        project_id: projectId,
+        question_id: questionId,
+        date: surveyDate,
+        answer: response.answer,
+        description: response.description || ''
+      });
+    } catch (error) {
+      console.error('Error saving description:', error);
+    }
+  };
+
+  const handleUploadSurveyPhoto = async (files) => {
+    setUploadingSurveyPhoto(true);
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await api.post(
+          `/daily-logs/survey/photos?project_id=${projectId}&date=${surveyDate}`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+      }
+      toast.success('Fotos subidas correctamente');
+      loadSurveyData();
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error(error.response?.data?.detail || 'Error al subir fotos');
+    } finally {
+      setUploadingSurveyPhoto(false);
+    }
+  };
+
+  const handleDeleteSurveyPhoto = async (photoId) => {
+    if (!window.confirm('¿Eliminar esta foto?')) return;
+    try {
+      await api.delete(`/daily-logs/survey/photos/${photoId}`);
+      toast.success('Foto eliminada');
+      loadSurveyData();
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      toast.error('Error al eliminar foto');
+    }
+  };
+
   // Render Work Logs
   const renderWorkLogs = () => {
     return (
