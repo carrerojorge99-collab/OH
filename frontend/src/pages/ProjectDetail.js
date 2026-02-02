@@ -4193,7 +4193,7 @@ const ProjectDetail = () => {
                   <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
                     <Upload className="w-10 h-10 mx-auto mb-3 opacity-50" />
                     <p className="text-sm mb-3">No hay documentos en esta carpeta</p>
-                    <p className="text-xs text-slate-400">Arrastra archivos aquí o usa el botón "Subir Documentos"</p>
+                    <p className="text-xs text-slate-400">Arrastra archivos aquí o usa el botón Subir Documentos</p>
                   </div>
                 )}
               </CardContent>
