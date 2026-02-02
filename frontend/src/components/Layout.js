@@ -95,7 +95,6 @@ const Layout = ({ children }) => {
       { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Calendario', href: '/calendar', icon: Calendar },
-      { name: 'Seguridad', href: '/safety', icon: Shield },
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
       { name: 'Compañías', href: '/companies', icon: Building2 },
       { name: 'Proveedores', href: '/vendors', icon: Truck },

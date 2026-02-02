@@ -31,7 +31,6 @@ import Clients from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
 import ClientProfileDetail from './pages/ClientProfileDetail';
 import ClientEstimates from './pages/ClientEstimates';
-import Safety from './pages/Safety';
 import Accounting from './pages/Accounting';
 import Companies from './pages/Companies';
 import Vendors from './pages/Vendors';
@@ -192,11 +191,6 @@ function AppRouter() {
       <Route path="/clients/:clientId" element={
         <ProtectedRoute>
           <ClientDetail />
-        </ProtectedRoute>
-      } />
-      <Route path="/safety" element={
-        <ProtectedRoute>
-          <Safety />
         </ProtectedRoute>
       } />
       <Route path="/accounting" element={
