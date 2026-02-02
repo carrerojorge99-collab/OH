@@ -2816,19 +2816,29 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
       toast.info('Generando reporte...');
       
       // Load all data for the report
-      const [workLogsRes, notesRes, questionsRes, responsesRes, photosRes, attachmentsRes] = await Promise.all([
+      const [workLogsRes, notesRes, questionsRes, responsesRes, photosRes, attachmentsRes, questionPhotosRes] = await Promise.all([
         api.get(`/daily-logs/work-logs?project_id=${projectId}`),
         api.get(`/daily-logs/notes?project_id=${projectId}`),
         api.get(`/daily-logs/survey/questions?project_id=${projectId}`),
         api.get(`/daily-logs/survey/responses?project_id=${projectId}&date=${dailyLogDate}`),
         api.get(`/daily-logs/survey/photos?project_id=${projectId}&date=${dailyLogDate}`),
-        api.get(`/daily-logs/attachments?project_id=${projectId}`)
+        api.get(`/daily-logs/attachments?project_id=${projectId}`),
+        api.get(`/daily-logs/survey/question-photos?project_id=${projectId}&date=${dailyLogDate}`)
       ]);
       
       // Build responses map
       const responsesMap = {};
       responsesRes.data.forEach(r => {
         responsesMap[r.question_id] = r;
+      });
+      
+      // Build question photos map
+      const questionPhotosMap = {};
+      questionPhotosRes.data.forEach(photo => {
+        if (!questionPhotosMap[photo.question_id]) {
+          questionPhotosMap[photo.question_id] = [];
+        }
+        questionPhotosMap[photo.question_id].push(photo);
       });
       
       const reportData = {
@@ -2843,7 +2853,8 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
         notes: notesRes.data.filter(n => n.date === dailyLogDate),
         survey: {
           questions: questionsRes.data,
-          responses: responsesMap
+          responses: responsesMap,
+          questionPhotos: questionPhotosMap
         },
         surveyPhotos: photosRes.data,
         attachments: attachmentsRes.data
