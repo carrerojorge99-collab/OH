@@ -1542,6 +1542,344 @@ const getPriorityLabel = (priority) => {
 
 export { COLORS };
 
+// ==================== DAILY LOG REPORT ====================
+export const generateDailyLogReport = async (data) => {
+  const { 
+    projectInfo, 
+    date, 
+    weather, 
+    workLogs, 
+    notes, 
+    survey, 
+    surveyPhotos,
+    attachments 
+  } = data;
+  
+  const doc = new jsPDF();
+  let yPos = 15;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  const contentWidth = pageWidth - (margin * 2);
+  
+  // Fetch company info
+  const company = await fetchCompanyInfo();
+  
+  // Helper function to check page break
+  const checkPageBreak = (neededSpace) => {
+    if (yPos + neededSpace > pageHeight - 25) {
+      doc.addPage();
+      yPos = 15;
+      return true;
+    }
+    return false;
+  };
+  
+  // Helper to add footer
+  const addPageFooter = (pageNum, totalPages) => {
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`${pageNum} de ${totalPages} | ${company?.nombre || 'OHSMS'}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+    doc.text('Powered by OHSMS ERP', margin, pageHeight - 10);
+  };
+  
+  // ===== HEADER =====
+  // Company name/logo
+  if (LOGO_BASE64) {
+    try {
+      doc.addImage(LOGO_BASE64, 'PNG', margin, yPos, 25, 25);
+    } catch (e) {
+      console.log('Error adding logo:', e);
+    }
+  }
+  
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...COLORS.primary);
+  doc.text(company?.nombre || 'OHSMS', margin + 30, yPos + 12);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...COLORS.secondary);
+  doc.text(projectInfo?.location || 'Puerto Rico', margin + 30, yPos + 20);
+  
+  yPos += 35;
+  
+  // ===== PROJECT INFO BAR =====
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 12, 'F');
+  
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.text);
+  
+  // Date
+  doc.setFont('helvetica', 'bold');
+  doc.text('Fecha:', margin + 5, yPos + 8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(moment(date).format('ddd MM/DD/YYYY'), margin + 20, yPos + 8);
+  
+  // Project/Job number
+  doc.setFont('helvetica', 'bold');
+  doc.text('Trabajo #:', margin + 70, yPos + 8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(projectInfo?.projectNumber || projectInfo?.project_id || '-', margin + 90, yPos + 8);
+  
+  // Prepared by
+  doc.setFont('helvetica', 'bold');
+  doc.text('Preparado por:', margin + 130, yPos + 8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(company?.nombre || 'OHSMS LLC', margin + 158, yPos + 8);
+  
+  yPos += 18;
+  
+  // ===== WEATHER SECTION =====
+  if (weather && weather.length > 0) {
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text('Clima', margin, yPos);
+    yPos += 7;
+    
+    // Weather boxes
+    const boxWidth = (contentWidth - 10) / 3;
+    
+    weather.forEach((w, idx) => {
+      const boxX = margin + (idx * (boxWidth + 5));
+      
+      // Box background
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(220, 220, 220);
+      doc.rect(boxX, yPos, boxWidth, 35, 'FD');
+      
+      // Time header
+      doc.setFillColor(...COLORS.primary);
+      doc.rect(boxX, yPos, boxWidth, 8, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(w.time || `${idx === 0 ? '6:00 AM' : idx === 1 ? '12:00 PM' : '4:00 PM'}`, boxX + boxWidth/2, yPos + 5.5, { align: 'center' });
+      
+      // Temperature
+      doc.setFontSize(18);
+      doc.setTextColor(...COLORS.text);
+      doc.text(`${w.temperature || '--'}°`, boxX + 5, yPos + 20);
+      
+      // Weather description
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text(w.description || 'N/A', boxX + 25, yPos + 16);
+      
+      // Details
+      doc.setFontSize(6);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Viento: ${w.wind_speed || 0} MPH`, boxX + 5, yPos + 27);
+      doc.text(`Precipitación: ${w.precipitation || 0}"`, boxX + 5, yPos + 31);
+      doc.text(`Humedad: ${w.humidity || 0}%`, boxX + boxWidth/2 + 5, yPos + 27);
+    });
+    
+    yPos += 42;
+  }
+  
+  // ===== WORK LOGS (Registros) =====
+  if (workLogs && workLogs.length > 0) {
+    checkPageBreak(40);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text('Registros', margin, yPos);
+    yPos += 5;
+    
+    const tableData = workLogs.map(log => [
+      log.name || '',
+      (log.description || '').substring(0, 200) + (log.description?.length > 200 ? '...' : ''),
+      log.quantity || 0,
+      log.hours || 0
+    ]);
+    
+    // Add totals row
+    const totalQty = workLogs.reduce((sum, l) => sum + (parseInt(l.quantity) || 0), 0);
+    const totalHrs = workLogs.reduce((sum, l) => sum + (parseFloat(l.hours) || 0), 0);
+    tableData.push(['Total', '', totalQty, totalHrs]);
+    
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Nombre', 'Descripción', 'Cantidad', 'Total Horas']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: COLORS.primary,
+        fontSize: 8,
+        fontStyle: 'bold'
+      },
+      bodyStyles: { 
+        fontSize: 7,
+        cellPadding: 2
+      },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 100 },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 25, halign: 'center' }
+      },
+      margin: { left: margin, right: margin },
+      didParseCell: function(data) {
+        if (data.row.index === tableData.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [240, 240, 240];
+        }
+      }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+  }
+  
+  // ===== NOTES SECTION =====
+  if (notes && notes.length > 0) {
+    checkPageBreak(40);
+    
+    // Group notes by category
+    const generalNotes = notes.filter(n => n.category === 'general_notes');
+    const safetyObs = notes.filter(n => n.category === 'site_safety_observations');
+    const qualityObs = notes.filter(n => n.category === 'quality_control_observations');
+    
+    const renderNoteSection = (title, notesList) => {
+      if (notesList.length === 0) return;
+      
+      checkPageBreak(20);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.primary);
+      doc.text(title, margin, yPos);
+      yPos += 6;
+      
+      notesList.forEach((note, idx) => {
+        checkPageBreak(15);
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...COLORS.text);
+        doc.text(`${idx + 1}.`, margin, yPos);
+        
+        doc.setFont('helvetica', 'normal');
+        const noteText = note.description || '';
+        const lines = doc.splitTextToSize(noteText, contentWidth - 10);
+        doc.text(lines, margin + 8, yPos);
+        yPos += (lines.length * 4) + 5;
+      });
+      
+      yPos += 5;
+    };
+    
+    renderNoteSection('Notas Generales', generalNotes);
+    renderNoteSection('Observaciones de Seguridad del Sitio', safetyObs);
+    renderNoteSection('Observaciones de Control de Calidad', qualityObs);
+  }
+  
+  // ===== SURVEY SECTION =====
+  if (survey && survey.questions && survey.questions.length > 0) {
+    checkPageBreak(50);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text('Encuesta', margin, yPos);
+    yPos += 5;
+    
+    const surveyData = survey.questions.map((q, idx) => {
+      const response = survey.responses?.[q.question_id] || {};
+      return [
+        `${idx + 1}. ${q.question_text}`,
+        response.answer === 'na' ? '✓' : '',
+        response.answer === 'no' ? '✓' : '',
+        response.answer === 'yes' ? '✓' : '',
+        response.description || ''
+      ];
+    });
+    
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Preguntas', 'N/A', 'No', 'Sí', 'Descripción']],
+      body: surveyData,
+      theme: 'grid',
+      headStyles: { 
+        fillColor: COLORS.primary,
+        fontSize: 7,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: { 
+        fontSize: 7,
+        cellPadding: 2
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 12, halign: 'center' },
+        2: { cellWidth: 12, halign: 'center' },
+        3: { cellWidth: 12, halign: 'center' },
+        4: { cellWidth: 75 }
+      },
+      margin: { left: margin, right: margin }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+  }
+  
+  // ===== PHOTOS SECTION =====
+  // Note: Adding images to PDF is complex and may require async loading
+  // For now, we'll indicate photo count
+  if ((surveyPhotos && surveyPhotos.length > 0) || (attachments && attachments.length > 0)) {
+    checkPageBreak(20);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text('Fotos y Adjuntos', margin, yPos);
+    yPos += 6;
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.text);
+    
+    if (surveyPhotos && surveyPhotos.length > 0) {
+      doc.text(`• Fotos de la Encuesta: ${surveyPhotos.length} archivo(s)`, margin, yPos);
+      yPos += 5;
+    }
+    
+    if (attachments && attachments.length > 0) {
+      doc.text(`• Adjuntos: ${attachments.length} archivo(s)`, margin, yPos);
+      yPos += 5;
+    }
+  }
+  
+  // ===== SIGN-OFF =====
+  checkPageBreak(20);
+  yPos += 10;
+  
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 15, 'F');
+  
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(...COLORS.secondary);
+  doc.text(`Yo, ${company?.nombre || 'OHSMS LLC'}, revisé y completé este reporte.`, margin + 5, yPos + 6);
+  doc.text(`${company?.nombre || 'OHSMS LLC'} | ${moment().format('MM/DD/YY')} | ${moment().format('hh:mm A')}`, margin + 5, yPos + 11);
+  
+  // Add page numbers
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    addPageFooter(i, totalPages);
+  }
+  
+  // Save the PDF
+  const fileName = `DailyLog_${projectInfo?.name || 'Project'}_${moment(date).format('YYYY-MM-DD')}.pdf`;
+  doc.save(fileName);
+  
+  return fileName;
+};
+
 export default { 
   fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addItemsTable, 
   addTotalsSection, addNotesSection, addFooter, addReportHeader, addReportTable, 
@@ -1549,5 +1887,7 @@ export default {
   // Safety Reports
   generateSafetyDashboardReport, generateIncidentsReport, generateIncidentDetailReport,
   generateToolboxTalksReport, generateToolboxTalkDetailReport, generateChecklistsReport,
-  generateObservationsReport
+  generateObservationsReport,
+  // Daily Log Report
+  generateDailyLogReport
 };
