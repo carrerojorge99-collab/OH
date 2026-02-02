@@ -146,6 +146,16 @@ const CostEstimateDetail = () => {
         b2b_ohsms_percentage: Number(b2bOhsmsPercentage),
         b2b_ohsms_labor_percentage: Number(b2bOhsmsLaborPercentage),
         b2b_subcontractor_percentage: Number(b2bSubcontractorPercentage),
+        // Include/Exclude flags
+        include_profit: includeProfit,
+        include_overhead: includeOverhead,
+        include_cfse: includeCfse,
+        include_liability: includeLiability,
+        include_municipal_patent: includeMunicipalPatent,
+        include_contingency: includeContingency,
+        include_b2b_ohsms: includeB2bOhsms,
+        include_b2b_ohsms_labor: includeB2bOhsmsLabor,
+        include_b2b_subcontractor: includeB2bSubcontractor,
         grand_total: totals.grandTotal  // Enviar el total calculado
       };
 
