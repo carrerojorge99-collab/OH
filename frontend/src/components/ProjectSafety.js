@@ -2816,6 +2816,55 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     }
   };
 
+  // ==================== SIGNATURE FUNCTIONS ====================
+  const loadDailyLogSignature = async () => {
+    setLoadingSignature(true);
+    try {
+      const response = await api.get(`/daily-logs/signature?project_id=${projectId}&date=${dailyLogDate}`);
+      setDailyLogSignature(response.data);
+    } catch (error) {
+      console.error('Error loading signature:', error);
+      setDailyLogSignature(null);
+    } finally {
+      setLoadingSignature(false);
+    }
+  };
+
+  const handleSaveSignature = async (signatureData) => {
+    try {
+      await api.post('/daily-logs/signature', {
+        project_id: projectId,
+        date: dailyLogDate,
+        signature_data: signatureData.signature_data,
+        signer_name: signatureData.signer_name
+      });
+      toast.success('Firma guardada correctamente');
+      loadDailyLogSignature();
+    } catch (error) {
+      console.error('Error saving signature:', error);
+      toast.error('Error al guardar la firma');
+    }
+  };
+
+  const handleDeleteSignature = async () => {
+    if (!window.confirm('¿Eliminar la firma de este Daily Log?')) return;
+    try {
+      await api.delete(`/daily-logs/signature?project_id=${projectId}&date=${dailyLogDate}`);
+      toast.success('Firma eliminada');
+      setDailyLogSignature(null);
+    } catch (error) {
+      console.error('Error deleting signature:', error);
+      toast.error('Error al eliminar la firma');
+    }
+  };
+
+  // Load signature when daily log date changes
+  useEffect(() => {
+    if (activeTab === 'daily-logs' && projectId) {
+      loadDailyLogSignature();
+    }
+  }, [dailyLogDate, activeTab, projectId]);
+
   // Generate Daily Log Report
   const handleGenerateDailyLogReport = async () => {
     try {
