@@ -4195,7 +4195,7 @@ const ProjectDetail = () => {
                     <p className="text-sm mb-3">No hay documentos en esta carpeta</p>
                     <p className="text-xs text-slate-400">Arrastra archivos aquí o usa el botón "Subir Documentos"</p>
                   </div>
-                )}}
+                )}
               </CardContent>
             </Card>
 
