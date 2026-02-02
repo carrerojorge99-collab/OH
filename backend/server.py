@@ -5771,6 +5771,102 @@ async def delete_daily_attachment(attachment_id: str, request: Request, session_
     
     return {"message": "Attachment eliminado"}
 
+# ==================== WEATHER API ====================
+import httpx
+
+@api_router.get("/weather")
+async def get_weather(
+    lat: float = Query(default=18.2547),  # Default: Gurabo, PR
+    lon: float = Query(default=-65.9727),
+    date: Optional[str] = None
+):
+    """Get weather data for a specific location and date using Open-Meteo API"""
+    try:
+        # If no date provided, use today
+        if not date:
+            date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        
+        # Open-Meteo API (free, no API key required)
+        url = f"https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "hourly": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code",
+            "start_date": date,
+            "end_date": date,
+            "timezone": "America/Puerto_Rico"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params)
+            data = response.json()
+        
+        if "hourly" not in data:
+            return {"error": "No weather data available"}
+        
+        hourly = data["hourly"]
+        times = hourly.get("time", [])
+        temps = hourly.get("temperature_2m", [])
+        humidity = hourly.get("relative_humidity_2m", [])
+        precip = hourly.get("precipitation", [])
+        wind = hourly.get("wind_speed_10m", [])
+        codes = hourly.get("weather_code", [])
+        
+        # Weather code descriptions
+        weather_descriptions = {
+            0: "Clear sky",
+            1: "Mainly clear",
+            2: "Partly cloudy",
+            3: "Overcast",
+            45: "Foggy",
+            48: "Depositing rime fog",
+            51: "Light drizzle",
+            53: "Moderate drizzle",
+            55: "Dense drizzle",
+            61: "Slight rain",
+            63: "Moderate rain",
+            65: "Heavy rain",
+            71: "Slight snow",
+            73: "Moderate snow",
+            75: "Heavy snow",
+            77: "Snow grains",
+            80: "Slight rain showers",
+            81: "Moderate rain showers",
+            82: "Violent rain showers",
+            95: "Thunderstorm",
+            96: "Thunderstorm with hail",
+            99: "Thunderstorm with heavy hail"
+        }
+        
+        # Get data for 6 AM, 12 PM, and 4 PM
+        weather_data = []
+        target_hours = [6, 12, 16]  # 6 AM, 12 PM, 4 PM
+        
+        for i, time_str in enumerate(times):
+            hour = int(time_str.split("T")[1].split(":")[0])
+            if hour in target_hours:
+                weather_data.append({
+                    "time": f"{hour}:00 {'AM' if hour < 12 else 'PM'}" if hour != 12 else "12:00 PM",
+                    "time_24h": f"{hour:02d}:00",
+                    "temperature": round(temps[i] * 9/5 + 32) if temps[i] is not None else None,  # Convert to Fahrenheit
+                    "temperature_c": temps[i],
+                    "humidity": humidity[i] if i < len(humidity) else None,
+                    "precipitation": round(precip[i] / 25.4, 2) if i < len(precip) and precip[i] is not None else 0,  # mm to inches
+                    "wind_speed": round(wind[i] * 0.621371) if i < len(wind) and wind[i] is not None else 0,  # km/h to mph
+                    "weather_code": codes[i] if i < len(codes) else 0,
+                    "description": weather_descriptions.get(codes[i] if i < len(codes) else 0, "Unknown")
+                })
+        
+        return {
+            "date": date,
+            "location": {"lat": lat, "lon": lon},
+            "weather": weather_data
+        }
+        
+    except Exception as e:
+        print(f"Weather API error: {e}")
+        return {"error": str(e), "weather": []}
+
 # ==================== DAILY SURVEY ====================
 # Default survey questions template
 DEFAULT_SURVEY_QUESTIONS = [
