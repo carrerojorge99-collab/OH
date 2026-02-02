@@ -1129,6 +1129,27 @@ const Settings = () => {
                     </div>
                   </div>
 
+                  {/* Permisos de Visibilidad Financiera */}
+                  <div className="p-4 border rounded-lg bg-red-50 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-base font-medium">🔒 Ocultar Información Financiera para Project Managers</Label>
+                        <p className="text-sm text-slate-500">Los usuarios con rol Project Manager no podrán ver montos, totales ni información monetaria en el sistema</p>
+                      </div>
+                      <Switch
+                        checked={company.hide_financial_for_pm || false}
+                        onCheckedChange={(checked) => setCompany(prev => ({ ...prev, hide_financial_for_pm: checked }))}
+                      />
+                    </div>
+                    {company.hide_financial_for_pm && (
+                      <div className="p-3 bg-red-100 rounded border border-red-200">
+                        <p className="text-sm text-red-700">
+                          <strong>⚠️ Activo:</strong> Los Project Managers verán "---" en lugar de valores monetarios en Dashboard, Facturas, Estimados, Órdenes de Compra y Estimaciones de Costos.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Submit Button */}
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={savingCompany} className="flex items-center space-x-2">
