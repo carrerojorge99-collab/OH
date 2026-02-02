@@ -2531,6 +2531,51 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     setNoteFiles([]);
   };
 
+  // ==================== ATTACHMENTS FUNCTIONS ====================
+  const loadDailyAttachments = async () => {
+    try {
+      const response = await api.get(`/daily-logs/attachments?project_id=${projectId}`);
+      setDailyAttachments(response.data);
+    } catch (error) {
+      console.error('Error loading attachments:', error);
+      toast.error('Error al cargar fotos');
+    }
+  };
+
+  const handleUploadAttachment = async (files) => {
+    setUploadingAttachment(true);
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await api.post(
+          `/daily-logs/attachments?project_id=${projectId}&description=`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+      }
+      toast.success('Fotos subidas correctamente');
+      loadDailyAttachments();
+    } catch (error) {
+      console.error('Error uploading attachments:', error);
+      toast.error(error.response?.data?.detail || 'Error al subir fotos');
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    if (!window.confirm('¿Eliminar esta foto?')) return;
+    try {
+      await api.delete(`/daily-logs/attachments/${attachmentId}`);
+      toast.success('Foto eliminada');
+      loadDailyAttachments();
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      toast.error('Error al eliminar foto');
+    }
+  };
+
   // Render Work Logs
   const renderWorkLogs = () => {
     return (
