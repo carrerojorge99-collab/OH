@@ -2250,6 +2250,76 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     );
   };
 
+  // Render Daily Logs Tab with sub-tabs
+  const [dailyLogsTab, setDailyLogsTab] = useState('work-logs');
+
+  const renderDailyLogs = () => {
+    return (
+      <div className="space-y-4">
+        <Tabs value={dailyLogsTab} onValueChange={setDailyLogsTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="work-logs" className="text-xs sm:text-sm" data-testid="daily-logs-work-logs-tab">
+              <FileText className="w-4 h-4 mr-1 hidden sm:inline" />
+              Work Logs
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="text-xs sm:text-sm" data-testid="daily-logs-notes-tab">
+              <StickyNote className="w-4 h-4 mr-1 hidden sm:inline" />
+              Notes
+            </TabsTrigger>
+            <TabsTrigger value="attachments" className="text-xs sm:text-sm" data-testid="daily-logs-attachments-tab">
+              <Paperclip className="w-4 h-4 mr-1 hidden sm:inline" />
+              Attachments
+            </TabsTrigger>
+            <TabsTrigger value="survey" className="text-xs sm:text-sm" data-testid="daily-logs-survey-tab">
+              <ClipboardCheck className="w-4 h-4 mr-1 hidden sm:inline" />
+              Survey
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="work-logs" className="mt-6">
+            <Card>
+              <CardContent className="p-8 text-center">
+                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 font-medium">Work Logs</p>
+                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notes" className="mt-6">
+            <Card>
+              <CardContent className="p-8 text-center">
+                <StickyNote className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 font-medium">Notes</p>
+                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="attachments" className="mt-6">
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Paperclip className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 font-medium">Attachments</p>
+                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="survey" className="mt-6">
+            <Card>
+              <CardContent className="p-8 text-center">
+                <ClipboardCheck className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500 font-medium">Survey</p>
+                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
