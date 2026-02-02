@@ -1580,30 +1580,39 @@ export const generateDailyLogReport = async (data) => {
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.text(`${pageNum} de ${totalPages} | ${company?.nombre || 'OHSMS'}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-    doc.text('Powered by OHSMS ERP', margin, pageHeight - 10);
+    doc.text('Powered by ProManage', margin, pageHeight - 10);
   };
   
   // ===== HEADER =====
-  // Company name/logo
+  // Company name/logo - LARGER LOGO
+  const logoSize = 45; // Increased from 25
   if (LOGO_BASE64) {
     try {
-      doc.addImage(LOGO_BASE64, 'PNG', margin, yPos, 25, 25);
+      doc.addImage(LOGO_BASE64, 'PNG', margin, yPos, logoSize, logoSize);
     } catch (e) {
       console.log('Error adding logo:', e);
     }
   }
   
-  doc.setFontSize(20);
+  // Position text next to larger logo
+  const textStartX = margin + logoSize + 8;
+  
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.primary);
-  doc.text(company?.nombre || 'OHSMS', margin + 30, yPos + 12);
+  doc.text(company?.nombre || 'OHSMS', textStartX, yPos + 18);
   
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...COLORS.secondary);
-  doc.text(projectInfo?.location || 'Puerto Rico', margin + 30, yPos + 20);
+  doc.text(projectInfo?.location || 'Puerto Rico', textStartX, yPos + 28);
   
-  yPos += 35;
+  // Add "Powered by ProManage" under company info
+  doc.setFontSize(8);
+  doc.setTextColor(150);
+  doc.text('Powered by ProManage', textStartX, yPos + 36);
+  
+  yPos += 55; // Increased to accommodate larger logo
   
   // ===== PROJECT INFO BAR =====
   doc.setFillColor(248, 250, 252);
