@@ -5771,6 +5771,227 @@ async def delete_daily_attachment(attachment_id: str, request: Request, session_
     
     return {"message": "Attachment eliminado"}
 
+# ==================== DAILY SURVEY ====================
+# Survey Questions Management
+@api_router.get("/daily-logs/survey/questions")
+async def get_survey_questions(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    questions = await db.survey_questions.find(query, {"_id": 0}).sort("order", 1).to_list(1000)
+    return questions
+
+@api_router.post("/daily-logs/survey/questions")
+async def create_survey_question(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    # Get max order for this project
+    project_id = data.get("project_id")
+    existing = await db.survey_questions.find({"project_id": project_id}).to_list(1000)
+    max_order = max([q.get("order", 0) for q in existing], default=0)
+    
+    question_id = f"sq_{uuid4().hex[:12]}"
+    question = {
+        "question_id": question_id,
+        "project_id": project_id,
+        "question_text": data.get("question_text", ""),
+        "order": max_order + 1,
+        "is_active": True,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.survey_questions.insert_one(question)
+    await log_audit(user.user_id, user.name, "create", "survey_question", question_id, data.get("question_text", ""), {})
+    
+    created = await db.survey_questions.find_one({"question_id": question_id}, {"_id": 0})
+    return created
+
+@api_router.put("/daily-logs/survey/questions/{question_id}")
+async def update_survey_question(question_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.survey_questions.find_one({"question_id": question_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pregunta no encontrada")
+    
+    update_data = {
+        "question_text": data.get("question_text", existing.get("question_text")),
+        "order": data.get("order", existing.get("order")),
+        "is_active": data.get("is_active", existing.get("is_active", True))
+    }
+    
+    await db.survey_questions.update_one({"question_id": question_id}, {"$set": update_data})
+    
+    updated = await db.survey_questions.find_one({"question_id": question_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/daily-logs/survey/questions/{question_id}")
+async def delete_survey_question(question_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.survey_questions.delete_one({"question_id": question_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Pregunta no encontrada")
+    
+    await log_audit(user.user_id, user.name, "delete", "survey_question", question_id, "", {})
+    return {"message": "Pregunta eliminada"}
+
+# Survey Responses
+@api_router.get("/daily-logs/survey/responses")
+async def get_survey_responses(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None,
+    date: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if date:
+        query["date"] = date
+    
+    responses = await db.survey_responses.find(query, {"_id": 0}).to_list(1000)
+    return responses
+
+@api_router.post("/daily-logs/survey/responses")
+async def save_survey_response(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Save or update survey response for a specific question on a specific date"""
+    user = await get_current_user(request, session_token)
+    
+    project_id = data.get("project_id")
+    question_id = data.get("question_id")
+    date = data.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    
+    # Check if response already exists
+    existing = await db.survey_responses.find_one({
+        "project_id": project_id,
+        "question_id": question_id,
+        "date": date
+    })
+    
+    if existing:
+        # Update existing response
+        update_data = {
+            "answer": data.get("answer"),  # "yes", "no", "na"
+            "description": data.get("description", ""),
+            "updated_by": user.user_id,
+            "updated_by_name": user.name,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.survey_responses.update_one(
+            {"response_id": existing["response_id"]},
+            {"$set": update_data}
+        )
+        updated = await db.survey_responses.find_one({"response_id": existing["response_id"]}, {"_id": 0})
+        return updated
+    else:
+        # Create new response
+        response_id = f"sr_{uuid4().hex[:12]}"
+        response = {
+            "response_id": response_id,
+            "project_id": project_id,
+            "question_id": question_id,
+            "date": date,
+            "answer": data.get("answer"),  # "yes", "no", "na"
+            "description": data.get("description", ""),
+            "created_by": user.user_id,
+            "created_by_name": user.name,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.survey_responses.insert_one(response)
+        created = await db.survey_responses.find_one({"response_id": response_id}, {"_id": 0})
+        return created
+
+# Survey Photos (separate from daily attachments, specific to survey date)
+@api_router.get("/daily-logs/survey/photos")
+async def get_survey_photos(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None,
+    date: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if date:
+        query["date"] = date
+    
+    photos = await db.survey_photos.find(query, {"_id": 0}).sort("uploaded_at", -1).to_list(1000)
+    return photos
+
+@api_router.post("/daily-logs/survey/photos")
+async def upload_survey_photo(
+    file: UploadFile = File(...),
+    project_id: str = Query(...),
+    date: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Upload a photo for the survey on a specific date"""
+    user = await get_current_user(request, session_token)
+    
+    # Validate file type - only images
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Solo se permiten imágenes")
+    
+    # Generate unique filename
+    ext = Path(file.filename).suffix
+    photo_id = f"sp_{uuid4().hex[:12]}"
+    filename = f"survey_{photo_id}{ext}"
+    filepath = DAILY_LOGS_UPLOAD_DIR / filename
+    
+    # Save file
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    photo = {
+        "photo_id": photo_id,
+        "project_id": project_id,
+        "date": date,
+        "filename": filename,
+        "original_filename": file.filename,
+        "content_type": file.content_type,
+        "url": f"/api/daily-logs/media/{filename}",
+        "uploaded_by": user.user_id,
+        "uploaded_by_name": user.name,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.survey_photos.insert_one(photo)
+    
+    created = await db.survey_photos.find_one({"photo_id": photo_id}, {"_id": 0})
+    return created
+
+@api_router.delete("/daily-logs/survey/photos/{photo_id}")
+async def delete_survey_photo(photo_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    # Get photo info
+    photo = await db.survey_photos.find_one({"photo_id": photo_id})
+    if not photo:
+        raise HTTPException(status_code=404, detail="Foto no encontrada")
+    
+    # Delete file from disk
+    filepath = DAILY_LOGS_UPLOAD_DIR / photo["filename"]
+    if filepath.exists():
+        filepath.unlink()
+    
+    # Delete from database
+    await db.survey_photos.delete_one({"photo_id": photo_id})
+    
+    return {"message": "Foto eliminada"}
+
 # ==================== CLIENT PORTAL ====================
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
