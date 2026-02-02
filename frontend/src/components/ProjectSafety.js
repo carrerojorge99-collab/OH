@@ -3559,6 +3559,67 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
                         className="mt-1"
                       />
                     </div>
+                    
+                    {/* Question Photos Section */}
+                    <div className="mt-4 pt-3 border-t">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm text-gray-500 flex items-center gap-1">
+                          <Camera className="w-4 h-4" />
+                          Fotos ({surveyQuestionPhotos[question.question_id]?.length || 0})
+                        </Label>
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files);
+                              if (files.length > 0) {
+                                handleUploadQuestionPhoto(question.question_id, files);
+                              }
+                              e.target.value = '';
+                            }}
+                            disabled={uploadingQuestionPhoto[question.question_id]}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            disabled={uploadingQuestionPhoto[question.question_id]} 
+                            asChild
+                            data-testid={`upload-photo-btn-${question.question_id}`}
+                          >
+                            <span>
+                              <Upload className="w-3 h-3 mr-1" />
+                              {uploadingQuestionPhoto[question.question_id] ? 'Subiendo...' : 'Subir Foto'}
+                            </span>
+                          </Button>
+                        </label>
+                      </div>
+                      
+                      {/* Photos Grid */}
+                      {surveyQuestionPhotos[question.question_id]?.length > 0 && (
+                        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                          {surveyQuestionPhotos[question.question_id].map(photo => (
+                            <div key={photo.photo_id} className="relative group">
+                              <img
+                                src={photo.url}
+                                alt={photo.original_filename}
+                                className="w-full h-16 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90"
+                                onClick={() => window.open(photo.url, '_blank')}
+                              />
+                              <button
+                                onClick={() => handleDeleteQuestionPhoto(photo.photo_id)}
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                data-testid={`delete-photo-btn-${photo.photo_id}`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Question actions */}
