@@ -737,34 +737,63 @@ const CostEstimateDetail = () => {
                   <div className="space-y-4 mt-6 p-4 border rounded-lg bg-slate-50">
                     <p className="font-semibold text-slate-700">Porcentajes (Cálculo en Cascada)</p>
                     <p className="text-xs text-slate-500">Subtotal × Profit = s → s × Overhead = w → (w + M.O.×CFSE) × Liability × Municipal Patent × Contingency × B2B OHSMS = TOTAL</p>
+                    <p className="text-xs text-slate-400">Marca el checkbox para incluir el porcentaje en el cálculo</p>
                     
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div>
-                        <Label>Profit (%)</Label>
+                      {/* Profit */}
+                      <div className={!includeProfit ? 'opacity-50' : ''}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-profit"
+                            checked={includeProfit}
+                            onCheckedChange={setIncludeProfit}
+                          />
+                          <Label htmlFor="include-profit">Profit (%)</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
                           value={profitPercentage}
                           onChange={(e) => setProfitPercentage(e.target.value)}
+                          disabled={!includeProfit}
                         />
-                        {totals.profitAmount > 0 && (
+                        {includeProfit && totals.profitAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.profitAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div>
-                        <Label>Overhead (%)</Label>
+
+                      {/* Overhead */}
+                      <div className={!includeOverhead ? 'opacity-50' : ''}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-overhead"
+                            checked={includeOverhead}
+                            onCheckedChange={setIncludeOverhead}
+                          />
+                          <Label htmlFor="include-overhead">Overhead (%)</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
                           value={overheadPercentage}
                           onChange={(e) => setOverheadPercentage(e.target.value)}
+                          disabled={!includeOverhead}
                         />
-                        {totals.overheadAmount > 0 && (
+                        {includeOverhead && totals.overheadAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.overheadAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div className="bg-blue-50 p-2 rounded">
-                        <Label className="text-blue-700">CFSE (%) - Fijo</Label>
+
+                      {/* CFSE - Fixed */}
+                      <div className={`bg-blue-50 p-2 rounded ${!includeCfse ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-cfse"
+                            checked={includeCfse}
+                            onCheckedChange={setIncludeCfse}
+                          />
+                          <Label htmlFor="include-cfse" className="text-blue-700">CFSE (%) - Fijo</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
@@ -772,13 +801,22 @@ const CostEstimateDetail = () => {
                           readOnly
                           className="bg-blue-100 cursor-not-allowed"
                         />
-                        {totals.cfseAmount > 0 && (
+                        {includeCfse && totals.cfseAmount > 0 && (
                           <p className="text-xs text-blue-600 mt-1">+${totals.cfseAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                         <p className="text-xs text-blue-500">*Solo M.O.: ${totals.totalLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
                       </div>
-                      <div className="bg-gray-100 p-2 rounded">
-                        <Label className="text-gray-700">Liability (%) - Fijo</Label>
+
+                      {/* Liability - Fixed */}
+                      <div className={`bg-gray-100 p-2 rounded ${!includeLiability ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-liability"
+                            checked={includeLiability}
+                            onCheckedChange={setIncludeLiability}
+                          />
+                          <Label htmlFor="include-liability" className="text-gray-700">Liability (%) - Fijo</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
@@ -786,12 +824,21 @@ const CostEstimateDetail = () => {
                           readOnly
                           className="bg-gray-200 cursor-not-allowed"
                         />
-                        {totals.liabilityAmount > 0 && (
+                        {includeLiability && totals.liabilityAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.liabilityAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div className="bg-gray-100 p-2 rounded">
-                        <Label className="text-gray-700">Municipal Patent (%) - Fijo</Label>
+
+                      {/* Municipal Patent - Fixed */}
+                      <div className={`bg-gray-100 p-2 rounded ${!includeMunicipalPatent ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-municipal"
+                            checked={includeMunicipalPatent}
+                            onCheckedChange={setIncludeMunicipalPatent}
+                          />
+                          <Label htmlFor="include-municipal" className="text-gray-700">Municipal Patent (%) - Fijo</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
@@ -799,12 +846,21 @@ const CostEstimateDetail = () => {
                           readOnly
                           className="bg-gray-200 cursor-not-allowed"
                         />
-                        {totals.municipalPatentAmount > 0 && (
+                        {includeMunicipalPatent && totals.municipalPatentAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.municipalPatentAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div className="bg-gray-100 p-2 rounded">
-                        <Label className="text-gray-700">Contingency (%) - Fijo</Label>
+
+                      {/* Contingency - Fixed */}
+                      <div className={`bg-gray-100 p-2 rounded ${!includeContingency ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-contingency"
+                            checked={includeContingency}
+                            onCheckedChange={setIncludeContingency}
+                          />
+                          <Label htmlFor="include-contingency" className="text-gray-700">Contingency (%) - Fijo</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
@@ -812,25 +868,44 @@ const CostEstimateDetail = () => {
                           readOnly
                           className="bg-gray-200 cursor-not-allowed"
                         />
-                        {totals.contingencyAmount > 0 && (
+                        {includeContingency && totals.contingencyAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.contingencyAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                       </div>
-                      <div className="bg-green-50 p-2 rounded">
-                        <Label className="text-green-700">B2B OHSMS (%) - Global</Label>
+
+                      {/* B2B OHSMS Global */}
+                      <div className={`bg-green-50 p-2 rounded ${!includeB2bOhsms ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-b2b-ohsms"
+                            checked={includeB2bOhsms}
+                            onCheckedChange={setIncludeB2bOhsms}
+                          />
+                          <Label htmlFor="include-b2b-ohsms" className="text-green-700">B2B OHSMS (%) - Global</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
                           value={b2bOhsmsPercentage}
                           onChange={(e) => setB2bOhsmsPercentage(e.target.value)}
+                          disabled={!includeB2bOhsms}
                         />
-                        {totals.b2bOhsmsAmount > 0 && (
+                        {includeB2bOhsms && totals.b2bOhsmsAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                         <p className="text-xs text-green-500">*Aplica al total</p>
                       </div>
-                      <div className="bg-green-50 p-2 rounded">
-                        <Label className="text-green-700">B2B OHSMS (%) - M.O. - Fijo 4%</Label>
+
+                      {/* B2B OHSMS Labor - Fixed 4% */}
+                      <div className={`bg-green-50 p-2 rounded ${!includeB2bOhsmsLabor ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-b2b-labor"
+                            checked={includeB2bOhsmsLabor}
+                            onCheckedChange={setIncludeB2bOhsmsLabor}
+                          />
+                          <Label htmlFor="include-b2b-labor" className="text-green-700">B2B OHSMS (%) - M.O. - Fijo 4%</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
@@ -838,20 +913,30 @@ const CostEstimateDetail = () => {
                           readOnly
                           className="bg-green-100 cursor-not-allowed"
                         />
-                        {totals.b2bOhsmsLaborAmount > 0 && (
+                        {includeB2bOhsmsLabor && totals.b2bOhsmsLaborAmount > 0 && (
                           <p className="text-xs text-green-600 mt-1">+${totals.b2bOhsmsLaborAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                         <p className="text-xs text-green-500">*Labor × 4%</p>
                       </div>
-                      <div className="bg-amber-50 p-2 rounded">
-                        <Label className="text-amber-700">B2B Subcontratista (%)</Label>
+
+                      {/* B2B Subcontratista */}
+                      <div className={`bg-amber-50 p-2 rounded ${!includeB2bSubcontractor ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Checkbox
+                            id="include-b2b-sub"
+                            checked={includeB2bSubcontractor}
+                            onCheckedChange={setIncludeB2bSubcontractor}
+                          />
+                          <Label htmlFor="include-b2b-sub" className="text-amber-700">B2B Subcontratista (%)</Label>
+                        </div>
                         <Input
                           type="number"
                           step="0.1"
                           value={b2bSubcontractorPercentage}
                           onChange={(e) => setB2bSubcontractorPercentage(parseFloat(e.target.value) || 0)}
+                          disabled={!includeB2bSubcontractor}
                         />
-                        {totals.b2bSubcontractorAmount > 0 && (
+                        {includeB2bSubcontractor && totals.b2bSubcontractorAmount > 0 && (
                           <p className="text-xs text-amber-600 mt-1">+${totals.b2bSubcontractorAmount.toLocaleString('es-PR', { minimumFractionDigits: 2 })}</p>
                         )}
                         <p className="text-xs text-amber-500">*M.O. Subcontr.: ${totals.totalSubcontractorLabor?.toLocaleString('es-PR', { minimumFractionDigits: 2 }) || '0.00'}</p>
