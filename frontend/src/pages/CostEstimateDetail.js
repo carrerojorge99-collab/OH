@@ -49,6 +49,17 @@ const CostEstimateDetail = () => {
   const [b2bSubcontractorPercentage, setB2bSubcontractorPercentage] = useState(0);
   const [convertingToEstimate, setConvertingToEstimate] = useState(false);
 
+  // Include/Exclude flags for each percentage
+  const [includeProfit, setIncludeProfit] = useState(true);
+  const [includeOverhead, setIncludeOverhead] = useState(true);
+  const [includeCfse, setIncludeCfse] = useState(true);
+  const [includeLiability, setIncludeLiability] = useState(true);
+  const [includeMunicipalPatent, setIncludeMunicipalPatent] = useState(true);
+  const [includeContingency, setIncludeContingency] = useState(true);
+  const [includeB2bOhsms, setIncludeB2bOhsms] = useState(true);
+  const [includeB2bOhsmsLabor, setIncludeB2bOhsmsLabor] = useState(true);
+  const [includeB2bSubcontractor, setIncludeB2bSubcontractor] = useState(true);
+
   useEffect(() => {
     loadData();
   }, [estimateId]);
