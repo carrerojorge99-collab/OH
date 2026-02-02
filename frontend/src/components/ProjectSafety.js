@@ -2294,11 +2294,13 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
   const [surveyQuestions, setSurveyQuestions] = useState([]);
   const [surveyResponses, setSurveyResponses] = useState({});
   const [surveyPhotos, setSurveyPhotos] = useState([]);
+  const [surveyQuestionPhotos, setSurveyQuestionPhotos] = useState({});
   const [surveyDate, setSurveyDate] = useState(new Date().toISOString().split('T')[0]);
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
   const [newQuestionText, setNewQuestionText] = useState('');
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [uploadingSurveyPhoto, setUploadingSurveyPhoto] = useState(false);
+  const [uploadingQuestionPhoto, setUploadingQuestionPhoto] = useState({});
   
   // Weather state
   const [weather, setWeather] = useState([]);
