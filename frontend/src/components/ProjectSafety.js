@@ -3116,6 +3116,89 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     );
   };
 
+  // Render Attachments (Photo Gallery)
+  const renderAttachments = () => {
+    return (
+      <div className="space-y-4">
+        {/* Upload Area */}
+        <div 
+          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
+          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-blue-500', 'bg-blue-50'); }}
+          onDragLeave={(e) => { e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50'); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (files.length > 0) {
+              handleUploadAttachment(files);
+            } else {
+              toast.error('Solo se permiten imágenes');
+            }
+          }}
+        >
+          <Camera className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+          <p className="text-lg font-medium text-gray-600">Arrastra fotos aquí</p>
+          <p className="text-sm text-gray-400 mt-1">o haz clic para seleccionar</p>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) {
+                  handleUploadAttachment(files);
+                }
+                e.target.value = '';
+              }}
+              disabled={uploadingAttachment}
+            />
+            <Button variant="outline" className="mt-4" disabled={uploadingAttachment} asChild>
+              <span>
+                <Upload className="w-4 h-4 mr-2" />
+                {uploadingAttachment ? 'Subiendo...' : 'Seleccionar Fotos'}
+              </span>
+            </Button>
+          </label>
+        </div>
+
+        {/* Photo Gallery */}
+        {dailyAttachments.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {dailyAttachments.map(att => (
+              <div key={att.attachment_id} className="relative group">
+                <img
+                  src={att.url}
+                  alt={att.original_filename}
+                  className="w-full h-32 object-cover rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+                  <button
+                    onClick={() => handleDeleteAttachment(att.attachment_id)}
+                    className="bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 truncate">{att.original_filename}</p>
+                <p className="text-xs text-gray-400">{moment(att.uploaded_at).format('DD/MM/YY')}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Camera className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-500">No hay fotos</p>
+              <p className="text-sm text-gray-400 mt-2">Arrastra o selecciona fotos para agregarlas</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   // Render Daily Logs Tab with sub-tabs
   const renderDailyLogs = () => {
     return (
@@ -3131,7 +3214,7 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
               Notes
             </TabsTrigger>
             <TabsTrigger value="attachments" className="text-xs sm:text-sm" data-testid="daily-logs-attachments-tab">
-              <Paperclip className="w-4 h-4 mr-1 hidden sm:inline" />
+              <Camera className="w-4 h-4 mr-1 hidden sm:inline" />
               Attachments
             </TabsTrigger>
             <TabsTrigger value="survey" className="text-xs sm:text-sm" data-testid="daily-logs-survey-tab">
@@ -3149,13 +3232,7 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
           </TabsContent>
 
           <TabsContent value="attachments" className="mt-6">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Paperclip className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 font-medium">Attachments</p>
-                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
-              </CardContent>
-            </Card>
+            {renderAttachments()}
           </TabsContent>
 
           <TabsContent value="survey" className="mt-6">
