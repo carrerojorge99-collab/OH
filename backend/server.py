@@ -5772,6 +5772,16 @@ async def delete_daily_attachment(attachment_id: str, request: Request, session_
     return {"message": "Attachment eliminado"}
 
 # ==================== DAILY SURVEY ====================
+# Default survey questions template
+DEFAULT_SURVEY_QUESTIONS = [
+    "Any accidents on site today?",
+    "Any schedule delays occur?",
+    "Did weather cause any delays?",
+    "Any visitors on site?",
+    "Any areas that can't be worked on?",
+    "Any equipment rented on site?"
+]
+
 # Survey Questions Management
 @api_router.get("/daily-logs/survey/questions")
 async def get_survey_questions(
@@ -5785,6 +5795,26 @@ async def get_survey_questions(
         query["project_id"] = project_id
     
     questions = await db.survey_questions.find(query, {"_id": 0}).sort("order", 1).to_list(1000)
+    
+    # If no questions exist for this project, create default ones
+    if project_id and len(questions) == 0:
+        for idx, question_text in enumerate(DEFAULT_SURVEY_QUESTIONS, 1):
+            question_id = f"sq_{uuid4().hex[:12]}"
+            question = {
+                "question_id": question_id,
+                "project_id": project_id,
+                "question_text": question_text,
+                "order": idx,
+                "is_active": True,
+                "is_default": True,
+                "created_by": user.user_id,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.survey_questions.insert_one(question)
+        
+        # Fetch the newly created questions
+        questions = await db.survey_questions.find(query, {"_id": 0}).sort("order", 1).to_list(1000)
+    
     return questions
 
 @api_router.post("/daily-logs/survey/questions")
