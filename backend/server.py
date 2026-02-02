@@ -6118,6 +6118,95 @@ async def delete_survey_photo(photo_id: str, request: Request, session_token: Op
     
     return {"message": "Foto eliminada"}
 
+# Survey Question Photos - Photos per individual question
+@api_router.get("/daily-logs/survey/question-photos")
+async def get_survey_question_photos(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None,
+    question_id: Optional[str] = None,
+    date: Optional[str] = None
+):
+    """Get photos for a specific survey question on a specific date"""
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if question_id:
+        query["question_id"] = question_id
+    if date:
+        query["date"] = date
+    
+    photos = await db.survey_question_photos.find(query, {"_id": 0}).sort("uploaded_at", -1).to_list(1000)
+    return photos
+
+@api_router.post("/daily-logs/survey/question-photos")
+async def upload_survey_question_photo(
+    file: UploadFile = File(...),
+    project_id: str = Query(...),
+    question_id: str = Query(...),
+    date: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Upload a photo for a specific survey question on a specific date"""
+    user = await get_current_user(request, session_token)
+    
+    # Validate file type - only images
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Solo se permiten imágenes")
+    
+    # Generate unique filename
+    ext = Path(file.filename).suffix
+    photo_id = f"sqp_{uuid4().hex[:12]}"
+    filename = f"survey_q_{photo_id}{ext}"
+    filepath = DAILY_LOGS_UPLOAD_DIR / filename
+    
+    # Save file
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    photo = {
+        "photo_id": photo_id,
+        "project_id": project_id,
+        "question_id": question_id,
+        "date": date,
+        "filename": filename,
+        "original_filename": file.filename,
+        "content_type": file.content_type,
+        "url": f"/api/daily-logs/media/{filename}",
+        "uploaded_by": user.user_id,
+        "uploaded_by_name": user.name,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.survey_question_photos.insert_one(photo)
+    
+    created = await db.survey_question_photos.find_one({"photo_id": photo_id}, {"_id": 0})
+    return created
+
+@api_router.delete("/daily-logs/survey/question-photos/{photo_id}")
+async def delete_survey_question_photo(photo_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a photo from a survey question"""
+    user = await get_current_user(request, session_token)
+    
+    # Get photo info
+    photo = await db.survey_question_photos.find_one({"photo_id": photo_id})
+    if not photo:
+        raise HTTPException(status_code=404, detail="Foto no encontrada")
+    
+    # Delete file from disk
+    filepath = DAILY_LOGS_UPLOAD_DIR / photo["filename"]
+    if filepath.exists():
+        filepath.unlink()
+    
+    # Delete from database
+    await db.survey_question_photos.delete_one({"photo_id": photo_id})
+    
+    return {"message": "Foto eliminada"}
+
 # ==================== CLIENT PORTAL ====================
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
