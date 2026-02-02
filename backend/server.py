@@ -6783,7 +6783,8 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
             "default_cfse_percentage": 7,
             "default_liability_percentage": 7,
             "default_municipal_patent_percentage": 1,
-            "max_punch_hours": 8
+            "max_punch_hours": 8,
+            "hide_financial_for_pm": False
         }
     # Asegurar que exista max_punch_hours
     if "max_punch_hours" not in company:
@@ -6800,6 +6801,9 @@ async def get_company_settings(request: Request, session_token: Optional[str] = 
         company["default_liability_percentage"] = 7
     if "default_municipal_patent_percentage" not in company:
         company["default_municipal_patent_percentage"] = 1
+    # Asegurar que exista hide_financial_for_pm
+    if "hide_financial_for_pm" not in company:
+        company["hide_financial_for_pm"] = False
     return company
 
 @api_router.put("/company")
@@ -6841,6 +6845,7 @@ async def update_company_settings(
         "default_liability_percentage": company_data.get("default_liability_percentage", 7),
         "default_municipal_patent_percentage": company_data.get("default_municipal_patent_percentage", 1),
         "max_punch_hours": company_data.get("max_punch_hours", 8),
+        "hide_financial_for_pm": company_data.get("hide_financial_for_pm", False),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
