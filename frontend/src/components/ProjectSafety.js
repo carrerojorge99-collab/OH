@@ -3650,8 +3650,60 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
 
   // Render Daily Logs Tab with sub-tabs
   const renderDailyLogs = () => {
+    // Weather icon helper
+    const getWeatherIcon = (code) => {
+      if (code === 0 || code === 1) return <Sun className="w-5 h-5 text-yellow-500" />;
+      if (code >= 51 && code <= 99) return <CloudRain className="w-5 h-5 text-blue-500" />;
+      return <Cloud className="w-5 h-5 text-gray-500" />;
+    };
+
     return (
       <div className="space-y-4">
+        {/* Header with Date, Weather, and Report Button */}
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-4 border">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            {/* Date Selector */}
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              <div>
+                <Label className="text-xs text-gray-500">Fecha del Daily Log</Label>
+                <Input
+                  type="date"
+                  value={dailyLogDate}
+                  onChange={(e) => setDailyLogDate(e.target.value)}
+                  className="w-auto h-8 text-sm font-medium"
+                />
+              </div>
+            </div>
+            
+            {/* Weather Display */}
+            <div className="flex items-center gap-2">
+              <Thermometer className="w-5 h-5 text-orange-500" />
+              <div className="flex gap-3">
+                {loadingWeather ? (
+                  <span className="text-sm text-gray-500">Cargando clima...</span>
+                ) : weather.length > 0 ? (
+                  weather.map((w, idx) => (
+                    <div key={idx} className="flex items-center gap-1 px-2 py-1 bg-white rounded shadow-sm">
+                      {getWeatherIcon(w.weather_code)}
+                      <span className="text-sm font-medium">{w.temperature}°F</span>
+                      <span className="text-xs text-gray-400">{w.time?.split(' ')[0]}</span>
+                    </div>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-400">Sin datos de clima</span>
+                )}
+              </div>
+            </div>
+            
+            {/* Generate Report Button */}
+            <Button onClick={handleGenerateDailyLogReport} className="bg-blue-600 hover:bg-blue-700">
+              <Download className="w-4 h-4 mr-2" />
+              Generar Reporte PDF
+            </Button>
+          </div>
+        </div>
+
         <Tabs value={dailyLogsTab} onValueChange={setDailyLogsTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
             <TabsTrigger value="work-logs" className="text-xs sm:text-sm" data-testid="daily-logs-work-logs-tab">
