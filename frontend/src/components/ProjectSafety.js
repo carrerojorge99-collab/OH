@@ -2871,14 +2871,15 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
       toast.info('Generando reporte...');
       
       // Load all data for the report
-      const [workLogsRes, notesRes, questionsRes, responsesRes, photosRes, attachmentsRes, questionPhotosRes] = await Promise.all([
+      const [workLogsRes, notesRes, questionsRes, responsesRes, photosRes, attachmentsRes, questionPhotosRes, signatureRes] = await Promise.all([
         api.get(`/daily-logs/work-logs?project_id=${projectId}`),
         api.get(`/daily-logs/notes?project_id=${projectId}`),
         api.get(`/daily-logs/survey/questions?project_id=${projectId}`),
         api.get(`/daily-logs/survey/responses?project_id=${projectId}&date=${dailyLogDate}`),
         api.get(`/daily-logs/survey/photos?project_id=${projectId}&date=${dailyLogDate}`),
         api.get(`/daily-logs/attachments?project_id=${projectId}`),
-        api.get(`/daily-logs/survey/question-photos?project_id=${projectId}&date=${dailyLogDate}`)
+        api.get(`/daily-logs/survey/question-photos?project_id=${projectId}&date=${dailyLogDate}`),
+        api.get(`/daily-logs/signature?project_id=${projectId}&date=${dailyLogDate}`)
       ]);
       
       // Build responses map
@@ -2912,7 +2913,8 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
           questionPhotos: questionPhotosMap
         },
         surveyPhotos: photosRes.data,
-        attachments: attachmentsRes.data
+        attachments: attachmentsRes.data,
+        signature: signatureRes.data
       };
       
       await generateDailyLogReport(reportData);
