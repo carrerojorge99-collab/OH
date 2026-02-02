@@ -5690,6 +5690,87 @@ async def delete_daily_note(note_id: str, request: Request, session_token: Optio
     await log_audit(user.user_id, user.name, "delete", "daily_note", note_id, "", {})
     return {"message": "Note eliminada"}
 
+# ==================== DAILY ATTACHMENTS (Photo Gallery) ====================
+@api_router.get("/daily-logs/attachments")
+async def get_daily_attachments(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    attachments = await db.daily_attachments.find(query, {"_id": 0}).sort("uploaded_at", -1).to_list(1000)
+    return attachments
+
+@api_router.post("/daily-logs/attachments")
+async def upload_daily_attachment(
+    file: UploadFile = File(...),
+    project_id: str = Query(...),
+    description: str = Query(default=""),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Upload a photo to the daily attachments gallery"""
+    user = await get_current_user(request, session_token)
+    
+    # Validate file type - only images
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Solo se permiten imágenes (JPEG, PNG, GIF, WebP)")
+    
+    # Generate unique filename
+    ext = Path(file.filename).suffix
+    attachment_id = f"att_{uuid4().hex[:12]}"
+    filename = f"attachment_{attachment_id}{ext}"
+    filepath = DAILY_LOGS_UPLOAD_DIR / filename
+    
+    # Save file
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    attachment = {
+        "attachment_id": attachment_id,
+        "project_id": project_id,
+        "filename": filename,
+        "original_filename": file.filename,
+        "content_type": file.content_type,
+        "url": f"/api/daily-logs/media/{filename}",
+        "description": description,
+        "uploaded_by": user.user_id,
+        "uploaded_by_name": user.name,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.daily_attachments.insert_one(attachment)
+    await log_audit(user.user_id, user.name, "create", "daily_attachment", attachment_id, file.filename, {})
+    
+    created = await db.daily_attachments.find_one({"attachment_id": attachment_id}, {"_id": 0})
+    return created
+
+@api_router.delete("/daily-logs/attachments/{attachment_id}")
+async def delete_daily_attachment(attachment_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    # Get attachment info
+    attachment = await db.daily_attachments.find_one({"attachment_id": attachment_id})
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment no encontrado")
+    
+    # Delete file from disk
+    filepath = DAILY_LOGS_UPLOAD_DIR / attachment["filename"]
+    if filepath.exists():
+        filepath.unlink()
+    
+    # Delete from database
+    await db.daily_attachments.delete_one({"attachment_id": attachment_id})
+    await log_audit(user.user_id, user.name, "delete", "daily_attachment", attachment_id, "", {})
+    
+    return {"message": "Attachment eliminado"}
+
 # ==================== CLIENT PORTAL ====================
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
