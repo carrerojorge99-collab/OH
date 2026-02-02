@@ -2284,6 +2284,10 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     quality_control_observations: 'Quality Control Observations'
   };
 
+  // Attachments state
+  const [dailyAttachments, setDailyAttachments] = useState([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
   // Load work logs when daily-logs tab is active
   useEffect(() => {
     if (activeTab === 'daily-logs' && dailyLogsTab === 'work-logs') {
@@ -2291,6 +2295,9 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     }
     if (activeTab === 'daily-logs' && dailyLogsTab === 'notes') {
       loadDailyNotes();
+    }
+    if (activeTab === 'daily-logs' && dailyLogsTab === 'attachments') {
+      loadDailyAttachments();
     }
   }, [activeTab, dailyLogsTab, projectId]);
 
