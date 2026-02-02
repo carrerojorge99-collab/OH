@@ -2267,10 +2267,30 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
   const [workLogFiles, setWorkLogFiles] = useState([]);
   const [uploadingWorkLogFile, setUploadingWorkLogFile] = useState(false);
 
+  // Notes state
+  const [dailyNotes, setDailyNotes] = useState([]);
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState(null);
+  const [noteForm, setNoteForm] = useState({
+    category: 'general_notes',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+  const [noteFiles, setNoteFiles] = useState([]);
+
+  const noteCategories = {
+    general_notes: 'General Notes',
+    site_safety_observations: 'Site Safety Observations',
+    quality_control_observations: 'Quality Control Observations'
+  };
+
   // Load work logs when daily-logs tab is active
   useEffect(() => {
     if (activeTab === 'daily-logs' && dailyLogsTab === 'work-logs') {
       loadWorkLogs();
+    }
+    if (activeTab === 'daily-logs' && dailyLogsTab === 'notes') {
+      loadDailyNotes();
     }
   }, [activeTab, dailyLogsTab, projectId]);
 
