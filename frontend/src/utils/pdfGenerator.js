@@ -1862,9 +1862,78 @@ export const generateDailyLogReport = async (data) => {
     }
   }
   
+  // ===== SIGNATURE SECTION =====
+  const signature = data.signature;
+  
+  if (signature && signature.signature_data) {
+    checkPageBreak(60);
+    yPos += 10;
+    
+    // Signature header
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text('Firma del Reporte', margin, yPos);
+    yPos += 8;
+    
+    // Signature box
+    doc.setFillColor(248, 250, 252);
+    doc.rect(margin, yPos, contentWidth, 45, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(margin, yPos, contentWidth, 45, 'S');
+    
+    // Add signature image
+    try {
+      doc.addImage(signature.signature_data, 'PNG', margin + 10, yPos + 5, 60, 25);
+    } catch (e) {
+      console.log('Error adding signature:', e);
+    }
+    
+    // Signature info
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.text);
+    doc.text(signature.signer_name || '', margin + 80, yPos + 15);
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.secondary);
+    doc.text(`Firmado: ${moment(signature.signed_at).format('DD/MM/YYYY hh:mm A')}`, margin + 80, yPos + 22);
+    
+    // Line under signature
+    doc.setDrawColor(100);
+    doc.line(margin + 10, yPos + 32, margin + 70, yPos + 32);
+    doc.setFontSize(7);
+    doc.text('Firma', margin + 32, yPos + 38);
+    
+    yPos += 50;
+  } else {
+    // No signature - show placeholder
+    checkPageBreak(40);
+    yPos += 10;
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.primary);
+    doc.text('Firma del Reporte', margin, yPos);
+    yPos += 8;
+    
+    doc.setFillColor(248, 250, 252);
+    doc.rect(margin, yPos, contentWidth, 30, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(margin, yPos, contentWidth, 30, 'S');
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(150);
+    doc.text('Este reporte no ha sido firmado', margin + (contentWidth / 2), yPos + 15, { align: 'center' });
+    
+    yPos += 35;
+  }
+  
   // ===== SIGN-OFF =====
   checkPageBreak(20);
-  yPos += 10;
+  yPos += 5;
   
   doc.setFillColor(248, 250, 252);
   doc.rect(margin, yPos, contentWidth, 15, 'F');
@@ -1872,7 +1941,7 @@ export const generateDailyLogReport = async (data) => {
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(...COLORS.secondary);
-  doc.text(`Yo, ${company?.nombre || 'OHSMS LLC'}, revisé y completé este reporte.`, margin + 5, yPos + 6);
+  doc.text(`Reporte preparado por ${company?.nombre || 'OHSMS LLC'}`, margin + 5, yPos + 6);
   doc.text(`${company?.nombre || 'OHSMS LLC'} | ${moment().format('MM/DD/YY')} | ${moment().format('hh:mm A')}`, margin + 5, yPos + 11);
   
   // Add page numbers
