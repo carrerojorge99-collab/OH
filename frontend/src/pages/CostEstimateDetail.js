@@ -97,6 +97,16 @@ const CostEstimateDetail = () => {
         setB2bOhsmsPercentage(estimateRes.data.b2b_ohsms_percentage || 0);
         setB2bOhsmsLaborPercentage(estimateRes.data.b2b_ohsms_labor_percentage ?? 4);
         setB2bSubcontractorPercentage(estimateRes.data.b2b_subcontractor_percentage || 0);
+        // Include/Exclude flags
+        setIncludeProfit(estimateRes.data.include_profit ?? true);
+        setIncludeOverhead(estimateRes.data.include_overhead ?? true);
+        setIncludeCfse(estimateRes.data.include_cfse ?? true);
+        setIncludeLiability(estimateRes.data.include_liability ?? true);
+        setIncludeMunicipalPatent(estimateRes.data.include_municipal_patent ?? true);
+        setIncludeContingency(estimateRes.data.include_contingency ?? true);
+        setIncludeB2bOhsms(estimateRes.data.include_b2b_ohsms ?? true);
+        setIncludeB2bOhsmsLabor(estimateRes.data.include_b2b_ohsms_labor ?? true);
+        setIncludeB2bSubcontractor(estimateRes.data.include_b2b_subcontractor ?? true);
       }
     } catch (error) {
       console.error('Error loading data:', error);
