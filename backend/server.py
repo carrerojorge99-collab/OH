@@ -5423,6 +5423,193 @@ async def get_safety_dashboard(
         "upcoming_talks": [t for t in toolbox_talks if t.get("status") == "scheduled"][:5]
     }
 
+# ==================== DAILY WORK LOGS ====================
+@api_router.get("/daily-logs/work-logs")
+async def get_work_logs(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    project_id: Optional[str] = None
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    
+    work_logs = await db.daily_work_logs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return work_logs
+
+@api_router.get("/daily-logs/work-logs/{log_id}")
+async def get_work_log(log_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    work_log = await db.daily_work_logs.find_one({"log_id": log_id}, {"_id": 0})
+    if not work_log:
+        raise HTTPException(status_code=404, detail="Work log no encontrado")
+    return work_log
+
+@api_router.post("/daily-logs/work-logs")
+async def create_work_log(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    log_id = f"wlog_{uuid4().hex[:12]}"
+    work_log = {
+        "log_id": log_id,
+        "project_id": data.get("project_id"),
+        "name": data.get("name", ""),
+        "quantity": data.get("quantity", 0),
+        "hours": data.get("hours", 0),
+        "description": data.get("description", ""),
+        "attachments": data.get("attachments", []),
+        "date": data.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d")),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.daily_work_logs.insert_one(work_log)
+    await log_audit(user.user_id, user.name, "create", "daily_work_log", log_id, data.get("name", ""), {})
+    
+    created = await db.daily_work_logs.find_one({"log_id": log_id}, {"_id": 0})
+    return created
+
+@api_router.put("/daily-logs/work-logs/{log_id}")
+async def update_work_log(log_id: str, data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.daily_work_logs.find_one({"log_id": log_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Work log no encontrado")
+    
+    update_data = {
+        "name": data.get("name", existing.get("name")),
+        "quantity": data.get("quantity", existing.get("quantity")),
+        "hours": data.get("hours", existing.get("hours")),
+        "description": data.get("description", existing.get("description")),
+        "attachments": data.get("attachments", existing.get("attachments", [])),
+        "date": data.get("date", existing.get("date")),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.daily_work_logs.update_one({"log_id": log_id}, {"$set": update_data})
+    await log_audit(user.user_id, user.name, "update", "daily_work_log", log_id, data.get("name", ""), {})
+    
+    updated = await db.daily_work_logs.find_one({"log_id": log_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/daily-logs/work-logs/{log_id}")
+async def delete_work_log(log_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.daily_work_logs.delete_one({"log_id": log_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Work log no encontrado")
+    
+    await log_audit(user.user_id, user.name, "delete", "daily_work_log", log_id, "", {})
+    return {"message": "Work log eliminado"}
+
+# Upload for daily logs
+DAILY_LOGS_UPLOAD_DIR = Path("/app/backend/uploads/daily_logs")
+DAILY_LOGS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@api_router.post("/daily-logs/upload")
+async def upload_daily_log_file(
+    file: UploadFile = File(...),
+    entity_type: str = Query(...),
+    entity_id: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Upload files for daily logs entities"""
+    user = await get_current_user(request, session_token)
+    
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 
+                     'application/pdf', 'application/msword',
+                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
+    
+    # Generate unique filename
+    ext = Path(file.filename).suffix
+    filename = f"{entity_type}_{entity_id}_{uuid4().hex[:8]}{ext}"
+    filepath = DAILY_LOGS_UPLOAD_DIR / filename
+    
+    # Save file
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    
+    # Determine media type
+    media_type = "photo" if file.content_type.startswith("image/") else "document"
+    
+    file_info = {
+        "filename": filename,
+        "original_filename": file.filename,
+        "media_type": media_type,
+        "content_type": file.content_type,
+        "url": f"/api/daily-logs/media/{filename}",
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        "uploaded_by": user.user_id
+    }
+    
+    # Add to entity's attachments
+    collection_map = {
+        "work_log": "daily_work_logs",
+        "daily_note": "daily_notes",
+        "daily_attachment": "daily_attachments"
+    }
+    
+    if entity_type in collection_map:
+        collection = db[collection_map[entity_type]]
+        id_field = "log_id" if entity_type == "work_log" else f"{entity_type.replace('daily_', '')}_id"
+        await collection.update_one(
+            {id_field: entity_id},
+            {"$push": {"attachments": file_info}}
+        )
+    
+    return file_info
+
+@api_router.get("/daily-logs/media/{filename}")
+async def get_daily_log_media(filename: str):
+    """Serve daily logs media files"""
+    filepath = DAILY_LOGS_UPLOAD_DIR / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+    return FileResponse(filepath)
+
+@api_router.delete("/daily-logs/media/{filename}")
+async def delete_daily_log_media(
+    filename: str,
+    entity_type: str = Query(...),
+    entity_id: str = Query(...),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a daily logs media file"""
+    user = await get_current_user(request, session_token)
+    
+    filepath = DAILY_LOGS_UPLOAD_DIR / filename
+    if filepath.exists():
+        filepath.unlink()
+    
+    # Remove from entity's attachments
+    collection_map = {
+        "work_log": "daily_work_logs",
+        "daily_note": "daily_notes",
+        "daily_attachment": "daily_attachments"
+    }
+    
+    if entity_type in collection_map:
+        collection = db[collection_map[entity_type]]
+        id_field = "log_id" if entity_type == "work_log" else f"{entity_type.replace('daily_', '')}_id"
+        await collection.update_one(
+            {id_field: entity_id},
+            {"$pull": {"attachments": {"filename": filename}}}
+        )
+    
+    return {"message": "Archivo eliminado"}
+
 # ==================== CLIENT PORTAL ====================
 @api_router.post("/clients")
 async def create_client(data: dict, request: Request, session_token: Optional[str] = Cookie(None)):
