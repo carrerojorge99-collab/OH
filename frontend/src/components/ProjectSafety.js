@@ -25,14 +25,16 @@ import {
   MoreVertical, Clock,
   ThumbsUp, ThumbsDown, AlertCircle,
   BookOpen, Upload, Camera, Video, X,
-  Download, FileText, StickyNote, Paperclip
+  Download, FileText, StickyNote, Paperclip,
+  Cloud, Sun, CloudRain, Thermometer
 } from 'lucide-react';
 import {
   generateSafetyDashboardReport,
   generateIncidentsReport,
   generateToolboxTalksReport,
   generateChecklistsReport,
-  generateObservationsReport
+  generateObservationsReport,
+  generateDailyLogReport
 } from '../utils/pdfGenerator';
 import {
   DropdownMenu,
