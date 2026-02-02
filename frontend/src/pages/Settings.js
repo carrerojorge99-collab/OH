@@ -100,7 +100,9 @@ const Settings = () => {
     default_b2b_percentage: 4,
     default_cfse_percentage: 7,
     default_liability_percentage: 7,
-    default_municipal_patent_percentage: 1
+    default_municipal_patent_percentage: 1,
+    // PM financial visibility
+    hide_financial_for_pm: false
   });
 
   const API_URL = getBackendUrl();
