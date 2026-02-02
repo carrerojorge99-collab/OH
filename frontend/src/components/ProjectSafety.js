@@ -2761,6 +2761,53 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     }
   };
 
+  // Generate Daily Log Report
+  const handleGenerateDailyLogReport = async () => {
+    try {
+      toast.info('Generando reporte...');
+      
+      // Load all data for the report
+      const [workLogsRes, notesRes, questionsRes, responsesRes, photosRes, attachmentsRes] = await Promise.all([
+        api.get(`/daily-logs/work-logs?project_id=${projectId}`),
+        api.get(`/daily-logs/notes?project_id=${projectId}`),
+        api.get(`/daily-logs/survey/questions?project_id=${projectId}`),
+        api.get(`/daily-logs/survey/responses?project_id=${projectId}&date=${dailyLogDate}`),
+        api.get(`/daily-logs/survey/photos?project_id=${projectId}&date=${dailyLogDate}`),
+        api.get(`/daily-logs/attachments?project_id=${projectId}`)
+      ]);
+      
+      // Build responses map
+      const responsesMap = {};
+      responsesRes.data.forEach(r => {
+        responsesMap[r.question_id] = r;
+      });
+      
+      const reportData = {
+        projectInfo: {
+          name: projectName,
+          project_id: projectId,
+          location: 'Puerto Rico'
+        },
+        date: dailyLogDate,
+        weather: weather,
+        workLogs: workLogsRes.data.filter(wl => wl.date === dailyLogDate),
+        notes: notesRes.data.filter(n => n.date === dailyLogDate),
+        survey: {
+          questions: questionsRes.data,
+          responses: responsesMap
+        },
+        surveyPhotos: photosRes.data,
+        attachments: attachmentsRes.data
+      };
+      
+      await generateDailyLogReport(reportData);
+      toast.success('Reporte generado exitosamente');
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast.error('Error al generar el reporte');
+    }
+  };
+
   // Render Work Logs
   const renderWorkLogs = () => {
     return (
