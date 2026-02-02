@@ -3,7 +3,7 @@ import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
-import { canViewMoney } from '../utils/permissions';
+import useFinancialPermissions from '../hooks/useFinancialPermissions';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -51,7 +51,7 @@ const Invoices = () => {
   
   // Get user role for permission checks
   const { user } = useAuth();
-  const showMoney = canViewMoney(user?.role);
+  const { showMoney } = useFinancialPermissions();
 
   // Generate available years from invoices
   const availableYears = React.useMemo(() => {
