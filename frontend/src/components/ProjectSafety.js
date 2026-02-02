@@ -3874,13 +3874,64 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
               </div>
             </div>
             
-            {/* Generate Report Button */}
-            <Button onClick={handleGenerateDailyLogReport} className="bg-blue-600 hover:bg-blue-700">
-              <Download className="w-4 h-4 mr-2" />
-              Generar Reporte PDF
-            </Button>
+            {/* Actions: Sign and Generate Report */}
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setSignatureDialogOpen(true)} 
+                variant={dailyLogSignature ? "outline" : "default"}
+                className={dailyLogSignature ? "border-green-500 text-green-600" : "bg-orange-500 hover:bg-orange-600"}
+                data-testid="sign-daily-log-btn"
+              >
+                <Pen className="w-4 h-4 mr-2" />
+                {dailyLogSignature ? 'Firmado' : 'Firmar'}
+              </Button>
+              <Button onClick={handleGenerateDailyLogReport} className="bg-blue-600 hover:bg-blue-700">
+                <Download className="w-4 h-4 mr-2" />
+                Generar Reporte PDF
+              </Button>
+            </div>
           </div>
+          
+          {/* Signature Display */}
+          {dailyLogSignature && (
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-white p-2 rounded border shadow-sm">
+                  <img 
+                    src={dailyLogSignature.signature_data} 
+                    alt="Firma" 
+                    className="h-12 object-contain"
+                  />
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium text-gray-700">{dailyLogSignature.signer_name}</p>
+                  <p className="text-xs text-gray-500">
+                    Firmado: {moment(dailyLogSignature.signed_at).format('DD/MM/YYYY HH:mm')}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleDeleteSignature}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                data-testid="delete-signature-btn"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Eliminar firma
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Signature Dialog */}
+        <SignaturePad
+          isOpen={signatureDialogOpen}
+          onClose={() => setSignatureDialogOpen(false)}
+          onSave={handleSaveSignature}
+          signerName={dailyLogSignature?.signer_name || ''}
+          existingSignature={dailyLogSignature?.signature_data}
+        />
 
         <Tabs value={dailyLogsTab} onValueChange={setDailyLogsTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
