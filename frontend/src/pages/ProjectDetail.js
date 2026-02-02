@@ -1885,6 +1885,7 @@ const ProjectDetail = () => {
                 <TabsTrigger value="required-docs" data-testid="required-docs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Doc.Req.</TabsTrigger>
                 <TabsTrigger value="logs" data-testid="logs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Bitácora</TabsTrigger>
                 <TabsTrigger value="safety" data-testid="safety-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Seguridad</TabsTrigger>
+                <TabsTrigger value="daily-logs" data-testid="daily-logs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Daily Logs</TabsTrigger>
                 <TabsTrigger value="comments" data-testid="comments-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Notas</TabsTrigger>
               </TabsList>
             </div>
