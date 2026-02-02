@@ -2297,6 +2297,13 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
   const [newQuestionText, setNewQuestionText] = useState('');
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [uploadingSurveyPhoto, setUploadingSurveyPhoto] = useState(false);
+  
+  // Weather state
+  const [weather, setWeather] = useState([]);
+  const [loadingWeather, setLoadingWeather] = useState(false);
+  
+  // Daily Log date (shared across all tabs)
+  const [dailyLogDate, setDailyLogDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Load work logs when daily-logs tab is active
   useEffect(() => {
@@ -2313,6 +2320,28 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
       loadSurveyData();
     }
   }, [activeTab, dailyLogsTab, projectId, surveyDate]);
+
+  // Load weather when daily logs tab is active
+  useEffect(() => {
+    if (activeTab === 'daily-logs') {
+      loadWeather();
+    }
+  }, [activeTab, dailyLogDate]);
+
+  const loadWeather = async () => {
+    setLoadingWeather(true);
+    try {
+      // Default coordinates for Puerto Rico (can be updated based on project location)
+      const response = await api.get(`/weather?date=${dailyLogDate}`);
+      if (response.data.weather) {
+        setWeather(response.data.weather);
+      }
+    } catch (error) {
+      console.error('Error loading weather:', error);
+    } finally {
+      setLoadingWeather(false);
+    }
+  };
 
   const loadWorkLogs = async () => {
     try {
