@@ -2412,6 +2412,118 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     setWorkLogFiles([]);
   };
 
+  // ==================== NOTES FUNCTIONS ====================
+  const loadDailyNotes = async () => {
+    try {
+      const response = await api.get(`/daily-logs/notes?project_id=${projectId}`);
+      setDailyNotes(response.data);
+    } catch (error) {
+      console.error('Error loading notes:', error);
+      toast.error('Error al cargar notes');
+    }
+  };
+
+  const handleSaveNote = async () => {
+    try {
+      const payload = {
+        ...noteForm,
+        project_id: projectId
+      };
+      
+      let savedNote;
+      if (editingNote) {
+        const response = await api.put(`/daily-logs/notes/${editingNote.note_id}`, payload);
+        savedNote = response.data;
+        toast.success('Note actualizada');
+      } else {
+        const response = await api.post('/daily-logs/notes', payload);
+        savedNote = response.data;
+        toast.success('Note creada');
+      }
+      
+      // Upload any pending files
+      if (noteFiles.length > 0 && savedNote?.note_id) {
+        for (const file of noteFiles) {
+          await uploadNoteFile(file, savedNote.note_id);
+        }
+      }
+      
+      setNoteDialogOpen(false);
+      setEditingNote(null);
+      resetNoteForm();
+      loadDailyNotes();
+    } catch (error) {
+      console.error('Error saving note:', error);
+      toast.error('Error al guardar note');
+    }
+  };
+
+  const uploadNoteFile = async (file, noteId) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.post(
+        `/daily-logs/upload?entity_type=daily_note&entity_id=${noteId}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm('¿Eliminar esta Note?')) return;
+    try {
+      await api.delete(`/daily-logs/notes/${noteId}`);
+      toast.success('Note eliminada');
+      loadDailyNotes();
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast.error('Error al eliminar note');
+    }
+  };
+
+  const handleNoteFileUpload = async (files, noteId) => {
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await api.post(
+          `/daily-logs/upload?entity_type=daily_note&entity_id=${noteId}`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+      }
+      toast.success('Archivos subidos correctamente');
+      loadDailyNotes();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast.error('Error al subir archivos');
+    }
+  };
+
+  const handleDeleteNoteFile = async (filename, noteId) => {
+    if (!window.confirm('¿Eliminar este archivo?')) return;
+    try {
+      await api.delete(`/daily-logs/media/${filename}?entity_type=daily_note&entity_id=${noteId}`);
+      toast.success('Archivo eliminado');
+      loadDailyNotes();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('Error al eliminar archivo');
+    }
+  };
+
+  const resetNoteForm = () => {
+    setNoteForm({
+      category: 'general_notes',
+      description: '',
+      date: new Date().toISOString().split('T')[0]
+    });
+    setNoteFiles([]);
+  };
+
   // Render Work Logs
   const renderWorkLogs = () => {
     return (
