@@ -2805,6 +2805,265 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     );
   };
 
+  // Render Notes
+  const renderNotes = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Buscar notes..."
+              className="pl-10 w-full sm:w-64"
+            />
+          </div>
+          <Button size="sm" onClick={() => { resetNoteForm(); setNoteDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Note
+          </Button>
+        </div>
+
+        <div className="grid gap-4">
+          {dailyNotes.map(note => (
+            <Card key={note.note_id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                        {noteCategories[note.category] || note.category}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        {moment(note.date).format('DD/MM/YYYY')}
+                      </span>
+                    </div>
+                    {note.description && (
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-3 whitespace-pre-wrap">{note.description}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-2">Por: {note.created_by_name}</p>
+                    {/* Attachments preview */}
+                    {note.attachments?.length > 0 && (
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {note.attachments.slice(0, 4).map((att, idx) => (
+                          <div key={idx} className="relative group">
+                            {att.media_type === 'photo' ? (
+                              <img
+                                src={att.url}
+                                alt={att.original_filename}
+                                className="w-16 h-16 object-cover rounded-lg border"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border">
+                                <FileText className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {note.attachments.length > 4 && (
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border">
+                            <span className="text-sm text-gray-500">+{note.attachments.length - 4}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        setEditingNote(note);
+                        setNoteForm({
+                          category: note.category || 'general_notes',
+                          description: note.description || '',
+                          date: note.date || new Date().toISOString().split('T')[0]
+                        });
+                        setNoteDialogOpen(true);
+                      }}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteNote(note.note_id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {dailyNotes.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <StickyNote className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">No hay Notes</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => { resetNoteForm(); setNoteDialogOpen(true); }}
+                >
+                  Crear primera Note
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Note Dialog */}
+        <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingNote ? 'Editar Note' : 'Nueva Note'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Category *</Label>
+                <Select
+                  value={noteForm.category}
+                  onValueChange={(value) => setNoteForm({...noteForm, category: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general_notes">General Notes</SelectItem>
+                    <SelectItem value="site_safety_observations">Site Safety Observations</SelectItem>
+                    <SelectItem value="quality_control_observations">Quality Control Observations</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={noteForm.date}
+                  onChange={(e) => setNoteForm({...noteForm, date: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={noteForm.description}
+                  onChange={(e) => setNoteForm({...noteForm, description: e.target.value})}
+                  placeholder="Escriba la nota aquí..."
+                  rows={10}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              {/* File Upload Area */}
+              <div>
+                <Label className="mb-2 block">Attachments</Label>
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const files = Array.from(e.dataTransfer.files);
+                    if (editingNote) {
+                      handleNoteFileUpload(files, editingNote.note_id);
+                    } else {
+                      setNoteFiles([...noteFiles, ...files]);
+                    }
+                  }}
+                >
+                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500">Drag and drop files here</p>
+                  <p className="text-xs text-gray-400 mt-1">o</p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files);
+                        if (editingNote) {
+                          handleNoteFileUpload(files, editingNote.note_id);
+                        } else {
+                          setNoteFiles([...noteFiles, ...files]);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <Button variant="outline" size="sm" className="mt-2" asChild>
+                      <span>Seleccionar archivos</span>
+                    </Button>
+                  </label>
+                </div>
+
+                {/* Pending files (for new note) */}
+                {!editingNote && noteFiles.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2">Archivos pendientes:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {noteFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-gray-100 rounded px-2 py-1">
+                          <span className="text-sm truncate max-w-[150px]">{file.name}</span>
+                          <button 
+                            onClick={() => setNoteFiles(noteFiles.filter((_, i) => i !== idx))}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Existing attachments (for editing) */}
+                {editingNote?.attachments?.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2">Archivos existentes:</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {editingNote.attachments.map((att, idx) => (
+                        <div key={idx} className="relative group">
+                          {att.media_type === 'photo' ? (
+                            <img
+                              src={att.url}
+                              alt={att.original_filename}
+                              className="w-full h-20 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-full h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <FileText className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleDeleteNoteFile(att.filename, editingNote.note_id)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveNote} disabled={!noteForm.category}>
+                {editingNote ? 'Guardar Cambios' : 'Crear Note'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
+
   // Render Daily Logs Tab with sub-tabs
   const renderDailyLogs = () => {
     return (
@@ -2834,13 +3093,7 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
           </TabsContent>
 
           <TabsContent value="notes" className="mt-6">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <StickyNote className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 font-medium">Notes</p>
-                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
-              </CardContent>
-            </Card>
+            {renderNotes()}
           </TabsContent>
 
           <TabsContent value="attachments" className="mt-6">
