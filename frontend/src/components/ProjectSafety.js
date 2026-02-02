@@ -2774,6 +2774,42 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     }
   };
 
+  // Upload photo for a specific question
+  const handleUploadQuestionPhoto = async (questionId, files) => {
+    setUploadingQuestionPhoto(prev => ({ ...prev, [questionId]: true }));
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await api.post(
+          `/daily-logs/survey/question-photos?project_id=${projectId}&question_id=${questionId}&date=${surveyDate}`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+      }
+      toast.success('Fotos subidas correctamente');
+      loadSurveyData();
+    } catch (error) {
+      console.error('Error uploading question photos:', error);
+      toast.error(error.response?.data?.detail || 'Error al subir fotos');
+    } finally {
+      setUploadingQuestionPhoto(prev => ({ ...prev, [questionId]: false }));
+    }
+  };
+
+  // Delete photo from a specific question
+  const handleDeleteQuestionPhoto = async (photoId) => {
+    if (!window.confirm('¿Eliminar esta foto?')) return;
+    try {
+      await api.delete(`/daily-logs/survey/question-photos/${photoId}`);
+      toast.success('Foto eliminada');
+      loadSurveyData();
+    } catch (error) {
+      console.error('Error deleting question photo:', error);
+      toast.error('Error al eliminar foto');
+    }
+  };
+
   // Generate Daily Log Report
   const handleGenerateDailyLogReport = async () => {
     try {
