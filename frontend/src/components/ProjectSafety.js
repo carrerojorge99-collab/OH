@@ -2253,7 +2253,7 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
           <TabsTrigger value="dashboard" className="text-xs sm:text-sm">
             <Shield className="w-4 h-4 mr-1 hidden sm:inline" />
             Dashboard
@@ -2273,6 +2273,10 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
           <TabsTrigger value="incidents" className="text-xs sm:text-sm">
             <AlertCircle className="w-4 h-4 mr-1 hidden sm:inline" />
             Incidentes
+          </TabsTrigger>
+          <TabsTrigger value="daily-logs" className="text-xs sm:text-sm">
+            <FileText className="w-4 h-4 mr-1 hidden sm:inline" />
+            Daily Logs
           </TabsTrigger>
         </TabsList>
 
