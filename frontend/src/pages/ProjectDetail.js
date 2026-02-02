@@ -4530,6 +4530,15 @@ const ProjectDetail = () => {
             />
           </TabsContent>
 
+          {/* Daily Logs Tab */}
+          <TabsContent value="daily-logs" className="space-y-6">
+            <ProjectDailyLogs 
+              projectId={projectId} 
+              projectName={project?.name}
+              users={users}
+            />
+          </TabsContent>
+
           {/* Comments Tab */}
           <TabsContent value="comments" className="space-y-6">
             <Card className="border-slate-200 shadow-sm">
