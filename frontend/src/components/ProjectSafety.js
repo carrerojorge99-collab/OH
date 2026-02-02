@@ -2288,6 +2288,16 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
   const [dailyAttachments, setDailyAttachments] = useState([]);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
+  // Survey state
+  const [surveyQuestions, setSurveyQuestions] = useState([]);
+  const [surveyResponses, setSurveyResponses] = useState({});
+  const [surveyPhotos, setSurveyPhotos] = useState([]);
+  const [surveyDate, setSurveyDate] = useState(new Date().toISOString().split('T')[0]);
+  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+  const [newQuestionText, setNewQuestionText] = useState('');
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [uploadingSurveyPhoto, setUploadingSurveyPhoto] = useState(false);
+
   // Load work logs when daily-logs tab is active
   useEffect(() => {
     if (activeTab === 'daily-logs' && dailyLogsTab === 'work-logs') {
@@ -2299,7 +2309,10 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     if (activeTab === 'daily-logs' && dailyLogsTab === 'attachments') {
       loadDailyAttachments();
     }
-  }, [activeTab, dailyLogsTab, projectId]);
+    if (activeTab === 'daily-logs' && dailyLogsTab === 'survey') {
+      loadSurveyData();
+    }
+  }, [activeTab, dailyLogsTab, projectId, surveyDate]);
 
   const loadWorkLogs = async () => {
     try {
