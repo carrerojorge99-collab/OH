@@ -2250,9 +2250,430 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     );
   };
 
-  // Render Daily Logs Tab with sub-tabs
+  // ==================== DAILY LOGS STATE ====================
   const [dailyLogsTab, setDailyLogsTab] = useState('work-logs');
+  
+  // Work Logs state
+  const [workLogs, setWorkLogs] = useState([]);
+  const [workLogDialogOpen, setWorkLogDialogOpen] = useState(false);
+  const [editingWorkLog, setEditingWorkLog] = useState(null);
+  const [workLogForm, setWorkLogForm] = useState({
+    name: '',
+    quantity: '',
+    hours: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+  const [workLogFiles, setWorkLogFiles] = useState([]);
+  const [uploadingWorkLogFile, setUploadingWorkLogFile] = useState(false);
 
+  // Load work logs when daily-logs tab is active
+  useEffect(() => {
+    if (activeTab === 'daily-logs' && dailyLogsTab === 'work-logs') {
+      loadWorkLogs();
+    }
+  }, [activeTab, dailyLogsTab, projectId]);
+
+  const loadWorkLogs = async () => {
+    try {
+      const response = await api.get(`/daily-logs/work-logs?project_id=${projectId}`);
+      setWorkLogs(response.data);
+    } catch (error) {
+      console.error('Error loading work logs:', error);
+      toast.error('Error al cargar work logs');
+    }
+  };
+
+  const handleSaveWorkLog = async () => {
+    try {
+      const payload = {
+        ...workLogForm,
+        project_id: projectId,
+        quantity: parseInt(workLogForm.quantity) || 0,
+        hours: parseFloat(workLogForm.hours) || 0
+      };
+      
+      let savedLog;
+      if (editingWorkLog) {
+        const response = await api.put(`/daily-logs/work-logs/${editingWorkLog.log_id}`, payload);
+        savedLog = response.data;
+        toast.success('Work Log actualizado');
+      } else {
+        const response = await api.post('/daily-logs/work-logs', payload);
+        savedLog = response.data;
+        toast.success('Work Log creado');
+      }
+      
+      // Upload any pending files
+      if (workLogFiles.length > 0 && savedLog?.log_id) {
+        for (const file of workLogFiles) {
+          await uploadWorkLogFile(file, savedLog.log_id);
+        }
+      }
+      
+      setWorkLogDialogOpen(false);
+      setEditingWorkLog(null);
+      resetWorkLogForm();
+      loadWorkLogs();
+    } catch (error) {
+      console.error('Error saving work log:', error);
+      toast.error('Error al guardar work log');
+    }
+  };
+
+  const uploadWorkLogFile = async (file, logId) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.post(
+        `/daily-logs/upload?entity_type=work_log&entity_id=${logId}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  const handleDeleteWorkLog = async (logId) => {
+    if (!window.confirm('¿Eliminar este Work Log?')) return;
+    try {
+      await api.delete(`/daily-logs/work-logs/${logId}`);
+      toast.success('Work Log eliminado');
+      loadWorkLogs();
+    } catch (error) {
+      console.error('Error deleting work log:', error);
+      toast.error('Error al eliminar work log');
+    }
+  };
+
+  const handleWorkLogFileUpload = async (files, logId) => {
+    setUploadingWorkLogFile(true);
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await api.post(
+          `/daily-logs/upload?entity_type=work_log&entity_id=${logId}`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+      }
+      toast.success('Archivos subidos correctamente');
+      loadWorkLogs();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast.error('Error al subir archivos');
+    } finally {
+      setUploadingWorkLogFile(false);
+    }
+  };
+
+  const handleDeleteWorkLogFile = async (filename, logId) => {
+    if (!window.confirm('¿Eliminar este archivo?')) return;
+    try {
+      await api.delete(`/daily-logs/media/${filename}?entity_type=work_log&entity_id=${logId}`);
+      toast.success('Archivo eliminado');
+      loadWorkLogs();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('Error al eliminar archivo');
+    }
+  };
+
+  const resetWorkLogForm = () => {
+    setWorkLogForm({
+      name: '',
+      quantity: '',
+      hours: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0]
+    });
+    setWorkLogFiles([]);
+  };
+
+  // Render Work Logs
+  const renderWorkLogs = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Buscar work logs..."
+              className="pl-10 w-full sm:w-64"
+            />
+          </div>
+          <Button size="sm" onClick={() => { resetWorkLogForm(); setWorkLogDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Work Log
+          </Button>
+        </div>
+
+        <div className="grid gap-4">
+          {workLogs.map(log => (
+            <Card key={log.log_id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h3 className="font-semibold">{log.name}</h3>
+                      <Badge variant="outline">
+                        {moment(log.date).format('DD/MM/YYYY')}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        Cantidad: {log.quantity}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {log.hours} horas
+                      </span>
+                    </div>
+                    {log.description && (
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{log.description}</p>
+                    )}
+                    {/* Attachments preview */}
+                    {log.attachments?.length > 0 && (
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {log.attachments.slice(0, 4).map((att, idx) => (
+                          <div key={idx} className="relative group">
+                            {att.media_type === 'photo' ? (
+                              <img
+                                src={att.url}
+                                alt={att.original_filename}
+                                className="w-16 h-16 object-cover rounded-lg border"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border">
+                                <FileText className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {log.attachments.length > 4 && (
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border">
+                            <span className="text-sm text-gray-500">+{log.attachments.length - 4}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        setEditingWorkLog(log);
+                        setWorkLogForm({
+                          name: log.name || '',
+                          quantity: log.quantity?.toString() || '',
+                          hours: log.hours?.toString() || '',
+                          description: log.description || '',
+                          date: log.date || new Date().toISOString().split('T')[0]
+                        });
+                        setWorkLogDialogOpen(true);
+                      }}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteWorkLog(log.log_id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {workLogs.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">No hay Work Logs</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => { resetWorkLogForm(); setWorkLogDialogOpen(true); }}
+                >
+                  Crear primer Work Log
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Work Log Dialog */}
+        <Dialog open={workLogDialogOpen} onOpenChange={setWorkLogDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingWorkLog ? 'Editar Work Log' : 'Nuevo Work Log'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-3 sm:col-span-1">
+                  <Label>Name *</Label>
+                  <Input
+                    value={workLogForm.name}
+                    onChange={(e) => setWorkLogForm({...workLogForm, name: e.target.value})}
+                    placeholder="Ej: OHSMS/ G.R.W"
+                  />
+                </div>
+                <div>
+                  <Label>Quantity</Label>
+                  <Input
+                    type="number"
+                    value={workLogForm.quantity}
+                    onChange={(e) => setWorkLogForm({...workLogForm, quantity: e.target.value})}
+                    placeholder="5"
+                  />
+                </div>
+                <div>
+                  <Label>Hours</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={workLogForm.hours}
+                    onChange={(e) => setWorkLogForm({...workLogForm, hours: e.target.value})}
+                    placeholder="8"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={workLogForm.date}
+                  onChange={(e) => setWorkLogForm({...workLogForm, date: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={workLogForm.description}
+                  onChange={(e) => setWorkLogForm({...workLogForm, description: e.target.value})}
+                  placeholder="Descripción detallada del trabajo realizado..."
+                  rows={8}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              {/* File Upload Area */}
+              <div>
+                <Label className="mb-2 block">Attachments</Label>
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const files = Array.from(e.dataTransfer.files);
+                    if (editingWorkLog) {
+                      handleWorkLogFileUpload(files, editingWorkLog.log_id);
+                    } else {
+                      setWorkLogFiles([...workLogFiles, ...files]);
+                    }
+                  }}
+                >
+                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500">Drag and drop files here</p>
+                  <p className="text-xs text-gray-400 mt-1">o</p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files);
+                        if (editingWorkLog) {
+                          handleWorkLogFileUpload(files, editingWorkLog.log_id);
+                        } else {
+                          setWorkLogFiles([...workLogFiles, ...files]);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <Button variant="outline" size="sm" className="mt-2" asChild>
+                      <span>Seleccionar archivos</span>
+                    </Button>
+                  </label>
+                </div>
+
+                {/* Pending files (for new work log) */}
+                {!editingWorkLog && workLogFiles.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2">Archivos pendientes:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {workLogFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-gray-100 rounded px-2 py-1">
+                          <span className="text-sm truncate max-w-[150px]">{file.name}</span>
+                          <button 
+                            onClick={() => setWorkLogFiles(workLogFiles.filter((_, i) => i !== idx))}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Existing attachments (for editing) */}
+                {editingWorkLog?.attachments?.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2">Archivos existentes:</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {editingWorkLog.attachments.map((att, idx) => (
+                        <div key={idx} className="relative group">
+                          {att.media_type === 'photo' ? (
+                            <img
+                              src={att.url}
+                              alt={att.original_filename}
+                              className="w-full h-20 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-full h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <FileText className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleDeleteWorkLogFile(att.filename, editingWorkLog.log_id)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setWorkLogDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSaveWorkLog} disabled={!workLogForm.name}>
+                {editingWorkLog ? 'Guardar Cambios' : 'Crear Work Log'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
+
+  // Render Daily Logs Tab with sub-tabs
   const renderDailyLogs = () => {
     return (
       <div className="space-y-4">
@@ -2277,13 +2698,7 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
           </TabsList>
 
           <TabsContent value="work-logs" className="mt-6">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 font-medium">Work Logs</p>
-                <p className="text-sm text-gray-400 mt-2">Contenido pendiente</p>
-              </CardContent>
-            </Card>
+            {renderWorkLogs()}
           </TabsContent>
 
           <TabsContent value="notes" className="mt-6">
