@@ -81,6 +81,7 @@ const Layout = ({ children }) => {
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Mi Historial', href: '/clock/history', icon: Clock },
       { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
+      { name: 'Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
       { name: 'Nómina', href: '/payroll', icon: DollarSign },
       { name: 'Usuarios', href: '/users', icon: Users },
