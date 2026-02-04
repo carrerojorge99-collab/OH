@@ -77,16 +77,24 @@ const Layout = ({ children }) => {
     ];
 
     const rrhhNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { name: 'Mi Perfil', href: '/my-profile', icon: User },
       { name: 'Ponchar', href: '/clock', icon: Clock },
-      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
       { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
-      { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
-      { name: 'Nómina', href: '/payroll', icon: DollarSign },
-      { name: 'Usuarios', href: '/users', icon: Users },
+      { name: 'Calendario', href: '/calendar', icon: Calendar },
+      { name: 'Reportes', href: '/reports', icon: BarChart3 },
+      { name: 'Proveedores', href: '/vendors', icon: Truck },
+      { name: 'Estimados', href: '/estimados', icon: FileText },
+      { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
+      { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
+      { name: 'Facturas', href: '/invoices', icon: DollarSign },
       { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
       { name: 'Aprobaciones', href: '/approvals', icon: CheckCircle },
+      { name: 'Clientes', href: '/clients', icon: Building2 },
+      { name: 'Usuarios', href: '/users', icon: Users },
+      { name: 'Recursos Humanos', href: '/hr', icon: Briefcase },
+      { name: 'Nómina', href: '/payroll', icon: DollarSign },
     ];
 
     const superAdminNav = [
