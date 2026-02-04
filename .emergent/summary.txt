@@ -3,79 +3,63 @@ The user's primary goal is to enhance their ERP application, now branded as ProM
 
 **Initial Request (from previous sessions):**
 *   A large backlog of feature requests and bug fixes, including issues with Cost Estimates, PDF generation, Vendor management, and user permissions.
-*   A high-priority request to hide all financial data from users with the  role.
 *   Integration of a Safety module into each project's detail page.
-*   Creation of a Daily Logs feature within the Safety module, including sections for Work Logs, Notes, Attachments, a dynamic Survey, and a comprehensive PDF report with live weather data.
+*   Creation of a Daily Logs feature within the Safety module, including sections for Work Logs, Notes, Attachments, a dynamic Survey, and a comprehensive PDF report.
+*   Survey Enhancement: Add the ability to upload photos for *each individual question*.
+*   Cost Estimate Flexibility: Add checkboxes to the Cost Estimate page to allow users to include or exclude specific percentage-based costs.
+*   Daily Log Report Branding: Make the company logo larger and change the footer/header text to Powered by ProManage.
+*   Drawable Signatures: Implement a feature allowing the user to draw their signature for the Daily Log PDF report.
 
 **Requests from this session:**
-1.  **Survey Enhancement**: Add the ability to upload photos for *each individual question* within the Daily Log's survey, not just for the survey as a whole.
-2.  **Cost Estimate Flexibility**: Add checkboxes to the Cost Estimate page to allow users to include or exclude specific percentage-based costs (Profit, Overhead, etc.) from the final calculation. The calculation logic should dynamically update based on which boxes are checked.
-3.  **Daily Log Report Branding**: In the generated PDF for the Daily Log, make the company logo larger and change the footer/header text from Powered by OHSMS ERP to Powered by ProManage.
-4.  **Drawable Signatures**: Implement a feature allowing the person preparing the Daily Log to draw their signature. This signature should be saved and included in the final generated PDF report.
+1.  **Configurable Permissions**: Make the feature that hides financial data for  users a configurable toggle in the Settings page, instead of being hardcoded.
+2.  **Role-Based Access**: Grant users with the  (HR) role access to the Proyectos (Projects) section of the application.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-- A full-stack ERP application (React frontend, FastAPI backend) branded as ProManage.
-- The Safety module is fully integrated as a tab within the  page.
-- The Daily Logs feature is implemented with four sub-tabs: Work Logs, Notes, Attachments, and a dynamic Survey.
-- **Survey Photos**: The Survey feature now allows attaching photos to *each individual question*.
-- **Cost Estimate Checkboxes**: The Cost Estimate detail page now features checkboxes for each percentage-based cost, allowing for dynamic inclusion/exclusion in the total calculation.
-- **Daily Log PDF Enhancements**:
-    - A  component has been integrated to capture drawn signatures for the Daily Log.
-    - The PDF generation logic () has been updated to include the saved signature.
-    - The branding on the PDF has been updated: the logo is larger, and the text now reads Powered by ProManage.
-- Backend endpoints have been created or modified to support all new functionalities (saving survey question photos, cost estimate inclusion flags, and signature data).
+- A full-stack ERP application (ProManage) with React frontend, FastAPI backend, and MongoDB.
+- A Safety module with a full-featured Daily Logs section (Work Logs, Notes, Attachments, Survey).
+- Numerous features implemented in previous sessions that are pending user verification (see ).
+- **Configurable Financial Visibility**: A new toggle switch has been added to the Settings page. This switch controls a backend flag () that dynamically shows or hides financial data for users with the  role. The implementation involved creating a custom hook () and refactoring several pages to use it.
+- **HR Access to Projects**: The navigation sidebar logic in  has been updated to include the Proyectos (Projects) link for users with the  role.
 
 **Last working item**:
--   **Last item agent was working**: Implementing the drawable signature feature for the Daily Log. This involved adding the  library, creating a  component and a popup dialog, creating backend endpoints to save the signature as a Base64 image, and updating the PDF generation logic to embed the signature image.
+-   **Last item agent was working**: Granting the  (HR) role access to the Proyectos (Projects) section. The agent modified the navigation array in  to include the project link for the  configuration.
 -   **Status**: USER VERIFICATION PENDING
--   **Agent Testing Done**: Y (Agent verified via screenshots that the Firmar button appears, and the signature dialog opens correctly. The full flow of drawing, saving, and generating the PDF with the signature has not been end-to-end tested.)
--   **Which testing method agent to use?**: Manual testing. The user should be guided to:
-    1.  Go to a project's Safety -> Daily Logs tab.
-    2.  Click the Firmar button.
-    3.  Enter their name, draw a signature in the canvas, and click Guardar Firma.
-    4.  Verify the signature appears below the header.
-    5.  Click Generar Reporte PDF and check the downloaded file for the signature image.
+-   **Agent Testing Done**: N (The agent only confirmed the code was changed but did not perform a visual test.)
+-   **Which testing method agent to use?**: Screenshot tool. The agent should log in as an HR user (e.g., create one if necessary) and take a screenshot of the navigation sidebar to confirm the Proyectos link is visible.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Daily Log Drawable Signature Verification (P0)
--   Issue 2: Cost Estimate Checkbox Logic Verification (P0)
--   Issue 3: Survey Photos-Per-Question Verification (P0)
--   Issue 4: Daily Log PDF Branding & Content Verification (P0)
--   Issue 5: Invoice PDF Layout Does Not Match Estimate (P1)
--   Issue 6: Multiple Core Features and Bug Fixes Pending User Verification (P1)
--   Issue 7: PDF Formatting for Numbered Lists (P2)
--   Issue 8: Deployment Failure Due to MongoDB Timeout (P3)
--   Issue 9: Responsive Layout Issues (P3)
+-   Issue 1: RH Role Access to Projects Verification (P0)
+-   Issue 2: Configurable PM Financial Visibility Verification (P0)
+-   Issue 3: Daily Log Drawable Signature Verification (P0)
+-   Issue 4: Cost Estimate Checkbox Logic Verification (P0)
+-   Issue 5: Survey Photos-Per-Question Verification (P0)
+-   Issue 6: Daily Log PDF Branding & Content Verification (P0)
+-   Issue 7: Multiple Core Features and Bug Fixes Pending User Verification (P1)
+-   Issue 8: Invoice PDF Layout Does Not Match Estimate (P1)
+-   Issue 9: PDF Formatting for Numbered Lists (P2)
+-   Issue 10: Deployment Failure Due to MongoDB Timeout (P3)
+-   Issue 11: Responsive Layout Issues (P3)
 
 **Issues Detail**:
--   **Issue 1: Daily Log Drawable Signature Verification**
-    -   **Description**: The UI and backend for capturing a drawn signature are complete, but the user needs to verify the entire flow: drawing, saving, and confirming the signature appears correctly on the generated PDF.
+-   **Issue 1: RH Role Access to Projects Verification**
+    -   **Description**: The UI change to give HR access to the Projects page is complete. The user needs to log in with an HR account and confirm the Proyectos link appears in the sidebar and works correctly.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: frontend
 
--   **Issue 2: Cost Estimate Checkbox Logic Verification**
-    -   **Description**: The UI for adding checkboxes to include/exclude percentages in Cost Estimates is complete. The user needs to verify that checking/unchecking these boxes correctly updates the total calculation in real-time and that the state is saved and loaded correctly.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: frontend
-
--   **Issue 3: Survey Photos-Per-Question Verification**
-    -   **Description**: The UI and backend for uploading photos to individual survey questions are implemented. The user needs to test uploading, deleting, and viewing photos within a question, and confirm they appear in the generated PDF report.
+-   **Issue 2: Configurable PM Financial Visibility Verification**
+    -   **Description**: The feature to toggle financial data visibility for PMs via the Settings page is complete. The user needs to test the full flow:
+        1.  Go to Settings and activate the toggle.
+        2.  Log in as a Project Manager.
+        3.  Confirm that financial data (e.g., on the Dashboard, Cost Estimates) is hidden (e.g., shown as ---).
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: both
 
--   **Issue 4: Daily Log PDF Branding & Content Verification**
-    -   **Description**: The PDF branding (larger logo, Powered by ProManage) has been updated. The user needs to generate a report and confirm the visual changes meet their expectations, in addition to verifying the original content.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: frontend
-
--   **Issue 5 - 9**: (Details for these issues are unchanged from the previous handoff summary)
+-   **Issue 3-11**: (Details for these issues are unchanged from the previous handoff summary and are still pending verification or action).
 
 **In progress Task List**:
 -   Task 1: Finalize Cloudinary Integration Strategy (P1)
@@ -84,8 +68,8 @@ The user's primary goal is to enhance their ERP application, now branded as ProM
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0 - Consolidate User Verification**: After the features from this session are approved, present a consolidated list of *all* pending features (from Issue 6) to the user for final sign-off. This is critical to establish a stable baseline.
-    -   **P1 - Fix Invoice PDF Layout**: Address Issue 5.
+    -   **P0 - Consolidate User Verification**: The list of unverified features is growing. The absolute next priority is to present a consolidated checklist of ALL pending items (Issues 1-7) to the user for final sign-off. This is critical to establish a stable baseline before starting new tasks.
+    -   **P1 - Fix Invoice PDF Layout**: Address Issue 8.
     -   **P2 - Prepare for Migration to DigitalOcean**: Address the user's request by preparing a , , and a database export script.
 -   **Future Tasks**:
     -   Refactor  and  into smaller components.
@@ -95,97 +79,84 @@ The user's primary goal is to enhance their ERP application, now branded as ProM
     -   Implement Security Features (Rate Limiting, Strong Password Policies).
 
 **Completed work in this session**
-- **Survey Enhancement (USER VERIFICATION PENDING)**:
-    - Implemented UI and backend to allow photo uploads for each individual survey question.
-    - Updated  with state management and handlers for question-specific photos.
-    - Added new backend endpoints in  ().
-- **Cost Estimate Checkboxes (USER VERIFICATION PENDING)**:
-    - Added  boolean fields to the  models in .
-    - Updated create/update endpoints to handle the new flags.
-    - Modified  to include checkboxes, state management, and updated  logic to respect the flags.
-- **Daily Log Report Branding (USER VERIFICATION PENDING)**:
-    - Modified  to increase the logo size and replace OHSMS ERP with Powered by ProManage.
-- **Drawable Signature for Daily Log (USER VERIFICATION PENDING)**:
-    - Added  dependency.
-    - Created a new reusable  component.
-    - Integrated a signature dialog into .
-    - Added backend endpoints in  to save/load signature data ().
-    - Updated  to embed the saved signature image into the report.
+- **Configurable Financial Visibility for PMs (USER VERIFICATION PENDING)**:
+    - Backend: Added  boolean field to company settings model and endpoints in .
+    - Frontend: Created a new custom hook  to centralize the permission logic.
+    - Frontend: Added a toggle switch with state management in .
+    - Frontend: Refactored , , , , , and  to use the new hook.
+- **HR Role Access to Projects (USER VERIFICATION PENDING)**:
+    - Frontend: Modified  to add the 'Proyectos' route to the navigation array for the  role.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Responsive Layout issues**: Several responsive layout problems on pages like HR, Settings, MyRequests, and MyProfile remain unaddressed.
 
 **Known issue recurrence from previous fork**
--   **PDF Generation Complexity**: The general challenge of generating complex, consistently formatted PDFs persists. Each new feature (Invoice layout, Daily Log content, Signatures) requires careful manual adjustments in .
+-   **PDF Generation Complexity**: The general challenge of generating complex, consistently formatted PDFs persists.
+-   **Testing Tool Instability**: The agent encountered persistent authentication/session issues with the screenshot tool, resulting in blank pages. This appeared to be a tool-specific problem, as the user confirmed the application was working on their end. The next agent should be aware that screenshot results may be unreliable and should cross-reference with logs or user feedback.
 
 **Code Architecture**
-
+hide_financial_for_pm
 
 **Key Technical Concepts**
--   **Canvas-based Signature Capture**: Using  to capture user drawings, converting them to Base64 data URI for storage and embedding.
--   **Conditional Financial Calculations**: Modifying calculation logic ( in React) to be dependent on a series of boolean flags controlled by the user via checkboxes.
--   **Complex Nested State Management**: Handling state for arrays of objects where each object has its own array of nested items (e.g., survey questions, each with its own photos).
--   **Dynamic PDF Modification**: Embedding Base64 image data (signatures, logos) directly into a client-side generated PDF using .
--   **Frontend-Backend Data Flow**: Passing boolean flags and Base64 image strings from the React client to the FastAPI backend for persistence in MongoDB.
+-   **Centralized Permissions with Hooks**: Created a custom React hook () to fetch a global setting from the backend and provide a reactive boolean () to multiple components. This abstracts away the data fetching and permission logic, making it reusable and easy to maintain.
+-   **Dynamic Feature Toggling**: Implemented a UI switch in the frontend () that controls a backend flag in MongoDB. This allows administrators to enable or disable a core feature (hiding financial data) for a specific user role across the entire application without requiring a code change or deployment.
 
 **key DB schema**
--   : Added boolean fields: , , , , , , , , .
--   : New collection to store photos linked to a  and . { , , , ,  }
--   : New collection to store signature data. { , , Mon Feb  2 14:43:24 UTC 2026, , ,  }
+-    (in  collection): Added boolean field: .
 
 **changes in tech stack**
--    was added to the frontend dependencies.
+- None in this session.
 
 **All files of reference**
+-    (Modified)
+-    (Modified)
 -    (Created)
+-    (Modified)
+-    (Modified)
+-    (Modified)
+-    (Modified)
 -    (Modified)
 -    (Modified)
 -    (Modified)
 -    (Modified)
 
 **Areas that need refactoring**:
--   ****: This component is now critically oversized, handling all Safety features, all Daily Log features, and now signature logic. It urgently needs to be broken down.
--   ****: This file has also grown significantly in complexity with the new calculation logic and state management. It should be broken into smaller components (e.g., for the percentages section, for the items table).
--   ****: The monolithic backend file continues to expand and should be refactored into feature-specific routers.
+-   ****: Critically oversized and complex.
+-   ****: Complex state management should be broken down.
+-   ****: A monolithic backend that should be refactored into feature-specific routers.
 
 **key api endpoints**
--   : CRUD for photos attached to a specific survey question.
--   : CRUD for the drawable signature on a daily log.
--   : Modified to accept  flags.
--   : Modified to accept  flags.
+-   : Used to fetch the  setting.
+-   : Used to update the  setting.
 
 **Critical Info for New Agent**
 1.  **Language**: All communication with the user **MUST** be in **Spanish**.
-2.  **Immediate Priority - Verification**: The top priority is to guide the user through testing and verifying the three major features completed in this session. Present them one by one:
-    *   **Cost Estimate Checkboxes**: Ask them to open an estimate, toggle the checkboxes, and confirm the totals update correctly and save.
-    -   **Survey Photos per Question**: Ask them to add a photo to a survey question, save it, and generate a PDF to see it included.
-    -   **Drawable Signature**: Guide them to sign a daily log and verify the signature appears on the generated PDF.
-3.  **Backlog Management**: The list of unverified features from previous sessions is still large. Once this session's work is approved, it is crucial to present a consolidated checklist to the user to get a clear sign-off and establish a stable baseline before starting new major tasks.
-4.  **Code Quality Debt**:  and  are monoliths. Any future work in these areas should start with a small refactoring to extract the relevant logic into a separate component/router to avoid making the problem worse.
+2.  **Immediate Priority - Verification**: The top priority is to guide the user through testing and verifying all completed but unconfirmed features. The backlog of pending verification is significant. Present a consolidated list for sign-off before starting any new development.
+3.  **Testing Environment**: The previous agent experienced significant issues with the screenshot tool (blank pages, auth errors), which were likely due to session handling in the test runner, not code errors. If you encounter similar issues, do not assume the code is broken. Check console/backend logs, try  commands, and consider that the live environment may be working correctly, as the user previously confirmed.
+4.  **Code Quality Debt**: , , and  are monoliths. Any future work in these areas should ideally start with a small, focused refactoring to extract relevant logic.
 
 **documents and test reports created in this job**
-- User-uploaded artifact: 
+- None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: I need the person who prepares the log to be able to sign the PDF, and not just digitally but by drawing it. How can we do that? -  (Implementation is done, pending user verification)
-2.  **User**: In the daily logs report I want the logo bigger and the text Powered by ProManage. -  (Implementation is done, pending user verification)
-3.  **User**: [uploads file] add this. -  (This was the request for the cost estimate checkboxes. Implementation is done, pending user verification).
-4.  **Agent**: Summarized completion of survey photos per question. - 
-5.  **User**: In the survey, each question should have the option to upload photos. -  (Implementation is done, pending user verification)
-6.  **Agent**: Asked user for confirmation on the completed Safety module integration (from previous session). -  by user's new requests.
+1.  **User**:  (Give HR authorization to the projects folder area.) -  (Implementation done, now pending user verification).
+2.  **User**:  (but it all opens for me) - This was in response to the agent struggling with a blank screen, confirming the app was working on the user's side. .
+3.  **User**:  /  - The user approved the agent's plan to make the PM financial visibility configurable. .
+4.  **User**:  (We implemented some changes for PM users. Can you apply them, but by pressing a button from settings? So it's not hardcoded?) - This was the initial request for the main task of this session.  (Implementation done, now pending user verification).
 
 **Project Health Check:**
 -   **Broken**:
     -   Invoice PDF Layout: Inconsistent with Estimate PDF layout.
     -   PDF Numbered List Formatting: Lists from rich text editor render incorrectly.
 -   **User Verification Pending**:
-    -   **Daily Log Signature**: The new drawable signature feature.
-    -   **Cost Estimate Checkboxes**: The new dynamic calculation feature.
-    -   **Survey Photos per Question**: The new photo upload feature within surveys.
-    -   **Daily Log PDF Branding**: The updated logo and text.
-    -   **Entire Daily Log Feature Suite**: The original features (Work Logs, Notes, Attachments, Survey, Weather Display, PDF Report) from the previous session.
-    -   Hiding Monetary Values for Project Managers.
-    -   Automatic Punch Closure.
+    -   **Configurable PM Financial Visibility** (New)
+    -   **RH Role Access to Projects** (New)
+    -   **Daily Log Drawable Signature**
+    -   **Cost Estimate Checkbox Logic**
+    -   **Survey Photos per Question**
+    -   **Daily Log PDF Branding**
+    -   **Entire Daily Log Feature Suite** (from a previous session)
+    -   **Automatic Punch Closure** (from a previous session)
 -   **Mocked**: None.
 
 **3rd Party Integrations**
@@ -196,13 +167,15 @@ The user's primary goal is to enhance their ERP application, now branded as ProM
 -   fastapi-mail
 -   cloudinary
 -   httpx
--   **react-signature-canvas** (newly added)
+-   react-signature-canvas
 
 **Testing status**
 -   **Testing agent used after significant changes**: NO
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: PDF formatting issues with rich text content (specifically lists).
+-   **Known regressions**:
+    -   PDF formatting issues with rich text content (specifically lists).
+    -   The  appears to have session/authentication instability, which can lead to false negatives (blank pages).
 
 **Credentials to test flow:**
 -   **Super Admin**:
@@ -211,6 +184,8 @@ The user's primary goal is to enhance their ERP application, now branded as ProM
 -   **Project Manager**:
     -   Email: 
     -   Password: 
+-   **Note**: An  (HR) user may be required to test the latest change. If one doesn't exist, one may need to be created via the UI.
 
 **What agent forgot to execute**
--   The agent correctly followed the user's high-priority requests in sequence. Consequently, the large, pre-existing backlog of unverified features and lower-priority bugs (like responsive design issues) remains unaddressed. The next step should be to pause new feature development and focus exclusively on getting user verification for all completed work to establish a stable project baseline.</analysis>
+- The agent did not perform a final visual verification (e.g., via screenshot) for the HR navigation change, declaring it done based only on the code change.
+- The agent correctly prioritized the user's new request but did not circle back to the large, growing list of previously completed features that are still awaiting user verification. This verification step is now the highest priority task for the next agent.</analysis>
