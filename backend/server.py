@@ -11735,6 +11735,253 @@ async def delete_sponsor(company_id: str, sponsor_id: str, request: Request, ses
     
     return {"message": "Sponsor eliminado exitosamente"}
 
+# ==================== RFI ENDPOINTS ====================
+
+@api_router.get("/rfis")
+async def get_rfis(
+    request: Request, 
+    project_id: Optional[str] = None,
+    status: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get all RFIs, optionally filtered by project"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if status:
+        query["status"] = status
+    
+    rfis = await db.rfis.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return rfis
+
+@api_router.get("/rfis/{rfi_id}")
+async def get_rfi(rfi_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get a single RFI by ID"""
+    user = await get_current_user(request, session_token)
+    rfi = await db.rfis.find_one({"rfi_id": rfi_id}, {"_id": 0})
+    if not rfi:
+        raise HTTPException(status_code=404, detail="RFI no encontrado")
+    return rfi
+
+@api_router.post("/rfis")
+async def create_rfi(rfi: RFICreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new RFI"""
+    user = await get_current_user(request, session_token)
+    
+    # Get project info
+    project = await db.projects.find_one({"project_id": rfi.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Generate RFI number: RFI-YYYY-PROJNUM-SEQ
+    year = datetime.now().year
+    project_num = project.get("project_number", rfi.project_id[:8]).replace("-", "").replace(" ", "")[:8]
+    
+    # Get next sequence number for this project
+    existing_count = await db.rfis.count_documents({"project_id": rfi.project_id})
+    seq_num = str(existing_count + 1).zfill(2)
+    
+    rfi_number = f"RFI-{year}-{project_num}-{seq_num}"
+    rfi_id = f"rfi_{uuid4().hex[:12]}"
+    
+    rfi_doc = {
+        "rfi_id": rfi_id,
+        "rfi_number": rfi_number,
+        "project_id": rfi.project_id,
+        "project_name": project.get("name"),
+        "project_number": project.get("project_number"),
+        "rfi_type": rfi.rfi_type,
+        "to_name": rfi.to_name,
+        "to_company": rfi.to_company,
+        "to_email": rfi.to_email,
+        "submitted_by": rfi.submitted_by,
+        "submitted_by_company": rfi.submitted_by_company,
+        "question": rfi.question,
+        "priority": rfi.priority,
+        "cost_impact": rfi.cost_impact,
+        "schedule_impact": rfi.schedule_impact,
+        "due_date": rfi.due_date,
+        "status": "draft",
+        "attachments": rfi.attachments or [],
+        "related_documents": rfi.related_documents or [],
+        "response": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": None,
+        "created_by": user["user_id"],
+        "created_by_name": user.get("name")
+    }
+    
+    await db.rfis.insert_one(rfi_doc)
+    
+    # Remove _id before returning
+    rfi_doc.pop("_id", None)
+    return rfi_doc
+
+@api_router.put("/rfis/{rfi_id}")
+async def update_rfi(rfi_id: str, rfi_update: RFIUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update an RFI"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.rfis.find_one({"rfi_id": rfi_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="RFI no encontrado")
+    
+    update_data = {k: v for k, v in rfi_update.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.rfis.update_one({"rfi_id": rfi_id}, {"$set": update_data})
+    
+    updated = await db.rfis.find_one({"rfi_id": rfi_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/rfis/{rfi_id}")
+async def delete_rfi(rfi_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete an RFI"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.rfis.delete_one({"rfi_id": rfi_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="RFI no encontrado")
+    
+    return {"message": "RFI eliminado exitosamente"}
+
+@api_router.post("/rfis/{rfi_id}/send")
+async def send_rfi(rfi_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Mark RFI as sent"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.rfis.find_one({"rfi_id": rfi_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="RFI no encontrado")
+    
+    await db.rfis.update_one(
+        {"rfi_id": rfi_id},
+        {"$set": {
+            "status": "sent",
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # TODO: Send email notification if to_email is provided
+    
+    return {"message": "RFI enviado exitosamente"}
+
+@api_router.post("/rfis/{rfi_id}/respond")
+async def respond_to_rfi(rfi_id: str, response: RFIResponseCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Add a response to an RFI"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.rfis.find_one({"rfi_id": rfi_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="RFI no encontrado")
+    
+    response_doc = {
+        "response_text": response.response_text,
+        "responded_by": response.responded_by,
+        "responded_by_company": response.responded_by_company,
+        "responded_by_title": response.responded_by_title,
+        "attachments": response.attachments or [],
+        "responded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.rfis.update_one(
+        {"rfi_id": rfi_id},
+        {"$set": {
+            "response": response_doc,
+            "status": "responded",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    updated = await db.rfis.find_one({"rfi_id": rfi_id}, {"_id": 0})
+    return updated
+
+@api_router.post("/rfis/{rfi_id}/close")
+async def close_rfi(rfi_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Close an RFI"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.rfis.find_one({"rfi_id": rfi_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="RFI no encontrado")
+    
+    await db.rfis.update_one(
+        {"rfi_id": rfi_id},
+        {"$set": {
+            "status": "closed",
+            "closed_at": datetime.now(timezone.utc).isoformat(),
+            "closed_by": user["user_id"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "RFI cerrado exitosamente"}
+
+@api_router.get("/rfis/{rfi_id}/comments")
+async def get_rfi_comments(rfi_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get comments for an RFI"""
+    user = await get_current_user(request, session_token)
+    comments = await db.rfi_comments.find({"rfi_id": rfi_id}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    return comments
+
+@api_router.post("/rfis/{rfi_id}/comments")
+async def add_rfi_comment(rfi_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Add a comment to an RFI"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    existing = await db.rfis.find_one({"rfi_id": rfi_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="RFI no encontrado")
+    
+    comment_id = f"rficmt_{uuid4().hex[:12]}"
+    comment_doc = {
+        "comment_id": comment_id,
+        "rfi_id": rfi_id,
+        "content": body.get("content", ""),
+        "created_by": user["user_id"],
+        "created_by_name": user.get("name"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.rfi_comments.insert_one(comment_doc)
+    comment_doc.pop("_id", None)
+    return comment_doc
+
+@api_router.get("/projects/{project_id}/rfi-stats")
+async def get_project_rfi_stats(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get RFI statistics for a project"""
+    user = await get_current_user(request, session_token)
+    
+    total = await db.rfis.count_documents({"project_id": project_id})
+    draft = await db.rfis.count_documents({"project_id": project_id, "status": "draft"})
+    sent = await db.rfis.count_documents({"project_id": project_id, "status": "sent"})
+    in_review = await db.rfis.count_documents({"project_id": project_id, "status": "in_review"})
+    responded = await db.rfis.count_documents({"project_id": project_id, "status": "responded"})
+    closed = await db.rfis.count_documents({"project_id": project_id, "status": "closed"})
+    
+    # Count overdue
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    overdue = await db.rfis.count_documents({
+        "project_id": project_id,
+        "status": {"$in": ["sent", "in_review"]},
+        "due_date": {"$lt": today, "$ne": None}
+    })
+    
+    return {
+        "total": total,
+        "draft": draft,
+        "sent": sent,
+        "in_review": in_review,
+        "responded": responded,
+        "closed": closed,
+        "overdue": overdue,
+        "pending": sent + in_review
+    }
+
 # ==================== VENDORS ENDPOINTS ====================
 
 @api_router.get("/vendors")
