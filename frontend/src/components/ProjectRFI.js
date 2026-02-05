@@ -252,194 +252,262 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
     setResponseDialogOpen(true);
   };
 
-  // Generate PDF for RFI
+  // Generate PDF for RFI - Professional OHSMS format
   const generateRfiPdf = (rfi) => {
-    // Use jsPDF to generate PDF matching the OHSMS format
     import('jspdf').then(({ default: jsPDF }) => {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 20;
-      let y = 20;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - (margin * 2);
+      let y = 15;
 
-      // Header with logo placeholder
-      doc.setFontSize(10);
-      doc.setTextColor(128, 128, 128);
-      doc.text('OHSMS', margin, y);
-      doc.setFontSize(8);
-      doc.text('SAFETY IS OUR PRIORITY', margin, y + 4);
-      
-      // Title
-      y = 35;
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
+      // Helper function to draw checkbox
+      const drawCheckbox = (x, yPos, checked, label) => {
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.3);
+        doc.rect(x, yPos - 3, 4, 4);
+        if (checked) {
+          doc.setFont(undefined, 'bold');
+          doc.text('X', x + 0.8, yPos);
+          doc.setFont(undefined, 'normal');
+        }
+        doc.text(label, x + 6, yPos);
+      };
+
+      // ========== HEADER WITH LOGO ==========
+      // Logo area (left side)
+      doc.setFillColor(0, 100, 0); // Dark green
+      doc.rect(margin, y, 40, 18, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
       doc.setFont(undefined, 'bold');
-      doc.text('REQUEST FOR INFORMATION / CLARIFICATION', pageWidth / 2, y, { align: 'center' });
-      
-      // Company info
-      y = 45;
-      doc.setFontSize(8);
+      doc.text('OHSMS', margin + 4, y + 8);
+      doc.setFontSize(6);
       doc.setFont(undefined, 'normal');
-      doc.text('Occupational Health & Safety Management Services', pageWidth / 2, y, { align: 'center' });
-      doc.text('HC 4 Box 4898 Las Piedras, PR 00771', pageWidth / 2, y + 4, { align: 'center' });
-      doc.text('(939) 610-3425 / (787) 966-9044', pageWidth / 2, y + 8, { align: 'center' });
+      doc.text('SAFETY IS OUR PRIORITY', margin + 4, y + 14);
+      
+      // Company info (right of logo)
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(8);
+      doc.text('Occupational Health & Safety Management Services', margin + 45, y + 4);
+      doc.text('HC 4 Box 4898 Las Piedras, PR 00771', margin + 45, y + 9);
+      doc.text('(939) 610-3425 / (787) 966-9044', margin + 45, y + 14);
 
-      // RFI/RFC checkbox
-      y = 62;
-      doc.setFontSize(10);
+      // ========== TITLE ==========
+      y = 40;
+      doc.setFillColor(200, 200, 200);
+      doc.rect(margin, y, contentWidth, 8, 'F');
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('REQUEST FOR INFORMATION / CLARIFICATION', pageWidth / 2, y + 5.5, { align: 'center' });
+
+      // ========== RFI/RFC CHECKBOXES ==========
+      y = 52;
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
       const isRfi = rfi.rfi_type === 'rfi';
-      doc.text(isRfi ? '☑ Request For Information (RFI)' : '☐ Request For Information (RFI)', margin, y);
-      doc.text(!isRfi ? '☑ Request For Clarification (RFC)' : '☐ Request For Clarification (RFC)', margin + 80, y);
+      drawCheckbox(margin, y, isRfi, 'Request For Information (RFI)');
+      drawCheckbox(margin + 70, y, !isRfi, 'Request For Clarification (RFC)');
 
-      // Info section
-      y = 75;
+      // ========== INFO SECTION - TWO COLUMNS ==========
+      y = 60;
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+      
+      // Draw border for info section
+      doc.rect(margin, y, contentWidth, 32);
+      
+      // Vertical divider
+      const midX = margin + contentWidth / 2;
+      doc.line(midX, y, midX, y + 32);
+      
+      // Left column - To/From info
+      const leftPadding = margin + 3;
+      const leftValueX = margin + 28;
+      
+      y += 6;
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.text('To:', leftPadding, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(rfi.to_name || '', leftValueX, y);
+      
+      y += 6;
+      doc.setFont(undefined, 'bold');
+      doc.text('Company:', leftPadding, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(rfi.to_company || '', leftValueX, y);
+      
+      y += 8;
+      doc.setFont(undefined, 'bold');
+      doc.text('Submitted by:', leftPadding, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(rfi.submitted_by || '', leftValueX + 5, y);
+      
+      y += 6;
+      doc.setFont(undefined, 'bold');
+      doc.text('Company:', leftPadding, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(rfi.submitted_by_company || '', leftValueX, y);
+
+      // Right column - Document info
+      const rightPadding = midX + 3;
+      const rightValueX = midX + 30;
+      let yRight = 66;
+      
+      doc.setFont(undefined, 'bold');
+      doc.text('Document No.:', rightPadding, yRight);
+      doc.setFont(undefined, 'normal');
+      doc.text(rfi.rfi_number || '', rightValueX, yRight);
+      
+      yRight += 6;
+      doc.setFont(undefined, 'bold');
+      doc.text('Date:', rightPadding, yRight);
+      doc.setFont(undefined, 'normal');
+      doc.text(moment(rfi.created_at).format('MMM/DD/YYYY'), rightValueX, yRight);
+      
+      yRight += 8;
+      doc.setFont(undefined, 'bold');
+      doc.text('Project Name:', rightPadding, yRight);
+      doc.setFont(undefined, 'normal');
+      const projName = (rfi.project_name || projectName || '').substring(0, 25);
+      doc.text(projName, rightValueX, yRight);
+      
+      yRight += 6;
+      doc.setFont(undefined, 'bold');
+      doc.text('Project No.:', rightPadding, yRight);
+      doc.setFont(undefined, 'normal');
+      doc.text(rfi.project_number || projectNumber || '', rightValueX, yRight);
+
+      // ========== QUESTION SECTION ==========
+      y = 96;
+      doc.setFillColor(230, 230, 230);
+      doc.rect(margin, y, contentWidth, 7, 'F');
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(9);
+      doc.text('Information / Clarification Required:', margin + 3, y + 5);
+      
+      y += 10;
+      doc.setFont(undefined, 'normal');
       doc.setFontSize(9);
       
-      // Left column
-      doc.setFont(undefined, 'bold');
-      doc.text('To:', margin, y);
-      doc.setFont(undefined, 'normal');
-      doc.text(rfi.to_name || '', margin + 25, y);
-      
-      doc.setFont(undefined, 'bold');
-      doc.text('Company:', margin, y + 8);
-      doc.setFont(undefined, 'normal');
-      doc.text(rfi.to_company || '', margin + 25, y + 8);
-      
-      doc.setFont(undefined, 'bold');
-      doc.text('Submitted by:', margin, y + 16);
-      doc.setFont(undefined, 'normal');
-      doc.text(rfi.submitted_by || '', margin + 35, y + 16);
-      
-      doc.setFont(undefined, 'bold');
-      doc.text('Company:', margin, y + 24);
-      doc.setFont(undefined, 'normal');
-      doc.text(rfi.submitted_by_company || '', margin + 25, y + 24);
+      // Question text with numbering
+      const questionText = `1. ${rfi.question || ''}`;
+      const questionLines = doc.splitTextToSize(questionText, contentWidth - 6);
+      doc.text(questionLines, margin + 3, y);
+      y += questionLines.length * 4 + 8;
 
-      // Right column
-      const rightCol = pageWidth - margin - 60;
-      doc.setFont(undefined, 'bold');
-      doc.text('Document No.:', rightCol, y);
-      doc.setFont(undefined, 'normal');
-      doc.text(rfi.rfi_number || '', rightCol + 30, y);
+      // ========== IMPACT SECTION ==========
+      doc.setFillColor(230, 230, 230);
+      doc.rect(margin, y, contentWidth, 24, 'F');
+      doc.rect(margin, y, contentWidth, 24); // Border
       
-      doc.setFont(undefined, 'bold');
-      doc.text('Date:', rightCol, y + 8);
-      doc.setFont(undefined, 'normal');
-      doc.text(moment(rfi.created_at).format('MMM/DD/YYYY'), rightCol + 30, y + 8);
+      const impactStartY = y + 6;
+      const labelX = margin + 3;
+      const optionsStartX = margin + 40;
+      const optionSpacing = 30;
       
+      // Priority row
       doc.setFont(undefined, 'bold');
-      doc.text('Project Name:', rightCol, y + 16);
+      doc.text('Priority:', labelX, impactStartY);
       doc.setFont(undefined, 'normal');
-      const projName = rfi.project_name || projectName || '';
-      doc.text(projName.substring(0, 30), rightCol + 30, y + 16);
+      drawCheckbox(optionsStartX, impactStartY, rfi.priority === 'high', 'High');
+      drawCheckbox(optionsStartX + optionSpacing, impactStartY, rfi.priority === 'normal', 'Normal');
+      drawCheckbox(optionsStartX + optionSpacing * 2, impactStartY, rfi.priority === 'unknown', 'Unknown');
       
+      // Cost Impact row
+      const costY = impactStartY + 8;
       doc.setFont(undefined, 'bold');
-      doc.text('Project No.:', rightCol, y + 24);
+      doc.text('Cost Impact:', labelX, costY);
       doc.setFont(undefined, 'normal');
-      doc.text(rfi.project_number || projectNumber || '', rightCol + 30, y + 24);
+      drawCheckbox(optionsStartX, costY, rfi.cost_impact === 'yes', 'Yes');
+      drawCheckbox(optionsStartX + optionSpacing, costY, rfi.cost_impact === 'no', 'No');
+      drawCheckbox(optionsStartX + optionSpacing * 2, costY, rfi.cost_impact === 'unknown', 'Unknown');
+      
+      // Schedule Impact row
+      const schedY = costY + 8;
+      doc.setFont(undefined, 'bold');
+      doc.text('Schedule Impact:', labelX, schedY);
+      doc.setFont(undefined, 'normal');
+      drawCheckbox(optionsStartX, schedY, rfi.schedule_impact === 'yes', 'Yes');
+      drawCheckbox(optionsStartX + optionSpacing, schedY, rfi.schedule_impact === 'no', 'No');
+      drawCheckbox(optionsStartX + optionSpacing * 2, schedY, rfi.schedule_impact === 'unknown', 'Unknown');
 
-      // Question section
-      y = 115;
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y);
-      
-      y += 8;
-      doc.setFont(undefined, 'bold');
-      doc.text('Information / Clarification Required:', margin, y);
-      
-      y += 8;
-      doc.setFont(undefined, 'normal');
-      const questionLines = doc.splitTextToSize(rfi.question || '', pageWidth - (margin * 2));
-      doc.text(questionLines, margin, y);
-      y += questionLines.length * 5 + 10;
+      y += 28;
 
-      // Impact section
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 8;
+      // ========== RESPONSE SECTION ==========
+      doc.setFillColor(230, 230, 230);
+      doc.rect(margin, y, contentWidth, 7, 'F');
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(9);
+      doc.text('Response:', margin + 3, y + 5);
       
-      // Priority
-      doc.setFont(undefined, 'bold');
-      doc.text('Priority:', margin, y);
+      y += 10;
       doc.setFont(undefined, 'normal');
-      const priorityX = margin + 25;
-      doc.text(rfi.priority === 'high' ? '☑ High' : '☐ High', priorityX, y);
-      doc.text(rfi.priority === 'normal' ? '☑ Normal' : '☐ Normal', priorityX + 25, y);
-      doc.text(rfi.priority === 'unknown' ? '☑ Unknown' : '☐ Unknown', priorityX + 55, y);
-      
-      // Cost Impact
-      y += 8;
-      doc.setFont(undefined, 'bold');
-      doc.text('Cost Impact:', margin, y);
-      doc.setFont(undefined, 'normal');
-      doc.text(rfi.cost_impact === 'yes' ? '☑ Yes' : '☐ Yes', priorityX, y);
-      doc.text(rfi.cost_impact === 'no' ? '☑ No' : '☐ No', priorityX + 25, y);
-      doc.text(rfi.cost_impact === 'unknown' ? '☑ Unknown' : '☐ Unknown', priorityX + 50, y);
-      
-      // Schedule Impact
-      y += 8;
-      doc.setFont(undefined, 'bold');
-      doc.text('Schedule Impact:', margin, y);
-      doc.setFont(undefined, 'normal');
-      doc.text(rfi.schedule_impact === 'yes' ? '☑ Yes' : '☐ Yes', priorityX + 15, y);
-      doc.text(rfi.schedule_impact === 'no' ? '☑ No' : '☐ No', priorityX + 40, y);
-      doc.text(rfi.schedule_impact === 'unknown' ? '☑ Unknown' : '☐ Unknown', priorityX + 65, y);
-
-      // Response section
-      y += 15;
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 8;
-      doc.setFont(undefined, 'bold');
-      doc.text('Response:', margin, y);
       
       if (rfi.response) {
-        y += 8;
+        const responseLines = doc.splitTextToSize(rfi.response.response_text || '', contentWidth - 6);
+        doc.text(responseLines, margin + 3, y);
+        y += responseLines.length * 4 + 10;
+        
+        // Response details in a bordered box
+        doc.rect(margin, y, contentWidth, 20);
+        
+        const respY = y + 6;
+        doc.setFont(undefined, 'bold');
+        doc.text('Response By:', margin + 3, respY);
         doc.setFont(undefined, 'normal');
-        const responseLines = doc.splitTextToSize(rfi.response.response_text || '', pageWidth - (margin * 2));
-        doc.text(responseLines, margin, y);
-        y += responseLines.length * 5 + 10;
+        doc.text(rfi.response.responded_by || '', margin + 30, respY);
         
         doc.setFont(undefined, 'bold');
-        doc.text('Response By:', margin, y);
+        doc.text('Company:', midX + 3, respY);
         doc.setFont(undefined, 'normal');
-        doc.text(rfi.response.responded_by || '', margin + 30, y);
+        doc.text(rfi.response.responded_by_company || '', midX + 25, respY);
+        
+        const respY2 = respY + 8;
+        doc.setFont(undefined, 'bold');
+        doc.text('Title:', margin + 3, respY2);
+        doc.setFont(undefined, 'normal');
+        doc.text(rfi.response.responded_by_title || '', margin + 18, respY2);
         
         doc.setFont(undefined, 'bold');
-        doc.text('Company:', margin + 80, y);
+        doc.text('Date:', midX + 3, respY2);
         doc.setFont(undefined, 'normal');
-        doc.text(rfi.response.responded_by_company || '', margin + 105, y);
-        
-        y += 8;
-        doc.setFont(undefined, 'bold');
-        doc.text('Title:', margin, y);
-        doc.setFont(undefined, 'normal');
-        doc.text(rfi.response.responded_by_title || '', margin + 20, y);
-        
-        doc.setFont(undefined, 'bold');
-        doc.text('Date:', margin + 80, y);
-        doc.setFont(undefined, 'normal');
-        doc.text(rfi.response.responded_at ? moment(rfi.response.responded_at).format('MMM/DD/YYYY') : '', margin + 95, y);
+        doc.text(rfi.response.responded_at ? moment(rfi.response.responded_at).format('MMM/DD/YYYY') : '', midX + 18, respY2);
       } else {
-        y += 8;
-        doc.setFont(undefined, 'normal');
-        doc.text('(Pending response)', margin, y);
+        // Empty response box with lines
+        doc.rect(margin, y, contentWidth, 35);
         
         y += 25;
-        doc.text('Response By: _______________________', margin, y);
-        doc.text('Company: _______________________', margin + 80, y);
+        doc.setLineWidth(0.2);
         
-        y += 10;
-        doc.text('Title: _______________________', margin, y);
-        doc.text('Date: _______________________', margin + 80, y);
+        // Response By line
+        doc.setFont(undefined, 'bold');
+        doc.text('Response By:', margin + 3, y);
+        doc.line(margin + 30, y + 1, margin + 75, y + 1);
+        
+        doc.text('Company:', midX + 3, y);
+        doc.line(midX + 25, y + 1, pageWidth - margin - 3, y + 1);
+        
+        y += 8;
+        doc.text('Title:', margin + 3, y);
+        doc.line(margin + 18, y + 1, margin + 75, y + 1);
+        
+        doc.text('Date:', midX + 3, y);
+        doc.line(midX + 18, y + 1, pageWidth - margin - 3, y + 1);
       }
 
-      // Footer
-      y = doc.internal.pageSize.getHeight() - 20;
-      doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
+      // ========== FOOTER ==========
+      y = pageHeight - 12;
+      doc.setFontSize(7);
+      doc.setTextColor(100, 100, 100);
       doc.text('Form-OHSMS-E-0003', margin, y);
+      doc.setFont(undefined, 'bold');
       doc.text('Powered by ProManage', pageWidth / 2, y, { align: 'center' });
-      doc.text(`Rev. 01 - ${moment().format('MM/DD/YYYY')}`, pageWidth - margin, y, { align: 'right' });
+      doc.setFont(undefined, 'normal');
+      doc.text('Rev. 01 - 08/18/2025', pageWidth - margin, y, { align: 'right' });
 
       // Save PDF
       doc.save(`${rfi.rfi_number}.pdf`);
