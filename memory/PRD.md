@@ -11,15 +11,39 @@ Sistema ERP completo para gestión de proyectos, facturación, estimados, recurs
 5. Control de tiempo (ponches) de empleados
 6. Gestión de proveedores
 7. Sistema de permisos por roles
+8. **Módulo de RFIs (Request for Information)**
 
 ## User Roles
 - **Super Admin**: Acceso completo a todo el sistema
 - **Admin**: Acceso administrativo
-- **Project Manager**: Acceso operacional SIN información monetaria
-- **RRHH**: Recursos humanos
+- **Project Manager**: Acceso operacional (financieros configurables)
+- **RRHH**: Recursos humanos + acceso completo a proyectos
 - **Empleado**: Acceso básico
 
 ## What's Been Implemented
+
+### February 2026
+
+#### RFI Module (2026-02-05)
+- ✅ Backend: Modelos y endpoints completos para RFIs (`/api/rfis`)
+- ✅ Frontend: Componente `ProjectRFI.js` con UI completa
+- ✅ Tab "RFIs" integrado en la página de detalle del proyecto
+- ✅ Estadísticas por proyecto (Total, Borrador, Enviados, En Revisión, Respondidos, Cerrados, Vencidos)
+- ✅ CRUD completo: Crear, editar, eliminar RFIs
+- ✅ Flujo de estados: Borrador → Enviado → En Revisión → Respondido → Cerrado
+- ✅ Registro de respuestas con información del respondedor
+- ✅ Generación de PDF con formato OHSMS
+- ✅ Filtros por estado y búsqueda
+- ✅ Soporte para RFI y RFC (Request for Clarification)
+- ✅ Campos de impacto: Prioridad, Impacto en Costo, Impacto en Cronograma
+- ✅ Fecha límite de respuesta con indicador de vencimiento
+
+#### HR Navigation Update (2026-02-05)
+- ✅ Usuarios con rol `rrhh` tienen acceso completo a todas las secciones de proyectos (igual que admin)
+
+#### Configurable PM Financial Visibility (Previous Session)
+- ✅ Toggle en Settings para ocultar/mostrar información financiera a Project Managers
+- ✅ Hook centralizado `useFinancialPermissions.js`
 
 ### December 2025 - January 2026
 
