@@ -4521,6 +4521,15 @@ const ProjectDetail = () => {
             </div>
           </TabsContent>
 
+          {/* RFI Tab */}
+          <TabsContent value="rfi" className="space-y-6">
+            <ProjectRFI 
+              projectId={projectId} 
+              projectName={project?.name}
+              projectNumber={project?.project_number}
+            />
+          </TabsContent>
+
           {/* Safety Tab */}
           <TabsContent value="safety" className="space-y-6">
             <ProjectSafety 
