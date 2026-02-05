@@ -25,10 +25,11 @@ import {
   ArrowLeft, Plus, FileDown, CheckCircle2, Circle, Clock,
   DollarSign, Calendar, Tag, MessageSquare, Trash2, Pencil, TrendingUp, TrendingDown,
   Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User, Edit, Users, UserPlus, UserMinus,
-  Folder, FolderPlus, FolderOpen, ChevronRight, Home, MoreVertical, Move, Shield
+  Folder, FolderPlus, FolderOpen, ChevronRight, Home, MoreVertical, Move, Shield, FileQuestion
 } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import ProjectSafety from '../components/ProjectSafety';
+import ProjectRFI from '../components/ProjectRFI';
 import Timer from '../components/Timer';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
