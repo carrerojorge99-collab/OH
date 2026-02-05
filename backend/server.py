@@ -11913,7 +11913,7 @@ async def close_rfi(rfi_id: str, request: Request, session_token: Optional[str] 
         {"$set": {
             "status": "closed",
             "closed_at": datetime.now(timezone.utc).isoformat(),
-            "closed_by": user["user_id"],
+            "closed_by": user.user_id,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
@@ -11942,8 +11942,8 @@ async def add_rfi_comment(rfi_id: str, request: Request, session_token: Optional
         "comment_id": comment_id,
         "rfi_id": rfi_id,
         "content": body.get("content", ""),
-        "created_by": user["user_id"],
-        "created_by_name": user.get("name"),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
