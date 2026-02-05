@@ -11809,8 +11809,8 @@ async def create_rfi(rfi: RFICreate, request: Request, session_token: Optional[s
         "response": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": None,
-        "created_by": user["user_id"],
-        "created_by_name": user.get("name")
+        "created_by": user.user_id,
+        "created_by_name": user.name
     }
     
     await db.rfis.insert_one(rfi_doc)
