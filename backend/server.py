@@ -857,6 +857,73 @@ class SponsorCreate(BaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
 
+# ==================== RFI (Request for Information) MODELS ====================
+class RFIResponseCreate(BaseModel):
+    response_text: str
+    responded_by: str
+    responded_by_company: Optional[str] = None
+    responded_by_title: Optional[str] = None
+    attachments: Optional[List[dict]] = []
+
+class RFICreate(BaseModel):
+    project_id: str
+    rfi_type: str = "rfi"  # 'rfi' or 'rfc'
+    to_name: str
+    to_company: Optional[str] = None
+    to_email: Optional[str] = None
+    submitted_by: str
+    submitted_by_company: Optional[str] = None
+    question: str
+    priority: str = "normal"  # 'high', 'normal', 'unknown'
+    cost_impact: str = "unknown"  # 'yes', 'no', 'unknown'
+    schedule_impact: str = "unknown"  # 'yes', 'no', 'unknown'
+    due_date: Optional[str] = None
+    attachments: Optional[List[dict]] = []
+    related_documents: Optional[List[str]] = []  # Document IDs
+
+class RFIUpdate(BaseModel):
+    rfi_type: Optional[str] = None
+    to_name: Optional[str] = None
+    to_company: Optional[str] = None
+    to_email: Optional[str] = None
+    submitted_by: Optional[str] = None
+    submitted_by_company: Optional[str] = None
+    question: Optional[str] = None
+    priority: Optional[str] = None
+    cost_impact: Optional[str] = None
+    schedule_impact: Optional[str] = None
+    due_date: Optional[str] = None
+    status: Optional[str] = None
+    attachments: Optional[List[dict]] = None
+    related_documents: Optional[List[str]] = None
+
+class RFI(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    rfi_id: str
+    rfi_number: str  # Format: RFI-YYYY-PROJ-SEQ
+    project_id: str
+    project_name: Optional[str] = None
+    project_number: Optional[str] = None
+    rfi_type: str = "rfi"
+    to_name: str
+    to_company: Optional[str] = None
+    to_email: Optional[str] = None
+    submitted_by: str
+    submitted_by_company: Optional[str] = None
+    question: str
+    priority: str = "normal"
+    cost_impact: str = "unknown"
+    schedule_impact: str = "unknown"
+    due_date: Optional[str] = None
+    status: str = "draft"  # 'draft', 'sent', 'in_review', 'responded', 'closed'
+    attachments: List[dict] = []
+    related_documents: List[str] = []
+    response: Optional[dict] = None  # Response object
+    created_at: str
+    updated_at: Optional[str] = None
+    created_by: str
+    created_by_name: Optional[str] = None
+
 # ==================== VENDORS MODELS ====================
 class VendorContact(BaseModel):
     model_config = ConfigDict(extra="ignore")
