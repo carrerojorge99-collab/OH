@@ -74,19 +74,22 @@ Sistema ERP completo para gestión de proyectos, facturación, estimados, recurs
 ```
 /app/
 ├── backend/
-│   └── server.py              # FastAPI main server
+│   └── server.py              # FastAPI main server (RFI endpoints added)
 ├── frontend/
 │   └── src/
+│       ├── components/
+│       │   ├── ProjectRFI.js     # NEW: RFI module component
+│       │   ├── ProjectSafety.js  # Safety module
+│       │   └── Layout.js         # MODIFIED: HR navigation
+│       ├── hooks/
+│       │   └── useFinancialPermissions.js # Financial visibility hook
 │       ├── pages/
-│       │   ├── Dashboard.js   # MODIFIED: Role-based money visibility
-│       │   ├── Estimates.js   # MODIFIED: Role-based money visibility
-│       │   ├── Invoices.js    # MODIFIED: Role-based money visibility
-│       │   ├── PurchaseOrders.js # MODIFIED: Role-based money visibility
-│       │   ├── CostEstimates.js  # MODIFIED: Role-based money visibility
-│       │   ├── CostEstimateDetail.js # MODIFIED: Role-based money visibility
-│       │   └── Settings.js    # MODIFIED: Auto punch config
+│       │   ├── ProjectDetail.js  # MODIFIED: Added RFI tab
+│       │   ├── Dashboard.js      # Role-based money visibility
+│       │   ├── Settings.js       # PM visibility toggle
+│       │   └── ...
 │       └── utils/
-│           └── permissions.js # NEW: Centralized permission utilities
+│           └── permissions.js    # Centralized permission utilities
 └── memory/
     └── PRD.md
 ```
@@ -94,21 +97,26 @@ Sistema ERP completo para gestión de proyectos, facturación, estimados, recurs
 ## Database Schema (Key Collections)
 - **users**: User accounts with roles
 - **projects**: Project data with budgets
+- **rfis**: RFI documents (NEW)
+- **rfi_comments**: Comments on RFIs (NEW)
 - **estimates**: Quote documents
 - **invoices**: Invoice documents
 - **purchase_orders**: PO documents
 - **cost_estimates**: Cost estimation documents
 - **clock_entries**: Time punch records
-- **company_settings**: System configuration including `max_punch_hours`
+- **company_settings**: System configuration including `max_punch_hours`, `hide_financial_for_pm`
 
 ## Key API Endpoints
 - `POST /api/auth/login` - Authentication
-- `GET /api/company-settings` - Get settings (includes max_punch_hours)
+- `GET /api/rfis` - List RFIs (NEW)
+- `POST /api/rfis` - Create RFI (NEW)
+- `PUT /api/rfis/{id}` - Update RFI (NEW)
+- `POST /api/rfis/{id}/send` - Send RFI (NEW)
+- `POST /api/rfis/{id}/respond` - Add response (NEW)
+- `POST /api/rfis/{id}/close` - Close RFI (NEW)
+- `GET /api/projects/{id}/rfi-stats` - RFI statistics (NEW)
+- `GET /api/company-settings` - Get settings
 - `PUT /api/company-settings` - Update settings
-- `GET /api/invoices` - List invoices
-- `GET /api/estimates` - List estimates
-- `GET /api/purchase-orders` - List POs
-- `GET /api/cost-estimates` - List cost estimates
 
 ## Third-Party Integrations
 - jsPDF & jspdf-autotable (PDF generation)
