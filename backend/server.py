@@ -12330,6 +12330,8 @@ async def update_receipt(receipt_id: str, receipt: PaymentReceiptUpdate, request
         update_data["date"] = receipt.date
     if receipt.amount is not None:
         update_data["amount"] = receipt.amount
+    if receipt.discount_percentage is not None:
+        update_data["discount_percentage"] = receipt.discount_percentage
     if receipt.payment_method:
         update_data["payment_method"] = receipt.payment_method
     if receipt.reference_number is not None:
@@ -12338,6 +12340,15 @@ async def update_receipt(receipt_id: str, receipt: PaymentReceiptUpdate, request
         update_data["concept"] = receipt.concept
     if receipt.notes is not None:
         update_data["notes"] = receipt.notes
+    
+    # Recalculate discount if amount or discount_percentage changed
+    if "amount" in update_data or "discount_percentage" in update_data:
+        amount = update_data.get("amount", existing.get("amount", 0))
+        discount_pct = update_data.get("discount_percentage", existing.get("discount_percentage", 0))
+        discount_amount = round(amount * (discount_pct / 100), 2)
+        total = round(amount - discount_amount, 2)
+        update_data["discount_amount"] = discount_amount
+        update_data["total"] = total
     
     await db.payment_receipts.update_one({"receipt_id": receipt_id}, {"$set": update_data})
     return {"message": "Recibo actualizado exitosamente"}
