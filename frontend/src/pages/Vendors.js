@@ -814,6 +814,9 @@ const Vendors = () => {
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-sm font-medium text-green-700">{receipt.receipt_number}</span>
                                 <span className="text-xs text-slate-500">{formatDate(receipt.date)}</span>
+                                {receipt.discount_percentage > 0 && (
+                                  <span className="text-xs text-orange-500">-{receipt.discount_percentage}%</span>
+                                )}
                               </div>
                               <p className="text-sm text-slate-600 mt-1">{receipt.concept}</p>
                               {receipt.project_name && (
@@ -821,7 +824,7 @@ const Vendors = () => {
                               )}
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-green-600">{formatCurrency(receipt.amount)}</p>
+                              <p className="font-bold text-green-600">{formatCurrency(receipt.total || receipt.amount)}</p>
                               <Badge variant="outline" className="text-xs mt-1">
                                 {receipt.payment_method === 'transferencia' ? 'Transferencia' : 
                                  receipt.payment_method === 'cheque' ? 'Cheque' : 
