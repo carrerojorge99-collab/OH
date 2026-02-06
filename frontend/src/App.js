@@ -209,6 +209,11 @@ function AppRouter() {
           <Vendors />
         </ProtectedRoute>
       } />
+      <Route path="/receipts" element={
+        <ProtectedRoute>
+          <PaymentReceipts />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
