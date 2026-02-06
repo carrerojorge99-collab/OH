@@ -140,8 +140,62 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
       priority: 'normal',
       cost_impact: 'unknown',
       schedule_impact: 'unknown',
-      due_date: ''
+      due_date: '',
+      attachments: []
     });
+  };
+
+  // Handle file upload for RFI attachments
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('El archivo no puede superar 10MB');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/cloudinary/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true
+      });
+
+      const newAttachment = {
+        name: file.name,
+        url: response.data.secure_url,
+        type: file.type,
+        public_id: response.data.public_id
+      };
+
+      setRfiForm(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, newAttachment]
+      }));
+
+      toast.success('Documento adjuntado exitosamente');
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Error al subir el documento');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Remove attachment from form
+  const removeAttachment = (index) => {
+    setRfiForm(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }));
   };
 
   const handleCreateRfi = async (e) => {
