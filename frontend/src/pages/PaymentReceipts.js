@@ -105,6 +105,7 @@ const PaymentReceipts = () => {
       const payload = {
         ...receiptForm,
         amount: parseFloat(receiptForm.amount),
+        discount_percentage: parseFloat(receiptForm.discount_percentage) || 0,
         project_id: receiptForm.project_id || null
       };
 
