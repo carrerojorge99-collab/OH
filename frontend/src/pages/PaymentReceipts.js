@@ -151,22 +151,51 @@ const PaymentReceipts = () => {
     }
   };
 
-  const handleAddAttachment = async (fileData) => {
-    if (!selectedReceipt) return;
+  // Handle file upload for attachments (same logic as RFI)
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !selectedReceipt) return;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('El archivo no puede superar 10MB');
+      return;
+    }
+
+    setUploadingFile(true);
     try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/cloudinary/upload?folder=uploads/receipts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true
+      });
+
+      // Determine file type
+      const isImage = file.type.startsWith('image/');
+      
+      // Add attachment to receipt
       await api.post(`/receipts/${selectedReceipt.receipt_id}/attachments`, {
-        filename: fileData.original_filename || fileData.public_id,
-        url: fileData.secure_url,
-        file_type: fileData.resource_type === 'image' ? 'image' : 'pdf'
+        filename: file.name,
+        url: response.data.secure_url,
+        file_type: isImage ? 'image' : 'pdf'
       }, { withCredentials: true });
-      toast.success('Comprobante agregado');
+      
+      toast.success('Comprobante adjuntado exitosamente');
       
       // Reload receipt
       const res = await api.get(`/receipts/${selectedReceipt.receipt_id}`, { withCredentials: true });
       setSelectedReceipt(res.data);
       loadData();
     } catch (error) {
-      toast.error('Error al agregar comprobante');
+      console.error('Error uploading file:', error);
+      toast.error('Error al subir el comprobante');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
