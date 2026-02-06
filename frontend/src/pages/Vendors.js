@@ -24,7 +24,7 @@ import {
 import { toast } from 'sonner';
 import { 
   Truck, Plus, Edit, Trash2, Users, Phone, Mail, MapPin, 
-  Globe, FileText, ChevronRight, Search, Tag
+  Globe, FileText, ChevronRight, Search, Tag, Receipt, DollarSign
 } from 'lucide-react';
 
 const vendorCategories = [
