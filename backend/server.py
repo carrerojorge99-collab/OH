@@ -982,6 +982,55 @@ class VendorContactCreate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
 
+# ==================== PAYMENT RECEIPTS MODELS ====================
+
+class PaymentReceiptAttachment(BaseModel):
+    attachment_id: str
+    filename: str
+    url: str
+    file_type: str  # pdf, image
+    uploaded_at: str
+
+class PaymentReceiptCreate(BaseModel):
+    vendor_id: str
+    project_id: Optional[str] = None  # Opcional - puede ser independiente
+    date: str
+    amount: float
+    payment_method: str  # transferencia, cheque, efectivo, tarjeta
+    reference_number: Optional[str] = None  # Número de referencia bancaria/cheque
+    concept: str
+    notes: Optional[str] = None
+
+class PaymentReceiptUpdate(BaseModel):
+    vendor_id: Optional[str] = None
+    project_id: Optional[str] = None
+    date: Optional[str] = None
+    amount: Optional[float] = None
+    payment_method: Optional[str] = None
+    reference_number: Optional[str] = None
+    concept: Optional[str] = None
+    notes: Optional[str] = None
+
+class PaymentReceipt(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    receipt_id: str
+    receipt_number: str  # REC-0001
+    vendor_id: str
+    vendor_name: str
+    project_id: Optional[str] = None
+    project_name: Optional[str] = None
+    date: str
+    amount: float
+    payment_method: str
+    reference_number: Optional[str] = None
+    concept: str
+    notes: Optional[str] = None
+    attachments: List[PaymentReceiptAttachment] = []
+    created_by: str
+    created_by_name: str
+    created_at: str
+    updated_at: Optional[str] = None
+
 # =====================================================================
 
 class AuditLog(BaseModel):
