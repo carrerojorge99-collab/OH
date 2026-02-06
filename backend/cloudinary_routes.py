@@ -90,6 +90,54 @@ async def get_cloudinary_config():
         "api_key": os.getenv("CLOUDINARY_API_KEY")
     }
 
+@cloudinary_router.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    folder: str = Query("uploads/rfi"),
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """
+    Upload a file directly to Cloudinary.
+    Supports images, PDFs, and other documents.
+    """
+    # Validate folder path
+    if not any(folder.startswith(allowed) for allowed in ALLOWED_FOLDERS):
+        raise HTTPException(status_code=400, detail="Ruta de carpeta no permitida")
+    
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Determine resource type based on file type
+        content_type = file.content_type or ""
+        if content_type.startswith("image/"):
+            resource_type = "image"
+        else:
+            resource_type = "raw"  # For PDFs, docs, etc.
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            content,
+            folder=folder,
+            resource_type=resource_type,
+            public_id=f"{int(time.time())}_{file.filename.rsplit('.', 1)[0]}" if file.filename else None,
+            use_filename=True,
+            unique_filename=True
+        )
+        
+        return {
+            "secure_url": result.get("secure_url"),
+            "public_id": result.get("public_id"),
+            "resource_type": result.get("resource_type"),
+            "format": result.get("format"),
+            "bytes": result.get("bytes"),
+            "original_filename": file.filename
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
+
 @cloudinary_router.delete("/delete")
 async def delete_asset(
     data: DeleteAssetRequest,
