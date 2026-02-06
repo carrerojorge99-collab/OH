@@ -86,6 +86,7 @@ const Layout = ({ children }) => {
       { name: 'Calendario', href: '/calendar', icon: Calendar },
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
       { name: 'Proveedores', href: '/vendors', icon: Truck },
+      { name: 'Recibos de Pago', href: '/receipts', icon: Receipt },
       { name: 'Estimados', href: '/estimados', icon: FileText },
       { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
       { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
