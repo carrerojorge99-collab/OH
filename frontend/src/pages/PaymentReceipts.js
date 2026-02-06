@@ -287,15 +287,10 @@ const PaymentReceipts = () => {
     });
   };
 
-  // Generate PDF
+  // Generate PDF - Professional OHSMS format matching Estimate style
   const generateReceiptPdf = async (receipt) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
-    
-    // Colors
-    const primaryColor = [37, 99, 235]; // Blue
-    const textColor = [30, 41, 59];
-    const grayColor = [100, 116, 139];
     
     // Fetch company info
     let company = {};
@@ -305,101 +300,117 @@ const PaymentReceipts = () => {
       console.error('Error loading company info:', e);
     }
 
-    // Header with logo
-    let yPos = 15;
+    // === LEFT SIDE: Company Logo and Info ===
+    let leftY = 15;
+    
+    // Add company logo - use company's logo if available, otherwise fallback to default
     const logoToUse = company?.logoBase64 || LOGO_BASE64;
     try {
       const imageFormat = logoToUse.includes('image/jpeg') ? 'JPEG' : 'PNG';
-      doc.addImage(logoToUse, imageFormat, 15, 10, 35, 18);
-      yPos = 35;
+      doc.addImage(logoToUse, imageFormat, 15, 6, 50, 38);
+      leftY = 47;
     } catch (e) {
-      yPos = 20;
+      leftY = 15;
     }
-
-    // Company name
+    
+    // Always show company name below logo (split into 2 lines after "SAFETY")
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...primaryColor);
-    doc.text(company.company_name || 'ProManage', 15, yPos);
-    yPos += 5;
-
+    doc.setTextColor(...COLORS.primary);
+    const companyName = company.company_name || 'OHSMS PR';
+    if (companyName.includes('SAFETY')) {
+      const parts = companyName.split('SAFETY');
+      doc.text(parts[0].trim() + ' SAFETY', 15, leftY);
+      leftY += 4;
+      doc.text(parts[1].trim(), 15, leftY);
+      leftY += 5;
+    } else {
+      doc.text(companyName, 15, leftY);
+      leftY += 5;
+    }
+    
     // Company details
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...grayColor);
-    if (company.address) { doc.text(company.address, 15, yPos); yPos += 4; }
+    doc.setTextColor(...COLORS.secondary);
+    if (company.address) { doc.text(company.address, 15, leftY); leftY += 4; }
     if (company.city || company.state) { 
-      doc.text(`${company.city || ''}, ${company.state || ''} ${company.zip_code || ''}`, 15, yPos); 
-      yPos += 4; 
+      doc.text(`${company.city || ''}, ${company.state || ''} ${company.zip_code || ''}`, 15, leftY); 
+      leftY += 4; 
     }
-    if (company.phone) { doc.text(`Tel: ${company.phone}`, 15, yPos); yPos += 4; }
-    if (company.email) { doc.text(company.email, 15, yPos); }
+    if (company.phone) { doc.text(`Tel: ${company.phone}`, 15, leftY); leftY += 4; }
+    if (company.email) { doc.text(company.email, 15, leftY); leftY += 4; }
+    if (company.website) { doc.text(company.website, 15, leftY); leftY += 4; }
 
-    // Title on right side
+    // === RIGHT SIDE: Document Info ===
+    const rightX = pageWidth - 15;
+    
+    // Document type title
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...textColor);
-    doc.text('RECIBO DE PAGO', pageWidth - 15, 20, { align: 'right' });
+    doc.setTextColor(...COLORS.text);
+    doc.text('RECIBO DE PAGO', rightX, 20, { align: 'right' });
 
     // Receipt number and date
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...grayColor);
-    doc.text(`#: ${receipt.receipt_number}`, pageWidth - 15, 28, { align: 'right' });
-    doc.text(`Fecha: ${formatDate(receipt.date)}`, pageWidth - 15, 34, { align: 'right' });
+    doc.setTextColor(...COLORS.secondary);
+    doc.text(`#: ${receipt.receipt_number}`, rightX, 28, { align: 'right' });
+    doc.text(`Fecha: ${moment(receipt.date).format('MMM DD, YYYY')}`, rightX, 34, { align: 'right' });
 
-    // Amount box
-    doc.setFillColor(...primaryColor);
-    doc.roundedRect(pageWidth - 55, 40, 40, 12, 2, 2, 'F');
-    doc.setTextColor(255, 255, 255);
+    // Total in orange box (show final total, not subtotal)
+    const totalBoxY = 40;
+    doc.setFillColor(...COLORS.primary);
+    doc.roundedRect(pageWidth - 55, totalBoxY, 40, 12, 2, 2, 'F');
+    doc.setTextColor(...COLORS.white);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(formatCurrency(receipt.amount), pageWidth - 35, 48, { align: 'center' });
+    const displayTotal = receipt.total || receipt.amount || 0;
+    doc.text(`$${displayTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, pageWidth - 35, totalBoxY + 8, { align: 'center' });
 
     // Separator line
-    const lineY = Math.max(yPos + 8, 58);
-    doc.setDrawColor(...primaryColor);
+    const lineY = Math.max(leftY + 2, totalBoxY + 18);
+    doc.setDrawColor(...COLORS.primary);
     doc.setLineWidth(0.5);
     doc.line(15, lineY, pageWidth - 15, lineY);
 
     // Vendor section
-    let contentY = lineY + 10;
+    let contentY = lineY + 8;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...primaryColor);
+    doc.setTextColor(...COLORS.primary);
     doc.text('PROVEEDOR', 15, contentY);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...textColor);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...COLORS.text);
     doc.setFontSize(11);
     contentY += 6;
     doc.text(receipt.vendor_name || '', 15, contentY);
 
-    // Project if exists
+    // Project if exists (on the right side)
     if (receipt.project_name) {
-      contentY += 10;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...primaryColor);
-      doc.text('PROYECTO', 15, contentY);
+      doc.setTextColor(...COLORS.primary);
+      doc.text('PROYECTO', pageWidth / 2, lineY + 8);
       
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...textColor);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...COLORS.text);
       doc.setFontSize(11);
-      contentY += 6;
-      doc.text(receipt.project_name, 15, contentY);
+      doc.text(receipt.project_name, pageWidth / 2, lineY + 14);
     }
 
-    // Amount details with discount
+    // Amount details section
     contentY += 15;
-    const amountTableData = [
-      ['Subtotal', formatCurrency(receipt.amount)]
-    ];
+    
+    // Amount breakdown table
+    const amountTableData = [];
+    amountTableData.push(['Subtotal', `$${(receipt.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`]);
     
     if (receipt.discount_percentage > 0) {
-      amountTableData.push(['Descuento (' + receipt.discount_percentage + '%)', '-' + formatCurrency(receipt.discount_amount)]);
+      amountTableData.push([`Descuento (${receipt.discount_percentage}%)`, `-$${(receipt.discount_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`]);
     }
-    amountTableData.push(['TOTAL A PAGAR', formatCurrency(receipt.total || receipt.amount)]);
+    amountTableData.push(['TOTAL A PAGAR', `$${displayTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`]);
 
     autoTable(doc, {
       startY: contentY,
@@ -407,22 +418,22 @@ const PaymentReceipts = () => {
       theme: 'plain',
       styles: {
         fontSize: 10,
-        cellPadding: 3
+        cellPadding: 4
       },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 80 },
+        0: { fontStyle: 'bold', cellWidth: 80, textColor: COLORS.secondary },
         1: { halign: 'right', cellWidth: 60 }
       },
       didParseCell: (data) => {
         // Make the last row (TOTAL) bold and green
         if (data.row.index === amountTableData.length - 1) {
           data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.textColor = [16, 185, 129]; // Green
+          data.cell.styles.textColor = COLORS.green;
           data.cell.styles.fontSize = 12;
         }
         // Make discount row orange
         if (receipt.discount_percentage > 0 && data.row.index === 1) {
-          data.cell.styles.textColor = [249, 115, 22]; // Orange
+          data.cell.styles.textColor = COLORS.primary;
         }
       }
     });
