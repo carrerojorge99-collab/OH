@@ -12267,6 +12267,11 @@ async def create_receipt(receipt: PaymentReceiptCreate, request: Request, sessio
     receipt_id = f"rec_{uuid4().hex[:12]}"
     receipt_number = await get_next_receipt_number()
     
+    # Calculate discount
+    discount_pct = receipt.discount_percentage or 0.0
+    discount_amount = round(receipt.amount * (discount_pct / 100), 2)
+    total = round(receipt.amount - discount_amount, 2)
+    
     receipt_doc = {
         "receipt_id": receipt_id,
         "receipt_number": receipt_number,
@@ -12276,6 +12281,9 @@ async def create_receipt(receipt: PaymentReceiptCreate, request: Request, sessio
         "project_name": project_name,
         "date": receipt.date,
         "amount": receipt.amount,
+        "discount_percentage": discount_pct,
+        "discount_amount": discount_amount,
+        "total": total,
         "payment_method": receipt.payment_method,
         "reference_number": receipt.reference_number,
         "concept": receipt.concept,
