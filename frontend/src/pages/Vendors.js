@@ -80,6 +80,28 @@ const Vendors = () => {
     loadVendors();
   }, []);
 
+  // Load vendor receipts when a vendor is selected
+  useEffect(() => {
+    if (selectedVendor?.vendor_id) {
+      loadVendorReceipts(selectedVendor.vendor_id);
+    } else {
+      setVendorReceipts([]);
+    }
+  }, [selectedVendor?.vendor_id]);
+
+  const loadVendorReceipts = async (vendorId) => {
+    setLoadingReceipts(true);
+    try {
+      const response = await api.get(`/vendors/${vendorId}/receipts`, { withCredentials: true });
+      setVendorReceipts(response.data);
+    } catch (error) {
+      console.error('Error loading vendor receipts:', error);
+      setVendorReceipts([]);
+    } finally {
+      setLoadingReceipts(false);
+    }
+  };
+
   const loadVendors = async () => {
     try {
       const response = await api.get('/vendors', { withCredentials: true });
