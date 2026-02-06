@@ -346,9 +346,9 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
     };
 
     // ========== HEADER - Clean minimal style ==========
-    // Add company logo (smaller, proportional)
+    // Add company logo (same size as Estimate: 35x18)
     try {
-      doc.addImage(LOGO_BASE64, 'PNG', margin, y, 32, 14);
+      doc.addImage(LOGO_BASE64, 'PNG', margin, y, 35, 18);
     } catch (logoErr) {
       console.warn('Could not load logo:', logoErr);
       doc.setFontSize(14);
