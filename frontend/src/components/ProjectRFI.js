@@ -566,6 +566,37 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
         doc.line(midX + 18, y + 1, pageWidth - margin - 3, y + 1);
       }
 
+      // ========== ATTACHMENTS SECTION ==========
+      if (rfi.attachments && rfi.attachments.length > 0) {
+        y += 15;
+        
+        // Check if we need a new page
+        if (y > pageHeight - 40) {
+          doc.addPage();
+          y = 20;
+        }
+        
+        doc.setFillColor(230, 230, 230);
+        doc.rect(margin, y, contentWidth, 7, 'F');
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Attached Documents / Documentos Adjuntos:', margin + 3, y + 5);
+        
+        y += 10;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 128); // Blue for links
+        
+        rfi.attachments.forEach((attachment, index) => {
+          const linkText = `${index + 1}. ${attachment.name}`;
+          doc.textWithLink(linkText, margin + 3, y, { url: attachment.url });
+          y += 5;
+        });
+        
+        doc.setTextColor(0, 0, 0); // Reset color
+      }
+
       // ========== FOOTER ==========
       y = pageHeight - 12;
       doc.setFontSize(7);
