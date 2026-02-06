@@ -12188,6 +12188,325 @@ async def delete_vendor_contact(vendor_id: str, contact_id: str, request: Reques
     
     return {"message": "Contacto eliminado exitosamente"}
 
+# ==================== PAYMENT RECEIPTS ENDPOINTS ====================
+
+async def get_next_receipt_number():
+    """Generate the next receipt number (REC-0001, REC-0002, etc.)"""
+    last_receipt = await db.payment_receipts.find_one(
+        {},
+        {"receipt_number": 1, "_id": 0},
+        sort=[("receipt_number", -1)]
+    )
+    if last_receipt and last_receipt.get("receipt_number"):
+        try:
+            last_num = int(last_receipt["receipt_number"].split("-")[1])
+            return f"REC-{str(last_num + 1).zfill(4)}"
+        except:
+            pass
+    return "REC-0001"
+
+@api_router.get("/receipts")
+async def get_receipts(
+    request: Request, 
+    session_token: Optional[str] = Cookie(None),
+    vendor_id: Optional[str] = Query(None),
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None)
+):
+    """Get all payment receipts with optional filters"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if vendor_id:
+        query["vendor_id"] = vendor_id
+    if project_id:
+        query["project_id"] = project_id
+    if start_date:
+        query["date"] = {"$gte": start_date}
+    if end_date:
+        if "date" in query:
+            query["date"]["$lte"] = end_date
+        else:
+            query["date"] = {"$lte": end_date}
+    
+    receipts = await db.payment_receipts.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    return receipts
+
+@api_router.get("/receipts/{receipt_id}")
+async def get_receipt(receipt_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get a single payment receipt by ID"""
+    user = await get_current_user(request, session_token)
+    receipt = await db.payment_receipts.find_one({"receipt_id": receipt_id}, {"_id": 0})
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Recibo no encontrado")
+    return receipt
+
+@api_router.post("/receipts")
+async def create_receipt(receipt: PaymentReceiptCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new payment receipt"""
+    user = await get_current_user(request, session_token)
+    
+    # Get vendor info
+    vendor = await db.vendors.find_one({"vendor_id": receipt.vendor_id}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    # Get project info if provided
+    project_name = None
+    if receipt.project_id:
+        project = await db.projects.find_one({"project_id": receipt.project_id}, {"_id": 0})
+        if project:
+            project_name = project.get("name", "")
+    
+    receipt_id = f"rec_{uuid4().hex[:12]}"
+    receipt_number = await get_next_receipt_number()
+    
+    receipt_doc = {
+        "receipt_id": receipt_id,
+        "receipt_number": receipt_number,
+        "vendor_id": receipt.vendor_id,
+        "vendor_name": vendor.get("name", ""),
+        "project_id": receipt.project_id,
+        "project_name": project_name,
+        "date": receipt.date,
+        "amount": receipt.amount,
+        "payment_method": receipt.payment_method,
+        "reference_number": receipt.reference_number,
+        "concept": receipt.concept,
+        "notes": receipt.notes,
+        "attachments": [],
+        "created_by": user.get("user_id"),
+        "created_by_name": user.get("name", ""),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": None
+    }
+    
+    await db.payment_receipts.insert_one(receipt_doc)
+    receipt_doc.pop("_id", None)
+    
+    return {"message": "Recibo creado exitosamente", "receipt": receipt_doc}
+
+@api_router.put("/receipts/{receipt_id}")
+async def update_receipt(receipt_id: str, receipt: PaymentReceiptUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a payment receipt"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.payment_receipts.find_one({"receipt_id": receipt_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Recibo no encontrado")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if receipt.vendor_id:
+        vendor = await db.vendors.find_one({"vendor_id": receipt.vendor_id}, {"_id": 0})
+        if vendor:
+            update_data["vendor_id"] = receipt.vendor_id
+            update_data["vendor_name"] = vendor.get("name", "")
+    
+    if receipt.project_id is not None:
+        if receipt.project_id:
+            project = await db.projects.find_one({"project_id": receipt.project_id}, {"_id": 0})
+            update_data["project_id"] = receipt.project_id
+            update_data["project_name"] = project.get("name", "") if project else None
+        else:
+            update_data["project_id"] = None
+            update_data["project_name"] = None
+    
+    if receipt.date:
+        update_data["date"] = receipt.date
+    if receipt.amount is not None:
+        update_data["amount"] = receipt.amount
+    if receipt.payment_method:
+        update_data["payment_method"] = receipt.payment_method
+    if receipt.reference_number is not None:
+        update_data["reference_number"] = receipt.reference_number
+    if receipt.concept:
+        update_data["concept"] = receipt.concept
+    if receipt.notes is not None:
+        update_data["notes"] = receipt.notes
+    
+    await db.payment_receipts.update_one({"receipt_id": receipt_id}, {"$set": update_data})
+    return {"message": "Recibo actualizado exitosamente"}
+
+@api_router.delete("/receipts/{receipt_id}")
+async def delete_receipt(receipt_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a payment receipt"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.payment_receipts.delete_one({"receipt_id": receipt_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Recibo no encontrado")
+    
+    return {"message": "Recibo eliminado exitosamente"}
+
+@api_router.post("/receipts/{receipt_id}/attachments")
+async def add_receipt_attachment(
+    receipt_id: str, 
+    request: Request, 
+    session_token: Optional[str] = Cookie(None)
+):
+    """Add an attachment to a payment receipt"""
+    user = await get_current_user(request, session_token)
+    
+    receipt = await db.payment_receipts.find_one({"receipt_id": receipt_id})
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Recibo no encontrado")
+    
+    body = await request.json()
+    filename = body.get("filename", "attachment")
+    url = body.get("url", "")
+    file_type = body.get("file_type", "pdf")
+    
+    attachment_id = f"att_{uuid4().hex[:12]}"
+    attachment_doc = {
+        "attachment_id": attachment_id,
+        "filename": filename,
+        "url": url,
+        "file_type": file_type,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.payment_receipts.update_one(
+        {"receipt_id": receipt_id},
+        {"$push": {"attachments": attachment_doc}}
+    )
+    
+    return {"message": "Comprobante agregado exitosamente", "attachment": attachment_doc}
+
+@api_router.delete("/receipts/{receipt_id}/attachments/{attachment_id}")
+async def delete_receipt_attachment(
+    receipt_id: str, 
+    attachment_id: str, 
+    request: Request, 
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete an attachment from a payment receipt"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.payment_receipts.update_one(
+        {"receipt_id": receipt_id},
+        {"$pull": {"attachments": {"attachment_id": attachment_id}}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Recibo no encontrado")
+    
+    return {"message": "Comprobante eliminado exitosamente"}
+
+@api_router.post("/receipts/{receipt_id}/send-email")
+async def send_receipt_email(
+    receipt_id: str, 
+    background_tasks: BackgroundTasks,
+    request: Request, 
+    session_token: Optional[str] = Cookie(None)
+):
+    """Send receipt PDF via email"""
+    user = await get_current_user(request, session_token)
+    
+    receipt = await db.payment_receipts.find_one({"receipt_id": receipt_id}, {"_id": 0})
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Recibo no encontrado")
+    
+    body = await request.json()
+    to_email = body.get("to_email")
+    pdf_base64 = body.get("pdf_base64")
+    
+    if not to_email or not pdf_base64:
+        raise HTTPException(status_code=400, detail="Email y PDF son requeridos")
+    
+    # Get company info for email branding
+    company = await db.company_settings.find_one({}, {"_id": 0})
+    company_name = company.get("company_name", "ProManage") if company else "ProManage"
+    
+    subject = f"Recibo de Pago {receipt['receipt_number']} - {company_name}"
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: #2563EB; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .details {{ background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+            .amount {{ font-size: 24px; color: #10B981; font-weight: bold; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Recibo de Pago</h1>
+            </div>
+            <div class="content">
+                <p>Se adjunta el recibo de pago con los siguientes detalles:</p>
+                <div class="details">
+                    <p><strong>Recibo #:</strong> {receipt['receipt_number']}</p>
+                    <p><strong>Fecha:</strong> {receipt['date']}</p>
+                    <p><strong>Proveedor:</strong> {receipt['vendor_name']}</p>
+                    <p><strong>Concepto:</strong> {receipt['concept']}</p>
+                    <p><strong>Monto:</strong> <span class="amount">${receipt['amount']:,.2f}</span></p>
+                </div>
+                <p>Adjunto encontrará el recibo en formato PDF.</p>
+            </div>
+            <div class="footer">
+                <p>Este es un correo automático de {company_name}.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text_content = f"""
+    Recibo de Pago - {receipt['receipt_number']}
+    
+    Detalles:
+    - Fecha: {receipt['date']}
+    - Proveedor: {receipt['vendor_name']}
+    - Concepto: {receipt['concept']}
+    - Monto: ${receipt['amount']:,.2f}
+    
+    Adjunto encontrará el recibo en formato PDF.
+    """
+    
+    attachments = [{
+        "filename": f"Recibo_{receipt['receipt_number']}.pdf",
+        "content": pdf_base64,
+        "content_type": "application/pdf"
+    }]
+    
+    # Send email in background
+    background_tasks.add_task(
+        send_email, 
+        to_email, 
+        subject, 
+        html_content, 
+        text_content, 
+        attachments
+    )
+    
+    return {"message": f"Recibo enviado a {to_email}"}
+
+# ==================== VENDOR RECEIPTS (Vista desde Vendor) ====================
+
+@api_router.get("/vendors/{vendor_id}/receipts")
+async def get_vendor_receipts(vendor_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all payment receipts for a specific vendor"""
+    user = await get_current_user(request, session_token)
+    
+    vendor = await db.vendors.find_one({"vendor_id": vendor_id}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+    
+    receipts = await db.payment_receipts.find(
+        {"vendor_id": vendor_id}, 
+        {"_id": 0}
+    ).sort("date", -1).to_list(1000)
+    
+    return receipts
+
 # =============================================================
 
 app.include_router(api_router)
