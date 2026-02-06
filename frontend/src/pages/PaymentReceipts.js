@@ -699,7 +699,7 @@ const PaymentReceipts = () => {
                   />
                 </div>
                 <div>
-                  <Label>Monto *</Label>
+                  <Label>Monto (Subtotal) *</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -713,7 +713,20 @@ const PaymentReceipts = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Descuento %</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={receiptForm.discount_percentage}
+                    onChange={(e) => setReceiptForm({ ...receiptForm, discount_percentage: e.target.value })}
+                    placeholder="0"
+                    data-testid="discount-input"
+                  />
+                </div>
                 <div>
                   <Label>Método de Pago *</Label>
                   <Select
@@ -741,6 +754,24 @@ const PaymentReceipts = () => {
                   />
                 </div>
               </div>
+
+              {/* Discount calculation preview */}
+              {receiptForm.amount && parseFloat(receiptForm.discount_percentage) > 0 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">Subtotal:</span>
+                    <span>{formatCurrency(parseFloat(receiptForm.amount) || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-orange-600">
+                    <span>Descuento ({receiptForm.discount_percentage}%):</span>
+                    <span>-{formatCurrency(formCalculations.discountAmount)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-green-600 border-t border-orange-200 mt-2 pt-2">
+                    <span>Total a Pagar:</span>
+                    <span>{formatCurrency(formCalculations.total)}</span>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label>Concepto *</Label>
