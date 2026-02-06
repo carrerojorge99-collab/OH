@@ -1052,6 +1052,85 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
                   data-testid="rfi-due-date-input"
                 />
               </div>
+
+              {/* Attachments Section */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4" />
+                  Documentos Adjuntos
+                </Label>
+                
+                <div className="border rounded-lg p-4 space-y-3">
+                  {/* File upload button */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                      data-testid="rfi-file-input"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                    >
+                      {uploadingFile ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                          Subiendo...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Adjuntar Documento
+                        </>
+                      )}
+                    </Button>
+                    <span className="text-xs text-slate-500">PDF, Word, Excel, Imágenes (máx. 10MB)</span>
+                  </div>
+                  
+                  {/* List of attached files */}
+                  {rfiForm.attachments.length > 0 && (
+                    <div className="space-y-2">
+                      {rfiForm.attachments.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-slate-50 rounded p-2">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-slate-500" />
+                            <a 
+                              href={file.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              {file.name}
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeAttachment(index)}
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {rfiForm.attachments.length === 0 && (
+                    <p className="text-sm text-slate-400 text-center py-2">
+                      No hay documentos adjuntos
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <DialogFooter>
