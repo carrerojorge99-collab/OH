@@ -995,7 +995,8 @@ class PaymentReceiptCreate(BaseModel):
     vendor_id: str
     project_id: Optional[str] = None  # Opcional - puede ser independiente
     date: str
-    amount: float
+    amount: float  # Subtotal antes del descuento
+    discount_percentage: Optional[float] = 0.0  # Descuento en porcentaje (0-100)
     payment_method: str  # transferencia, cheque, efectivo, tarjeta
     reference_number: Optional[str] = None  # Número de referencia bancaria/cheque
     concept: str
@@ -1006,6 +1007,7 @@ class PaymentReceiptUpdate(BaseModel):
     project_id: Optional[str] = None
     date: Optional[str] = None
     amount: Optional[float] = None
+    discount_percentage: Optional[float] = None
     payment_method: Optional[str] = None
     reference_number: Optional[str] = None
     concept: Optional[str] = None
@@ -1020,7 +1022,10 @@ class PaymentReceipt(BaseModel):
     project_id: Optional[str] = None
     project_name: Optional[str] = None
     date: str
-    amount: float
+    amount: float  # Subtotal
+    discount_percentage: float = 0.0  # Descuento en %
+    discount_amount: float = 0.0  # Monto del descuento calculado
+    total: float = 0.0  # Total final después del descuento
     payment_method: str
     reference_number: Optional[str] = None
     concept: str
