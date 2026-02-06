@@ -36,7 +36,8 @@ import {
   Home,
   ChevronUp,
   Landmark,
-  Truck
+  Truck,
+  Receipt
 } from 'lucide-react';
 import { toast } from 'sonner';
 
