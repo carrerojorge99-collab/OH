@@ -60,11 +60,23 @@ const PaymentReceipts = () => {
     project_id: '',
     date: new Date().toISOString().split('T')[0],
     amount: '',
+    discount_percentage: '',
     payment_method: '',
     reference_number: '',
     concept: '',
     notes: ''
   });
+
+  // Calculate discount preview
+  const calculateDiscount = (amount, discountPct) => {
+    const amt = parseFloat(amount) || 0;
+    const pct = parseFloat(discountPct) || 0;
+    const discountAmount = amt * (pct / 100);
+    const total = amt - discountAmount;
+    return { discountAmount, total };
+  };
+
+  const formCalculations = calculateDiscount(receiptForm.amount, receiptForm.discount_percentage);
 
   useEffect(() => {
     loadData();
