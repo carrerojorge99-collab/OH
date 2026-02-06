@@ -555,7 +555,7 @@ const PaymentReceipts = () => {
                     <th className="text-left p-4 font-medium text-slate-600">Proyecto</th>
                     <th className="text-left p-4 font-medium text-slate-600">Método</th>
                     <th className="text-left p-4 font-medium text-slate-600">Concepto</th>
-                    <th className="text-right p-4 font-medium text-slate-600">Monto</th>
+                    <th className="text-right p-4 font-medium text-slate-600">Total</th>
                     <th className="text-center p-4 font-medium text-slate-600">Acciones</th>
                   </tr>
                 </thead>
@@ -589,7 +589,12 @@ const PaymentReceipts = () => {
                           </Badge>
                         </td>
                         <td className="p-4 text-slate-600 max-w-xs truncate">{receipt.concept}</td>
-                        <td className="p-4 text-right font-medium text-green-600">{formatCurrency(receipt.amount)}</td>
+                        <td className="p-4 text-right">
+                          {receipt.discount_percentage > 0 && (
+                            <span className="text-xs text-orange-500 block">-{receipt.discount_percentage}%</span>
+                          )}
+                          <span className="font-medium text-green-600">{formatCurrency(receipt.total || receipt.amount)}</span>
+                        </td>
                         <td className="p-4">
                           <div className="flex items-center justify-center gap-1">
                             <Button
