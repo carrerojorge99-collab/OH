@@ -451,8 +451,8 @@ const PaymentReceipts = () => {
       ],
       theme: 'striped',
       headStyles: {
-        fillColor: primaryColor,
-        textColor: [255, 255, 255],
+        fillColor: COLORS.primary,
+        textColor: COLORS.white,
         fontStyle: 'bold'
       },
       styles: {
@@ -468,9 +468,9 @@ const PaymentReceipts = () => {
     // Footer
     const footerY = doc.internal.pageSize.height - 20;
     doc.setFontSize(8);
-    doc.setTextColor(...grayColor);
+    doc.setTextColor(...COLORS.secondary);
     doc.text('Este documento es un comprobante de pago.', pageWidth / 2, footerY, { align: 'center' });
-    doc.text(`Generado el ${new Date().toLocaleDateString('es-PR')}`, pageWidth / 2, footerY + 5, { align: 'center' });
+    doc.text(`Generado el ${moment().format('MMM DD, YYYY')}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
     return doc;
   };
