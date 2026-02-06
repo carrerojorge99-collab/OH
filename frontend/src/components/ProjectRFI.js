@@ -1450,6 +1450,32 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
                 </div>
               </div>
 
+              {/* Attachments */}
+              {selectedRfi.attachments && selectedRfi.attachments.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2">
+                    <Paperclip className="w-4 h-4" />
+                    Documentos Adjuntos:
+                  </h4>
+                  <div className="p-4 bg-white border rounded-lg space-y-2">
+                    {selectedRfi.attachments.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-slate-500" />
+                        <a 
+                          href={file.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          {file.name}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Response */}
               {selectedRfi.response ? (
                 <div className="space-y-2">
