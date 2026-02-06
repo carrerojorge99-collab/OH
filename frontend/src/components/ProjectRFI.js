@@ -91,8 +91,13 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
     priority: 'normal',
     cost_impact: 'unknown',
     schedule_impact: 'unknown',
-    due_date: ''
+    due_date: '',
+    attachments: [] // [{name, url, type}]
   });
+  
+  // File upload state
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
   
   const [responseForm, setResponseForm] = useState({
     response_text: '',
