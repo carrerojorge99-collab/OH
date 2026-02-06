@@ -313,46 +313,50 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
     setResponseDialogOpen(true);
   };
 
-  // Generate PDF for RFI - Professional OHSMS format
-  const generateRfiPdf = (rfi) => {
-    import('jspdf').then(({ default: jsPDF }) => {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      const contentWidth = pageWidth - (margin * 2);
-      let y = 15;
+  // Generate PDF for RFI - Professional OHSMS format with merged attachments
+  const generateRfiPdf = async (rfi) => {
+    const { default: jsPDF } = await import('jspdf');
+    const { PDFDocument } = await import('pdf-lib');
+    
+    toast.info('Generando PDF...');
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
+    let y = 15;
 
-      // Helper function to draw checkbox
-      const drawCheckbox = (x, yPos, checked, label) => {
-        doc.setDrawColor(0);
-        doc.setLineWidth(0.3);
-        doc.rect(x, yPos - 3, 4, 4);
-        if (checked) {
-          doc.setFont(undefined, 'bold');
-          doc.text('X', x + 0.8, yPos);
-          doc.setFont(undefined, 'normal');
-        }
-        doc.text(label, x + 6, yPos);
-      };
-
-      // ========== HEADER WITH LOGO ==========
-      // Add company logo image (from base64)
-      try {
-        doc.addImage(LOGO_BASE64, 'PNG', margin, y, 40, 18);
-      } catch (logoErr) {
-        // Fallback if logo fails to load
-        console.warn('Could not load logo:', logoErr);
-        doc.setFillColor(0, 100, 0);
-        doc.rect(margin, y, 40, 18, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(16);
+    // Helper function to draw checkbox
+    const drawCheckbox = (x, yPos, checked, label) => {
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+      doc.rect(x, yPos - 3, 4, 4);
+      if (checked) {
         doc.setFont(undefined, 'bold');
-        doc.text('OHSMS', margin + 4, y + 8);
-        doc.setFontSize(6);
+        doc.text('X', x + 0.8, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text('SAFETY IS OUR PRIORITY', margin + 4, y + 14);
       }
+      doc.text(label, x + 6, yPos);
+    };
+
+    // ========== HEADER WITH LOGO ==========
+    // Add company logo image (from base64)
+    try {
+      doc.addImage(LOGO_BASE64, 'PNG', margin, y, 40, 18);
+    } catch (logoErr) {
+      // Fallback if logo fails to load
+      console.warn('Could not load logo:', logoErr);
+      doc.setFillColor(0, 100, 0);
+      doc.rect(margin, y, 40, 18, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text('OHSMS', margin + 4, y + 8);
+      doc.setFontSize(6);
+      doc.setFont(undefined, 'normal');
+      doc.text('SAFETY IS OUR PRIORITY', margin + 4, y + 14);
+    }
       
       // Company info (right of logo)
       doc.setTextColor(0, 0, 0);
