@@ -297,7 +297,8 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
       priority: rfi.priority,
       cost_impact: rfi.cost_impact,
       schedule_impact: rfi.schedule_impact,
-      due_date: rfi.due_date || ''
+      due_date: rfi.due_date || '',
+      attachments: rfi.attachments || []
     });
     setEditDialogOpen(true);
   };
