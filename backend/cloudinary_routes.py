@@ -10,7 +10,7 @@ import time
 import cloudinary
 import cloudinary.uploader
 import cloudinary.utils
-from fastapi import APIRouter, Query, HTTPException, Request, Cookie
+from fastapi import APIRouter, Query, HTTPException, Request, Cookie, UploadFile, File
 from typing import Optional
 from pydantic import BaseModel
 
