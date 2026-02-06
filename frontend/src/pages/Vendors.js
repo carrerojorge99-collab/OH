@@ -263,7 +263,7 @@ const Vendors = () => {
     });
   };
 
-  const totalVendorReceipts = vendorReceipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+  const totalVendorReceipts = vendorReceipts.reduce((sum, r) => sum + (r.total || r.amount || 0), 0);
 
   const filteredVendors = vendors.filter(v => {
     const matchesSearch = v.name.toLowerCase().includes(searchTerm.toLowerCase());
