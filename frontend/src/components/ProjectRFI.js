@@ -337,16 +337,22 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
       };
 
       // ========== HEADER WITH LOGO ==========
-      // Logo area (left side)
-      doc.setFillColor(0, 100, 0); // Dark green
-      doc.rect(margin, y, 40, 18, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text('OHSMS', margin + 4, y + 8);
-      doc.setFontSize(6);
-      doc.setFont(undefined, 'normal');
-      doc.text('SAFETY IS OUR PRIORITY', margin + 4, y + 14);
+      // Add company logo image (from base64)
+      try {
+        doc.addImage(LOGO_BASE64, 'PNG', margin, y, 40, 18);
+      } catch (logoErr) {
+        // Fallback if logo fails to load
+        console.warn('Could not load logo:', logoErr);
+        doc.setFillColor(0, 100, 0);
+        doc.rect(margin, y, 40, 18, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('OHSMS', margin + 4, y + 8);
+        doc.setFontSize(6);
+        doc.setFont(undefined, 'normal');
+        doc.text('SAFETY IS OUR PRIORITY', margin + 4, y + 14);
+      }
       
       // Company info (right of logo)
       doc.setTextColor(0, 0, 0);
