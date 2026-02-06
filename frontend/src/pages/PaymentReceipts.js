@@ -826,9 +826,29 @@ const PaymentReceipts = () => {
                     <p className="font-medium">{formatDate(selectedReceipt.date)}</p>
                   </div>
                   <div>
-                    <Label className="text-slate-500">Monto</Label>
-                    <p className="font-medium text-xl text-green-600">{formatCurrency(selectedReceipt.amount)}</p>
+                    <Label className="text-slate-500">Subtotal</Label>
+                    <p className="font-medium text-lg">{formatCurrency(selectedReceipt.amount)}</p>
                   </div>
+                  {selectedReceipt.discount_percentage > 0 && (
+                    <>
+                      <div>
+                        <Label className="text-slate-500">Descuento</Label>
+                        <p className="font-medium text-orange-600">
+                          {selectedReceipt.discount_percentage}% (-{formatCurrency(selectedReceipt.discount_amount)})
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-slate-500">Total</Label>
+                        <p className="font-medium text-xl text-green-600">{formatCurrency(selectedReceipt.total)}</p>
+                      </div>
+                    </>
+                  )}
+                  {!selectedReceipt.discount_percentage && (
+                    <div>
+                      <Label className="text-slate-500">Total</Label>
+                      <p className="font-medium text-xl text-green-600">{formatCurrency(selectedReceipt.total || selectedReceipt.amount)}</p>
+                    </div>
+                  )}
                   <div>
                     <Label className="text-slate-500">Proveedor</Label>
                     <p className="font-medium flex items-center gap-2">
