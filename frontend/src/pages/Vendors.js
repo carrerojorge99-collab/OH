@@ -73,6 +73,9 @@ const Vendors = () => {
     phone: ''
   });
 
+  const [vendorReceipts, setVendorReceipts] = useState([]);
+  const [loadingReceipts, setLoadingReceipts] = useState(false);
+
   useEffect(() => {
     loadVendors();
   }, []);
