@@ -653,13 +653,13 @@ const PaymentReceipts = () => {
                 <Label>Proyecto (Opcional)</Label>
                 <Select
                   value={receiptForm.project_id}
-                  onValueChange={(value) => setReceiptForm({ ...receiptForm, project_id: value })}
+                  onValueChange={(value) => setReceiptForm({ ...receiptForm, project_id: value === 'none' ? '' : value })}
                 >
                   <SelectTrigger data-testid="project-select">
                     <SelectValue placeholder="Seleccionar proyecto..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin proyecto</SelectItem>
+                    <SelectItem value="none">Sin proyecto</SelectItem>
                     {projects.map(p => (
                       <SelectItem key={p.project_id} value={p.project_id}>{p.name}</SelectItem>
                     ))}
