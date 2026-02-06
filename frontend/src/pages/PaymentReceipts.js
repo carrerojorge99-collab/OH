@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
@@ -24,13 +24,23 @@ import { toast } from 'sonner';
 import { 
   Receipt, Plus, Edit, Trash2, Search, Filter, Download, Mail,
   Calendar, DollarSign, FileText, Eye, Upload, X, Truck, FolderKanban,
-  CreditCard, Building, Banknote
+  CreditCard, Building, Banknote, ExternalLink, Loader2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { fetchCompanyInfo } from '../utils/pdfGenerator';
+import { fetchCompanyInfo, addDocumentHeader, addPartySection } from '../utils/pdfGenerator';
 import { LOGO_BASE64 } from '../utils/logoData';
-import CloudinaryUpload from '../components/CloudinaryUpload';
+import moment from 'moment';
+
+// Colors matching the corporate style
+const COLORS = {
+  primary: [249, 115, 22],    // Orange
+  secondary: [71, 85, 105],   // Slate
+  text: [30, 41, 59],         // Dark
+  lightBg: [248, 250, 252],   // Light gray
+  white: [255, 255, 255],
+  green: [16, 185, 129]       // Green for totals
+};
 
 const paymentMethods = [
   { value: 'transferencia', label: 'Transferencia Bancaria', icon: Building },
@@ -48,6 +58,10 @@ const PaymentReceipts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [vendorFilter, setVendorFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  
+  // File upload state
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
