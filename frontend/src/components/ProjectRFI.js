@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import moment from 'moment';
 import { Button } from './ui/button';
@@ -20,7 +20,7 @@ import {
   Plus, Trash2, Edit, Eye, Send, CheckCircle, Clock,
   FileQuestion, MessageSquare, Download, AlertTriangle,
   Search, Filter, MoreVertical, XCircle, FileText,
-  Calendar, Building2, User, Mail
+  Calendar, Building2, User, Mail, Paperclip, Upload, ExternalLink
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { toast } from 'sonner';
+import { LOGO_BASE64 } from '../utils/logoData';
 
 const statusColors = {
   draft: 'bg-gray-100 text-gray-800',
