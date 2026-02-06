@@ -431,8 +431,8 @@ const PaymentReceipts = () => {
     return matchesSearch && matchesVendor && matchesProject;
   });
 
-  // Calculate totals
-  const totalAmount = filteredReceipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+  // Calculate totals - use 'total' field (after discount) if available, otherwise 'amount'
+  const totalAmount = filteredReceipts.reduce((sum, r) => sum + (r.total || r.amount || 0), 0);
 
   if (loading) {
     return (
