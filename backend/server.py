@@ -12276,8 +12276,8 @@ async def create_receipt(receipt: PaymentReceiptCreate, request: Request, sessio
         "concept": receipt.concept,
         "notes": receipt.notes,
         "attachments": [],
-        "created_by": user.get("user_id"),
-        "created_by_name": user.get("name", ""),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": None
     }
