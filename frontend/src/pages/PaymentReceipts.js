@@ -347,8 +347,45 @@ const PaymentReceipts = () => {
       doc.text(receipt.project_name, 15, contentY);
     }
 
-    // Payment details table
+    // Amount details with discount
     contentY += 15;
+    const amountTableData = [
+      ['Subtotal', formatCurrency(receipt.amount)]
+    ];
+    
+    if (receipt.discount_percentage > 0) {
+      amountTableData.push(['Descuento (' + receipt.discount_percentage + '%)', '-' + formatCurrency(receipt.discount_amount)]);
+    }
+    amountTableData.push(['TOTAL A PAGAR', formatCurrency(receipt.total || receipt.amount)]);
+
+    autoTable(doc, {
+      startY: contentY,
+      body: amountTableData,
+      theme: 'plain',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 80 },
+        1: { halign: 'right', cellWidth: 60 }
+      },
+      didParseCell: (data) => {
+        // Make the last row (TOTAL) bold and green
+        if (data.row.index === amountTableData.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = [16, 185, 129]; // Green
+          data.cell.styles.fontSize = 12;
+        }
+        // Make discount row orange
+        if (receipt.discount_percentage > 0 && data.row.index === 1) {
+          data.cell.styles.textColor = [249, 115, 22]; // Orange
+        }
+      }
+    });
+
+    // Payment details table
+    contentY = doc.lastAutoTable.finalY + 10;
     autoTable(doc, {
       startY: contentY,
       head: [['Detalle', 'Información']],
