@@ -782,6 +782,75 @@ const Vendors = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Receipts Section */}
+                  <div className="border-t pt-6 mt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                        <Receipt className="w-5 h-5 text-green-500" />
+                        Recibos de Pago ({vendorReceipts.length})
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-500">Total:</span>
+                        <span className="font-bold text-green-600">{formatCurrency(totalVendorReceipts)}</span>
+                        <a href="/receipts" className="ml-2">
+                          <Button size="sm" variant="outline">
+                            Ver Todo
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
+
+                    {loadingReceipts ? (
+                      <div className="text-center py-4 text-slate-500">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                        Cargando recibos...
+                      </div>
+                    ) : vendorReceipts.length > 0 ? (
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {vendorReceipts.slice(0, 10).map((receipt) => (
+                          <div key={receipt.receipt_id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm font-medium text-green-700">{receipt.receipt_number}</span>
+                                <span className="text-xs text-slate-500">{formatDate(receipt.date)}</span>
+                              </div>
+                              <p className="text-sm text-slate-600 mt-1">{receipt.concept}</p>
+                              {receipt.project_name && (
+                                <p className="text-xs text-slate-400">Proyecto: {receipt.project_name}</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-600">{formatCurrency(receipt.amount)}</p>
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {receipt.payment_method === 'transferencia' ? 'Transferencia' : 
+                                 receipt.payment_method === 'cheque' ? 'Cheque' : 
+                                 receipt.payment_method === 'efectivo' ? 'Efectivo' : 
+                                 receipt.payment_method === 'tarjeta' ? 'Tarjeta' : 
+                                 receipt.payment_method === 'ath_movil' ? 'ATH Móvil' : 
+                                 receipt.payment_method}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                        {vendorReceipts.length > 10 && (
+                          <p className="text-center text-sm text-slate-500 py-2">
+                            Y {vendorReceipts.length - 10} recibos más...
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-slate-500">
+                        <Receipt className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                        <p>No hay recibos de pago registrados</p>
+                        <a href="/receipts">
+                          <Button size="sm" variant="outline" className="mt-2">
+                            <DollarSign className="w-4 h-4 mr-1" /> Registrar Pago
+                          </Button>
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ) : (
