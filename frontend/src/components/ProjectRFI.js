@@ -590,15 +590,13 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
         y += 10;
         doc.setFont(undefined, 'normal');
         doc.setFontSize(8);
-        doc.setTextColor(0, 0, 128); // Blue for links
+        doc.setTextColor(0, 0, 0);
         
         rfi.attachments.forEach((attachment, index) => {
-          const linkText = `${index + 1}. ${attachment.name}`;
-          doc.textWithLink(linkText, margin + 3, y, { url: attachment.url });
+          const linkText = `${index + 1}. ${attachment.name} (ver página siguiente)`;
+          doc.text(linkText, margin + 3, y);
           y += 5;
         });
-        
-        doc.setTextColor(0, 0, 0); // Reset color
       }
 
       // ========== FOOTER ==========
@@ -611,10 +609,108 @@ const ProjectRFI = ({ projectId, projectName, projectNumber }) => {
       doc.setFont(undefined, 'normal');
       doc.text('Rev. 01 - 08/18/2025', pageWidth - margin, y, { align: 'right' });
 
-      // Save PDF
-      doc.save(`${rfi.rfi_number}.pdf`);
-      toast.success('PDF generado exitosamente');
-    });
+      // Convert jsPDF to ArrayBuffer for merging
+      const rfiPdfBytes = doc.output('arraybuffer');
+      
+      // If there are attachments, merge them
+      if (rfi.attachments && rfi.attachments.length > 0) {
+        try {
+          // Create the merged PDF document
+          const mergedPdf = await PDFDocument.load(rfiPdfBytes);
+          
+          for (const attachment of rfi.attachments) {
+            const fileType = attachment.type || '';
+            const fileName = attachment.name || '';
+            const isImage = fileType.startsWith('image/') || 
+                           fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+            const isPdf = fileType === 'application/pdf' || 
+                         fileName.match(/\.pdf$/i);
+            
+            try {
+              // Fetch the attachment
+              const response = await fetch(attachment.url);
+              const arrayBuffer = await response.arrayBuffer();
+              
+              if (isPdf) {
+                // Merge PDF
+                const attachmentPdf = await PDFDocument.load(arrayBuffer);
+                const copiedPages = await mergedPdf.copyPages(attachmentPdf, attachmentPdf.getPageIndices());
+                copiedPages.forEach((page) => mergedPdf.addPage(page));
+              } else if (isImage) {
+                // Add image as new page
+                const newPage = mergedPdf.addPage([595.28, 841.89]); // A4 size
+                const { width: pageW, height: pageH } = newPage.getSize();
+                
+                let image;
+                if (fileType.includes('png') || fileName.match(/\.png$/i)) {
+                  image = await mergedPdf.embedPng(arrayBuffer);
+                } else {
+                  image = await mergedPdf.embedJpg(arrayBuffer);
+                }
+                
+                // Scale image to fit page with margins
+                const maxWidth = pageW - 60;
+                const maxHeight = pageH - 100;
+                const imgDims = image.scale(1);
+                
+                let scale = 1;
+                if (imgDims.width > maxWidth) {
+                  scale = maxWidth / imgDims.width;
+                }
+                if (imgDims.height * scale > maxHeight) {
+                  scale = maxHeight / imgDims.height;
+                }
+                
+                const finalWidth = imgDims.width * scale;
+                const finalHeight = imgDims.height * scale;
+                
+                // Center the image
+                const x = (pageW - finalWidth) / 2;
+                const y = pageH - 50 - finalHeight;
+                
+                // Add attachment header
+                const { rgb } = await import('pdf-lib');
+                newPage.drawText(`Adjunto: ${attachment.name}`, {
+                  x: 30,
+                  y: pageH - 40,
+                  size: 12,
+                  color: rgb(0, 0, 0),
+                });
+                
+                newPage.drawImage(image, {
+                  x,
+                  y,
+                  width: finalWidth,
+                  height: finalHeight,
+                });
+              }
+            } catch (attachErr) {
+              console.warn(`Could not process attachment ${attachment.name}:`, attachErr);
+            }
+          }
+          
+          // Save merged PDF
+          const mergedPdfBytes = await mergedPdf.save();
+          const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${rfi.rfi_number}.pdf`;
+          link.click();
+          URL.revokeObjectURL(url);
+          
+          toast.success('PDF generado con adjuntos');
+        } catch (mergeErr) {
+          console.error('Error merging attachments:', mergeErr);
+          // Fallback: save just the RFI PDF
+          doc.save(`${rfi.rfi_number}.pdf`);
+          toast.warning('PDF generado (algunos adjuntos no se pudieron incluir)');
+        }
+      } else {
+        // No attachments, save directly
+        doc.save(`${rfi.rfi_number}.pdf`);
+        toast.success('PDF generado exitosamente');
+      }
   };
 
   // Filter RFIs
