@@ -994,15 +994,39 @@ const PaymentReceipts = () => {
                       <p className="text-slate-400 text-sm">No hay comprobantes adjuntos</p>
                     )}
                   </div>
-                  <div className="mt-3">
-                    <CloudinaryUpload
-                      onUploadSuccess={handleAddAttachment}
-                      uploadPreset="unsigned_preset"
-                      folder="receipts"
-                      resourceType="auto"
-                      buttonText="Adjuntar Comprobante"
-                      buttonClassName="w-full"
-                    />
+                  <div className="mt-3 border rounded-lg p-4">
+                    {/* File upload button */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                        data-testid="receipt-file-input"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingFile}
+                        className="w-full"
+                      >
+                        {uploadingFile ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Adjuntar Comprobante
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2 text-center">PDF, Imágenes (máx. 10MB)</p>
                   </div>
                 </div>
 
