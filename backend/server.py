@@ -12771,6 +12771,281 @@ async def get_vendor_receipts(vendor_id: str, request: Request, session_token: O
     
     return receipts
 
+
+# ==================== INSPECTION FORMS API ====================
+
+# Get all inspection forms for a project
+@api_router.get("/inspection-forms")
+async def get_inspection_forms(
+    project_id: str,
+    form_type: Optional[str] = None,  # 'pressure_test' or 'aboveground_inspection'
+    request: Request = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    results = {
+        "pressure_test_forms": [],
+        "aboveground_inspections": []
+    }
+    
+    if form_type is None or form_type == "pressure_test":
+        pressure_forms = await db.pressure_test_forms.find(
+            {"project_id": project_id}, {"_id": 0}
+        ).sort("created_at", -1).to_list(1000)
+        results["pressure_test_forms"] = pressure_forms
+    
+    if form_type is None or form_type == "aboveground_inspection":
+        aboveground_forms = await db.aboveground_inspections.find(
+            {"project_id": project_id}, {"_id": 0}
+        ).sort("created_at", -1).to_list(1000)
+        results["aboveground_inspections"] = aboveground_forms
+    
+    return results
+
+# === PRESSURE TEST FORM ENDPOINTS ===
+
+@api_router.post("/pressure-test-forms")
+async def create_pressure_test_form(
+    form_data: PressureTestFormCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Get project info to auto-fill
+    project = await db.projects.find_one({"project_id": form_data.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Generate form number
+    count = await db.pressure_test_forms.count_documents({"project_id": form_data.project_id})
+    form_number = f"PTF-{project.get('project_number', form_data.project_id[:8])}-{count + 1:03d}"
+    
+    form_id = f"ptf_{uuid4().hex[:12]}"
+    
+    # Auto-fill project info if not provided
+    form_dict = form_data.model_dump()
+    form_dict["form_id"] = form_id
+    form_dict["form_number"] = form_number
+    form_dict["status"] = "draft"
+    form_dict["created_by"] = user["user_id"]
+    form_dict["created_by_name"] = user.get("name", "Unknown")
+    form_dict["created_at"] = datetime.now(timezone.utc).isoformat()
+    
+    if not form_dict.get("project_name"):
+        form_dict["project_name"] = project.get("name", "")
+    if not form_dict.get("project_no"):
+        form_dict["project_no"] = project.get("project_number", "")
+    if not form_dict.get("contractor"):
+        form_dict["contractor"] = project.get("client", "")
+    
+    await db.pressure_test_forms.insert_one(form_dict)
+    
+    return {**form_dict, "_id": None}
+
+@api_router.get("/pressure-test-forms/{form_id}")
+async def get_pressure_test_form(
+    form_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    form = await db.pressure_test_forms.find_one({"form_id": form_id}, {"_id": 0})
+    if not form:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    return form
+
+@api_router.put("/pressure-test-forms/{form_id}")
+async def update_pressure_test_form(
+    form_id: str,
+    form_data: PressureTestFormCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.pressure_test_forms.find_one({"form_id": form_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    update_dict = form_data.model_dump()
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Preserve original fields
+    update_dict["form_id"] = existing["form_id"]
+    update_dict["form_number"] = existing["form_number"]
+    update_dict["created_by"] = existing["created_by"]
+    update_dict["created_by_name"] = existing["created_by_name"]
+    update_dict["created_at"] = existing["created_at"]
+    update_dict["status"] = existing.get("status", "draft")
+    
+    await db.pressure_test_forms.replace_one({"form_id": form_id}, update_dict)
+    
+    return update_dict
+
+@api_router.put("/pressure-test-forms/{form_id}/status")
+async def update_pressure_test_form_status(
+    form_id: str,
+    status: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if status not in ["draft", "completed", "signed"]:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    
+    result = await db.pressure_test_forms.update_one(
+        {"form_id": form_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    return {"message": "Estado actualizado", "status": status}
+
+@api_router.delete("/pressure-test-forms/{form_id}")
+async def delete_pressure_test_form(
+    form_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.pressure_test_forms.delete_one({"form_id": form_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    return {"message": "Formulario eliminado"}
+
+# === ABOVEGROUND INSPECTION ENDPOINTS ===
+
+@api_router.post("/aboveground-inspections")
+async def create_aboveground_inspection(
+    form_data: AbovegroundInspectionCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    # Get project info to auto-fill
+    project = await db.projects.find_one({"project_id": form_data.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Generate form number
+    count = await db.aboveground_inspections.count_documents({"project_id": form_data.project_id})
+    form_number = f"AGI-{project.get('project_number', form_data.project_id[:8])}-{count + 1:03d}"
+    
+    form_id = f"agi_{uuid4().hex[:12]}"
+    
+    # Auto-fill project info if not provided
+    form_dict = form_data.model_dump()
+    form_dict["form_id"] = form_id
+    form_dict["form_number"] = form_number
+    form_dict["page_number"] = 1
+    form_dict["total_pages"] = 1
+    form_dict["status"] = "draft"
+    form_dict["created_by"] = user["user_id"]
+    form_dict["created_by_name"] = user.get("name", "Unknown")
+    form_dict["created_at"] = datetime.now(timezone.utc).isoformat()
+    
+    if not form_dict.get("project_name"):
+        form_dict["project_name"] = project.get("name", "")
+    if not form_dict.get("project_no"):
+        form_dict["project_no"] = project.get("project_number", "")
+    if not form_dict.get("contractor"):
+        form_dict["contractor"] = project.get("client", "")
+    
+    await db.aboveground_inspections.insert_one(form_dict)
+    
+    return {**form_dict, "_id": None}
+
+@api_router.get("/aboveground-inspections/{form_id}")
+async def get_aboveground_inspection(
+    form_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    form = await db.aboveground_inspections.find_one({"form_id": form_id}, {"_id": 0})
+    if not form:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    return form
+
+@api_router.put("/aboveground-inspections/{form_id}")
+async def update_aboveground_inspection(
+    form_id: str,
+    form_data: AbovegroundInspectionCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.aboveground_inspections.find_one({"form_id": form_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    update_dict = form_data.model_dump()
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Preserve original fields
+    update_dict["form_id"] = existing["form_id"]
+    update_dict["form_number"] = existing["form_number"]
+    update_dict["page_number"] = existing.get("page_number", 1)
+    update_dict["total_pages"] = existing.get("total_pages", 1)
+    update_dict["created_by"] = existing["created_by"]
+    update_dict["created_by_name"] = existing["created_by_name"]
+    update_dict["created_at"] = existing["created_at"]
+    update_dict["status"] = existing.get("status", "draft")
+    
+    await db.aboveground_inspections.replace_one({"form_id": form_id}, update_dict)
+    
+    return update_dict
+
+@api_router.put("/aboveground-inspections/{form_id}/status")
+async def update_aboveground_inspection_status(
+    form_id: str,
+    status: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    if status not in ["draft", "completed", "signed"]:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    
+    result = await db.aboveground_inspections.update_one(
+        {"form_id": form_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    return {"message": "Estado actualizado", "status": status}
+
+@api_router.delete("/aboveground-inspections/{form_id}")
+async def delete_aboveground_inspection(
+    form_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    result = await db.aboveground_inspections.delete_one({"form_id": form_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Formulario no encontrado")
+    
+    return {"message": "Formulario eliminado"}
+
+
 # =============================================================
 
 app.include_router(api_router)
