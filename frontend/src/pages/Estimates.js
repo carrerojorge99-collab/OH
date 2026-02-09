@@ -463,6 +463,7 @@ const Estimates = () => {
       client_phone: estimate.client_phone || '',
       client_address: estimate.client_address || '',
       title: estimate.title,
+      subtitle: estimate.subtitle || '',
       description: estimate.description || '',
       items: estimate.items,
       tax_rate: estimate.tax_rate,
