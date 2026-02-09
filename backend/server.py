@@ -201,7 +201,7 @@ async def sync_nomenclature_numbers():
                     {"prefix": "I"},
                     {"$set": {"current_number": 16}}
                 )
-                print(f"✅ Nomenclatura I actualizada: current_number = 16 (próximo será 17)")
+                print("✅ Nomenclatura I actualizada: current_number = 16 (próximo será 17)")
             else:
                 print(f"ℹ️ Nomenclatura I ya tiene current_number = {current}")
         else:
@@ -5950,7 +5950,7 @@ async def get_weather(
             date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         
         # Open-Meteo API (free, no API key required)
-        url = f"https://api.open-meteo.com/v1/forecast"
+        url = "https://api.open-meteo.com/v1/forecast"
         params = {
             "latitude": lat,
             "longitude": lon,
@@ -6767,7 +6767,7 @@ async def migrate_estimates_to_client_profiles(request: Request, session_token: 
         logger.error(f"HTTP Exception: {he.detail}")
         raise he
     except Exception as e:
-        logger.error(f"=== MIGRATION ERROR ===")
+        logger.error("=== MIGRATION ERROR ===")
         logger.error(f"Error type: {type(e).__name__}")
         logger.error(f"Error message: {str(e)}")
         import traceback
@@ -9175,7 +9175,7 @@ async def export_all_data(request: Request, session_token: Optional[str] = Cooki
             collection = db[collection_name]
             docs = await collection.find({}, {"_id": 0}).to_list(10000)
             export_data["collections"][collection_name] = docs
-        except Exception as e:
+        except Exception:
             export_data["collections"][collection_name] = []
     
     return export_data
@@ -10629,7 +10629,7 @@ async def export_cost_estimate_excel(
     session_token: Optional[str] = Cookie(None)
 ):
     from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.styles import Font, PatternFill, Border, Side
     from openpyxl.utils import get_column_letter
     import io
     
@@ -11339,7 +11339,7 @@ async def update_employee_profile(
     logger = logging.getLogger("employee_profile")
     
     try:
-        logger.info(f"=== UPDATE EMPLOYEE PROFILE START ===")
+        logger.info("=== UPDATE EMPLOYEE PROFILE START ===")
         logger.info(f"Employee ID: {employee_id}")
         logger.info(f"Profile data received: {profile_data}")
         
@@ -11370,14 +11370,14 @@ async def update_employee_profile(
             result = await db.employee_profiles.insert_one(profile_dict)
             logger.info(f"Insert result - inserted_id: {result.inserted_id}")
         
-        logger.info(f"=== UPDATE EMPLOYEE PROFILE SUCCESS ===")
+        logger.info("=== UPDATE EMPLOYEE PROFILE SUCCESS ===")
         return {"message": "Perfil actualizado"}
         
     except HTTPException as he:
         logger.error(f"HTTP Exception: {he.detail}")
         raise he
     except Exception as e:
-        logger.error(f"=== UPDATE EMPLOYEE PROFILE ERROR ===")
+        logger.error("=== UPDATE EMPLOYEE PROFILE ERROR ===")
         logger.error(f"Error type: {type(e).__name__}")
         logger.error(f"Error message: {str(e)}")
         import traceback
