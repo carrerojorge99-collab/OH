@@ -428,7 +428,12 @@ const CostEstimateDetail = () => {
     const round2 = (num) => Math.round(num * 100) / 100;
     
     const totalLabor = round2(laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0));
-    const totalSubcontractors = round2(subcontractors.reduce((sum, item) => sum + (Number(item.cost) || 0), 0));
+    // Calculate subcontractors with factor applied to cost
+    const totalSubcontractors = round2(subcontractors.reduce((sum, item) => {
+      const baseCost = Number(item.cost) || 0;
+      const factor = Number(item.factor) || 0;
+      return sum + (baseCost * (1 + factor / 100));
+    }, 0));
     const totalSubcontractorLabor = round2(subcontractors.reduce((sum, item) => sum + (Number(item.labor_cost) || 0), 0));
     const totalMaterials = round2(materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
     const totalEquipment = round2(equipment.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
