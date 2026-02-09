@@ -136,7 +136,11 @@ const ClockHistory = () => {
     // Extract time from ISO string
     const clockInTime = entry.clock_in ? moment(entry.clock_in).format('HH:mm') : '';
     const clockOutTime = entry.clock_out ? moment(entry.clock_out).format('HH:mm') : '';
-    setEditForm({ clock_in_time: clockInTime, clock_out_time: clockOutTime });
+    setEditForm({ 
+      clock_in_time: clockInTime, 
+      clock_out_time: clockOutTime,
+      project_id: entry.project_id || ''
+    });
     setEditDialogOpen(true);
   };
 
