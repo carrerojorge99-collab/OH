@@ -111,6 +111,7 @@ const PurchaseOrders = () => {
     supplier_phone: '',
     supplier_address: '',
     title: '',
+    subtitle: '',
     description: '',
     items: [{ description: '', scope: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
