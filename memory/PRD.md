@@ -1,163 +1,40 @@
-# ProManage ERP - Product Requirements Document
+# ProManage - Sistema de Gestión de Proyectos
 
-## Original Problem Statement
-Sistema ERP completo para gestión de proyectos de construcción con módulos de proyectos, tareas, presupuestos, facturas, estimados, seguridad, RFIs, recibos de pago y más.
+## Descripción
+Sistema completo de gestión de proyectos con funcionalidades de facturación, estimaciones de costos, control de tiempo y recursos humanos.
 
-## Current Session Bug Fix (Feb 9, 2026)
+## Stack Tecnológico
+- **Frontend:** React + Shadcn/UI + TailwindCSS
+- **Backend:** FastAPI (Python)
+- **Base de datos:** MongoDB
 
-### Subtitle Field Not Saving - FIXED ✅
-**Problema reportado:** El campo "Subtítulo del Documento" no se guardaba al crear o editar Facturas, Estimados y Órdenes de Compra.
+## Funcionalidades Implementadas
 
-**Causa raíz:** Los endpoints del backend no incluían el campo `subtitle` al guardar los documentos en la base de datos:
-- `POST /api/invoices/manual` - No guardaba subtitle
-- `PUT /api/invoices/{id}` - No guardaba subtitle
-- `POST /api/estimates` - No guardaba subtitle
-- `PUT /api/estimates/{id}` - No guardaba subtitle
-- `POST /api/purchase-orders` - No guardaba subtitle
-- `PUT /api/purchase-orders/{id}` - No guardaba subtitle
+### Estimaciones de Costo
+- Gestión completa de estimaciones con múltiples categorías
+- **Campo Factor % (Nuevo - Feb 2025):** Campo porcentual editable en cada tab que ajusta los cálculos:
+  - Mano de Obra: Factor se aplica a las horas
+  - Subcontratistas: Factor se aplica al costo total
+  - Materiales: Factor se aplica al costo unitario
+  - Equipos: Factor se aplica a los días
+  - Transporte: Factor se aplica a los días
+  - Condiciones Generales: Factor se aplica a la cantidad
+- Cálculo en cascada con múltiples porcentajes (Profit, Overhead, CFSE, Liability, etc.)
+- Exportación a PDF y Excel
+- Conversión a Estimado
 
-**Correcciones aplicadas:**
-1. Agregado `subtitle: Optional[str] = None` al modelo `ManualInvoiceCreate`
-2. Agregado `"subtitle": invoice_data.subtitle` en el documento de creación de facturas manuales
-3. Agregado `"subtitle": invoice_data.get('subtitle', invoice.get('subtitle'))` en actualización de facturas
-4. Agregado `"subtitle": estimate_data.subtitle` en creación y actualización de estimados
-5. Agregado `"subtitle": po_data.subtitle` en creación y actualización de órdenes de compra
+### Otros Módulos
+- Facturación (con campo subtítulo)
+- Estimados para clientes
+- Órdenes de compra
+- Control de ponches/reloj
+- Gestión de proyectos
+- Reportes y dashboards
 
-**Archivos modificados:**
-- `/app/backend/server.py` - Líneas 7706-7722 (modelo), 7776-7807 (POST invoice), 7883-7903 (PUT invoice), 8315-8348 (POST estimate), 8462-8484 (PUT estimate), 8726-8755 (POST PO), 8824-8843 (PUT PO)
+## Bugs Corregidos (Feb 2025)
+1. Campo "Subtítulo" no se guardaba en facturas/estimados/órdenes de compra
+2. Crash al editar ponche (SelectItem con value vacío)
 
-## Previous Session Completed Work (Feb 9, 2026)
-
-### Document Subtitle Feature ✅
-Agregado campo de subtítulo para documentos (Facturas, Estimados, Órdenes de Compra).
-
-**Funcionalidades implementadas:**
-1. **Campo "Subtítulo del Documento"** agregado a todos los formularios de creación/edición
-2. **Aparece centrado en el PDF** en color naranja (destacado) antes del contenido principal
-3. **Ejemplos de uso**:
-   - Facturas: "Avance de Obra #2", "Factura Final"
-   - Estimados: "Fase 1 - Demolición", "Propuesta Inicial"
-   - Órdenes de Compra: "Materiales Fase 1", "Equipos para Demolición"
-
-**Archivos modificados:**
-- Backend: `server.py` - Agregado campo `subtitle` a modelos Invoice, Estimate y PurchaseOrder
-- Frontend: `Invoices.js`, `Estimates.js`, `PurchaseOrders.js` - Campo de entrada y generación PDF
-
-### Project Time Management Improvements ✅
-Mejoras en el área de Tiempo de los proyectos solicitadas por el usuario.
-
-**Funcionalidades implementadas:**
-1. **Eliminación del cronómetro (Timer)**: Removido el componente Timer de la pestaña Tiempo
-2. **Tarjetas de Control de Horas**: Nueva sección en el dashboard del proyecto con:
-   - Horas Estimadas (configurables)
-   - Horas Consumidas (calculadas automáticamente de los registros de timesheet)
-   - Horas Restantes (estimadas - consumidas)
-   - Barra de progreso con indicador de exceso
-   - Botón "Editar Horas Estimadas" para acceso rápido
-3. **Mover ponches en lote**:
-   - Checkboxes en cada fila de la tabla de timesheet
-   - Checkbox "Seleccionar todos" en el encabezado
-   - Botón "Mover X seleccionados" que aparece al seleccionar registros
-   - Diálogo modal con selector de proyecto destino
-   - Endpoint API `/api/timesheet/move-batch` para mover múltiples registros
-4. **Campo Horas Estimadas del Proyecto**: Agregado al formulario de edición del proyecto
-
-### Payment Receipts Module (Recibos de Pago) ✅ (Previous session)
-Módulo completo para gestionar y evidenciar los pagos realizados a proveedores.
-
-**Funcionalidades implementadas:**
-1. **CRUD completo de recibos** con numeración automática (REC-0001, REC-0002...)
-2. **Campos del recibo:**
-   - Proveedor (obligatorio)
-   - Proyecto (opcional)
-   - Fecha, Monto, Método de Pago
-   - Número de Referencia (bancaria/cheque)
-   - Concepto, Notas
-   - Descuento en porcentaje
-3. **Módulo centralizado** en `/receipts` con:
-   - Tarjetas de estadísticas (Total Recibos, Total Pagado, Proveedores)
-   - Filtros por proveedor, proyecto y búsqueda
-   - Tabla con todas las columnas
-4. **Vista integrada en Vendors**: Cada proveedor muestra sus recibos y total pagado
-5. **Generación de PDF**: Diseño con branding de la empresa (estilo Estimados)
-6. **Envío por Email**: Con PDF adjunto
-7. **Comprobantes adjuntos**: Subida de imágenes/PDFs a Cloudinary
-
-### Files Created/Modified (This Session)
-- `/app/backend/server.py` - Agregado `estimated_hours` a Project, endpoint `/timesheet/move-batch`
-- `/app/frontend/src/pages/ProjectDetail.js` - Timer eliminado, tarjetas de horas, checkboxes y mover en lote
-
-### Files Created/Modified (Previous Session)
-- `/app/backend/server.py` - Endpoints de recibos (CRUD, attachments, email)
-- `/app/frontend/src/pages/PaymentReceipts.js` - Página principal de recibos
-- `/app/frontend/src/pages/Vendors.js` - Integración de recibos en detalle de vendor
-- `/app/frontend/src/components/Layout.js` - Menú con "Recibos de Pago"
-- `/app/frontend/src/App.js` - Ruta /receipts
-
-### RFI Module Enhancements ✅ (Previous session)
-1. Logo del PDF corregido
-2. Función de Adjuntar Documentos
-
-## Architecture
-
-```
-/app/
-├── backend/
-│   └── server.py           # FastAPI backend con todos los endpoints
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ProjectRFI.js    # Módulo RFI completo
-│   │   │   ├── Layout.js        # Navegación
-│   │   │   ├── Timer.js         # Componente (ya no se usa en Tiempo)
-│   │   │   └── CloudinaryUpload.jsx
-│   │   ├── pages/
-│   │   │   ├── PaymentReceipts.js  # Módulo de recibos
-│   │   │   ├── Vendors.js          # Con integración de recibos
-│   │   │   └── ProjectDetail.js    # Detalle de proyecto con control de horas
-│   │   └── utils/
-│   │       ├── logoData.js         # Logo base64 de la empresa
-│   │       └── pdfGenerator.js     # Helpers para PDF
-│   └── package.json
-└── memory/
-    └── PRD.md
-```
-
-## Key API Endpoints
-### Project Time Management (New)
-- `POST /api/timesheet/move-batch` - Mover múltiples registros de timesheet a otro proyecto
-
-### Payment Receipts
-- `GET /api/receipts` - Listar recibos con filtros
-- `POST /api/receipts` - Crear recibo
-- `GET /api/receipts/{id}` - Obtener recibo
-- `PUT /api/receipts/{id}` - Actualizar recibo
-- `DELETE /api/receipts/{id}` - Eliminar recibo
-- `POST /api/receipts/{id}/attachments` - Agregar comprobante
-- `DELETE /api/receipts/{id}/attachments/{id}` - Eliminar comprobante
-- `POST /api/receipts/{id}/send-email` - Enviar por email
-- `GET /api/vendors/{id}/receipts` - Recibos de un proveedor
-
-## Pending User Verification
-- Verificación E2E del módulo RFI (generación PDF y fusión de documentos)
-- Verificación acceso rol HR (rrhh)
-
-## Backlog (P1-P2)
-- Corregir diseño PDF Facturas vs Presupuestos
-- Preparación para migración a DigitalOcean (Dockerfile, docker-compose)
-- Refactorizar server.py en módulos
-- Implementar categorías de proveedores
-- Implementar "Mover Documento" en Project Documents
-
-## Credentials
-- **Super Admin**: jcarrion@ohsmspr.com / Admin2024!
-- **Test Admin**: j.carrero@ohsmspr.com / Admin2024!
-
-## 3rd Party Integrations
-- jsPDF & jspdf-autotable (PDF generation)
-- pdf-lib (PDF merging)
-- Cloudinary (file storage)
-- MongoDB (database)
-- fastapi-mail (emails)
-- React Big Calendar
-- @tiptap/react (rich text editor)
+## Backlog
+- Verificación visual de Factor % en producción
+- Testing de cálculos con Factor %
