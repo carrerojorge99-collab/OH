@@ -234,6 +234,7 @@ const ProjectDetail = () => {
   useEffect(() => {
     loadProjectData();
     loadUsers();
+    loadAllProjects();
   }, [projectId]);
   
   // Load required documents when project loads
