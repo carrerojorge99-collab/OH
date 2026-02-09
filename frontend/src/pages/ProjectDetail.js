@@ -1926,6 +1926,70 @@ const ProjectDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Hours Control Card */}
+        {(() => {
+          const estimatedHours = project?.estimated_hours || 0;
+          const consumedHours = timesheet.reduce((sum, entry) => sum + (entry.hours_worked || 0), 0);
+          const remainingHours = Math.max(0, estimatedHours - consumedHours);
+          const hoursProgress = estimatedHours > 0 ? Math.min(100, (consumedHours / estimatedHours) * 100) : 0;
+          const isOvertime = consumedHours > estimatedHours && estimatedHours > 0;
+          
+          return (
+            <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-slate-50 to-purple-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-800">⏱️ Control de Horas del Proyecto</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setEditDialogOpen(true)}
+                    className="text-xs"
+                  >
+                    <Pencil className="w-3 h-3 mr-1" />
+                    Editar Horas Estimadas
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-4 bg-white rounded-lg border border-purple-200">
+                    <p className="text-sm text-slate-600 mb-1">Horas Estimadas</p>
+                    <p className="text-2xl font-bold text-purple-600 font-mono">
+                      {estimatedHours.toFixed(2)}h
+                    </p>
+                  </div>
+                  <div className={`text-center p-4 bg-white rounded-lg border ${isOvertime ? 'border-red-300 bg-red-50' : 'border-blue-200'}`}>
+                    <p className="text-sm text-slate-600 mb-1">Horas Consumidas</p>
+                    <p className={`text-2xl font-bold font-mono ${isOvertime ? 'text-red-600' : 'text-blue-600'}`}>
+                      {consumedHours.toFixed(2)}h
+                    </p>
+                    {isOvertime && <p className="text-xs text-red-500 mt-1">⚠️ Excedido</p>}
+                  </div>
+                  <div className={`text-center p-4 bg-white rounded-lg border ${remainingHours === 0 && estimatedHours > 0 ? 'border-orange-300 bg-orange-50' : 'border-green-200'}`}>
+                    <p className="text-sm text-slate-600 mb-1">Horas Restantes</p>
+                    <p className={`text-2xl font-bold font-mono ${remainingHours === 0 && estimatedHours > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      {remainingHours.toFixed(2)}h
+                    </p>
+                  </div>
+                </div>
+                {estimatedHours > 0 && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-slate-600 mb-1">
+                      <span>Progreso de horas</span>
+                      <span className={isOvertime ? 'text-red-600 font-semibold' : ''}>
+                        {hoursProgress.toFixed(1)}%
+                        {isOvertime && ` (+${((consumedHours - estimatedHours) / estimatedHours * 100).toFixed(1)}% extra)`}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={Math.min(100, hoursProgress)} 
+                      className={`h-2 ${isOvertime ? '[&>div]:bg-red-500' : ''}`} 
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Tabs - Responsive scrollable */}
         <Tabs defaultValue="tasks" className="space-y-6">
           <div className="relative">
