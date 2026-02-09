@@ -5,7 +5,22 @@ Sistema ERP completo para gestión de proyectos de construcción con módulos de
 
 ## Current Session Completed Work (Feb 9, 2026)
 
-### Project Time Management Improvements ✅ NEW
+### Document Subtitle Feature ✅ NEW
+Agregado campo de subtítulo para documentos (Facturas, Estimados, Órdenes de Compra).
+
+**Funcionalidades implementadas:**
+1. **Campo "Subtítulo del Documento"** agregado a todos los formularios de creación/edición
+2. **Aparece centrado en el PDF** en color naranja (destacado) antes del contenido principal
+3. **Ejemplos de uso**:
+   - Facturas: "Avance de Obra #2", "Factura Final"
+   - Estimados: "Fase 1 - Demolición", "Propuesta Inicial"
+   - Órdenes de Compra: "Materiales Fase 1", "Equipos para Demolición"
+
+**Archivos modificados:**
+- Backend: `server.py` - Agregado campo `subtitle` a modelos Invoice, Estimate y PurchaseOrder
+- Frontend: `Invoices.js`, `Estimates.js`, `PurchaseOrders.js` - Campo de entrada y generación PDF
+
+### Project Time Management Improvements ✅
 Mejoras en el área de Tiempo de los proyectos solicitadas por el usuario.
 
 **Funcionalidades implementadas:**
