@@ -1142,6 +1142,7 @@ class EstimateCreate(BaseModel):
     client_phone: Optional[str] = None
     client_address: Optional[str] = None
     title: str
+    subtitle: Optional[str] = None
     description: Optional[str] = None
     items: List[EstimateItem]
     tax_rate: float = 0.0
@@ -1167,6 +1168,7 @@ class Estimate(BaseModel):
     client_phone: Optional[str] = None
     client_address: Optional[str] = None
     title: str
+    subtitle: Optional[str] = None
     description: Optional[str] = None
     items: List[EstimateItem]
     subtotal: float
