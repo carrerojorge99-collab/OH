@@ -327,7 +327,8 @@ const ProjectDetail = () => {
         location_latitude: project.location_latitude || null,
         location_longitude: project.location_longitude || null,
         geofence_radius: project.geofence_radius || 100,
-        geofence_enabled: project.geofence_enabled || false
+        geofence_enabled: project.geofence_enabled || false,
+        estimated_hours: project.estimated_hours || 0
       });
     }
   }, [project]);
