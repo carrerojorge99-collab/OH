@@ -190,6 +190,7 @@ const CostEstimateDetail = () => {
       overtime_hours: 0,
       rate: laborRates[0]?.quoted_rate || 0,
       overtime_rate: laborRates[0]?.overtime_rate || 0,
+      factor: 0,
       subtotal: 0
     };
     setLaborCosts([...laborCosts, newRow]);
@@ -208,14 +209,21 @@ const CostEstimateDetail = () => {
       }
     }
 
-    // Calculate subtotal
+    // Calculate subtotal with factor applied to hours
+    // Formula: Horas × (1 + Factor%) × Rate = Total
     const qty = Number(updated[index].qty_personnel) || 1;
     const regular = Number(updated[index].regular_hours) || 0;
     const overtime = Number(updated[index].overtime_hours) || 0;
     const rate = Number(updated[index].rate) || 0;
     const oRate = Number(updated[index].overtime_rate) || 0;
+    const factor = Number(updated[index].factor) || 0;
+    const factorMultiplier = 1 + (factor / 100);
 
-    updated[index].subtotal = qty * ((regular * rate) + (overtime * oRate));
+    // Apply factor to hours before multiplying by rate
+    const adjustedRegular = regular * factorMultiplier;
+    const adjustedOvertime = overtime * factorMultiplier;
+
+    updated[index].subtotal = qty * ((adjustedRegular * rate) + (adjustedOvertime * oRate));
 
     setLaborCosts(updated);
   };
