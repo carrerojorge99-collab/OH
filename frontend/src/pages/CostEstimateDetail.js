@@ -1170,13 +1170,18 @@ const CostEstimateDetail = () => {
                       <tr className="border-b bg-slate-50">
                         <th className="p-2 text-left text-xs">Tipo</th>
                         <th className="p-2 text-left text-xs">Descripción</th>
-                        <th className="p-2 text-right text-xs">Costo Total</th>
-                        <th className="p-2 text-right text-xs bg-amber-50">Mano de Obra (para B2B)</th>
+                        <th className="p-2 text-right text-xs">Costo Base</th>
+                        <th className="p-2 text-right text-xs bg-yellow-50">Factor %</th>
+                        <th className="p-2 text-right text-xs">Total Ajustado</th>
+                        <th className="p-2 text-right text-xs bg-amber-50">Mano de Obra (B2B)</th>
                         <th className="p-2"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {subcontractors.map((item, idx) => (
+                      {subcontractors.map((item, idx) => {
+                        const factor = Number(item.factor) || 0;
+                        const adjustedCost = (Number(item.cost) || 0) * (1 + factor / 100);
+                        return (
                         <tr key={idx} className="border-b">
                           <td className="p-2">
                             <select
@@ -1200,16 +1205,29 @@ const CostEstimateDetail = () => {
                             <Input
                               type="number"
                               step="0.01"
-                              className="text-right"
+                              className="text-right w-28"
                               value={item.cost}
                               onChange={(e) => updateSubcontractorRow(idx, 'cost', parseFloat(e.target.value) || 0)}
                             />
+                          </td>
+                          <td className="p-2 bg-yellow-50">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              className="text-right w-20 border-yellow-300"
+                              value={item.factor || 0}
+                              onChange={(e) => updateSubcontractorRow(idx, 'factor', parseFloat(e.target.value) || 0)}
+                              placeholder="0"
+                            />
+                          </td>
+                          <td className="p-2 text-right text-sm text-blue-600 font-semibold">
+                            ${adjustedCost.toFixed(2)}
                           </td>
                           <td className="p-2 bg-amber-50">
                             <Input
                               type="number"
                               step="0.01"
-                              className="text-right border-amber-300"
+                              className="text-right w-28 border-amber-300"
                               value={item.labor_cost || 0}
                               onChange={(e) => updateSubcontractorRow(idx, 'labor_cost', parseFloat(e.target.value) || 0)}
                               placeholder="Mano de obra"
@@ -1225,10 +1243,11 @@ const CostEstimateDetail = () => {
                             </Button>
                           </td>
                         </tr>
-                      ))}
+                      )})}
                     </tbody>
                   </table>
                   <p className="text-xs text-amber-600 mt-2">* El B2B Subcontratista se calcula sobre la columna Mano de Obra</p>
+                  <p className="text-xs text-yellow-600">* El Factor % se aplica al Costo Base para obtener el Total Ajustado</p>
                 </div>
               </CardContent>
             </Card>
