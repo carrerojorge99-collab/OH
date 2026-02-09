@@ -638,14 +638,14 @@ const ClockHistory = () => {
                   Proyecto
                 </Label>
                 <Select
-                  value={editForm.project_id}
-                  onValueChange={(value) => setEditForm({...editForm, project_id: value})}
+                  value={editForm.project_id || "none"}
+                  onValueChange={(value) => setEditForm({...editForm, project_id: value === "none" ? "" : value})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar proyecto" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin proyecto</SelectItem>
+                    <SelectItem value="none">Sin proyecto</SelectItem>
                     {projects.map(project => (
                       <SelectItem key={project.project_id} value={project.project_id}>
                         {project.name}
