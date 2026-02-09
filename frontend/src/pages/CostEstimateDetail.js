@@ -375,8 +375,13 @@ const CostEstimateDetail = () => {
     const updated = [...generalConditions];
     updated[index][field] = value;
     
-    if (field === 'quantity' || field === 'unit_cost') {
-      updated[index].total = (Number(updated[index].quantity) || 0) * (Number(updated[index].unit_cost) || 0);
+    // Apply factor to quantity: (Cantidad × (1 + Factor%)) × Costo = Total
+    if (field === 'quantity' || field === 'unit_cost' || field === 'factor') {
+      const quantity = Number(updated[index].quantity) || 0;
+      const unitCost = Number(updated[index].unit_cost) || 0;
+      const factor = Number(updated[index].factor) || 0;
+      const factorMultiplier = 1 + (factor / 100);
+      updated[index].total = (quantity * factorMultiplier) * unitCost;
     }
     
     setGeneralConditions(updated);
