@@ -160,7 +160,8 @@ const ClockHistory = () => {
       
       await api.put(`/clock/${editingEntry.clock_id}`, {
         clock_in: clockInFull,
-        clock_out: clockOutFull
+        clock_out: clockOutFull,
+        project_id: editForm.project_id || null
       }, { withCredentials: true });
       
       toast.success('Ponche actualizado exitosamente');
