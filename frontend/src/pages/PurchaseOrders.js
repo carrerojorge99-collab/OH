@@ -390,6 +390,16 @@ const PurchaseOrders = () => {
       doc.text(po.project_name, 120, y - 10);
     }
     
+    // Subtitle (centered before content)
+    if (po.subtitle) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(249, 115, 22); // Orange color for emphasis
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.text(po.subtitle, pageWidth / 2, y, { align: 'center' });
+      y += 8;
+    }
+    
     // Tasks table con espacio para descripción
     const tasks = po.items.map(item => ({
       description: item.description,
