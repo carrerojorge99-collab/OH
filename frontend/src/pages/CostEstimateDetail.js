@@ -1453,6 +1453,7 @@ const CostEstimateDetail = () => {
                         <th className="p-2 text-right text-xs">Millas Ida/Vuelta</th>
                         <th className="p-2 text-right text-xs">Costo por Milla</th>
                         <th className="p-2 text-right text-xs">Días</th>
+                        <th className="p-2 text-right text-xs bg-yellow-50">Factor %</th>
                         <th className="p-2 text-right text-xs">Total</th>
                         <th className="p-2"></th>
                       </tr>
@@ -1478,7 +1479,7 @@ const CostEstimateDetail = () => {
                             <Input
                               type="number"
                               step="0.1"
-                              className="text-right w-28"
+                              className="text-right w-24"
                               value={item.roundtrip_miles}
                               onChange={(e) => updateTransportationRow(idx, 'roundtrip_miles', e.target.value)}
                             />
@@ -1500,8 +1501,18 @@ const CostEstimateDetail = () => {
                               onChange={(e) => updateTransportationRow(idx, 'days', e.target.value)}
                             />
                           </td>
-                          <td className="p-2 text-right font-semibold">
-                            ${item.total.toFixed(2)}
+                          <td className="p-2 bg-yellow-50">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              className="text-right w-20 border-yellow-300"
+                              value={item.factor || 0}
+                              onChange={(e) => updateTransportationRow(idx, 'factor', e.target.value)}
+                              placeholder="0"
+                            />
+                          </td>
+                          <td className="p-2 text-right font-semibold text-blue-600">
+                            ${(item.total || 0).toFixed(2)}
                           </td>
                           <td className="p-2">
                             <Button
@@ -1519,11 +1530,9 @@ const CostEstimateDetail = () => {
                 </div>
                 <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm text-slate-600">
-                    💡 <strong>Cálculo:</strong> Total = Millas Ida/Vuelta × Costo por Milla × Días
+                    <strong>Cálculo:</strong> Total = Millas × Costo × (Días × (1 + Factor%))
                   </p>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Ejemplo: 50 millas × $0.65/milla × 20 días = $650.00
-                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">* El Factor % se aplica a los Días</p>
                 </div>
               </CardContent>
             </Card>
