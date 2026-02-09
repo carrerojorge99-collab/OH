@@ -3964,7 +3964,7 @@ const ProjectDetail = () => {
             {/* Filter by Employee and Move Button */}
             <Card className="border-slate-200 shadow-sm mb-4">
               <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <Label htmlFor="filter-user" className="whitespace-nowrap font-semibold">Filtrar por empleado:</Label>
                   <Select value={selectedTimesheetUser} onValueChange={setSelectedTimesheetUser}>
                     <SelectTrigger className="max-w-xs">
@@ -3979,6 +3979,19 @@ const ProjectDetail = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  
+                  {selectedTimesheets.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMoveTimesheetDialogOpen(true)}
+                      className="bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100"
+                    >
+                      <Move className="w-4 h-4 mr-2" />
+                      Mover {selectedTimesheets.length} seleccionados
+                    </Button>
+                  )}
+                  
                   <div className="ml-auto text-sm text-slate-600">
                     <span className="font-semibold">{filteredTimesheet.length}</span> registros
                     {filteredTimesheet.length > 0 && (
@@ -3992,6 +4005,58 @@ const ProjectDetail = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Move Timesheet Dialog */}
+            <Dialog open={moveTimesheetDialogOpen} onOpenChange={setMoveTimesheetDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Mover Registros de Tiempo</DialogTitle>
+                  <DialogDescription>
+                    Selecciona el proyecto destino para mover los {selectedTimesheets.length} registros seleccionados.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Proyecto Destino</Label>
+                    <Select value={targetProjectId} onValueChange={setTargetProjectId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un proyecto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allProjects
+                          .filter(p => p.project_id !== projectId)
+                          .map((p) => (
+                            <SelectItem key={p.project_id} value={p.project_id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                    <p><strong>Nota:</strong> Esta acción moverá los registros seleccionados al proyecto destino. Las horas serán recalculadas en ambos proyectos.</p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setMoveTimesheetDialogOpen(false);
+                      setTargetProjectId('');
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleMoveTimesheets}
+                    disabled={!targetProjectId || movingTimesheets}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    {movingTimesheets ? 'Moviendo...' : 'Mover Registros'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="p-0">
