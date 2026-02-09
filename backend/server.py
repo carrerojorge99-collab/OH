@@ -8472,6 +8472,7 @@ async def update_estimate(
         "client_phone": estimate_data.client_phone,
         "client_address": estimate_data.client_address,
         "title": estimate_data.title,
+        "subtitle": estimate_data.subtitle,
         "description": estimate_data.description,
         "items": [item.model_dump() for item in estimate_data.items],
         "subtotal": round(subtotal, 2),
