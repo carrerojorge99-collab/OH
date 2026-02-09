@@ -30,7 +30,6 @@ import {
 import KanbanBoard from '../components/KanbanBoard';
 import ProjectSafety from '../components/ProjectSafety';
 import ProjectRFI from '../components/ProjectRFI';
-import Timer from '../components/Timer';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { 
