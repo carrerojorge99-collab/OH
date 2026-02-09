@@ -4064,6 +4064,15 @@ const ProjectDetail = () => {
                   <table className="w-full">
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
+                        <th className="px-3 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={filteredTimesheet.length > 0 && selectedTimesheets.length === filteredTimesheet.length}
+                            onChange={toggleAllTimesheets}
+                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            title="Seleccionar todos"
+                          />
+                        </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Fecha</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Persona</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Horas</th>
@@ -4074,7 +4083,18 @@ const ProjectDetail = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {filteredTimesheet.length > 0 ? filteredTimesheet.map((entry) => (
-                        <tr key={entry.timesheet_id} className="hover:bg-slate-50">
+                        <tr 
+                          key={entry.timesheet_id} 
+                          className={`hover:bg-slate-50 ${selectedTimesheets.includes(entry.timesheet_id) ? 'bg-blue-50' : ''}`}
+                        >
+                          <td className="px-3 py-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedTimesheets.includes(entry.timesheet_id)}
+                              onChange={() => toggleTimesheetSelection(entry.timesheet_id)}
+                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </td>
                           <td className="px-4 py-3 font-medium text-slate-900">{entry.date}</td>
                           <td className="px-4 py-3 text-slate-700">{entry.user_name}</td>
                           <td className="px-4 py-3 text-right font-mono font-semibold text-blue-700">{entry.hours_worked}h</td>
@@ -4107,7 +4127,7 @@ const ProjectDetail = () => {
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                          <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
                             {selectedTimesheetUser === 'all' 
                               ? 'No hay registros de tiempo. Añade el primero haciendo clic en "Nuevo Registro".' 
                               : 'No hay registros para el empleado seleccionado'}
