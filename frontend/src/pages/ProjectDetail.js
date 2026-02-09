@@ -4138,6 +4138,7 @@ const ProjectDetail = () => {
                     {filteredTimesheet.length > 0 && (
                       <tfoot className="bg-slate-50 border-t-2 border-slate-300">
                         <tr>
+                          <td></td>
                           <td colSpan="2" className="px-4 py-3 text-right font-semibold text-slate-700">
                             Total Horas {selectedTimesheetUser !== 'all' && '(Filtrado)'}:
                           </td>
