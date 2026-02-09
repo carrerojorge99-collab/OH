@@ -262,6 +262,7 @@ const PurchaseOrders = () => {
       supplier_phone: po.supplier_phone || '',
       supplier_address: po.supplier_address || '',
       title: po.title,
+      subtitle: po.subtitle || '',
       description: po.description || '',
       items: po.items,
       tax_rate: po.tax_rate,
