@@ -628,6 +628,16 @@ const Invoices = () => {
       y += 6;
     }
     
+    // Subtitle (centered before content)
+    if (invoice.subtitle) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(249, 115, 22); // Orange color for emphasis
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.text(invoice.subtitle, pageWidth / 2, y, { align: 'center' });
+      y += 8;
+    }
+    
     // Tasks table (like Estimate)
     const tasks = invoice.items.map(item => ({
       description: item.description,
