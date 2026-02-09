@@ -1055,6 +1055,7 @@ const CostEstimateDetail = () => {
                         <th className="p-2 text-left text-xs">Cant.</th>
                         <th className="p-2 text-left text-xs">Hrs Regular</th>
                         <th className="p-2 text-left text-xs">Hrs Overtime</th>
+                        <th className="p-2 text-left text-xs bg-yellow-50">Factor %</th>
                         <th className="p-2 text-left text-xs">Tarifa/Hora</th>
                         <th className="p-2 text-left text-xs">Tarifa OT</th>
                         <th className="p-2 text-right text-xs">Subtotal</th>
@@ -1099,6 +1100,16 @@ const CostEstimateDetail = () => {
                               className="w-24"
                               value={item.overtime_hours}
                               onChange={(e) => updateLaborRow(idx, 'overtime_hours', e.target.value)}
+                            />
+                          </td>
+                          <td className="p-2 bg-yellow-50">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              className="w-20 border-yellow-300"
+                              value={item.factor || 0}
+                              onChange={(e) => updateLaborRow(idx, 'factor', e.target.value)}
+                              placeholder="0"
                             />
                           </td>
                           <td className="p-2">
