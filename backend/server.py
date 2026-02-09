@@ -1069,6 +1069,7 @@ class InvoiceCreate(BaseModel):
     client_address: Optional[str] = None
     sponsor_name: Optional[str] = None
     po_number: Optional[str] = None
+    subtitle: Optional[str] = None
     tax_rate: float = 0.0
     tax_type_id: Optional[str] = None
     tax_type_name: Optional[str] = None
@@ -1089,6 +1090,7 @@ class Invoice(BaseModel):
     client_address: Optional[str] = None
     sponsor_name: Optional[str] = None
     po_number: Optional[str] = None
+    subtitle: Optional[str] = None
     items: List[InvoiceItem]
     subtotal: float
     tax_rate: float
