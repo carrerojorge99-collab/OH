@@ -35,7 +35,7 @@ const ClockHistory = () => {
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
-  const [editForm, setEditForm] = useState({ clock_in_time: '', clock_out_time: '' });
+  const [editForm, setEditForm] = useState({ clock_in_time: '', clock_out_time: '', project_id: '' });
   const [saving, setSaving] = useState(false);
 
   // Manual entry dialog state
