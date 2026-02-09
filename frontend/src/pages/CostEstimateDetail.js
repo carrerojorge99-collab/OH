@@ -1553,13 +1553,14 @@ const CostEstimateDetail = () => {
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead>
                       <tr className="border-b bg-slate-50">
                         <th className="p-2 text-left text-xs">Descripción</th>
                         <th className="p-2 text-right text-xs">Cantidad</th>
+                        <th className="p-2 text-right text-xs bg-yellow-50">Factor %</th>
                         <th className="p-2 text-right text-xs">Costo Unitario</th>
                         <th className="p-2 text-right text-xs">Total</th>
                         <th className="p-2"></th>
+                      </tr>
                       </tr>
                     </thead>
                     <tbody>
