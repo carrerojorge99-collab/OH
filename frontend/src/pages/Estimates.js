@@ -311,6 +311,7 @@ const Estimates = () => {
       client_phone: '',
       client_address: '',
       title: '',
+      subtitle: '',
       description: '',
       items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
       tax_rate: 0,
