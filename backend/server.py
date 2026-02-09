@@ -605,6 +605,7 @@ class Project(BaseModel):
     po_quantity: Optional[float] = None
     proposal_number: Optional[str] = None
     cover_image: Optional[str] = None
+    estimated_hours: float = 0
     created_by: str
     team_members: List[str]
     created_at: str
