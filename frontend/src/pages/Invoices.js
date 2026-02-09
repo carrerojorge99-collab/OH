@@ -1044,6 +1044,18 @@ const Invoices = () => {
                     <p className="text-xs text-slate-500">Ingrese el número de factura que desee</p>
                   </div>
 
+                  {/* Subtitle */}
+                  <div className="space-y-2">
+                    <Label htmlFor="manual_subtitle">Subtítulo del Documento</Label>
+                    <Input
+                      id="manual_subtitle"
+                      value={manualForm.subtitle}
+                      onChange={(e) => setManualForm({...manualForm, subtitle: e.target.value})}
+                      placeholder="Ej: Avance de Obra #2, Factura Final, etc."
+                    />
+                    <p className="text-xs text-slate-500">Aparecerá centrado en el PDF antes del contenido</p>
+                  </div>
+
                   {/* Client Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
