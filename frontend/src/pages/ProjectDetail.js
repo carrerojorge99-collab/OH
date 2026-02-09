@@ -1600,6 +1600,21 @@ const ProjectDetail = () => {
                   <p className="text-xs text-slate-500">Valor total que se cobrará al cliente</p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="edit-estimated-hours">Horas Estimadas del Proyecto</Label>
+                  <Input
+                    id="edit-estimated-hours"
+                    data-testid="edit-project-estimated-hours-input"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    placeholder="0"
+                    value={editForm.estimated_hours}
+                    onChange={(e) => setEditForm({ ...editForm, estimated_hours: parseFloat(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-slate-500">Total de horas estimadas para completar el proyecto</p>
+                </div>
+
                 <div className="col-span-2 text-xs text-muted-foreground bg-slate-50 p-3 rounded-md border border-slate-200">
                   💡 Ganancia estimada: ${((editForm.project_value || 0) - (stats?.budget_spent || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
