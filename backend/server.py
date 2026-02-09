@@ -1126,6 +1126,158 @@ class Payment(BaseModel):
     created_by: str
     created_at: str
 
+
+# ===================== INSPECTION FORMS MODELS =====================
+
+class InspectionFormStatus(str, Enum):
+    DRAFT = "draft"
+    COMPLETED = "completed"
+    SIGNED = "signed"
+
+# Pressure Test Form Models
+class PressureTestFormSignature(BaseModel):
+    name: Optional[str] = None
+    signature_data: Optional[str] = None  # Base64 encoded signature image
+    date: Optional[str] = None
+
+class PIDEntry(BaseModel):
+    pid_no: Optional[str] = None
+    rev: Optional[str] = None
+    na: bool = False
+
+class PressureTestFormCreate(BaseModel):
+    project_id: str
+    # Project Information (auto-filled from project)
+    project_no: Optional[str] = None
+    project_name: Optional[str] = None
+    contractor: Optional[str] = None
+    building: Optional[str] = None
+    area: Optional[str] = None
+    system_no: Optional[str] = None
+    system_description: Optional[str] = None
+    test_package_no: Optional[str] = None
+    
+    # Test Type
+    test_type: Optional[List[str]] = []  # hydrostatic, pneumatic, static, head, in_service
+    
+    # Test Boundaries
+    pid_entries: Optional[List[PIDEntry]] = []
+    lines_included_in_test: Optional[str] = None
+    
+    # Test Conditions
+    test_media: Optional[str] = None
+    actual_test_media_temp: Optional[str] = None
+    test_media_min_temp_limit: Optional[str] = None
+    ambient_temp_min_req: Optional[str] = None
+    
+    # Test Inspection Release - Contractor
+    contractor_release_name: Optional[str] = None
+    contractor_release_signature: Optional[PressureTestFormSignature] = None
+    
+    # Test Inspection Release - CST
+    cst_release_name: Optional[str] = None
+    cst_release_signature: Optional[PressureTestFormSignature] = None
+    
+    # Gauge Information
+    gauge_number: Optional[str] = None
+    gauge_calibration_due_date: Optional[str] = None
+    gauge_range_low: Optional[str] = None
+    gauge_range_high: Optional[str] = None
+    
+    # Test Execution
+    test_pressure_requirements: Optional[str] = None
+    initial_pressure: Optional[str] = None
+    final_pressure: Optional[str] = None
+    min_req_holding_time: Optional[str] = None
+    actual_holding_time: Optional[str] = None
+    test_start_date: Optional[str] = None
+    test_start_time: Optional[str] = None
+    test_finish_date: Optional[str] = None
+    test_finish_time: Optional[str] = None
+    
+    # Test Results Signatures
+    test_performer_name: Optional[str] = None
+    test_performer_signature: Optional[PressureTestFormSignature] = None
+    
+    verifier_contractor_name: Optional[str] = None
+    verifier_contractor_signature: Optional[PressureTestFormSignature] = None
+    
+    verifier_cst_name: Optional[str] = None
+    verifier_cst_signature: Optional[PressureTestFormSignature] = None
+    
+    remarks: Optional[str] = None
+    
+    # Line Restoration Signatures
+    restoration_contractor_name: Optional[str] = None
+    restoration_contractor_signature: Optional[PressureTestFormSignature] = None
+    
+    restoration_cst_name: Optional[str] = None
+    restoration_cst_signature: Optional[PressureTestFormSignature] = None
+
+class PressureTestForm(PressureTestFormCreate):
+    model_config = ConfigDict(extra="ignore")
+    form_id: str
+    form_number: str
+    status: str = "draft"
+    created_by: str
+    created_by_name: str
+    created_at: str
+    updated_at: Optional[str] = None
+
+# Aboveground Pipe Inspection Checklist Models
+class InspectionLineItem(BaseModel):
+    line_number: Optional[str] = None
+    material: Optional[str] = None
+    size: Optional[str] = None
+    joints_gaskets_washers: Optional[str] = None  # A, N/AC, N/A
+    clearance: Optional[str] = None
+    supports_guides_anchors: Optional[str] = None
+    valves_accessible: Optional[str] = None
+    slope: Optional[str] = None
+    dead_legs: Optional[str] = None
+    alignment_orientation: Optional[str] = None
+    vents_drains: Optional[str] = None
+    initials: Optional[str] = None
+    date: Optional[str] = None
+    remarks: Optional[str] = None
+
+class AbovegroundInspectionCreate(BaseModel):
+    project_id: str
+    # Project Information (auto-filled from project)
+    project_no: Optional[str] = None
+    project_name: Optional[str] = None
+    contractor: Optional[str] = None
+    building: Optional[str] = None
+    area: Optional[str] = None
+    system_no: Optional[str] = None
+    system_description: Optional[str] = None
+    
+    # P&ID / Isometric Reference
+    pid_isometric_rev: Optional[str] = None
+    
+    # Inspection Lines
+    inspection_lines: Optional[List[InspectionLineItem]] = []
+    
+    # Signatures
+    contractor_name: Optional[str] = None
+    contractor_signature: Optional[PressureTestFormSignature] = None
+    
+    cst_representative_name: Optional[str] = None
+    cst_representative_signature: Optional[PressureTestFormSignature] = None
+
+class AbovegroundInspection(AbovegroundInspectionCreate):
+    model_config = ConfigDict(extra="ignore")
+    form_id: str
+    form_number: str
+    page_number: int = 1
+    total_pages: int = 1
+    status: str = "draft"
+    created_by: str
+    created_by_name: str
+    created_at: str
+    updated_at: Optional[str] = None
+
+
 # Estimate Models
 class EstimateItem(BaseModel):
     description: str
