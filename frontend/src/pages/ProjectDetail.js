@@ -3961,10 +3961,7 @@ const ProjectDetail = () => {
               </Dialog>
             </div>
 
-            {/* Timer Component */}
-            <Timer onStop={handleTimerStop} />
-
-            {/* Filter by Employee */}
+            {/* Filter by Employee and Move Button */}
             <Card className="border-slate-200 shadow-sm mb-4">
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
