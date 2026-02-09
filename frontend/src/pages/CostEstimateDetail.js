@@ -238,13 +238,23 @@ const CostEstimateDetail = () => {
       trade: 'Civil',
       description: '',
       cost: 0,
-      labor_cost: 0
+      labor_cost: 0,
+      factor: 0
     }]);
   };
 
   const updateSubcontractorRow = (index, field, value) => {
     const updated = [...subcontractors];
     updated[index][field] = value;
+    
+    // Apply factor to cost: Costo Total × (1 + Factor%)
+    if (field === 'cost' || field === 'factor') {
+      const baseCost = Number(updated[index].cost) || 0;
+      const factor = Number(updated[index].factor) || 0;
+      const factorMultiplier = 1 + (factor / 100);
+      updated[index].adjustedCost = baseCost * factorMultiplier;
+    }
+    
     setSubcontractors(updated);
   };
 
@@ -258,6 +268,7 @@ const CostEstimateDetail = () => {
       description: '',
       quantity: 0,
       unit_cost: 0,
+      factor: 0,
       total: 0
     }]);
   };
@@ -266,8 +277,13 @@ const CostEstimateDetail = () => {
     const updated = [...materials];
     updated[index][field] = value;
     
-    if (field === 'quantity' || field === 'unit_cost') {
-      updated[index].total = (Number(updated[index].quantity) || 0) * (Number(updated[index].unit_cost) || 0);
+    // Apply factor to unit_cost: Cantidad × (Costo × (1 + Factor%)) = Total
+    if (field === 'quantity' || field === 'unit_cost' || field === 'factor') {
+      const quantity = Number(updated[index].quantity) || 0;
+      const unitCost = Number(updated[index].unit_cost) || 0;
+      const factor = Number(updated[index].factor) || 0;
+      const factorMultiplier = 1 + (factor / 100);
+      updated[index].total = quantity * (unitCost * factorMultiplier);
     }
     
     setMaterials(updated);
