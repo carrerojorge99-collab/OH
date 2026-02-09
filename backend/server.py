@@ -3165,6 +3165,8 @@ async def update_clock_entry(
     if not clock_entry:
         raise HTTPException(status_code=404, detail="Ponche no encontrado")
     
+    old_project_id = clock_entry.get('project_id')
+    
     # Build update object
     update_data = {"updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()}
     
@@ -3183,6 +3185,20 @@ async def update_clock_entry(
     if data.notes is not None:
         update_data["notes"] = data.notes
     
+    # Handle project change
+    if data.project_id is not None:
+        new_project_id = data.project_id if data.project_id else None
+        if new_project_id:
+            # Verify project exists
+            project = await db.projects.find_one({"project_id": new_project_id}, {"_id": 0, "name": 1})
+            if not project:
+                raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+            update_data["project_id"] = new_project_id
+            update_data["project_name"] = project["name"]
+        else:
+            update_data["project_id"] = None
+            update_data["project_name"] = None
+    
     # Update the clock entry
     await db.clock_entries.update_one(
         {"clock_id": clock_id},
@@ -3190,15 +3206,24 @@ async def update_clock_entry(
     )
     
     # Update associated timesheet if exists
+    timesheet_update = {}
     if "hours_worked" in update_data:
+        timesheet_update["hours_worked"] = update_data["hours_worked"]
+    if "project_id" in update_data:
+        timesheet_update["project_id"] = update_data["project_id"]
+    
+    if timesheet_update:
         await db.timesheet.update_one(
             {"clock_id": clock_id},
-            {"$set": {"hours_worked": update_data["hours_worked"]}}
+            {"$set": timesheet_update}
         )
-        # Sincronizar horas consumidas en Labor automáticamente
-        project_id = clock_entry.get('project_id')
-        if project_id:
-            await sync_project_labor_hours(project_id)
+    
+    # Sync labor hours for affected projects
+    if old_project_id:
+        await sync_project_labor_hours(old_project_id)
+    new_project_id = update_data.get("project_id", old_project_id)
+    if new_project_id and new_project_id != old_project_id:
+        await sync_project_labor_hours(new_project_id)
     
     # Log audit
     await log_audit(
