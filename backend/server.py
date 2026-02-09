@@ -2691,6 +2691,44 @@ async def delete_timesheet(timesheet_id: str, request: Request, session_token: O
     
     return {"message": "Registro de timesheet eliminado exitosamente"}
 
+class MoveTimesheetsRequest(BaseModel):
+    timesheet_ids: List[str]
+    target_project_id: str
+
+@api_router.post("/timesheet/move-batch")
+async def move_timesheets_batch(data: MoveTimesheetsRequest, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Mover múltiples registros de timesheet a otro proyecto"""
+    user = await get_current_user(request, session_token)
+    
+    # Verify target project exists
+    target_project = await db.projects.find_one({"project_id": data.target_project_id}, {"_id": 0})
+    if not target_project:
+        raise HTTPException(status_code=404, detail="Proyecto destino no encontrado")
+    
+    # Get source project IDs for syncing later
+    source_project_ids = set()
+    for ts_id in data.timesheet_ids:
+        ts = await db.timesheet.find_one({"timesheet_id": ts_id}, {"project_id": 1, "_id": 0})
+        if ts and ts.get("project_id"):
+            source_project_ids.add(ts["project_id"])
+    
+    # Update all timesheets
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db.timesheet.update_many(
+        {"timesheet_id": {"$in": data.timesheet_ids}},
+        {"$set": {"project_id": data.target_project_id, "updated_at": now}}
+    )
+    
+    # Sync labor hours for all affected projects
+    for proj_id in source_project_ids:
+        await sync_project_labor_hours(proj_id)
+    await sync_project_labor_hours(data.target_project_id)
+    
+    return {
+        "message": f"{result.modified_count} registros movidos exitosamente",
+        "moved_count": result.modified_count
+    }
+
 @api_router.post("/clock/in", response_model=ClockEntry)
 async def clock_in(
     project_id: str = Query(...),
