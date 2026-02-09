@@ -3036,6 +3036,7 @@ class ClockEditRequest(BaseModel):
     clock_in: Optional[str] = None
     clock_out: Optional[str] = None
     notes: Optional[str] = None
+    project_id: Optional[str] = None
 
 class ManualClockRequest(BaseModel):
     user_id: str
