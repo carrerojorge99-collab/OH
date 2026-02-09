@@ -1273,6 +1273,7 @@ const CostEstimateDetail = () => {
                         <th className="p-2 text-left text-xs">Descripción</th>
                         <th className="p-2 text-right text-xs">Cantidad</th>
                         <th className="p-2 text-right text-xs">Costo Unitario</th>
+                        <th className="p-2 text-right text-xs bg-yellow-50">Factor %</th>
                         <th className="p-2 text-right text-xs">Total</th>
                         <th className="p-2"></th>
                       </tr>
@@ -1291,7 +1292,7 @@ const CostEstimateDetail = () => {
                             <Input
                               type="number"
                               step="0.01"
-                              className="text-right"
+                              className="text-right w-24"
                               value={item.quantity}
                               onChange={(e) => updateMaterialRow(idx, 'quantity', e.target.value)}
                             />
@@ -1300,13 +1301,23 @@ const CostEstimateDetail = () => {
                             <Input
                               type="number"
                               step="0.01"
-                              className="text-right"
+                              className="text-right w-28"
                               value={item.unit_cost}
                               onChange={(e) => updateMaterialRow(idx, 'unit_cost', e.target.value)}
                             />
                           </td>
-                          <td className="p-2 text-right font-semibold">
-                            ${item.total.toFixed(2)}
+                          <td className="p-2 bg-yellow-50">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              className="text-right w-20 border-yellow-300"
+                              value={item.factor || 0}
+                              onChange={(e) => updateMaterialRow(idx, 'factor', e.target.value)}
+                              placeholder="0"
+                            />
+                          </td>
+                          <td className="p-2 text-right font-semibold text-blue-600">
+                            ${(item.total || 0).toFixed(2)}
                           </td>
                           <td className="p-2">
                             <Button
@@ -1321,6 +1332,7 @@ const CostEstimateDetail = () => {
                       ))}
                     </tbody>
                   </table>
+                  <p className="text-xs text-yellow-600 mt-2">* El Factor % se aplica al Costo Unitario: Cantidad × (Costo × (1 + Factor%)) = Total</p>
                 </div>
               </CardContent>
             </Card>
