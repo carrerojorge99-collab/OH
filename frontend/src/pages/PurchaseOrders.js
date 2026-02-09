@@ -582,6 +582,15 @@ const PurchaseOrders = () => {
                     <Input type="date" value={form.expected_delivery_date} onChange={(e) => setForm({...form, expected_delivery_date: e.target.value})} />
                   </div>
                   <div className="md:col-span-2">
+                    <Label>Subtítulo del Documento</Label>
+                    <Input 
+                      value={form.subtitle} 
+                      onChange={(e) => setForm({...form, subtitle: e.target.value})} 
+                      placeholder="Ej: Materiales Fase 1, Equipos para Demolición, etc."
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Aparecerá centrado en el PDF antes del contenido</p>
+                  </div>
+                  <div className="md:col-span-2">
                     <Label>Descripción</Label>
                     <Textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} rows={2} />
                   </div>
