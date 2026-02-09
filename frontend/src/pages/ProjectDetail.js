@@ -96,6 +96,13 @@ const ProjectDetail = () => {
   const [editingLaborId, setEditingLaborId] = useState(null);
   const [editingTimesheetId, setEditingTimesheetId] = useState(null);
   
+  // Timesheet batch move state
+  const [selectedTimesheets, setSelectedTimesheets] = useState([]);
+  const [moveTimesheetDialogOpen, setMoveTimesheetDialogOpen] = useState(false);
+  const [allProjects, setAllProjects] = useState([]);
+  const [targetProjectId, setTargetProjectId] = useState('');
+  const [movingTimesheets, setMovingTimesheets] = useState(false);
+  
   // Change Orders state
   const [changeOrders, setChangeOrders] = useState([]);
   const [changeOrderDialogOpen, setChangeOrderDialogOpen] = useState(false);
