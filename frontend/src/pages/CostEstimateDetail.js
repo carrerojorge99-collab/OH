@@ -1343,7 +1343,7 @@ const CostEstimateDetail = () => {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Equipos y Transporte</CardTitle>
+                  <CardTitle>Equipos</CardTitle>
                   <Button onClick={addEquipmentRow} size="sm">
                     <Plus className="w-4 h-4 mr-2" />
                     Agregar Equipo
@@ -1358,6 +1358,7 @@ const CostEstimateDetail = () => {
                         <th className="p-2 text-left text-xs">Descripción</th>
                         <th className="p-2 text-right text-xs">Cantidad</th>
                         <th className="p-2 text-right text-xs">Días</th>
+                        <th className="p-2 text-right text-xs bg-yellow-50">Factor %</th>
                         <th className="p-2 text-right text-xs">Tarifa/Día</th>
                         <th className="p-2 text-right text-xs">Total</th>
                         <th className="p-2"></th>
@@ -1376,7 +1377,7 @@ const CostEstimateDetail = () => {
                           <td className="p-2">
                             <Input
                               type="number"
-                              className="text-right w-24"
+                              className="text-right w-20"
                               value={item.quantity}
                               onChange={(e) => updateEquipmentRow(idx, 'quantity', e.target.value)}
                             />
@@ -1384,9 +1385,19 @@ const CostEstimateDetail = () => {
                           <td className="p-2">
                             <Input
                               type="number"
-                              className="text-right w-24"
+                              className="text-right w-20"
                               value={item.days}
                               onChange={(e) => updateEquipmentRow(idx, 'days', e.target.value)}
+                            />
+                          </td>
+                          <td className="p-2 bg-yellow-50">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              className="text-right w-20 border-yellow-300"
+                              value={item.factor || 0}
+                              onChange={(e) => updateEquipmentRow(idx, 'factor', e.target.value)}
+                              placeholder="0"
                             />
                           </td>
                           <td className="p-2">
@@ -1398,8 +1409,8 @@ const CostEstimateDetail = () => {
                               onChange={(e) => updateEquipmentRow(idx, 'rate', e.target.value)}
                             />
                           </td>
-                          <td className="p-2 text-right font-semibold">
-                            ${item.total.toFixed(2)}
+                          <td className="p-2 text-right font-semibold text-blue-600">
+                            ${(item.total || 0).toFixed(2)}
                           </td>
                           <td className="p-2">
                             <Button
@@ -1414,6 +1425,7 @@ const CostEstimateDetail = () => {
                       ))}
                     </tbody>
                   </table>
+                  <p className="text-xs text-yellow-600 mt-2">* El Factor % se aplica a los Días: Cantidad × (Días × (1 + Factor%)) × Tarifa = Total</p>
                 </div>
               </CardContent>
             </Card>
