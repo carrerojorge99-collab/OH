@@ -848,6 +848,17 @@ const Estimates = () => {
                   </div>
                 </div>
 
+                {/* Subtitle Field */}
+                <div>
+                  <Label>Subtítulo del Documento</Label>
+                  <Input 
+                    value={form.subtitle} 
+                    onChange={(e) => setForm({...form, subtitle: e.target.value})} 
+                    placeholder="Ej: Fase 1 - Demolición, Propuesta Inicial, etc."
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Aparecerá centrado en el PDF antes del contenido</p>
+                </div>
+
                 {/* Items - Task Format */}
                 <div>
                   <Label className="mb-2 block">Líneas del Estimado</Label>
