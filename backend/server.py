@@ -9522,6 +9522,7 @@ class LaborCostItem(BaseModel):
     overtime_hours: float = 0
     rate: float = 0
     overtime_rate: float = 0
+    factor: float = 0  # Factor General % - applies to hours
     subtotal: float = 0
 
 class SubcontractorItem(BaseModel):
@@ -9529,11 +9530,13 @@ class SubcontractorItem(BaseModel):
     description: str = ""
     cost: float = 0
     labor_cost: float = 0  # Mano de obra del subcontratista para cálculo B2B
+    factor: float = 0  # Factor General % - applies to total cost
 
 class MaterialItem(BaseModel):
     description: str
     quantity: float = 0
     unit_cost: float = 0
+    factor: float = 0  # Factor General % - applies to cost
     total: float = 0
 
 class EquipmentItem(BaseModel):
@@ -9541,6 +9544,7 @@ class EquipmentItem(BaseModel):
     quantity: int = 0
     days: int = 0
     rate: float = 0
+    factor: float = 0  # Factor General % - applies to days
     total: float = 0
 
 class TransportationItem(BaseModel):
@@ -9549,12 +9553,14 @@ class TransportationItem(BaseModel):
     roundtrip_miles: float = 0
     cost_per_mile: float = 0
     days: int = 0
+    factor: float = 0  # Factor General % - applies to days
     total: float = 0
 
 class GeneralConditionItem(BaseModel):
     description: str
     quantity: float = 0
     unit_cost: float = 0
+    factor: float = 0  # Factor General % - applies to quantity
     total: float = 0
 
 class CostEstimate(BaseModel):
