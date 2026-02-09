@@ -364,6 +364,7 @@ const Invoices = () => {
       sponsor_title: '',
       sponsor_email: '',
       po_number: '',
+      subtitle: '',
       items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
       tax_rate: 0,
       selected_taxes: [],
