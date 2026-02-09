@@ -206,7 +206,8 @@ const ProjectDetail = () => {
     sponsor: '',
     po_number: '',
     po_quantity: 0,
-    proposal_number: ''
+    proposal_number: '',
+    estimated_hours: 0
   });
 
   // Required documents state
