@@ -8738,6 +8738,7 @@ async def create_purchase_order(
         "supplier_phone": po_data.supplier_phone,
         "supplier_address": po_data.supplier_address,
         "title": po_data.title,
+        "subtitle": po_data.subtitle,
         "description": po_data.description,
         "items": [item.model_dump() for item in po_data.items],
         "subtotal": subtotal,
