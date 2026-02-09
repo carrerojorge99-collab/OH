@@ -252,6 +252,56 @@ const ProjectDetail = () => {
     }
   };
 
+  const loadAllProjects = async () => {
+    try {
+      const response = await api.get(`/projects`, { withCredentials: true });
+      setAllProjects(response.data);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
+  const handleMoveTimesheets = async () => {
+    if (!targetProjectId || selectedTimesheets.length === 0) {
+      toast.error('Selecciona un proyecto destino');
+      return;
+    }
+    
+    setMovingTimesheets(true);
+    try {
+      await api.post('/timesheet/move-batch', {
+        timesheet_ids: selectedTimesheets,
+        target_project_id: targetProjectId
+      }, { withCredentials: true });
+      
+      toast.success(`${selectedTimesheets.length} registros movidos exitosamente`);
+      setMoveTimesheetDialogOpen(false);
+      setSelectedTimesheets([]);
+      setTargetProjectId('');
+      loadProjectData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al mover registros');
+    } finally {
+      setMovingTimesheets(false);
+    }
+  };
+
+  const toggleTimesheetSelection = (timesheetId) => {
+    setSelectedTimesheets(prev => 
+      prev.includes(timesheetId) 
+        ? prev.filter(id => id !== timesheetId)
+        : [...prev, timesheetId]
+    );
+  };
+
+  const toggleAllTimesheets = () => {
+    if (selectedTimesheets.length === filteredTimesheet.length) {
+      setSelectedTimesheets([]);
+    } else {
+      setSelectedTimesheets(filteredTimesheet.map(t => t.timesheet_id));
+    }
+  };
+
   useEffect(() => {
     if (project) {
       setEditForm({
