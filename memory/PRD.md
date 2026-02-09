@@ -3,9 +3,32 @@
 ## Original Problem Statement
 Sistema ERP completo para gestión de proyectos de construcción con módulos de proyectos, tareas, presupuestos, facturas, estimados, seguridad, RFIs, recibos de pago y más.
 
-## Current Session Completed Work (Feb 9, 2026)
+## Current Session Bug Fix (Feb 9, 2026)
 
-### Document Subtitle Feature ✅ NEW
+### Subtitle Field Not Saving - FIXED ✅
+**Problema reportado:** El campo "Subtítulo del Documento" no se guardaba al crear o editar Facturas, Estimados y Órdenes de Compra.
+
+**Causa raíz:** Los endpoints del backend no incluían el campo `subtitle` al guardar los documentos en la base de datos:
+- `POST /api/invoices/manual` - No guardaba subtitle
+- `PUT /api/invoices/{id}` - No guardaba subtitle
+- `POST /api/estimates` - No guardaba subtitle
+- `PUT /api/estimates/{id}` - No guardaba subtitle
+- `POST /api/purchase-orders` - No guardaba subtitle
+- `PUT /api/purchase-orders/{id}` - No guardaba subtitle
+
+**Correcciones aplicadas:**
+1. Agregado `subtitle: Optional[str] = None` al modelo `ManualInvoiceCreate`
+2. Agregado `"subtitle": invoice_data.subtitle` en el documento de creación de facturas manuales
+3. Agregado `"subtitle": invoice_data.get('subtitle', invoice.get('subtitle'))` en actualización de facturas
+4. Agregado `"subtitle": estimate_data.subtitle` en creación y actualización de estimados
+5. Agregado `"subtitle": po_data.subtitle` en creación y actualización de órdenes de compra
+
+**Archivos modificados:**
+- `/app/backend/server.py` - Líneas 7706-7722 (modelo), 7776-7807 (POST invoice), 7883-7903 (PUT invoice), 8315-8348 (POST estimate), 8462-8484 (PUT estimate), 8726-8755 (POST PO), 8824-8843 (PUT PO)
+
+## Previous Session Completed Work (Feb 9, 2026)
+
+### Document Subtitle Feature ✅
 Agregado campo de subtítulo para documentos (Facturas, Estimados, Órdenes de Compra).
 
 **Funcionalidades implementadas:**
