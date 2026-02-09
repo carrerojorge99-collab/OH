@@ -3,9 +3,28 @@
 ## Original Problem Statement
 Sistema ERP completo para gestión de proyectos de construcción con módulos de proyectos, tareas, presupuestos, facturas, estimados, seguridad, RFIs, recibos de pago y más.
 
-## Current Session Completed Work (Feb 2026)
+## Current Session Completed Work (Feb 9, 2026)
 
-### Payment Receipts Module (Recibos de Pago) ✅ NEW
+### Project Time Management Improvements ✅ NEW
+Mejoras en el área de Tiempo de los proyectos solicitadas por el usuario.
+
+**Funcionalidades implementadas:**
+1. **Eliminación del cronómetro (Timer)**: Removido el componente Timer de la pestaña Tiempo
+2. **Tarjetas de Control de Horas**: Nueva sección en el dashboard del proyecto con:
+   - Horas Estimadas (configurables)
+   - Horas Consumidas (calculadas automáticamente de los registros de timesheet)
+   - Horas Restantes (estimadas - consumidas)
+   - Barra de progreso con indicador de exceso
+   - Botón "Editar Horas Estimadas" para acceso rápido
+3. **Mover ponches en lote**:
+   - Checkboxes en cada fila de la tabla de timesheet
+   - Checkbox "Seleccionar todos" en el encabezado
+   - Botón "Mover X seleccionados" que aparece al seleccionar registros
+   - Diálogo modal con selector de proyecto destino
+   - Endpoint API `/api/timesheet/move-batch` para mover múltiples registros
+4. **Campo Horas Estimadas del Proyecto**: Agregado al formulario de edición del proyecto
+
+### Payment Receipts Module (Recibos de Pago) ✅ (Previous session)
 Módulo completo para gestionar y evidenciar los pagos realizados a proveedores.
 
 **Funcionalidades implementadas:**
@@ -16,16 +35,21 @@ Módulo completo para gestionar y evidenciar los pagos realizados a proveedores.
    - Fecha, Monto, Método de Pago
    - Número de Referencia (bancaria/cheque)
    - Concepto, Notas
+   - Descuento en porcentaje
 3. **Módulo centralizado** en `/receipts` con:
    - Tarjetas de estadísticas (Total Recibos, Total Pagado, Proveedores)
    - Filtros por proveedor, proyecto y búsqueda
    - Tabla con todas las columnas
 4. **Vista integrada en Vendors**: Cada proveedor muestra sus recibos y total pagado
-5. **Generación de PDF**: Diseño minimalista con logo de empresa
+5. **Generación de PDF**: Diseño con branding de la empresa (estilo Estimados)
 6. **Envío por Email**: Con PDF adjunto
 7. **Comprobantes adjuntos**: Subida de imágenes/PDFs a Cloudinary
 
-### Files Created/Modified
+### Files Created/Modified (This Session)
+- `/app/backend/server.py` - Agregado `estimated_hours` a Project, endpoint `/timesheet/move-batch`
+- `/app/frontend/src/pages/ProjectDetail.js` - Timer eliminado, tarjetas de horas, checkboxes y mover en lote
+
+### Files Created/Modified (Previous Session)
 - `/app/backend/server.py` - Endpoints de recibos (CRUD, attachments, email)
 - `/app/frontend/src/pages/PaymentReceipts.js` - Página principal de recibos
 - `/app/frontend/src/pages/Vendors.js` - Integración de recibos en detalle de vendor
@@ -47,11 +71,12 @@ Módulo completo para gestionar y evidenciar los pagos realizados a proveedores.
 │   │   ├── components/
 │   │   │   ├── ProjectRFI.js    # Módulo RFI completo
 │   │   │   ├── Layout.js        # Navegación
+│   │   │   ├── Timer.js         # Componente (ya no se usa en Tiempo)
 │   │   │   └── CloudinaryUpload.jsx
 │   │   ├── pages/
-│   │   │   ├── PaymentReceipts.js  # Nuevo módulo de recibos
+│   │   │   ├── PaymentReceipts.js  # Módulo de recibos
 │   │   │   ├── Vendors.js          # Con integración de recibos
-│   │   │   └── ProjectDetail.js    # Detalle de proyecto con tabs
+│   │   │   └── ProjectDetail.js    # Detalle de proyecto con control de horas
 │   │   └── utils/
 │   │       ├── logoData.js         # Logo base64 de la empresa
 │   │       └── pdfGenerator.js     # Helpers para PDF
@@ -60,7 +85,11 @@ Módulo completo para gestionar y evidenciar los pagos realizados a proveedores.
     └── PRD.md
 ```
 
-## Key API Endpoints (New)
+## Key API Endpoints
+### Project Time Management (New)
+- `POST /api/timesheet/move-batch` - Mover múltiples registros de timesheet a otro proyecto
+
+### Payment Receipts
 - `GET /api/receipts` - Listar recibos con filtros
 - `POST /api/receipts` - Crear recibo
 - `GET /api/receipts/{id}` - Obtener recibo
@@ -72,8 +101,8 @@ Módulo completo para gestionar y evidenciar los pagos realizados a proveedores.
 - `GET /api/vendors/{id}/receipts` - Recibos de un proveedor
 
 ## Pending User Verification
+- Verificación E2E del módulo RFI (generación PDF y fusión de documentos)
 - Verificación acceso rol HR (rrhh)
-- Funciones anteriores completadas pendientes de verificación
 
 ## Backlog (P1-P2)
 - Corregir diseño PDF Facturas vs Presupuestos
