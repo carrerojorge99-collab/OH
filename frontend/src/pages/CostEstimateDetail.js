@@ -300,6 +300,7 @@ const CostEstimateDetail = () => {
       quantity: 0,
       days: 0,
       rate: 0,
+      factor: 0,
       total: 0
     }]);
   };
@@ -312,6 +313,7 @@ const CostEstimateDetail = () => {
       roundtrip_miles: 0,
       cost_per_mile: 0,
       days: 0,
+      factor: 0,
       total: 0
     }]);
   };
@@ -320,10 +322,14 @@ const CostEstimateDetail = () => {
     const updated = [...transportation];
     updated[index][field] = value;
     
-    if (field === 'roundtrip_miles' || field === 'cost_per_mile' || field === 'days') {
-      updated[index].total = (Number(updated[index].roundtrip_miles) || 0) * 
-                              (Number(updated[index].cost_per_mile) || 0) * 
-                              (Number(updated[index].days) || 0);
+    // Apply factor to days: Millas × Costo × (Días × (1 + Factor%)) = Total
+    if (field === 'roundtrip_miles' || field === 'cost_per_mile' || field === 'days' || field === 'factor') {
+      const miles = Number(updated[index].roundtrip_miles) || 0;
+      const costPerMile = Number(updated[index].cost_per_mile) || 0;
+      const days = Number(updated[index].days) || 0;
+      const factor = Number(updated[index].factor) || 0;
+      const factorMultiplier = 1 + (factor / 100);
+      updated[index].total = miles * costPerMile * (days * factorMultiplier);
     }
     
     setTransportation(updated);
@@ -337,10 +343,14 @@ const CostEstimateDetail = () => {
     const updated = [...equipment];
     updated[index][field] = value;
     
-    if (field === 'quantity' || field === 'days' || field === 'rate') {
-      updated[index].total = (Number(updated[index].quantity) || 0) * 
-                             (Number(updated[index].days) || 0) * 
-                             (Number(updated[index].rate) || 0);
+    // Apply factor to days: Cantidad × (Días × (1 + Factor%)) × Tarifa = Total
+    if (field === 'quantity' || field === 'days' || field === 'rate' || field === 'factor') {
+      const quantity = Number(updated[index].quantity) || 0;
+      const days = Number(updated[index].days) || 0;
+      const rate = Number(updated[index].rate) || 0;
+      const factor = Number(updated[index].factor) || 0;
+      const factorMultiplier = 1 + (factor / 100);
+      updated[index].total = quantity * (days * factorMultiplier) * rate;
     }
     
     setEquipment(updated);
@@ -356,6 +366,7 @@ const CostEstimateDetail = () => {
       description: '',
       quantity: 0,
       unit_cost: 0,
+      factor: 0,
       total: 0
     }]);
   };
