@@ -1206,6 +1206,7 @@ class PurchaseOrderCreate(BaseModel):
     supplier_phone: Optional[str] = None
     supplier_address: Optional[str] = None
     title: str
+    subtitle: Optional[str] = None
     description: Optional[str] = None
     items: List[PurchaseOrderItem]
     tax_rate: float = 0.0
@@ -1226,6 +1227,7 @@ class PurchaseOrder(BaseModel):
     supplier_phone: Optional[str] = None
     supplier_address: Optional[str] = None
     title: str
+    subtitle: Optional[str] = None
     description: Optional[str] = None
     items: List[PurchaseOrderItem]
     subtotal: float
