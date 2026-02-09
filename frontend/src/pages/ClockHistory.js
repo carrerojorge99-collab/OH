@@ -10,7 +10,7 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
-import { MapPin, Calendar, User, Clock, FolderKanban, ChevronDown, ChevronRight, Trash2, Edit2, Plus } from 'lucide-react';
+import { MapPin, Calendar, User, Clock, FolderKanban, ChevronDown, ChevronRight, Trash2, Edit2, Plus, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
