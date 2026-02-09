@@ -563,6 +563,16 @@ const Estimates = () => {
       y += 6;
     }
     
+    // Subtitle (centered before content)
+    if (estimate.subtitle) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(249, 115, 22); // Orange color for emphasis
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.text(estimate.subtitle, pageWidth / 2, y, { align: 'center' });
+      y += 8;
+    }
+    
     // Tasks table
     y = addTasksTable(doc, estimate.items, y + 4);
     
