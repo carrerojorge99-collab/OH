@@ -630,7 +630,29 @@ const ClockHistory = () => {
               <div className="bg-slate-50 p-3 rounded-lg text-sm">
                 <p><strong>Empleado:</strong> {editingEntry.user_name}</p>
                 <p><strong>Fecha:</strong> {moment(editingEntry.date).format('dddd, D [de] MMMM [de] YYYY')}</p>
-                <p><strong>Proyecto:</strong> {editingEntry.project_name || 'Sin proyecto'}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit_project" className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-orange-600" />
+                  Proyecto
+                </Label>
+                <Select
+                  value={editForm.project_id}
+                  onValueChange={(value) => setEditForm({...editForm, project_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar proyecto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin proyecto</SelectItem>
+                    {projects.map(project => (
+                      <SelectItem key={project.project_id} value={project.project_id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
