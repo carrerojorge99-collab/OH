@@ -550,6 +550,8 @@ class ProjectCreate(BaseModel):
     location_longitude: Optional[float] = None
     geofence_radius: float = 100  # metros
     geofence_enabled: bool = False
+    # Hours tracking
+    estimated_hours: float = 0
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
@@ -576,6 +578,8 @@ class ProjectUpdate(BaseModel):
     location_longitude: Optional[float] = None
     geofence_radius: Optional[float] = None
     geofence_enabled: Optional[bool] = None
+    # Hours tracking
+    estimated_hours: Optional[float] = None
 
 class Project(BaseModel):
     model_config = ConfigDict(extra="ignore")
