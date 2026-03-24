@@ -37,8 +37,10 @@ import {
   ChevronUp,
   Landmark,
   Truck,
-  Receipt
+  Receipt,
+  Target
 } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Layout = ({ children }) => {
@@ -66,8 +68,10 @@ const Layout = ({ children }) => {
       { name: 'Mi Perfil', href: '/my-profile', icon: User },
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Pre-Proyectos', href: '/pre-projects', icon: Target },
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Calendario', href: '/calendar', icon: Calendar },
+      { name: 'Plan Semanal', href: '/weekly-plan', icon: CalendarClock },
       { name: 'Estimados', href: '/estimados', icon: FileText },
       { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
       { name: 'Órdenes de Compra', href: '/purchase-orders', icon: Package },
@@ -82,6 +86,7 @@ const Layout = ({ children }) => {
       { name: 'Mi Perfil', href: '/my-profile', icon: User },
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
+      { name: 'Pre-Proyectos', href: '/pre-projects', icon: Target },
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Calendario', href: '/calendar', icon: Calendar },
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
@@ -104,8 +109,10 @@ const Layout = ({ children }) => {
       { name: 'Mi Perfil', href: '/my-profile', icon: User },
       { name: 'Ponchar', href: '/clock', icon: Clock },
       { name: 'Historial Ponches', href: '/clock/history', icon: Clock },
+      { name: 'Pre-Proyectos', href: '/pre-projects', icon: Target },
       { name: 'Proyectos', href: '/projects', icon: FolderKanban },
       { name: 'Calendario', href: '/calendar', icon: Calendar },
+      { name: 'Plan Semanal', href: '/weekly-plan', icon: CalendarClock },
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
       { name: 'Compañías', href: '/companies', icon: Building2 },
       { name: 'Proveedores', href: '/vendors', icon: Truck },
@@ -134,6 +141,37 @@ const Layout = ({ children }) => {
       { name: 'Reportes', href: '/reports', icon: BarChart3 },
     ];
 
+    const designerNav = [
+      { name: 'Mi Perfil', href: '/my-profile', icon: User },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Pre-Proyectos', href: '/pre-projects', icon: Target },
+      { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+      { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
+      { name: 'Proveedores', href: '/vendors', icon: Truck },
+      { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
+    ];
+
+    const pmEstimatorNav = [
+      { name: 'Mi Perfil', href: '/my-profile', icon: User },
+      { name: 'Estimados', href: '/estimados', icon: FileText },
+      { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
+    ];
+
+    const supervisorNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Mi Perfil', href: '/my-profile', icon: User },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Pre-Proyectos', href: '/pre-projects', icon: Target },
+      { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+      { name: 'Calendario', href: '/calendar', icon: Calendar },
+      { name: 'Plan Semanal', href: '/weekly-plan', icon: CalendarClock },
+      { name: 'Estimaciones Costos', href: '/cost-estimates', icon: Calculator },
+      { name: 'Proveedores', href: '/vendors', icon: Truck },
+      { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
+    ];
+
     const clientNav = [
       { name: 'Mi Perfil', href: `/clients/${user?.user_id}`, icon: Building2 },
     ];
@@ -148,6 +186,12 @@ const Layout = ({ children }) => {
         return rrhhNav;
       case 'accountant':
         return accountantNav;
+      case 'designer':
+        return designerNav;
+      case 'supervisor':
+        return supervisorNav;
+      case 'pm_estimator':
+        return pmEstimatorNav;
       case 'empleado':
         return baseEmpleado;
       case 'client':
@@ -185,8 +229,11 @@ const Layout = ({ children }) => {
     'admin': 'Admin',
     'project_manager': 'Project Manager',
     'rrhh': 'RRHH',
+    'designer': 'Designer',
+    'supervisor': 'Supervisor',
     'empleado': 'Empleado',
-    'client': 'Cliente'
+    'client': 'Cliente',
+    'accountant': 'Contador'
   };
 
   const handleLogout = async () => {

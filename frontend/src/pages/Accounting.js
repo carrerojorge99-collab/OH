@@ -98,6 +98,13 @@ const Accounting = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [paymentType, setPaymentType] = useState('ar');
   
+  // Cash Flow Projection state
+  const [cashFlowData, setCashFlowData] = useState(null);
+  const [loadingCashFlow, setLoadingCashFlow] = useState(false);
+  
+  // Migration state
+  const [migrating, setMigrating] = useState(false);
+  
   // Bank state
   const [bankAccounts, setBankAccounts] = useState([]);
   const [bankDialogOpen, setBankDialogOpen] = useState(false);
@@ -117,6 +124,7 @@ const Accounting = () => {
   useEffect(() => {
     loadDashboard();
     loadAccounts();
+    loadCashFlow();
   }, []);
 
   useEffect(() => {
@@ -129,6 +137,7 @@ const Accounting = () => {
       loadTaxRates();
     }
     if (activeTab === 'reports') loadReports();
+    if (activeTab === 'cashflow') loadCashFlow();
   }, [activeTab]);
 
   const loadDashboard = async () => {
@@ -358,6 +367,89 @@ const Accounting = () => {
     }
   };
 
+  const syncPayroll = async (payrollId) => {
+    try {
+      const res = await api.post(`/accounting/sync-payroll?payroll_id=${payrollId}`);
+      if (res.data.success !== false) {
+        toast.success(res.data.message || 'Nómina sincronizada');
+        loadDashboard();
+        loadJournalEntries();
+      } else {
+        toast.info(res.data.message);
+      }
+    } catch (err) {
+      toast.error('Error al sincronizar nómina');
+    }
+  };
+
+  const syncAllPayroll = async () => {
+    try {
+      // Get all unsynced payroll runs
+      const payrollRes = await api.get('/payroll/history');
+      const payrollRuns = payrollRes.data || [];
+      
+      let synced = 0;
+      for (const run of payrollRuns) {
+        if (!run.accounting_synced) {
+          const res = await api.post(`/accounting/sync-payroll?payroll_id=${run.id}`);
+          if (res.data.success) synced++;
+        }
+      }
+      
+      if (synced > 0) {
+        toast.success(`${synced} nóminas sincronizadas a contabilidad`);
+        loadDashboard();
+        loadJournalEntries();
+      } else {
+        toast.info('Todas las nóminas ya están sincronizadas');
+      }
+    } catch (err) {
+      toast.error('Error al sincronizar nóminas');
+    }
+  };
+
+  const syncPurchaseOrders = async () => {
+    try {
+      const res = await api.post('/accounting/sync-purchase-orders');
+      toast.success(res.data.message);
+      loadAP();
+      loadDashboard();
+    } catch (err) {
+      toast.error('Error al sincronizar órdenes de compra');
+    }
+  };
+
+  const loadCashFlow = async () => {
+    setLoadingCashFlow(true);
+    try {
+      const res = await api.get('/accounting/cash-flow-projection');
+      setCashFlowData(res.data);
+    } catch (err) {
+      console.error('Error loading cash flow:', err);
+    } finally {
+      setLoadingCashFlow(false);
+    }
+  };
+
+  const migrateHistoricalData = async () => {
+    setMigrating(true);
+    try {
+      const res = await api.post('/accounting/migrate-historical-data?year=2026');
+      toast.success(res.data.message, {
+        description: `Facturas: ${res.data.results.invoices.synced}, POs: ${res.data.results.purchase_orders.synced}, Nóminas: ${res.data.results.payroll_runs.synced}, Gastos: ${res.data.results.expenses.synced}`
+      });
+      loadDashboard();
+      loadJournalEntries();
+      loadAR();
+      loadAP();
+      loadCashFlow();
+    } catch (err) {
+      toast.error('Error en migración de datos');
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -400,6 +492,36 @@ const Accounting = () => {
   // Dashboard Tab
   const renderDashboard = () => (
     <div className="space-y-6">
+      {/* Quick Actions */}
+      <div className="flex gap-2 flex-wrap">
+        <Button variant="outline" size="sm" onClick={syncInvoices}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Sincronizar Facturas
+        </Button>
+        <Button variant="outline" size="sm" onClick={syncAllPayroll}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Sincronizar Nóminas
+        </Button>
+        <Button variant="outline" size="sm" onClick={syncPurchaseOrders}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Sincronizar Órdenes de Compra
+        </Button>
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={migrateHistoricalData}
+          disabled={migrating}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          {migrating ? (
+            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4 mr-2" />
+          )}
+          Migrar Data 2026
+        </Button>
+      </div>
+      
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -556,6 +678,183 @@ const Accounting = () => {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+
+  // Cash Flow Projection Tab
+  const renderCashFlow = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-semibold">Proyección de Flujo de Caja</h2>
+          <p className="text-sm text-gray-500">Visibilidad de ingresos y egresos proyectados a 30, 60 y 90 días</p>
+        </div>
+        <Button variant="outline" onClick={loadCashFlow} disabled={loadingCashFlow}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loadingCashFlow ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
+      </div>
+
+      {cashFlowData ? (
+        <>
+          {/* Current Balance */}
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100">Balance Actual en Caja</p>
+                  <p className="text-3xl font-bold">{formatCurrency(cashFlowData.current_cash_balance)}</p>
+                </div>
+                <Landmark className="w-12 h-12 text-blue-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Projection Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(cashFlowData.projection || {}).map(([key, period]) => (
+              <Card key={key} className={period.status === 'negative' ? 'border-red-200' : 'border-green-200'}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <span>{period.period?.replace('_', ' ').replace('days', 'días')}</span>
+                    <Badge className={period.status === 'negative' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                      {period.status === 'negative' ? 'Déficit' : 'Superávit'}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-xs text-gray-500">Hasta {period.date}</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                    <span className="text-sm text-green-700 flex items-center">
+                      <ArrowUpRight className="w-4 h-4 mr-1" />
+                      Entradas (AR)
+                    </span>
+                    <span className="font-semibold text-green-700">{formatCurrency(period.inflows?.total)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                    <span className="text-sm text-red-700 flex items-center">
+                      <ArrowDownRight className="w-4 h-4 mr-1" />
+                      Salidas (AP + Impuestos)
+                    </span>
+                    <span className="font-semibold text-red-700">{formatCurrency(period.outflows?.total)}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Flujo Neto</span>
+                      <span className={`text-lg font-bold ${period.net_cash_flow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(period.net_cash_flow)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Summary Totals */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Cuentas por Cobrar</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(cashFlowData.total_ar_outstanding)}</p>
+                  </div>
+                  <ArrowUpRight className="w-8 h-8 text-green-200" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Cuentas por Pagar</p>
+                    <p className="text-2xl font-bold text-red-600">{formatCurrency(cashFlowData.total_ap_outstanding)}</p>
+                  </div>
+                  <ArrowDownRight className="w-8 h-8 text-red-200" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Impuestos Pendientes</p>
+                    <p className="text-2xl font-bold text-orange-600">{formatCurrency(cashFlowData.total_tax_liabilities)}</p>
+                  </div>
+                  <Receipt className="w-8 h-8 text-orange-200" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Aging Analysis */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ArrowUpRight className="w-5 h-5 text-green-600" />
+                  Antigüedad de Cuentas por Cobrar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                    <span className="text-sm">Corriente (0-30 días)</span>
+                    <span className="font-semibold">{formatCurrency(cashFlowData.ar_aging?.current)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
+                    <span className="text-sm">30-60 días</span>
+                    <span className="font-semibold">{formatCurrency(cashFlowData.ar_aging?.['30_60'])}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-orange-50 rounded">
+                    <span className="text-sm">60-90 días</span>
+                    <span className="font-semibold">{formatCurrency(cashFlowData.ar_aging?.['60_90'])}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                    <span className="text-sm">Más de 90 días / Vencidas</span>
+                    <span className="font-semibold text-red-600">{formatCurrency(cashFlowData.ar_aging?.over_90)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ArrowDownRight className="w-5 h-5 text-red-600" />
+                  Antigüedad de Cuentas por Pagar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                    <span className="text-sm">Corriente (0-30 días)</span>
+                    <span className="font-semibold">{formatCurrency(cashFlowData.ap_aging?.current)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
+                    <span className="text-sm">30-60 días</span>
+                    <span className="font-semibold">{formatCurrency(cashFlowData.ap_aging?.['30_60'])}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-orange-50 rounded">
+                    <span className="text-sm">60-90 días</span>
+                    <span className="font-semibold">{formatCurrency(cashFlowData.ap_aging?.['60_90'])}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                    <span className="text-sm">Más de 90 días / Vencidas</span>
+                    <span className="font-semibold text-red-600">{formatCurrency(cashFlowData.ap_aging?.over_90)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <Card>
+          <CardContent className="pt-6 text-center text-gray-500">
+            {loadingCashFlow ? 'Cargando proyección...' : 'No hay datos disponibles'}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
@@ -1601,6 +1900,10 @@ const Accounting = () => {
               <Receipt className="w-4 h-4" />
               Taxes
             </TabsTrigger>
+            <TabsTrigger value="cashflow" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Cash Flow
+            </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Reports
@@ -1624,6 +1927,9 @@ const Accounting = () => {
           </TabsContent>
           <TabsContent value="taxes" className="mt-6">
             {renderTaxes()}
+          </TabsContent>
+          <TabsContent value="cashflow" className="mt-6">
+            {renderCashFlow()}
           </TabsContent>
           <TabsContent value="reports" className="mt-6">
             {renderReports()}

@@ -172,7 +172,8 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
     location: '',
     presenter: '',
     attendees: [],
-    notes: ''
+    notes: '',
+    save_to_library: true  // Auto-save to library by default
   });
   
   // Incidents
@@ -417,11 +418,16 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
       } else {
         await api.post('/safety/toolbox-talks', payload);
         toast.success('Toolbox Talk creado');
+        // Show additional message if saved to library
+        if (toolboxForm.save_to_library && toolboxForm.title && (toolboxForm.description || toolboxForm.key_points?.length > 0)) {
+          toast.info('Tema guardado en la biblioteca para uso futuro', { duration: 3000 });
+        }
       }
       setToolboxDialogOpen(false);
       setEditingToolbox(null);
       resetToolboxForm();
       loadToolboxTalks();
+      loadToolboxTopics(); // Refresh topics to include newly added
     } catch (error) {
       console.error('Error saving toolbox talk:', error);
       toast.error('Error al guardar Toolbox Talk');
@@ -468,7 +474,8 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
       location: '',
       presenter: '',
       attendees: [],
-      notes: ''
+      notes: '',
+      save_to_library: true
     });
   };
 
@@ -1672,6 +1679,20 @@ const ProjectSafety = ({ projectId, projectName, users = [] }) => {
                   />
                 </div>
               </div>
+              
+              {/* Save to library option - only for new toolbox talks */}
+              {!editingToolbox && (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <Checkbox
+                    id="save-to-library"
+                    checked={toolboxForm.save_to_library}
+                    onCheckedChange={(checked) => setToolboxForm({...toolboxForm, save_to_library: checked})}
+                  />
+                  <Label htmlFor="save-to-library" className="text-blue-700 cursor-pointer text-sm">
+                    Guardar este tema en la biblioteca para uso futuro
+                  </Label>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setToolboxDialogOpen(false)}>Cancelar</Button>

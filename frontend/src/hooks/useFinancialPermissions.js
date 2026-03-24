@@ -39,6 +39,21 @@ export const useFinancialPermissions = () => {
   const canViewMoney = () => {
     if (!user?.role) return false;
     
+    // PM Estimator nunca puede ver información financiera
+    if (user.role === 'pm_estimator') {
+      return false;
+    }
+    
+    // Designer nunca puede ver información financiera (solo materiales)
+    if (user.role === 'designer') {
+      return false;
+    }
+    
+    // Supervisor nunca puede ver información financiera
+    if (user.role === 'supervisor') {
+      return false;
+    }
+    
     // Si la configuración está activada y el usuario es PM, no puede ver
     if (hideFinancialForPM && user.role === 'project_manager') {
       return false;

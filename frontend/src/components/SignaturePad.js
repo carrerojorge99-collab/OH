@@ -32,7 +32,8 @@ const SignaturePad = ({
 
   const save = () => {
     if (sigCanvas.current && !sigCanvas.current.isEmpty()) {
-      const signatureData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+      // Use toDataURL directly instead of getTrimmedCanvas due to compatibility issues
+      const signatureData = sigCanvas.current.toDataURL('image/png');
       onSave({
         signature_data: signatureData,
         signer_name: signerName

@@ -1046,7 +1046,7 @@ const Settings = () => {
                       <span className="text-sm text-slate-600">horas</span>
                     </div>
                     <p className="text-xs text-slate-500">
-                      💡 El cierre automático se ejecuta una vez al día al iniciar el servidor. Los ponches cerrados automáticamente 
+                      💡 El cierre automático se ejecuta cada 15 minutos. Los ponches cerrados automáticamente 
                       tendrán la nota: "Cierre automático - X horas máximo"
                     </p>
                   </div>

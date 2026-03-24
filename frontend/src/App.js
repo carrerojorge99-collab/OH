@@ -19,6 +19,7 @@ import Invoices from './pages/Invoices';
 import Estimates from './pages/Estimates';
 import PurchaseOrders from './pages/PurchaseOrders';
 import CostEstimates from './pages/CostEstimates';
+import CostEstimatesByCompany from './pages/CostEstimatesByCompany';
 import CostEstimateDetail from './pages/CostEstimateDetail';
 import AuditLog from './pages/AuditLog';
 import Settings from './pages/Settings';
@@ -35,6 +36,9 @@ import Accounting from './pages/Accounting';
 import Companies from './pages/Companies';
 import Vendors from './pages/Vendors';
 import PaymentReceipts from './pages/PaymentReceipts';
+import PreProjects from './pages/PreProjects';
+import PreProjectDetail from './pages/PreProjectDetail';
+import WeeklyPlan from './pages/WeeklyPlan';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRouter() {
@@ -136,6 +140,30 @@ function AppRouter() {
       
       <Route path="/cost-estimates" element={
         <ProtectedRoute>
+          <CostEstimatesByCompany />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cost-estimates-company" element={
+        <ProtectedRoute>
+          <CostEstimatesByCompany />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cost-estimates-company/:companyId" element={
+        <ProtectedRoute>
+          <CostEstimatesByCompany />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cost-estimates-company/:companyId/sponsor/:sponsorId" element={
+        <ProtectedRoute>
+          <CostEstimatesByCompany />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cost-estimates/list" element={
+        <ProtectedRoute>
           <CostEstimates />
         </ProtectedRoute>
       } />
@@ -212,6 +240,23 @@ function AppRouter() {
       <Route path="/receipts" element={
         <ProtectedRoute>
           <PaymentReceipts />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/pre-projects" element={
+        <ProtectedRoute>
+          <PreProjects />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/pre-projects/:preProjectId" element={
+        <ProtectedRoute>
+          <PreProjectDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/weekly-plan" element={
+        <ProtectedRoute>
+          <WeeklyPlan />
         </ProtectedRoute>
       } />
     </Routes>

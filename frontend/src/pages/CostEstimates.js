@@ -7,8 +7,9 @@ import useFinancialPermissions from '../hooks/useFinancialPermissions';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, FileText, DollarSign, Trash2, Pencil, Calendar, RefreshCw, Clock, CheckCircle, Calculator } from 'lucide-react';
+import { Plus, FileText, DollarSign, Trash2, Pencil, Calendar, RefreshCw, Clock, CheckCircle, Calculator, Copy, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
@@ -21,8 +22,10 @@ const CostEstimates = () => {
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
-  // Start with 'all' and update to current year if data exists
+  // Filters
   const [yearFilter, setYearFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [yearInitialized, setYearInitialized] = useState(false);
   
   // Get user role for permission checks
@@ -40,14 +43,32 @@ const CostEstimates = () => {
     return Array.from(years).sort((a, b) => b - a);
   }, [estimates]);
 
-  // Filter estimates by year
+  // Filter estimates by year, status and search
   const filteredEstimates = useMemo(() => {
-    if (yearFilter === 'all') return estimates;
     return estimates.filter(e => {
-      const year = e.created_at ? new Date(e.created_at).getFullYear() : new Date().getFullYear();
-      return year === parseInt(yearFilter);
+      // Year filter
+      if (yearFilter !== 'all') {
+        const year = e.created_at ? new Date(e.created_at).getFullYear() : new Date().getFullYear();
+        if (year !== parseInt(yearFilter)) return false;
+      }
+      // Status filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'final' && e.status !== 'final') return false;
+        if (statusFilter === 'en_proceso' && e.status === 'final') return false;
+      }
+      // Search filter
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        const name = (e.estimate_name || '').toLowerCase();
+        const number = (e.estimate_number || '').toLowerCase();
+        const project = (e.project_name || '').toLowerCase();
+        if (!name.includes(search) && !number.includes(search) && !project.includes(search)) {
+          return false;
+        }
+      }
+      return true;
     });
-  }, [estimates, yearFilter]);
+  }, [estimates, yearFilter, statusFilter, searchTerm]);
 
   // Auto-set year filter to current year if available
   useEffect(() => {
@@ -95,6 +116,29 @@ const CostEstimates = () => {
     }
   };
 
+  const handleClone = async (estimateId, estimateName) => {
+    try {
+      const res = await api.post(`/cost-estimates/${estimateId}/clone`, {}, {
+        withCredentials: true
+      });
+      toast.success(`Estimación "${estimateName}" clonada como "${res.data.estimate_name}"`);
+      loadData();
+      // Navigate to the new estimate
+      navigate(`/cost-estimates/${res.data.estimate_id}`);
+    } catch (error) {
+      console.error('Error cloning estimate:', error);
+      toast.error(error.response?.data?.detail || 'Error al clonar estimación');
+    }
+  };
+
+  const clearFilters = () => {
+    setYearFilter('all');
+    setStatusFilter('all');
+    setSearchTerm('');
+  };
+
+  const hasActiveFilters = yearFilter !== 'all' || statusFilter !== 'all' || searchTerm !== '';
+
   const getProjectName = (projectId) => {
     const project = projects.find(p => p.project_id === projectId);
     return project ? project.name : 'Proyecto no encontrado';
@@ -118,22 +162,10 @@ const CostEstimates = () => {
             <h1 className="text-3xl font-bold text-slate-900">Estimaciones de Costos</h1>
             <p className="text-slate-600 mt-1">
               Gestiona las estimaciones de costos de tus proyectos
-              {yearFilter !== 'all' && <span className="text-blue-600 font-medium"> - Año {yearFilter}</span>}
+              {hasActiveFilters && <span className="text-blue-600 font-medium"> - {filteredEstimates.length} resultados</span>}
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            <Select value={yearFilter} onValueChange={setYearFilter}>
-              <SelectTrigger className="w-[140px]">
-                <Calendar className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los años</SelectItem>
-                {availableYears.map(year => (
-                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button 
               variant="outline" 
               onClick={() => { setLoading(true); loadData(); }}
@@ -150,6 +182,58 @@ const CostEstimates = () => {
             </Button>
           </div>
         </div>
+
+        {/* Filters Section */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Buscar por nombre, número o proyecto..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {/* Year Filter */}
+              <Select value={yearFilter} onValueChange={setYearFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Año" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los años</SelectItem>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="en_proceso">En Proceso</SelectItem>
+                  <SelectItem value="final">Finalizadas</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button variant="ghost" onClick={clearFilters} className="text-slate-500">
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Summary Cards */}
         {estimates.length > 0 && (
@@ -256,52 +340,62 @@ const CostEstimates = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredEstimates.map((estimate) => (
-              <Card key={estimate.estimate_id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-semibold text-slate-900">
-                          {estimate.estimate_name}
-                        </h3>
-                        {estimate.project_id && (
-                          <Badge variant="outline" className="text-xs">
-                            {getProjectName(estimate.project_id)}
-                          </Badge>
-                        )}
-                        <Badge className={estimate.status === 'final' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}>
-                          {estimate.status === 'final' ? 'Final' : 'En Proceso'}
-                        </Badge>
-                      </div>
-                      
-                      <div className="mt-4">
-                        <p className="text-xs text-slate-500">Creada</p>
-                        <p className="text-sm text-slate-700">
-                          {moment(estimate.created_at).format('DD MMM YYYY')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
+              <Card key={estimate.estimate_id} className="hover:shadow-lg transition-shadow group">
+                <CardContent className="p-4">
+                  {/* Header with status badge */}
+                  <div className="flex items-start justify-between mb-3">
+                    <Badge className={`text-xs ${estimate.status === 'final' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {estimate.status === 'final' ? 'Final' : 'En Proceso'}
+                    </Badge>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => navigate(`/cost-estimates/${estimate.estimate_id}`)}
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={() => navigate(`/cost-estimates/${estimate.estimate_id || estimate.cost_estimate_id}`)}
+                        title="Editar"
                       >
-                        <Pencil className="w-4 h-4 mr-1" />
-                        Ver
+                        <Pencil className="w-3.5 h-3.5 text-slate-500" />
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:bg-red-50"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
+                        onClick={() => handleClone(estimate.estimate_id, estimate.estimate_name)}
+                        title="Clonar estimación"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
                         onClick={() => handleDelete(estimate.estimate_id)}
+                        title="Eliminar"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
+                  </div>
+                  
+                  {/* Title */}
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2 line-clamp-2 min-h-[2.5rem]">
+                    {estimate.estimate_name}
+                  </h3>
+                  
+                  {/* Project badge */}
+                  {estimate.project_id && (
+                    <Badge variant="outline" className="text-xs mb-3 truncate max-w-full">
+                      {getProjectName(estimate.project_id)}
+                    </Badge>
+                  )}
+                  
+                  {/* Date */}
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-auto pt-2 border-t border-slate-100">
+                    <Calendar className="w-3 h-3" />
+                    {moment(estimate.created_at).format('DD MMM YYYY')}
                   </div>
                 </CardContent>
               </Card>

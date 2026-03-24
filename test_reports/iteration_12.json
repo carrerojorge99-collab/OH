@@ -1,0 +1,83 @@
+{
+  "summary": "Weekly Plan Multi-Selection & PDF Download Feature Testing - All features working correctly. Tested checkboxes, select all, combined PDF download, and expanded modal sizes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "DialogContent",
+        "issues": ["Console warning: Missing `Description` or `aria-describedby` for DialogContent - minor accessibility warning"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "Login flow works correctly",
+    "Weekly Plan page loads at /weekly-plan",
+    "Create Plan button (data-testid='create-plan-btn') works",
+    "Create Plan modal opens with title 'Crear Plan Semanal'",
+    "Create Plan modal is wide (w-[1400px]) - showing all 14 columns",
+    "Plan creation works - toast 'Plan creado correctamente' shown",
+    "Individual plan checkbox appears next to each plan",
+    "Checkbox has data-testid='select-plan-{planId}' attribute",
+    "Clicking individual checkbox selects/deselects plan",
+    "'Seleccionar todos' checkbox appears when plans exist",
+    "Select All checkbox (data-testid='select-all-plans') works",
+    "Clicking Select All selects all plans",
+    "Clicking Select All again deselects all plans",
+    "'Descargar X plan(es) en PDF' button appears when plans selected",
+    "Button shows correct count (1 plan(es), 2 plan(es), etc.)",
+    "Download button hidden when no plans selected",
+    "Combined PDF download works - toast 'PDF generado con 2 plan(es)'",
+    "Selections cleared after PDF download",
+    "Edit Plan button works",
+    "Edit Plan modal opens with title 'Editar Plan Semanal'",
+    "Edit Plan modal is wide (1350px actual, target w-[1400px])",
+    "Edit modal shows all 14 columns: Empleado, Posición, Crew, Entrada, Proyecto, Lun-Dom, Look Ahead"
+  ],
+  "features_verified": {
+    "multiple_selection": {
+      "individual_checkboxes": "WORKING - Checkbox appears next to each plan with data-testid",
+      "select_all_checkbox": "WORKING - Located in card header, toggles all plans",
+      "download_button_visibility": "WORKING - Shows only when plans selected, shows count",
+      "deselection": "WORKING - Can deselect individual or all plans"
+    },
+    "combined_pdf_download": {
+      "button_appearance": "WORKING - Blue button 'Descargar X plan(es) en PDF'",
+      "pdf_generation": "WORKING - jsPDF generates combined PDF with all selected plans",
+      "success_toast": "WORKING - Shows 'PDF generado con X plan(es)'",
+      "selection_clear": "WORKING - Selections cleared after download"
+    },
+    "expanded_modals": {
+      "create_modal": "WORKING - DialogContent uses 'max-w-[95vw] w-[1400px] max-h-[90vh]'",
+      "edit_modal": "WORKING - DialogContent uses same expanded size",
+      "7_day_table": "WORKING - All columns visible: Employee, Position, Crew, Entry, Project, Mon-Sun, Look Ahead"
+    }
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - Frontend only testing",
+    "frontend": "100% - All features working correctly"
+  },
+  "test_credentials": {
+    "super_admin_email": "carrerojorge99@gmail.com",
+    "super_admin_password": "12345678"
+  },
+  "seed_data_creation": "Created 2 test plans: 'TEST Plan Semanal - Test Selection' and 'TEST Plan Semanal 2 - Multiple Selection Test'",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Weekly Plan multi-selection and combined PDF download features fully tested and working. Both Create and Edit modals are expanded to w-[1400px]. Selection checkboxes have data-testid attributes for testing. The generateCombinedPDF function uses jsPDF with autoTable to create combined PDFs.",
+  "code_verification": {
+    "create_modal_class": "max-w-[95vw] w-[1400px] max-h-[90vh] overflow-y-auto (line 889)",
+    "edit_modal_class": "max-w-[95vw] w-[1400px] max-h-[90vh] overflow-y-auto (line 1124)",
+    "toggle_selection_function": "togglePlanSelection (line 524-530)",
+    "select_all_function": "selectAllPlans (line 532-538)",
+    "combined_pdf_function": "generateCombinedPDF (line 540-690)"
+  }
+}

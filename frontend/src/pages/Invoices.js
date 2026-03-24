@@ -20,14 +20,16 @@ import {
 } from '../components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Plus, FileText, Download, Eye, Trash2, DollarSign, RefreshCw, Send, User, Calendar, Edit, Building2 } from 'lucide-react';
-import { fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addTotalsSection, addNotesSection, addFooter, formatCurrency, stripHtml } from '../utils/pdfGenerator';
+import { Plus, FileText, Download, Eye, Trash2, DollarSign, RefreshCw, Send, User, Calendar, Edit, Building2, ClipboardList, Check, Filter, Copy } from 'lucide-react';
+import { fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addTotalsSection, addNotesSection, addFooter, formatCurrency, stripHtml, createPDFDocument } from '../utils/pdfGenerator';
 import { toast } from 'sonner';
 import moment from 'moment';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import NomenclatureSelector, { useNomenclature } from '../components/NomenclatureSelector';
 import RichTextEditor from '../components/ui/RichTextEditor';
+import { Checkbox } from '../components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
 
 const Invoices = () => {
@@ -45,9 +47,36 @@ const Invoices = () => {
   const [savedClients, setSavedClients] = useState([]);
   const [taxTypes, setTaxTypes] = useState([]);
   // Start with 'all' and update to current year if data exists
+  const [statusFilter, setStatusFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
   const [yearInitialized, setYearInitialized] = useState(false);
   const navigate = useNavigate();
+  
+  // Statement states
+  const [activeTab, setActiveTab] = useState('invoices');
+  const [statementDialogOpen, setStatementDialogOpen] = useState(false);
+  const [statements, setStatements] = useState([]);
+  const [selectedInvoicesForStatement, setSelectedInvoicesForStatement] = useState([]);
+  const [statementFilterMode, setStatementFilterMode] = useState('manual'); // 'manual' or 'client'
+  const [statementClientFilter, setStatementClientFilter] = useState('');
+  const [statementDateFrom, setStatementDateFrom] = useState('');
+  const [statementDateTo, setStatementDateTo] = useState('');
+  const [statementPreview, setStatementPreview] = useState(null);
+  const [statementNotes, setStatementNotes] = useState('');
+
+  // Purchase Orders state
+  const [poData, setPoData] = useState([]);
+  const [poLoading, setPoLoading] = useState(false);
+  const [poFilterYear, setPoFilterYear] = useState('all');
+  const [poFilterCompany, setPoFilterCompany] = useState('all');
+  const [poFilterSponsor, setPoFilterSponsor] = useState('all');
+  const [statementProjectId, setStatementProjectId] = useState('');
+  const [previewStatementDialogOpen, setPreviewStatementDialogOpen] = useState(false);
+  const [clientsSummary, setClientsSummary] = useState([]);
+  
+  // Multi-select for bulk send
+  const [selectedInvoicesForSend, setSelectedInvoicesForSend] = useState([]);
+  const [isSendingBulk, setIsSendingBulk] = useState(false);
   
   // Get user role for permission checks
   const { user } = useAuth();
@@ -69,14 +98,20 @@ const Invoices = () => {
 
   // Filter invoices by year
   const filteredInvoices = React.useMemo(() => {
-    if (yearFilter === 'all') return invoices;
-    return invoices.filter(inv => {
-      const invoiceYear = inv.invoice_date 
-        ? new Date(inv.invoice_date).getFullYear()
-        : new Date(inv.created_at).getFullYear();
-      return invoiceYear === parseInt(yearFilter);
-    });
-  }, [invoices, yearFilter]);
+    let result = invoices;
+    if (yearFilter !== 'all') {
+      result = result.filter(inv => {
+        const invoiceYear = inv.invoice_date 
+          ? new Date(inv.invoice_date).getFullYear()
+          : new Date(inv.created_at).getFullYear();
+        return invoiceYear === parseInt(yearFilter);
+      });
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter(inv => inv.status === statusFilter);
+    }
+    return result;
+  }, [invoices, yearFilter, statusFilter]);
 
   // Auto-set year filter to current year if available
   React.useEffect(() => {
@@ -97,6 +132,7 @@ const Invoices = () => {
     client_address: '',
     sponsor_name: '',
     po_number: '',
+    tax_id: '',
     tax_rate: 0,
     selected_taxes: [],
     notes: '',
@@ -118,6 +154,7 @@ const Invoices = () => {
     sponsor_email: '',
     po_number: '',
     subtitle: '',
+    tax_id: '',
     items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
     selected_taxes: [],
@@ -125,7 +162,9 @@ const Invoices = () => {
     notes: '',
     terms: '',
     custom_number: '',
-    price_breakdown: null  // {material_equipment, labor, total}
+    price_breakdown: null,  // {material_equipment, labor, total}
+    document_date: moment().format('YYYY-MM-DD'), // Fecha del documento
+    due_date: moment().add(30, 'days').format('YYYY-MM-DD') // Fecha de vencimiento
   });
   
   // Preview state
@@ -194,6 +233,602 @@ const Invoices = () => {
     } catch (error) {
       console.error('Error loading tax types');
     }
+  };
+
+  // Statement functions
+  const loadStatements = async () => {
+    try {
+      const res = await api.get('/statements', { withCredentials: true });
+      setStatements(res.data);
+    } catch (error) {
+      console.error('Error loading statements');
+    }
+  };
+
+  const loadClientsSummary = async () => {
+    try {
+      const res = await api.get('/statements/clients/summary', { withCredentials: true });
+      setClientsSummary(res.data);
+    } catch (error) {
+      console.error('Error loading clients summary');
+    }
+  };
+
+  // Load statements when tab changes to statements
+  useEffect(() => {
+    if (activeTab === 'statements') {
+      loadStatements();
+      loadClientsSummary();
+    }
+  }, [activeTab]);
+
+  // Load PO data when tab changes to purchase-orders
+  useEffect(() => {
+    if (activeTab === 'purchase-orders' && poData.length === 0) {
+      loadPOData();
+    }
+  }, [activeTab]);
+
+  const loadPOData = async () => {
+    setPoLoading(true);
+    try {
+      const res = await api.get('/projects', { withCredentials: true });
+      const projects = res.data || [];
+      const pos = projects
+        .filter(p => p.po_number)
+        .map(p => ({
+          project_id: p.project_id,
+          project_name: p.name || '',
+          project_number: p.project_number || '',
+          client: p.client || '',
+          sponsor: p.sponsor || '',
+          po_number: p.po_number || '',
+          po_quantity: p.po_quantity || 0,
+          date: p.start_date || p.created_at || '',
+          status: p.status || '',
+        }));
+      setPoData(pos);
+    } catch (e) {
+      toast.error('Error al cargar Purchase Orders');
+    } finally {
+      setPoLoading(false);
+    }
+  };
+
+  const filteredPOs = React.useMemo(() => {
+    let result = poData;
+    if (poFilterYear !== 'all') {
+      result = result.filter(po => {
+        const y = po.date ? new Date(po.date).getFullYear() : null;
+        return y === parseInt(poFilterYear);
+      });
+    }
+    if (poFilterCompany !== 'all') {
+      result = result.filter(po => po.client === poFilterCompany);
+    }
+    if (poFilterSponsor !== 'all') {
+      result = result.filter(po => po.sponsor === poFilterSponsor);
+    }
+    return result;
+  }, [poData, poFilterYear, poFilterCompany, poFilterSponsor]);
+
+  const poCompanies = React.useMemo(() => [...new Set(poData.map(p => p.client).filter(Boolean))], [poData]);
+  const poSponsors = React.useMemo(() => [...new Set(poData.map(p => p.sponsor).filter(Boolean))], [poData]);
+  const poYears = React.useMemo(() => [...new Set(poData.map(p => p.date ? new Date(p.date).getFullYear() : null).filter(Boolean))].sort((a,b) => b-a), [poData]);
+
+  const exportPOExcel = () => {
+    import('xlsx').then(XLSX => {
+      // Build filter info for header rows
+      const filterInfo = [];
+      if (poFilterSponsor !== 'all') filterInfo.push(['Sponsor:', poFilterSponsor]);
+      if (poFilterCompany !== 'all') filterInfo.push(['Compañía:', poFilterCompany]);
+      if (poFilterYear !== 'all') filterInfo.push(['Año:', poFilterYear]);
+      
+      const data = filteredPOs.map(po => ({
+        'Proyecto': po.project_name,
+        'No. Proyecto': po.project_number,
+        'Compañía': po.client,
+        'Sponsor': po.sponsor,
+        'PO Number': po.po_number,
+        'Cantidad PO': po.po_quantity,
+        'Fecha': po.date ? moment(po.date).format('DD/MM/YYYY') : '',
+        'Estatus': po.status,
+      }));
+      
+      // Create workbook with header info
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([]);
+      
+      // Add title and filter info
+      XLSX.utils.sheet_add_aoa(ws, [['PURCHASE ORDERS REPORT']], { origin: 'A1' });
+      XLSX.utils.sheet_add_aoa(ws, [['Fecha de Generación:', moment().format('DD/MM/YYYY HH:mm')]], { origin: 'A2' });
+      
+      let startRow = 3;
+      if (filterInfo.length > 0) {
+        XLSX.utils.sheet_add_aoa(ws, [['Filtros Aplicados:']], { origin: `A${startRow}` });
+        startRow++;
+        filterInfo.forEach((f, idx) => {
+          XLSX.utils.sheet_add_aoa(ws, [[f[0], f[1]]], { origin: `A${startRow + idx}` });
+        });
+        startRow += filterInfo.length + 1;
+      } else {
+        startRow++;
+      }
+      
+      // Add data table
+      XLSX.utils.sheet_add_json(ws, data, { origin: `A${startRow}` });
+      
+      // Add total row at the end
+      const totalRow = startRow + data.length + 1;
+      const totalQty = filteredPOs.reduce((s, po) => s + (Number(po.po_quantity) || 0), 0);
+      XLSX.utils.sheet_add_aoa(ws, [['', '', '', '', 'TOTAL:', totalQty]], { origin: `A${totalRow}` });
+      
+      XLSX.utils.book_append_sheet(wb, ws, 'Purchase Orders');
+      
+      // Build filename with filter info
+      let filename = 'Purchase_Orders';
+      if (poFilterSponsor !== 'all') filename += `_${poFilterSponsor.replace(/\s+/g, '_')}`;
+      if (poFilterCompany !== 'all') filename += `_${poFilterCompany.replace(/\s+/g, '_')}`;
+      if (poFilterYear !== 'all') filename += `_${poFilterYear}`;
+      filename += `_${moment().format('YYYYMMDD')}.xlsx`;
+      
+      XLSX.writeFile(wb, filename);
+      toast.success('Excel descargado');
+    });
+  };
+
+  const exportPOPdf = async () => {
+    try {
+      const doc = new jsPDF('landscape');
+      const company = await fetchCompanyInfo();
+      const totalQty = filteredPOs.reduce((s, po) => s + (Number(po.po_quantity) || 0), 0);
+
+      // Build filter subtitle
+      const filterParts = [];
+      if (poFilterSponsor !== 'all') filterParts.push(`Sponsor: ${poFilterSponsor}`);
+      if (poFilterCompany !== 'all') filterParts.push(`Compañía: ${poFilterCompany}`);
+      if (poFilterYear !== 'all') filterParts.push(`Año: ${poFilterYear}`);
+      
+      const subtitle = filterParts.length > 0 
+        ? `${filteredPOs.length} POs | ${filterParts.join(' | ')}`
+        : `${filteredPOs.length} POs`;
+
+      let y = await addDocumentHeader(doc, company, 'PURCHASE ORDERS', subtitle, new Date().toISOString(), totalQty);
+
+      autoTable(doc, {
+        startY: y + 4,
+        head: [['Proyecto', 'No.', 'Compañía', 'Sponsor', 'PO Number', 'Cantidad PO', 'Fecha', 'Estatus']],
+        body: filteredPOs.map(po => [
+          po.project_name,
+          po.project_number,
+          po.client,
+          po.sponsor,
+          po.po_number,
+          `$${(Number(po.po_quantity) || 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}`,
+          po.date ? moment(po.date).format('DD/MM/YYYY') : '',
+          po.status,
+        ]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [234, 88, 12] },
+        foot: [['', '', '', '', 'TOTAL', `$${totalQty.toLocaleString('es-PR', { minimumFractionDigits: 2 })}`, '', '']],
+        footStyles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: 'bold' },
+      });
+      addFooter(doc, company);
+      
+      // Build filename with filter info
+      let filename = 'Purchase_Orders';
+      if (poFilterSponsor !== 'all') filename += `_${poFilterSponsor.replace(/\s+/g, '_')}`;
+      if (poFilterCompany !== 'all') filename += `_${poFilterCompany.replace(/\s+/g, '_')}`;
+      if (poFilterYear !== 'all') filename += `_${poFilterYear}`;
+      filename += `_${moment().format('YYYYMMDD')}.pdf`;
+      
+      doc.save(filename);
+      toast.success('PDF descargado');
+    } catch (e) {
+      console.error('Error generating PO PDF:', e);
+      toast.error('Error al generar PDF');
+    }
+  };
+
+  // Get unique clients from invoices for the filter dropdown
+  const uniqueClients = React.useMemo(() => {
+    const clients = new Map();
+    invoices.forEach(inv => {
+      if (inv.client_name && !clients.has(inv.client_name)) {
+        clients.set(inv.client_name, {
+          name: inv.client_name,
+          email: inv.client_email,
+          phone: inv.client_phone,
+          address: inv.client_address
+        });
+      }
+    });
+    return Array.from(clients.values());
+  }, [invoices]);
+
+  // Filter invoices for statement based on mode
+  const filteredInvoicesForStatement = React.useMemo(() => {
+    let filtered = [...invoices];
+    
+    if (statementFilterMode === 'client' && statementClientFilter) {
+      filtered = filtered.filter(inv => inv.client_name === statementClientFilter);
+    }
+    
+    if (statementDateFrom) {
+      filtered = filtered.filter(inv => {
+        const invDate = inv.created_at || inv.invoice_date;
+        return invDate >= statementDateFrom;
+      });
+    }
+    
+    if (statementDateTo) {
+      filtered = filtered.filter(inv => {
+        const invDate = inv.created_at || inv.invoice_date;
+        return invDate <= statementDateTo;
+      });
+    }
+    
+    return filtered;
+  }, [invoices, statementFilterMode, statementClientFilter, statementDateFrom, statementDateTo]);
+
+  const handleToggleInvoiceForStatement = (invoiceId) => {
+    setSelectedInvoicesForStatement(prev => {
+      if (prev.includes(invoiceId)) {
+        return prev.filter(id => id !== invoiceId);
+      } else {
+        return [...prev, invoiceId];
+      }
+    });
+  };
+
+  const handleSelectAllInvoicesForStatement = () => {
+    if (selectedInvoicesForStatement.length === filteredInvoicesForStatement.length) {
+      setSelectedInvoicesForStatement([]);
+    } else {
+      setSelectedInvoicesForStatement(filteredInvoicesForStatement.map(inv => inv.invoice_id));
+    }
+  };
+
+  const handlePreviewStatement = async () => {
+    if (selectedInvoicesForStatement.length === 0) {
+      toast.error('Seleccione al menos una factura');
+      return;
+    }
+
+    const selectedInvs = invoices.filter(inv => selectedInvoicesForStatement.includes(inv.invoice_id));
+    const clientInfo = selectedInvs[0] || {};
+
+    try {
+      const res = await api.post('/statements/preview', {
+        client_name: clientInfo.client_name || 'Cliente',
+        client_email: clientInfo.client_email,
+        client_phone: clientInfo.client_phone,
+        client_address: clientInfo.client_address,
+        invoice_ids: selectedInvoicesForStatement,
+        date_from: statementDateFrom || null,
+        date_to: statementDateTo || null,
+        notes: statementNotes
+      }, { withCredentials: true });
+      
+      setStatementPreview(res.data);
+      setPreviewStatementDialogOpen(true);
+    } catch (error) {
+      toast.error('Error al generar vista previa');
+      console.error(error);
+    }
+  };
+
+  const handleCreateStatement = async () => {
+    if (selectedInvoicesForStatement.length === 0) {
+      toast.error('Seleccione al menos una factura');
+      return;
+    }
+
+    const selectedInvs = invoices.filter(inv => selectedInvoicesForStatement.includes(inv.invoice_id));
+    const clientInfo = selectedInvs[0] || {};
+
+    try {
+      const res = await api.post('/statements', {
+        project_id: statementProjectId && statementProjectId !== 'none' ? statementProjectId : null,
+        client_name: clientInfo.client_name || 'Cliente',
+        client_email: clientInfo.client_email,
+        client_phone: clientInfo.client_phone,
+        client_address: clientInfo.client_address,
+        invoice_ids: selectedInvoicesForStatement,
+        date_from: statementDateFrom || null,
+        date_to: statementDateTo || null,
+        notes: statementNotes
+      }, { withCredentials: true });
+      
+      toast.success('Statement creado exitosamente');
+      setStatementDialogOpen(false);
+      setSelectedInvoicesForStatement([]);
+      setStatementNotes('');
+      setStatementProjectId('');
+      loadStatements();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al crear statement');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteStatement = async (statementId, statementNumber) => {
+    if (!window.confirm(`¿Eliminar statement ${statementNumber}?`)) return;
+
+    try {
+      await api.delete(`/statements/${statementId}`, { withCredentials: true });
+      toast.success('Statement eliminado exitosamente');
+      loadStatements();
+    } catch (error) {
+      toast.error('Error al eliminar statement');
+    }
+  };
+
+  const exportStatementToPDF = async (statement) => {
+    const doc = await createPDFDocument({ compress: true });
+    const company = await fetchCompanyInfo();
+    
+    // Header
+    let y = await addDocumentHeader(doc, company, 'STATEMENT', statement.statement_number, statement.created_at, statement.balance_due);
+    
+    // Client section
+    y = addPartySection(doc, 'Bill To:', statement.client_name, statement.client_address || '', statement.client_email || '', statement.client_phone || '', y);
+    
+    // Project Information (if associated)
+    if (statement.project_name) {
+      // Get project details including sponsor
+      let projectDetails = null;
+      try {
+        const projectRes = await api.get(`/projects/${statement.project_id}`, { withCredentials: true });
+        projectDetails = projectRes.data;
+      } catch (e) {
+        console.log('Could not fetch project details');
+      }
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235); // Blue color for project section
+      doc.text('Project Information', 15, y);
+      y += 6;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0); // Black
+      
+      // Project Name
+      doc.setFont('helvetica', 'bold');
+      doc.text('Project:', 15, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(statement.project_name, 40, y);
+      y += 5;
+      
+      // Sponsor (if available)
+      if (projectDetails?.sponsor) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Sponsor:', 15, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(projectDetails.sponsor, 40, y);
+        y += 5;
+      }
+      
+      // Project Address (if available)
+      if (projectDetails?.address) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Location:', 15, y);
+        doc.setFont('helvetica', 'normal');
+        const addressText = doc.splitTextToSize(projectDetails.address, 140);
+        doc.text(addressText, 40, y);
+        y += (addressText.length * 4) + 1;
+      }
+      
+      // Project Status (if available)
+      if (projectDetails?.status) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Status:', 15, y);
+        doc.setFont('helvetica', 'normal');
+        const statusText = projectDetails.status === 'in_progress' ? 'In Progress' : 
+                          projectDetails.status === 'completed' ? 'Completed' : 
+                          projectDetails.status === 'on_hold' ? 'On Hold' : projectDetails.status;
+        doc.text(statusText, 40, y);
+        y += 5;
+      }
+      
+      y += 5; // Extra spacing after project info
+    }
+    
+    // Period
+    if (statement.date_from || statement.date_to) {
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0); // Black
+      const periodText = `Period: ${statement.date_from ? moment(statement.date_from).format('MM/DD/YYYY') : 'Start'} - ${statement.date_to ? moment(statement.date_to).format('MM/DD/YYYY') : 'Current'}`;
+      doc.text(periodText, 15, y);
+      y += 8;
+    }
+    
+    // Account Summary
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0); // Black
+    doc.text('Account Summary', 15, y);
+    y += 8;
+    
+    // Calculate remaining balance from project value
+    const projectValue = statement.project_value || 0;
+    const remainingFromProject = projectValue - statement.total_invoiced;
+    
+    // Summary boxes - 4 columns if project has value, otherwise 3
+    const hasProjectValue = projectValue > 0;
+    const boxWidth = hasProjectValue ? 43 : 55;
+    const startX = 15;
+    
+    if (hasProjectValue) {
+      // 4 boxes: Project Value, Total Invoiced, Total Paid, Balance Due
+      doc.setFillColor(230, 244, 255); // Light blue for project value
+      doc.rect(startX, y, boxWidth, 25, 'F');
+      doc.setFillColor(240, 240, 240); // Light gray
+      doc.rect(startX + boxWidth + 3, y, boxWidth, 25, 'F');
+      doc.setFillColor(240, 240, 240); // Light gray
+      doc.rect(startX + (boxWidth + 3) * 2, y, boxWidth, 25, 'F');
+      // Orange tint if positive, Red tint if negative
+      if (remainingFromProject >= 0) {
+        doc.setFillColor(255, 245, 230);
+      } else {
+        doc.setFillColor(255, 230, 230);
+      }
+      doc.rect(startX + (boxWidth + 3) * 3, y, boxWidth, 25, 'F');
+      
+      doc.setFontSize(7);
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text('Valor del Proyecto', startX + boxWidth/2, y + 5, { align: 'center' });
+      doc.text('Total Facturado', startX + boxWidth + 3 + boxWidth/2, y + 5, { align: 'center' });
+      doc.text('Total Pagado', startX + (boxWidth + 3) * 2 + boxWidth/2, y + 5, { align: 'center' });
+      doc.text('Por Facturar', startX + (boxWidth + 3) * 3 + boxWidth/2, y + 5, { align: 'center' });
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235); // Blue for project value
+      doc.text(`$${formatCurrency(projectValue)}`, startX + boxWidth/2, y + 15, { align: 'center' });
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text(`$${formatCurrency(statement.total_invoiced)}`, startX + boxWidth + 3 + boxWidth/2, y + 15, { align: 'center' });
+      doc.text(`$${formatCurrency(statement.total_paid)}`, startX + (boxWidth + 3) * 2 + boxWidth/2, y + 15, { align: 'center' });
+      // Green if positive, Red if negative
+      if (remainingFromProject >= 0) {
+        doc.setTextColor(0, 128, 0);
+      } else {
+        doc.setTextColor(200, 0, 0);
+      }
+      doc.text(`$${formatCurrency(remainingFromProject)}`, startX + (boxWidth + 3) * 3 + boxWidth/2, y + 15, { align: 'center' });
+      
+      // Add balance due below
+      y += 28;
+      doc.setFillColor(240, 240, 240);
+      doc.rect(startX + (boxWidth + 3) * 2, y, (boxWidth + 3) * 2 - 3, 20, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Balance Pendiente de Cobro', startX + (boxWidth + 3) * 3, y + 5, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(200, 0, 0); // Red for balance due
+      doc.text(`$${formatCurrency(statement.balance_due)}`, startX + (boxWidth + 3) * 3, y + 14, { align: 'center' });
+      y += 25;
+    } else {
+      // Original 3 boxes layout
+      doc.setFillColor(240, 240, 240); // Light gray
+      doc.rect(15, y, boxWidth, 20, 'F');
+      doc.setFillColor(240, 240, 240); // Light gray
+      doc.rect(75, y, boxWidth, 20, 'F');
+      doc.setFillColor(240, 240, 240); // Light gray
+      doc.rect(135, y, boxWidth, 20, 'F');
+      
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text('Total Invoiced', 15 + boxWidth/2, y + 6, { align: 'center' });
+      doc.text('Total Paid', 75 + boxWidth/2, y + 6, { align: 'center' });
+      doc.text('Balance Due', 135 + boxWidth/2, y + 6, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text(`$${formatCurrency(statement.total_invoiced)}`, 15 + boxWidth/2, y + 15, { align: 'center' });
+      doc.text(`$${formatCurrency(statement.total_paid)}`, 75 + boxWidth/2, y + 15, { align: 'center' });
+      doc.text(`$${formatCurrency(statement.balance_due)}`, 135 + boxWidth/2, y + 15, { align: 'center' });
+      y += 28;
+    }
+    
+    // Invoices Table
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0); // Black
+    doc.text('Invoice Details', 15, y);
+    y += 5;
+    
+    const invoiceTableData = statement.invoices.map(inv => [
+      inv.invoice_number,
+      moment(inv.invoice_date).format('MM/DD/YYYY'),
+      inv.due_date ? moment(inv.due_date).format('MM/DD/YYYY') : '-',
+      `$${formatCurrency(inv.total)}`,
+      `$${formatCurrency(inv.amount_paid)}`,
+      `$${formatCurrency(inv.balance_due)}`,
+      inv.status === 'paid' ? 'Paid' : inv.status === 'partial' ? 'Partial' : 'Pending'
+    ]);
+    
+    autoTable(doc, {
+      startY: y,
+      head: [['Invoice', 'Date', 'Due Date', 'Total', 'Paid', 'Balance', 'Status']],
+      body: invoiceTableData,
+      theme: 'plain',
+      headStyles: {
+        fillColor: [248, 250, 252],
+        textColor: [0, 0, 0], // Black
+        fontStyle: 'bold',
+        fontSize: 8
+      },
+      bodyStyles: { fontSize: 8, cellPadding: 3, textColor: [0, 0, 0] }, // Black
+      columnStyles: {
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' }
+      },
+      alternateRowStyles: { fillColor: [252, 252, 253] }
+    });
+    
+    y = doc.lastAutoTable.finalY + 10;
+    
+    // Payments Table (if any)
+    if (statement.payments && statement.payments.length > 0) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text('Payment History', 15, y);
+      y += 5;
+      
+      const paymentTableData = statement.payments.map(p => [
+        moment(p.payment_date).format('MM/DD/YYYY'),
+        p.invoice_number,
+        `$${formatCurrency(p.amount)}`,
+        p.payment_method === 'transfer' ? 'Transfer' : p.payment_method === 'card' ? 'Card' : p.payment_method === 'cash' ? 'Cash' : p.payment_method === 'check' ? 'Check' : p.payment_method,
+        p.reference || '-'
+      ]);
+      
+      autoTable(doc, {
+        startY: y,
+        head: [['Date', 'Invoice', 'Amount', 'Method', 'Reference']],
+        body: paymentTableData,
+        theme: 'plain',
+        headStyles: {
+          fillColor: [248, 250, 252],
+          textColor: [0, 0, 0], // Black
+          fontStyle: 'bold',
+          fontSize: 8
+        },
+        bodyStyles: { fontSize: 8, cellPadding: 3, textColor: [0, 0, 0] }, // Black
+        columnStyles: {
+          2: { halign: 'right' }
+        },
+        alternateRowStyles: { fillColor: [252, 252, 253] }
+      });
+      
+      y = doc.lastAutoTable.finalY + 10;
+    }
+    
+    // Notes
+    if (statement.notes) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text('Notes', 15, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0); // Black
+      const notesLines = doc.splitTextToSize(statement.notes, 175);
+      doc.text(notesLines, 15, y);
+    }
+    
+    // Footer
+    addFooter(doc, company);
+    
+    doc.save(`Statement_${statement.statement_number}.pdf`);
   };
 
   const handleSelectSavedClient = (client, formSetter) => {
@@ -365,6 +1000,7 @@ const Invoices = () => {
       sponsor_email: '',
       po_number: '',
       subtitle: '',
+      tax_id: '',
       items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
       tax_rate: 0,
       selected_taxes: [],
@@ -372,7 +1008,9 @@ const Invoices = () => {
       notes: '',
       terms: '',
       custom_number: '',
-      price_breakdown: null
+      price_breakdown: null,
+      document_date: moment().format('YYYY-MM-DD'),
+      due_date: moment().add(30, 'days').format('YYYY-MM-DD')
     });
   };
 
@@ -417,6 +1055,7 @@ const Invoices = () => {
         sponsor_email: '',
         po_number: '',
         subtitle: '',
+        tax_id: '',
         items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
         tax_rate: 0,
         selected_taxes: [],
@@ -424,7 +1063,9 @@ const Invoices = () => {
         notes: '',
         terms: '',
         custom_number: '',
-        price_breakdown: null
+        price_breakdown: null,
+        document_date: moment().format('YYYY-MM-DD'),
+        due_date: moment().add(30, 'days').format('YYYY-MM-DD')
       });
       loadData();
       loadSavedClients();
@@ -468,6 +1109,19 @@ const Invoices = () => {
     }
   };
 
+  const handleDuplicateInvoice = async (invoiceId, invoiceNumber) => {
+    try {
+      const res = await api.post(`/invoices/${invoiceId}/duplicate`, {}, { 
+        withCredentials: true 
+      });
+      toast.success(`Factura ${invoiceNumber} duplicada como #${res.data.invoice_number}`);
+      loadData();
+    } catch (error) {
+      console.error('Error duplicating invoice:', error);
+      toast.error(error.response?.data?.detail || 'Error al duplicar factura');
+    }
+  };
+
   const handleEditInvoice = (invoice) => {
     setEditingInvoice(invoice.invoice_id);
     setManualForm({
@@ -479,6 +1133,7 @@ const Invoices = () => {
       sponsor_name: invoice.sponsor_name || '',
       po_number: invoice.po_number || '',
       subtitle: invoice.subtitle || '',
+      tax_id: invoice.tax_id || '',
       items: invoice.items?.map(item => ({
         description: item.description || '',
         quantity: item.hours || item.quantity || 1,
@@ -491,7 +1146,9 @@ const Invoices = () => {
       notes: invoice.notes || '',
       terms: invoice.terms || '',
       custom_number: invoice.invoice_number || '',
-      price_breakdown: invoice.price_breakdown || null
+      price_breakdown: invoice.price_breakdown || null,
+      document_date: invoice.document_date || moment(invoice.created_at).format('YYYY-MM-DD'),
+      due_date: invoice.due_date || moment().add(30, 'days').format('YYYY-MM-DD')
     });
     setManualDialogOpen(true);
   };
@@ -542,6 +1199,85 @@ const Invoices = () => {
     }
   };
 
+  // Toggle selection for bulk send
+  const toggleInvoiceSelection = (invoiceId) => {
+    setSelectedInvoicesForSend(prev => 
+      prev.includes(invoiceId) 
+        ? prev.filter(id => id !== invoiceId)
+        : [...prev, invoiceId]
+    );
+  };
+
+  // Select all sendable invoices (draft with email)
+  const selectAllSendableInvoices = () => {
+    const sendableInvoices = filteredInvoices
+      .filter(inv => inv.status === 'draft' && inv.client_email)
+      .map(inv => inv.invoice_id);
+    
+    if (selectedInvoicesForSend.length === sendableInvoices.length) {
+      setSelectedInvoicesForSend([]);
+    } else {
+      setSelectedInvoicesForSend(sendableInvoices);
+    }
+  };
+
+  // Get sendable invoices count
+  const sendableInvoicesCount = filteredInvoices.filter(inv => inv.status === 'draft' && inv.client_email).length;
+
+  // Bulk send invoices
+  const handleBulkSendInvoices = async () => {
+    if (selectedInvoicesForSend.length === 0) {
+      toast.error('Selecciona al menos una factura para enviar');
+      return;
+    }
+
+    const invoicesToSend = invoices.filter(inv => 
+      selectedInvoicesForSend.includes(inv.invoice_id) && 
+      inv.client_email && 
+      inv.status === 'draft'
+    );
+
+    if (invoicesToSend.length === 0) {
+      toast.error('Las facturas seleccionadas no tienen email o ya fueron enviadas');
+      return;
+    }
+
+    setIsSendingBulk(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      // Send invoices in parallel batches of 3
+      for (let i = 0; i < invoicesToSend.length; i += 3) {
+        const batch = invoicesToSend.slice(i, i + 3);
+        const results = await Promise.allSettled(
+          batch.map(inv => 
+            api.post(`/invoices/${inv.invoice_id}/send`, {}, { withCredentials: true })
+          )
+        );
+        
+        results.forEach(result => {
+          if (result.status === 'fulfilled') successCount++;
+          else errorCount++;
+        });
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} factura(s) enviada(s) exitosamente`);
+      }
+      if (errorCount > 0) {
+        toast.error(`${errorCount} factura(s) no pudieron ser enviadas`);
+      }
+      
+      setSelectedInvoicesForSend([]);
+      loadData();
+    } catch (error) {
+      toast.error('Error al enviar facturas');
+    } finally {
+      setIsSendingBulk(false);
+    }
+  };
+
   const handleOpenPaymentDialog = async (invoice) => {
     setSelectedInvoiceForPayment(invoice);
     setPaymentForm({
@@ -586,8 +1322,8 @@ const Invoices = () => {
   };
 
   const exportToPDF = async (invoice) => {
-    // Create PDF with compression enabled
-    const doc = new jsPDF({
+    // Create PDF with compression enabled and Unicode font support
+    const doc = await createPDFDocument({
       compress: true
     });
     const company = await fetchCompanyInfo();
@@ -607,11 +1343,26 @@ const Invoices = () => {
       poNumber: poNumber
     });
     
-    // Client section - include company name if available (like Estimate)
-    const clientDisplayName = invoice.client_company 
+    // Client section - include company name and sponsor if available
+    let clientDisplayName = invoice.client_company 
       ? `${invoice.client_company}\nAttn: ${invoice.client_name}`
       : invoice.client_name;
+    
+    // Add sponsor information if available
+    if (invoice.sponsor_name) {
+      clientDisplayName += `\nSponsor: ${invoice.sponsor_name}`;
+    }
+    
     y = addPartySection(doc, 'Bill To:', clientDisplayName, invoice.client_address || '', invoice.client_email || '', invoice.client_phone || '', y);
+    
+    // Tax ID
+    if (invoice.tax_id) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Tax ID: ${invoice.tax_id}`, 15, y);
+      y += 5;
+    }
     
     // Valid until / Due Date derecha (like Estimate)
     doc.setFontSize(8);
@@ -694,36 +1445,48 @@ const Invoices = () => {
     }
     y = addTotalsSection(doc, invoice.price_breakdown?.total || invoice.subtotal || 0, 0, invoice.tax_amount || 0, invoice.total || 0, y, taxDetails);
     
-    // Notes and Terms - BOTH on second page in two columns (like Estimate)
-    // LEFT: Terms, RIGHT: Notes
+    // Notes and Terms - Add to same page if there's space, otherwise new page
     if (invoice.notes || invoice.terms) {
-      doc.addPage();
-      
-      const pageWidth = 210; // A4 width in mm
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 15;
-      const columnWidth = (pageWidth - (margin * 2) - 10) / 2; // 10mm gap between columns
+      const columnWidth = (pageWidth - (margin * 2) - 10) / 2;
       const columnGap = 10;
-      const pageHeight = 297; // A4 height in mm
-      const maxY = pageHeight - 20; // Leave margin at bottom
-      const lineHeight = 3.5; // Height per line of text
-      let leftY = 20;
-      let rightY = 20;
+      const lineHeight = 3.5;
+      
+      // Calculate approximate height needed for notes and terms
+      doc.setFontSize(8);
+      const cleanTerms = invoice.terms ? stripHtml(invoice.terms) : '';
+      const cleanNotes = invoice.notes ? stripHtml(invoice.notes) : '';
+      const termsLines = cleanTerms ? doc.splitTextToSize(cleanTerms, columnWidth) : [];
+      const notesLines = cleanNotes ? doc.splitTextToSize(cleanNotes, columnWidth) : [];
+      const maxLines = Math.max(termsLines.length, notesLines.length);
+      const requiredHeight = 20 + (maxLines * lineHeight);
+      
+      // Check if we need a new page
+      if (y + requiredHeight > pageHeight - 15) {
+        doc.addPage();
+        y = 20;
+      } else {
+        y += 10;
+      }
+      
+      let leftY = y;
+      let rightY = y;
+      const maxY = pageHeight - 15;
       
       // LEFT COLUMN - Terms and Conditions
       if (invoice.terms) {
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(30, 41, 59);
-        doc.text('Términos y Condiciones:', margin, leftY);
-        leftY += 8;
+        doc.setTextColor(0, 0, 0);
+        doc.text('Terms and Conditions:', margin, leftY);
+        leftY += 6;
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(71, 85, 105);
-        const cleanTerms = stripHtml(invoice.terms);
-        const termsLines = doc.splitTextToSize(cleanTerms, columnWidth);
+        doc.setTextColor(0, 0, 0);
         
-        // Render terms lines with page overflow handling
         for (let i = 0; i < termsLines.length; i++) {
           if (leftY > maxY) {
             doc.addPage();
@@ -733,31 +1496,26 @@ const Invoices = () => {
           doc.text(termsLines[i], margin, leftY);
           leftY += lineHeight;
         }
-        leftY += 5;
       }
       
       // RIGHT COLUMN - Notes
       if (invoice.notes) {
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(30, 41, 59);
-        doc.text('Notas:', margin + columnWidth + columnGap, rightY);
-        rightY += 8;
+        doc.setTextColor(0, 0, 0);
+        doc.text('Notes:', margin + columnWidth + columnGap, rightY);
+        rightY += 6;
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(71, 85, 105);
-        const cleanNotes = stripHtml(invoice.notes);
-        const notesLines = doc.splitTextToSize(cleanNotes, columnWidth);
+        doc.setTextColor(0, 0, 0);
         
-        // Render notes lines with page overflow handling
         for (let i = 0; i < notesLines.length; i++) {
           if (rightY > maxY) {
-            // If notes overflow, continue on same page below terms or add new page
             if (leftY < maxY) {
               rightY = leftY + 10;
-              doc.text('Notas (cont.):', margin + columnWidth + columnGap, rightY);
-              rightY += 8;
+              doc.text('Notes (cont.):', margin + columnWidth + columnGap, rightY);
+              rightY += 6;
             } else {
               doc.addPage();
               rightY = 20;
@@ -820,6 +1578,21 @@ const Invoices = () => {
           </div>
 
           <div className="flex gap-2 items-center">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="draft">Borrador</SelectItem>
+                <SelectItem value="sent">Enviada</SelectItem>
+                <SelectItem value="paid">Pagada</SelectItem>
+                <SelectItem value="partial">Parcial</SelectItem>
+                <SelectItem value="overdue">Vencida</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={yearFilter} onValueChange={setYearFilter}>
               <SelectTrigger className="w-[140px]">
                 <Calendar className="w-4 h-4 mr-2" />
@@ -992,6 +1765,17 @@ const Invoices = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="tax_id">Tax ID / EIN</Label>
+                    <Input
+                      id="tax_id"
+                      value={formData.tax_id}
+                      onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                      placeholder="Ej: 66-0123456"
+                      data-testid="invoice-tax-id"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="tax_rate">Tasa de Impuesto (%)</Label>
                     <Input
                       id="tax_rate"
@@ -1042,17 +1826,36 @@ const Invoices = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={(e) => { e.preventDefault(); editingInvoice ? handleUpdateInvoice() : handleManualSubmit(e); }} className="space-y-6">
-                  {/* Invoice Number */}
-                  <div className="space-y-2">
-                    <Label htmlFor="manual_custom_number">Número de Factura *</Label>
-                    <Input
-                      id="manual_custom_number"
-                      value={manualForm.custom_number}
-                      onChange={(e) => setManualForm({...manualForm, custom_number: e.target.value})}
-                      placeholder="Ej: INV-2025-0150"
-                      required
-                    />
-                    <p className="text-xs text-slate-500">Ingrese el número de factura que desee</p>
+                  {/* Invoice Number and Dates */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="manual_custom_number">Número de Factura *</Label>
+                      <Input
+                        id="manual_custom_number"
+                        value={manualForm.custom_number}
+                        onChange={(e) => setManualForm({...manualForm, custom_number: e.target.value})}
+                        placeholder="Ej: INV-2025-0150"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="manual_document_date">Fecha del Documento</Label>
+                      <Input
+                        id="manual_document_date"
+                        type="date"
+                        value={manualForm.document_date}
+                        onChange={(e) => setManualForm({...manualForm, document_date: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="manual_due_date">Fecha de Vencimiento</Label>
+                      <Input
+                        id="manual_due_date"
+                        type="date"
+                        value={manualForm.due_date}
+                        onChange={(e) => setManualForm({...manualForm, due_date: e.target.value})}
+                      />
+                    </div>
                   </div>
 
                   {/* Subtitle */}
@@ -1160,6 +1963,15 @@ const Invoices = () => {
                         onChange={(e) => setManualForm({...manualForm, client_address: e.target.value})} 
                         placeholder="Calle, Número&#10;Ciudad, Estado&#10;Código Postal"
                         rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label>Tax ID / EIN</Label>
+                      <Input 
+                        value={manualForm.tax_id} 
+                        onChange={(e) => setManualForm({...manualForm, tax_id: e.target.value})} 
+                        placeholder="Ej: 66-0123456"
+                        data-testid="manual-invoice-tax-id"
                       />
                     </div>
                   </div>
@@ -1453,13 +2265,102 @@ const Invoices = () => {
           )}
         </div>
 
-        {/* Invoices List */}
-        {filteredInvoices.length > 0 ? (
+        {/* Tabs para Facturas y Statements */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="invoices" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Facturas
+            </TabsTrigger>
+            <TabsTrigger value="purchase-orders" className="flex items-center gap-2" data-testid="po-tab">
+              <ClipboardList className="w-4 h-4" />
+              Purchase Orders
+            </TabsTrigger>
+            <TabsTrigger value="statements" className="flex items-center gap-2">
+              <ClipboardList className="w-4 h-4" />
+              Statements
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="invoices" className="mt-6">
+            {/* Bulk Actions Bar */}
+            {filteredInvoices.some(inv => inv.status === 'draft') && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="select-all-sendable"
+                    checked={selectedInvoicesForSend.length === sendableInvoicesCount && sendableInvoicesCount > 0}
+                    onCheckedChange={selectAllSendableInvoices}
+                    disabled={sendableInvoicesCount === 0}
+                  />
+                  <label htmlFor="select-all-sendable" className="text-sm font-medium text-blue-800 cursor-pointer">
+                    {sendableInvoicesCount > 0 
+                      ? `Seleccionar todas las enviables (${sendableInvoicesCount} con email)`
+                      : 'No hay facturas con email para enviar'
+                    }
+                  </label>
+                </div>
+                {selectedInvoicesForSend.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-blue-700">
+                      {selectedInvoicesForSend.length} seleccionada(s)
+                    </span>
+                    <Button
+                      onClick={handleBulkSendInvoices}
+                      disabled={isSendingBulk}
+                      className="bg-blue-600 hover:bg-blue-700"
+                      data-testid="bulk-send-invoices-btn"
+                    >
+                      {isSendingBulk ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Enviar Seleccionadas
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedInvoicesForSend([])}
+                    >
+                      Limpiar selección
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Invoices List */}
+            {filteredInvoices.length > 0 ? (
           <div className="grid grid-cols-1 gap-4">
-            {filteredInvoices.map((invoice) => (
-              <Card key={invoice.invoice_id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            {filteredInvoices.map((invoice) => {
+              const isSendable = invoice.status === 'draft' && invoice.client_email;
+              const isDraft = invoice.status === 'draft';
+              const isSelected = selectedInvoicesForSend.includes(invoice.invoice_id);
+              
+              return (
+              <Card 
+                key={invoice.invoice_id} 
+                className={`border-slate-200 shadow-sm hover:shadow-md transition-shadow ${isSelected ? 'ring-2 ring-blue-400 bg-blue-50/30' : ''}`}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4">
+                    {/* Checkbox for bulk selection - show for all drafts */}
+                    {isDraft && (
+                      <div className="pt-1" title={isSendable ? 'Seleccionar para envío' : 'Sin email de cliente'}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => isSendable && toggleInvoiceSelection(invoice.invoice_id)}
+                          disabled={!isSendable}
+                          className={!isSendable ? 'opacity-50' : ''}
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -1475,6 +2376,9 @@ const Invoices = () => {
                         <div>
                           <p className="text-xs text-slate-600">Cliente</p>
                           <p className="text-sm font-medium">{invoice.client_name}</p>
+                          {invoice.client_email && (
+                            <p className="text-xs text-slate-400">{invoice.client_email}</p>
+                          )}
                         </div>
                         <div>
                           <p className="text-xs text-slate-600">Fecha</p>
@@ -1569,6 +2473,17 @@ const Invoices = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => handleDuplicateInvoice(invoice.invoice_id, invoice.invoice_number)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        title="Duplicar factura"
+                        data-testid={`duplicate-invoice-${invoice.invoice_id}`}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDeleteInvoice(invoice.invoice_id, invoice.invoice_number)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
@@ -1581,6 +2496,13 @@ const Invoices = () => {
                   {invoice.sponsor_name && (
                     <div className="mt-2 text-sm text-slate-600">
                       <span className="font-medium">Sponsor:</span> {invoice.sponsor_name}
+                    </div>
+                  )}
+
+                  {/* Tax ID display */}
+                  {invoice.tax_id && (
+                    <div className="text-sm text-slate-600">
+                      <span className="font-medium">Tax ID:</span> {invoice.tax_id}
                     </div>
                   )}
 
@@ -1616,7 +2538,8 @@ const Invoices = () => {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <Card className="border-slate-200 shadow-sm">
@@ -1631,6 +2554,588 @@ const Invoices = () => {
             </CardContent>
           </Card>
         )}
+
+          </TabsContent>
+
+          {/* Purchase Orders Tab */}
+          <TabsContent value="purchase-orders" className="mt-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-bold">Purchase Orders</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={poFilterYear} onValueChange={setPoFilterYear}>
+                  <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {poYears.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={poFilterCompany} onValueChange={setPoFilterCompany}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Compañía" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {poCompanies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={poFilterSponsor} onValueChange={setPoFilterSponsor}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Sponsor" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {poSponsors.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={exportPOPdf} data-testid="po-pdf-btn">
+                  <Download className="w-4 h-4 mr-1" /> PDF
+                </Button>
+                <Button variant="outline" onClick={exportPOExcel} data-testid="po-excel-btn">
+                  <Download className="w-4 h-4 mr-1" /> Excel
+                </Button>
+              </div>
+            </div>
+
+            {poLoading ? (
+              <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" /></div>
+            ) : filteredPOs.length === 0 ? (
+              <Card><CardContent className="py-12 text-center text-slate-500">
+                <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                <p>No hay Purchase Orders {poFilterYear !== 'all' || poFilterCompany !== 'all' || poFilterSponsor !== 'all' ? 'con esos filtros' : 'registrados'}</p>
+              </CardContent></Card>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <Card className="border-orange-200 bg-orange-50">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-2xl font-bold text-orange-600">{filteredPOs.length}</p>
+                      <p className="text-xs text-orange-700">Total POs</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-green-200 bg-green-50">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-2xl font-bold text-green-600">
+                        ${filteredPOs.reduce((s, po) => s + (Number(po.po_quantity) || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-green-700">Cantidad Total</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-2xl font-bold text-blue-600">{poCompanies.length}</p>
+                      <p className="text-xs text-blue-700">Compañías</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-slate-50">
+                            <th className="p-3 text-left font-semibold">Proyecto</th>
+                            <th className="p-3 text-left font-semibold">Compañía</th>
+                            <th className="p-3 text-left font-semibold">Sponsor</th>
+                            <th className="p-3 text-left font-semibold">PO Number</th>
+                            <th className="p-3 text-right font-semibold">Cantidad PO</th>
+                            <th className="p-3 text-left font-semibold">Fecha</th>
+                            <th className="p-3 text-left font-semibold">Estatus</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredPOs.map((po, idx) => (
+                            <tr key={po.project_id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
+                              <td className="p-3">
+                                <div className="font-medium">{po.project_name}</div>
+                                <div className="text-xs text-slate-400">{po.project_number}</div>
+                              </td>
+                              <td className="p-3">{po.client}</td>
+                              <td className="p-3">{po.sponsor}</td>
+                              <td className="p-3 font-mono text-orange-600 font-medium">{po.po_number}</td>
+                              <td className="p-3 text-right font-semibold text-green-600">
+                                ${(Number(po.po_quantity) || 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="p-3 text-slate-500">{po.date ? moment(po.date).format('DD/MM/YYYY') : '—'}</td>
+                              <td className="p-3">
+                                <Badge variant="outline" className="text-xs capitalize">{po.status}</Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-orange-50 font-bold border-t-2 border-orange-300">
+                            <td className="p-3" colSpan={4}>TOTAL</td>
+                            <td className="p-3 text-right text-orange-600">
+                              ${filteredPOs.reduce((s, po) => s + (Number(po.po_quantity) || 0), 0).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td colSpan={2}></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
+
+          {/* Statements Tab */}
+          <TabsContent value="statements" className="mt-6 space-y-6">
+            {/* Statements Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="text-muted-foreground">
+                  Genera estados de cuenta con facturas pendientes y pagadas
+                </p>
+              </div>
+              <Button 
+                onClick={() => setStatementDialogOpen(true)} 
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Crear Statement
+              </Button>
+            </div>
+
+            {/* Statements List */}
+            {statements.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {statements.map((statement) => (
+                  <Card key={statement.statement_id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                              <ClipboardList className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-[#0F172A]">{statement.statement_number}</h3>
+                              <p className="text-sm text-slate-600">{statement.client_name}</p>
+                              {statement.project_name && (
+                                <Badge variant="outline" className="text-xs mt-1 bg-blue-50 text-blue-700 border-blue-200">
+                                  {statement.project_name}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
+                            <div>
+                              <p className="text-xs text-slate-600">Fecha</p>
+                              <p className="text-sm font-medium">{moment(statement.created_at).format('DD/MM/YYYY')}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-600">Facturas</p>
+                              <p className="text-sm font-medium">{statement.invoices?.length || 0}</p>
+                            </div>
+                            {showMoney && (
+                              <>
+                                <div>
+                                  <p className="text-xs text-slate-600">Total Facturado</p>
+                                  <p className="text-sm font-bold text-blue-600">${formatCurrency(statement.total_invoiced)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-600">Total Pagado</p>
+                                  <p className="text-sm font-bold text-green-600">${formatCurrency(statement.total_paid)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-600">Balance</p>
+                                  <p className={`text-lg font-bold ${statement.balance_due > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                    ${formatCurrency(statement.balance_due)}
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => exportStatementToPDF(statement)}
+                            title="Descargar PDF"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            PDF
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteStatement(statement.statement_id, statement.statement_number)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Period info */}
+                      {(statement.date_from || statement.date_to) && (
+                        <div className="mt-2 text-sm text-slate-600">
+                          <span className="font-medium">Período:</span> {statement.date_from ? moment(statement.date_from).format('DD/MM/YYYY') : 'Inicio'} - {statement.date_to ? moment(statement.date_to).format('DD/MM/YYYY') : 'Actual'}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <ClipboardList className="w-16 h-16 text-slate-300 mb-4" />
+                  <p className="text-lg font-medium text-slate-600 mb-2">No hay statements generados</p>
+                  <p className="text-sm text-muted-foreground mb-6">Crea tu primer estado de cuenta seleccionando facturas</p>
+                  <Button onClick={() => setStatementDialogOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                    <ClipboardList className="w-4 h-4 mr-2" />
+                    Crear Statement
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* Statement Creation Dialog */}
+        <Dialog open={statementDialogOpen} onOpenChange={setStatementDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Crear Statement (Estado de Cuenta)</DialogTitle>
+              <DialogDescription>
+                Selecciona facturas para incluir en el estado de cuenta
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Filter Mode Selection */}
+              <div className="flex gap-4">
+                <Button
+                  variant={statementFilterMode === 'manual' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setStatementFilterMode('manual');
+                    setStatementClientFilter('');
+                  }}
+                  className="flex-1"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Selección Manual
+                </Button>
+                <Button
+                  variant={statementFilterMode === 'client' ? 'default' : 'outline'}
+                  onClick={() => setStatementFilterMode('client')}
+                  className="flex-1"
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filtrar por Cliente
+                </Button>
+              </div>
+
+              {/* Client Filter (when in client mode) */}
+              {statementFilterMode === 'client' && (
+                <div className="space-y-2">
+                  <Label>Seleccionar Cliente</Label>
+                  <Select value={statementClientFilter} onValueChange={(v) => {
+                    setStatementClientFilter(v);
+                    // Auto-select all invoices for this client
+                    const clientInvoices = invoices.filter(inv => inv.client_name === v);
+                    setSelectedInvoicesForStatement(clientInvoices.map(inv => inv.invoice_id));
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar cliente..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {uniqueClients.map(client => (
+                        <SelectItem key={client.name} value={client.name}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Date Range Filter */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Fecha Desde (opcional)</Label>
+                  <Input
+                    type="date"
+                    value={statementDateFrom}
+                    onChange={(e) => setStatementDateFrom(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Fecha Hasta (opcional)</Label>
+                  <Input
+                    type="date"
+                    value={statementDateTo}
+                    onChange={(e) => setStatementDateTo(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Project Selection */}
+              <div className="space-y-2">
+                <Label>Proyecto Asociado (opcional)</Label>
+                <Select value={statementProjectId} onValueChange={setStatementProjectId}>
+                  <SelectTrigger data-testid="statement-project-select">
+                    <SelectValue placeholder="Seleccionar proyecto..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin proyecto</SelectItem>
+                    {projects.map(project => (
+                      <SelectItem key={project.project_id} value={project.project_id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Asocia este estado de cuenta a un proyecto específico
+                </p>
+              </div>
+
+              {/* Invoice Selection Table */}
+              <div className="border rounded-lg">
+                <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selectedInvoicesForStatement.length === filteredInvoicesForStatement.length && filteredInvoicesForStatement.length > 0}
+                      onCheckedChange={handleSelectAllInvoicesForStatement}
+                    />
+                    <span className="text-sm font-medium">
+                      Seleccionar Todas ({selectedInvoicesForStatement.length} de {filteredInvoicesForStatement.length})
+                    </span>
+                  </div>
+                  {showMoney && selectedInvoicesForStatement.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-slate-600">Total seleccionado: </span>
+                      <span className="font-bold text-blue-600">
+                        ${formatCurrency(
+                          invoices
+                            .filter(inv => selectedInvoicesForStatement.includes(inv.invoice_id))
+                            .reduce((sum, inv) => sum + (inv.total || 0), 0)
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {filteredInvoicesForStatement.length > 0 ? (
+                    filteredInvoicesForStatement.map((invoice) => (
+                      <div
+                        key={invoice.invoice_id}
+                        className={`p-3 border-b flex items-center gap-4 hover:bg-slate-50 cursor-pointer ${
+                          selectedInvoicesForStatement.includes(invoice.invoice_id) ? 'bg-blue-50' : ''
+                        }`}
+                        onClick={() => handleToggleInvoiceForStatement(invoice.invoice_id)}
+                      >
+                        <Checkbox
+                          checked={selectedInvoicesForStatement.includes(invoice.invoice_id)}
+                          onCheckedChange={() => handleToggleInvoiceForStatement(invoice.invoice_id)}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{invoice.invoice_number}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {invoice.status === 'paid' ? 'Pagada' : invoice.status === 'partial' ? 'Parcial' : 'Pendiente'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-slate-600">{invoice.client_name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-slate-600">{moment(invoice.created_at).format('DD/MM/YYYY')}</p>
+                          {showMoney && (
+                            <p className="font-mono font-bold text-blue-600">${formatCurrency(invoice.total || 0)}</p>
+                          )}
+                        </div>
+                        {showMoney && invoice.balance_due > 0 && (
+                          <div className="text-right">
+                            <p className="text-xs text-slate-600">Pendiente</p>
+                            <p className="font-mono font-bold text-red-600">${formatCurrency(invoice.balance_due)}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-slate-500">
+                      No hay facturas que coincidan con los filtros
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label>Notas del Statement (opcional)</Label>
+                <Textarea
+                  value={statementNotes}
+                  onChange={(e) => setStatementNotes(e.target.value)}
+                  placeholder="Información adicional para el cliente..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setStatementDialogOpen(false);
+                setSelectedInvoicesForStatement([]);
+                setStatementNotes('');
+                setStatementProjectId('');
+              }}>
+                Cancelar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handlePreviewStatement}
+                disabled={selectedInvoicesForStatement.length === 0}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Vista Previa
+              </Button>
+              <Button
+                onClick={handleCreateStatement}
+                disabled={selectedInvoicesForStatement.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Crear Statement
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Statement Preview Dialog */}
+        <Dialog open={previewStatementDialogOpen} onOpenChange={setPreviewStatementDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Vista Previa del Statement</DialogTitle>
+            </DialogHeader>
+            
+            {statementPreview && (
+              <div className="space-y-6 p-4 bg-white border rounded-lg">
+                {/* Header */}
+                <div className="flex justify-between items-start border-b pb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-emerald-600">STATEMENT</h2>
+                    <p className="text-lg font-semibold">{statementPreview.client_name}</p>
+                    {statementPreview.client_email && <p className="text-sm text-slate-500">{statementPreview.client_email}</p>}
+                  </div>
+                  <div className="text-right">
+                    {(statementPreview.date_from || statementPreview.date_to) && (
+                      <p className="text-sm text-slate-500">
+                        Período: {statementPreview.date_from ? moment(statementPreview.date_from).format('DD/MM/YYYY') : 'Inicio'} - {statementPreview.date_to ? moment(statementPreview.date_to).format('DD/MM/YYYY') : 'Actual'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Summary Boxes */}
+                {showMoney && (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-500 text-white p-4 rounded-lg text-center">
+                      <p className="text-sm opacity-90">Total Facturado</p>
+                      <p className="text-2xl font-bold">${formatCurrency(statementPreview.total_invoiced)}</p>
+                    </div>
+                    <div className="bg-green-500 text-white p-4 rounded-lg text-center">
+                      <p className="text-sm opacity-90">Total Pagado</p>
+                      <p className="text-2xl font-bold">${formatCurrency(statementPreview.total_paid)}</p>
+                    </div>
+                    <div className={`${statementPreview.balance_due > 0 ? 'bg-red-500' : 'bg-emerald-500'} text-white p-4 rounded-lg text-center`}>
+                      <p className="text-sm opacity-90">Balance Pendiente</p>
+                      <p className="text-2xl font-bold">${formatCurrency(statementPreview.balance_due)}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Invoices Table */}
+                <div>
+                  <h3 className="font-semibold text-slate-700 mb-2">Detalle de Facturas</h3>
+                  <table className="w-full border">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="p-2 text-left text-sm">Factura</th>
+                        <th className="p-2 text-left text-sm">Fecha</th>
+                        <th className="p-2 text-left text-sm">Vencimiento</th>
+                        {showMoney && <th className="p-2 text-right text-sm">Total</th>}
+                        {showMoney && <th className="p-2 text-right text-sm">Pagado</th>}
+                        {showMoney && <th className="p-2 text-right text-sm">Pendiente</th>}
+                        <th className="p-2 text-center text-sm">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statementPreview.invoices?.map((inv, idx) => (
+                        <tr key={idx} className="border-t">
+                          <td className="p-2 text-sm font-medium">{inv.invoice_number}</td>
+                          <td className="p-2 text-sm">{moment(inv.invoice_date).format('DD/MM/YYYY')}</td>
+                          <td className="p-2 text-sm">{inv.due_date ? moment(inv.due_date).format('DD/MM/YYYY') : '-'}</td>
+                          {showMoney && <td className="p-2 text-right text-sm">${formatCurrency(inv.total)}</td>}
+                          {showMoney && <td className="p-2 text-right text-sm text-green-600">${formatCurrency(inv.amount_paid)}</td>}
+                          {showMoney && <td className="p-2 text-right text-sm font-medium text-red-600">${formatCurrency(inv.balance_due)}</td>}
+                          <td className="p-2 text-center">
+                            <Badge variant="outline" className={`text-xs ${inv.status === 'paid' ? 'bg-green-100 text-green-700' : inv.status === 'partial' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100'}`}>
+                              {inv.status === 'paid' ? 'Pagada' : inv.status === 'partial' ? 'Parcial' : 'Pendiente'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Payments Table */}
+                {statementPreview.payments && statementPreview.payments.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-slate-700 mb-2">Historial de Pagos</h3>
+                    <table className="w-full border">
+                      <thead className="bg-slate-100">
+                        <tr>
+                          <th className="p-2 text-left text-sm">Fecha</th>
+                          <th className="p-2 text-left text-sm">Factura</th>
+                          {showMoney && <th className="p-2 text-right text-sm">Monto</th>}
+                          <th className="p-2 text-left text-sm">Método</th>
+                          <th className="p-2 text-left text-sm">Referencia</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {statementPreview.payments.map((p, idx) => (
+                          <tr key={idx} className="border-t">
+                            <td className="p-2 text-sm">{moment(p.payment_date).format('DD/MM/YYYY')}</td>
+                            <td className="p-2 text-sm">{p.invoice_number}</td>
+                            {showMoney && <td className="p-2 text-right text-sm font-medium text-green-600">${formatCurrency(p.amount)}</td>}
+                            <td className="p-2 text-sm">
+                              {p.payment_method === 'transfer' ? 'Transferencia' : 
+                               p.payment_method === 'card' ? 'Tarjeta' : 
+                               p.payment_method === 'cash' ? 'Efectivo' : 
+                               p.payment_method === 'check' ? 'Cheque' : p.payment_method}
+                            </td>
+                            <td className="p-2 text-sm">{p.reference || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {statementNotes && (
+                  <div className="border-t pt-4">
+                    <h3 className="font-semibold text-slate-700 mb-2">Notas</h3>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{statementNotes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPreviewStatementDialogOpen(false)}>
+                Cerrar
+              </Button>
+              <Button onClick={handleCreateStatement} className="bg-emerald-600 hover:bg-emerald-700">
+                Crear Statement
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Preview Dialog */}
         <Dialog open={!!previewInvoice} onOpenChange={(open) => !open && setPreviewInvoice(null)}>
@@ -1670,6 +3175,9 @@ const Invoices = () => {
                     {previewInvoice.client_phone && <p className="text-sm text-slate-500">{previewInvoice.client_phone}</p>}
                     {previewInvoice.client_address && (
                       <div className="text-sm text-slate-500 whitespace-pre-line">{previewInvoice.client_address}</div>
+                    )}
+                    {previewInvoice.tax_id && (
+                      <p className="text-sm text-slate-600 font-medium mt-1">Tax ID: {previewInvoice.tax_id}</p>
                     )}
                   </div>
                   <div>

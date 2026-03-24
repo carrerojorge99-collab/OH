@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import moment from 'moment';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -25,11 +26,15 @@ import {
   ArrowLeft, Plus, FileDown, CheckCircle2, Circle, Clock,
   DollarSign, Calendar, Tag, MessageSquare, Trash2, Pencil, TrendingUp, TrendingDown,
   Upload, Download, File, FileText, Image as ImageIcon, LayoutGrid, List, User, Edit, Users, UserPlus, UserMinus,
-  Folder, FolderPlus, FolderOpen, ChevronRight, Home, MoreVertical, Move, Shield, FileQuestion
+  Folder, FolderPlus, FolderOpen, ChevronRight, Home, MoreVertical, Move, Shield, FileQuestion, Eye
 } from 'lucide-react';
 import KanbanBoard from '../components/KanbanBoard';
 import ProjectSafety from '../components/ProjectSafety';
 import ProjectRFI from '../components/ProjectRFI';
+import ProjectMRR from '../components/ProjectMRR';
+import ProjectInspections from '../components/ProjectInspections';
+import ProjectQuality from '../components/ProjectQuality';
+import ProjectSchedule from '../components/ProjectSchedule';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { 
@@ -49,8 +54,18 @@ import {
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Helper to check if user is designer (hide financial info)
+  // Use both local check AND backend flag for redundancy
+  const isDesigner = user?.role === 'designer';
+  const isSupervisor = user?.role === 'supervisor';
+  const canEditProject = user?.role === 'super_admin' || user?.role === 'project_manager';
   
   const [project, setProject] = useState(null);
+  
+  // Dynamic check using project's hide_financial flag from backend
+  const hideFinancial = isDesigner || isSupervisor || project?.hide_financial;
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -131,6 +146,9 @@ const ProjectDetail = () => {
     client_email: '',
     client_phone: '',
     client_address: '',
+    tax_id: '',
+    sponsor_name: '',
+    po_number: '',
     items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
     tax_rate: 0,
     discount_percent: 0,
@@ -320,6 +338,10 @@ const ProjectDetail = () => {
         initials: project.initials || '',
         project_number: project.project_number || '',
         client: project.client || '',
+        client_email: project.client_email || '',
+        client_phone: project.client_phone || '',
+        client_address: project.client_address || '',
+        client_tax_id: project.client_tax_id || '',
         sponsor: project.sponsor || '',
         po_number: project.po_number || '',
         po_quantity: project.po_quantity || 0,
@@ -946,6 +968,9 @@ const ProjectDetail = () => {
         client_email: '',
         client_phone: '',
         client_address: '',
+        tax_id: '',
+        sponsor_name: '',
+        po_number: '',
         items: [{ description: '', quantity: 1, unit_price: 0, amount: 0 }],
         tax_rate: 0,
         discount_percent: 0,
@@ -1140,9 +1165,34 @@ const ProjectDetail = () => {
     setUploadingFile(false);
   };
 
-  const handleDownloadDocument = async (documentId, filename) => {
+  // Check if file is a CAD file (DWG, DXF, DWF)
+  const isCADFile = (filename) => {
+    if (!filename) return false;
+    const ext = filename.toLowerCase().split('.').pop();
+    return ['dwg', 'dxf', 'dwf'].includes(ext);
+  };
+
+  // Open CAD file in ShareCAD viewer
+  const openCADPreview = (doc) => {
+    if (!doc.url) {
+      toast.error('El archivo no tiene URL disponible');
+      return;
+    }
+    // ShareCAD viewer URL
+    const shareCADUrl = `https://sharecad.org/cadframe/load?url=${encodeURIComponent(doc.url)}`;
+    window.open(shareCADUrl, '_blank');
+  };
+
+  const handleDownloadDocument = async (doc) => {
     try {
-      const response = await api.get(`/documents/${documentId}/download`, {
+      // Si tiene URL de Cloudinary, abrir directamente
+      if (doc.url) {
+        window.open(doc.url, '_blank');
+        return;
+      }
+      
+      // Fallback para archivos legacy
+      const response = await api.get(`/documents/${doc.document_id}/download`, {
         withCredentials: true,
         responseType: 'blob'
       });
@@ -1150,7 +1200,7 @@ const ProjectDetail = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', filename);
+      link.setAttribute('download', doc.original_filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1403,6 +1453,8 @@ const ProjectDetail = () => {
               </div>
             </div>
             
+            {/* Action buttons - hidden for designers */}
+            {canEditProject && (
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
@@ -1444,6 +1496,7 @@ const ProjectDetail = () => {
                 Eliminar
               </Button>
             </div>
+          )}
           </div>
         </div>
 
@@ -1631,6 +1684,49 @@ const ProjectDetail = () => {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-client-email">Email del Cliente</Label>
+                      <Input
+                        id="edit-client-email"
+                        type="email"
+                        placeholder="cliente@empresa.com"
+                        value={editForm.client_email}
+                        onChange={(e) => setEditForm({ ...editForm, client_email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-client-phone">Teléfono del Cliente</Label>
+                      <Input
+                        id="edit-client-phone"
+                        placeholder="787-555-0000"
+                        value={editForm.client_phone}
+                        onChange={(e) => setEditForm({ ...editForm, client_phone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-client-address">Dirección del Cliente</Label>
+                      <Input
+                        id="edit-client-address"
+                        placeholder="Calle, Ciudad, Estado, ZIP"
+                        value={editForm.client_address}
+                        onChange={(e) => setEditForm({ ...editForm, client_address: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-client-tax-id">Tax ID del Cliente</Label>
+                      <Input
+                        id="edit-client-tax-id"
+                        placeholder="Ej: 66-0123456"
+                        value={editForm.client_tax_id}
+                        onChange={(e) => setEditForm({ ...editForm, client_tax_id: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="edit-project-number">Número de Proyecto</Label>
@@ -1798,134 +1894,148 @@ const ProjectDetail = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600 mb-1">Valor Proyecto</p>
-                  <p className="text-xl font-bold font-mono">
-                    ${(stats?.project_value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <DollarSign className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Financial Cards - Hidden for designers */}
+          {!hideFinancial && (
+            <>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Valor Proyecto</p>
+                      <p className="text-xl font-bold font-mono">
+                        ${(stats?.project_value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <DollarSign className="w-8 h-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600 mb-1">Gastado</p>
-                  <p className="text-xl font-bold font-mono">
-                    ${(stats?.budget_spent || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <DollarSign className="w-8 h-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Gastado</p>
+                      <p className="text-xl font-bold font-mono">
+                        ${(stats?.budget_spent || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <DollarSign className="w-8 h-8 text-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className={`border-slate-200 shadow-sm ${(stats?.profit || 0) >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600 mb-1">Ganancia</p>
-                  <p className={`text-xl font-bold font-mono ${(stats?.profit || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                    ${(stats?.profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                {(stats?.profit || 0) >= 0 ? (
-                  <TrendingUp className="w-8 h-8 text-green-600" />
-                ) : (
-                  <TrendingDown className="w-8 h-8 text-red-600" />
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              <Card className={`border-slate-200 shadow-sm ${(stats?.profit || 0) >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Ganancia</p>
+                      <p className={`text-xl font-bold font-mono ${(stats?.profit || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                        ${(stats?.profit || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    {(stats?.profit || 0) >= 0 ? (
+                      <TrendingUp className="w-8 h-8 text-green-600" />
+                    ) : (
+                      <TrendingDown className="w-8 h-8 text-red-600" />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className={`border-slate-200 shadow-sm ${
-            project?.payment_status === 'paid' ? 'bg-green-50' : 
-            project?.payment_status === 'partial' ? 'bg-yellow-50' : 
-            'bg-red-50'
-          }`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600 mb-1">Estado de Pago</p>
-                  <p className={`text-lg font-semibold ${
-                    project?.payment_status === 'paid' ? 'text-green-700' : 
-                    project?.payment_status === 'partial' ? 'text-yellow-700' : 
-                    'text-red-700'
-                  }`}>
-                    {project?.payment_status === 'paid' && '✓ Pagado'}
-                    {project?.payment_status === 'partial' && '◐ Pago Parcial'}
-                    {project?.payment_status === 'pending' && '⊗ Pendiente'}
-                    {!project?.payment_status && '⊗ Pendiente'}
-                  </p>
-                </div>
-                <DollarSign className={`w-8 h-8 ${
-                  project?.payment_status === 'paid' ? 'text-green-600' : 
-                  project?.payment_status === 'partial' ? 'text-yellow-600' : 
-                  'text-red-600'
-                }`} />
-              </div>
-            </CardContent>
-          </Card>
+              <Card className={`border-slate-200 shadow-sm ${
+                project?.payment_status === 'paid' ? 'bg-green-50' : 
+                project?.payment_status === 'partial' ? 'bg-yellow-50' : 
+                'bg-red-50'
+              }`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 mb-1">Estado de Pago</p>
+                      <p className={`text-lg font-semibold ${
+                        project?.payment_status === 'paid' ? 'text-green-700' : 
+                        project?.payment_status === 'partial' ? 'text-yellow-700' : 
+                        'text-red-700'
+                      }`}>
+                        {project?.payment_status === 'paid' && '✓ Pagado'}
+                        {project?.payment_status === 'partial' && '◐ Pago Parcial'}
+                        {project?.payment_status === 'pending' && '⊗ Pendiente'}
+                        {!project?.payment_status && '⊗ Pendiente'}
+                      </p>
+                    </div>
+                    <DollarSign className={`w-8 h-8 ${
+                      project?.payment_status === 'paid' ? 'text-green-600' : 
+                      project?.payment_status === 'partial' ? 'text-yellow-600' : 
+                      'text-red-600'
+                    }`} />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
-        {/* Financial Summary Card */}
-        <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-slate-50 to-blue-50">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-800">💰 Resumen Financiero del Proyecto</h3>
-              <Badge variant="outline">{financialSummary.invoice_count} Facturas</Badge>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-white rounded-lg border border-slate-200">
-                <p className="text-sm text-slate-600 mb-1">Total Facturado</p>
-                <p className="text-2xl font-bold text-blue-600 font-mono">
-                  ${financialSummary.total_invoiced.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                </p>
+        {/* Financial Summary Card - Hidden for designers */}
+        {!hideFinancial && (
+          <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-slate-50 to-blue-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-800">💰 Resumen Financiero del Proyecto</h3>
+                <Badge variant="outline">{financialSummary.invoice_count} Facturas</Badge>
               </div>
-              <div className="text-center p-4 bg-white rounded-lg border border-green-200">
-                <p className="text-sm text-slate-600 mb-1">Total Cobrado</p>
-                <p className="text-2xl font-bold text-green-600 font-mono">
-                  ${financialSummary.total_paid.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-lg border border-orange-200">
-                <p className="text-sm text-slate-600 mb-1">Pendiente por Cobrar</p>
-                <p className="text-2xl font-bold text-orange-600 font-mono">
-                  ${financialSummary.total_pending.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-            {financialSummary.total_invoiced > 0 && (
-              <div className="mt-4">
-                <div className="flex justify-between text-sm text-slate-600 mb-1">
-                  <span>Progreso de cobranza</span>
-                  <span>{Math.round((financialSummary.total_paid / financialSummary.total_invoiced) * 100)}%</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-4 bg-white rounded-lg border border-slate-200">
+                  <p className="text-sm text-slate-600 mb-1">Total Facturado</p>
+                  <p className="text-2xl font-bold text-blue-600 font-mono">
+                    ${financialSummary.total_invoiced.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
-                <Progress value={(financialSummary.total_paid / financialSummary.total_invoiced) * 100} className="h-2" />
+                <div className="text-center p-4 bg-white rounded-lg border border-green-200">
+                  <p className="text-sm text-slate-600 mb-1">Total Cobrado</p>
+                  <p className="text-2xl font-bold text-green-600 font-mono">
+                    ${financialSummary.total_paid.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg border border-orange-200">
+                  <p className="text-sm text-slate-600 mb-1">Pendiente por Cobrar</p>
+                  <p className="text-2xl font-bold text-orange-600 font-mono">
+                    ${financialSummary.total_pending.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
               </div>
-            )}
+              {financialSummary.total_invoiced > 0 && (
+                <div className="mt-4">
+                  <div className="flex justify-between text-sm text-slate-600 mb-1">
+                    <span>Progreso de cobranza</span>
+                    <span>{Math.round((financialSummary.total_paid / financialSummary.total_invoiced) * 100)}%</span>
+                  </div>
+                  <Progress value={(financialSummary.total_paid / financialSummary.total_invoiced) * 100} className="h-2" />
+                </div>
+              )}
           </CardContent>
         </Card>
+        )}
 
         {/* Hours Control Card */}
         {(() => {
           const estimatedHours = project?.estimated_hours || 0;
+          // SIEMPRE calcular de los timesheets locales para reflejar cambios inmediatamente
           const consumedHours = timesheet.reduce((sum, entry) => sum + (entry.hours_worked || 0), 0);
           const remainingHours = Math.max(0, estimatedHours - consumedHours);
           const hoursProgress = estimatedHours > 0 ? Math.min(100, (consumedHours / estimatedHours) * 100) : 0;
           const isOvertime = consumedHours > estimatedHours && estimatedHours > 0;
+          const lastSynced = project?.hours_last_synced ? new Date(project.hours_last_synced).toLocaleString('es') : null;
           
           return (
             <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-slate-50 to-purple-50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-800">⏱️ Control de Horas del Proyecto</h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">⏱️ Control de Horas del Proyecto</h3>
+                    {lastSynced && (
+                      <p className="text-xs text-slate-500">Última sincronización: {lastSynced}</p>
+                    )}
+                  </div>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -1987,15 +2097,21 @@ const ProjectDetail = () => {
               <TabsList className="bg-white border border-slate-200 flex flex-row flex-nowrap min-w-max p-1 h-auto gap-1">
                 <TabsTrigger value="tasks" data-testid="tasks-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Tareas</TabsTrigger>
                 <TabsTrigger value="team" data-testid="team-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Equipo</TabsTrigger>
-                <TabsTrigger value="budget" data-testid="budget-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Presupuesto</TabsTrigger>
-                <TabsTrigger value="invoices" data-testid="invoices-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Facturas</TabsTrigger>
-                <TabsTrigger value="change-orders" data-testid="change-orders-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Cambios</TabsTrigger>
-                <TabsTrigger value="labor" data-testid="labor-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Salarios</TabsTrigger>
-                <TabsTrigger value="timesheet" data-testid="timesheet-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Tiempo</TabsTrigger>
+                <TabsTrigger value="schedule" data-testid="schedule-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Horarios</TabsTrigger>
+                {!hideFinancial && (
+                  <>
+                    <TabsTrigger value="budget" data-testid="budget-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Presupuesto</TabsTrigger>
+                    <TabsTrigger value="invoices" data-testid="invoices-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Facturas</TabsTrigger>
+                    <TabsTrigger value="change-orders" data-testid="change-orders-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Cambios</TabsTrigger>
+                    <TabsTrigger value="labor" data-testid="labor-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Salarios</TabsTrigger>
+                    <TabsTrigger value="timesheet" data-testid="timesheet-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Tiempo</TabsTrigger>
+                  </>
+                )}
                 <TabsTrigger value="documents" data-testid="documents-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Docs</TabsTrigger>
                 <TabsTrigger value="required-docs" data-testid="required-docs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Doc.Req.</TabsTrigger>
                 <TabsTrigger value="logs" data-testid="logs-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Bitácora</TabsTrigger>
                 <TabsTrigger value="rfi" data-testid="rfi-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">RFIs</TabsTrigger>
+                <TabsTrigger value="quality" data-testid="quality-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Quality</TabsTrigger>
                 <TabsTrigger value="safety" data-testid="safety-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Seguridad</TabsTrigger>
                 <TabsTrigger value="comments" data-testid="comments-tab" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2 shrink-0">Notas</TabsTrigger>
               </TabsList>
@@ -2317,7 +2433,16 @@ const ProjectDetail = () => {
             </Card>
           </TabsContent>
 
-          {/* Budget Tab */}
+          {/* Schedule Tab */}
+          <TabsContent value="schedule" className="space-y-6">
+            <ProjectSchedule 
+              projectId={projectId}
+              projectName={project?.name}
+            />
+          </TabsContent>
+
+          {/* Budget Tab - Hidden for designers */}
+          {!hideFinancial && (
           <TabsContent value="budget" className="space-y-6">
             {/* Budget Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2780,12 +2905,28 @@ const ProjectDetail = () => {
               </Card>
             )}
           </TabsContent>
+          )}
 
-          {/* Invoices Tab */}
+          {/* Invoices Tab - Hidden for designers */}
+          {!hideFinancial && (
           <TabsContent value="invoices" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold tracking-tight">Facturas del Proyecto</h2>
-              <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
+              <Dialog open={invoiceDialogOpen} onOpenChange={(open) => {
+                if (open) {
+                  setInvoiceForm(prev => ({
+                    ...prev,
+                    client_name: prev.client_name || project?.client || '',
+                    client_email: prev.client_email || project?.client_email || '',
+                    client_phone: prev.client_phone || project?.client_phone || '',
+                    client_address: prev.client_address || project?.client_address || '',
+                    tax_id: prev.tax_id || project?.client_tax_id || '',
+                    sponsor_name: prev.sponsor_name || project?.sponsor || '',
+                    po_number: prev.po_number || project?.po_number || '',
+                  }));
+                }
+                setInvoiceDialogOpen(open);
+              }}>
                 <DialogTrigger asChild>
                   <Button className="bg-orange-600 hover:bg-orange-700">
                     <Plus className="w-4 h-4 mr-2" /> Nueva Factura
@@ -2841,6 +2982,33 @@ const ProjectDetail = () => {
                         placeholder="Dirección del cliente"
                         rows={2}
                       />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label>Tax ID / EIN</Label>
+                        <Input 
+                          value={invoiceForm.tax_id} 
+                          onChange={(e) => setInvoiceForm({...invoiceForm, tax_id: e.target.value})} 
+                          placeholder="Ej: 66-0123456"
+                          data-testid="project-invoice-tax-id"
+                        />
+                      </div>
+                      <div>
+                        <Label>Sponsor</Label>
+                        <Input 
+                          value={invoiceForm.sponsor_name} 
+                          onChange={(e) => setInvoiceForm({...invoiceForm, sponsor_name: e.target.value})} 
+                          placeholder="Nombre del sponsor"
+                        />
+                      </div>
+                      <div>
+                        <Label>PO Number</Label>
+                        <Input 
+                          value={invoiceForm.po_number} 
+                          onChange={(e) => setInvoiceForm({...invoiceForm, po_number: e.target.value})} 
+                          placeholder="Número de orden"
+                        />
+                      </div>
                     </div>
 
                     {/* Items */}
@@ -3050,8 +3218,9 @@ const ProjectDetail = () => {
               </div>
             )}
           </TabsContent>
+          )}
 
-          {/* Payment Dialog */}
+          {/* Payment Dialog - Available globally for invoice payments */}
           <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
             <DialogContent>
               <DialogHeader>
@@ -3135,7 +3304,8 @@ const ProjectDetail = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Change Orders Tab */}
+          {/* Change Orders Tab - Hidden for designers */}
+          {!hideFinancial && (
           <TabsContent value="change-orders" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold tracking-tight">Change Orders</h2>
@@ -3237,8 +3407,10 @@ const ProjectDetail = () => {
               </div>
             )}
           </TabsContent>
+          )}
 
-          {/* Labor/Salarios Tab */}
+          {/* Labor/Salarios Tab - Hidden for designers */}
+          {!hideFinancial && (
           <TabsContent value="labor" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold tracking-tight">Salarios del Proyecto</h2>
@@ -3691,8 +3863,10 @@ const ProjectDetail = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
-          {/* Timesheet Tab */}
+          {/* Timesheet Tab - Hidden for designers */}
+          {!hideFinancial && (
           <TabsContent value="timesheet" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold tracking-tight">Timesheet - Registro de Horas</h2>
@@ -4126,6 +4300,7 @@ const ProjectDetail = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6">
@@ -4319,15 +4494,27 @@ const ProjectDetail = () => {
                                     Subido por <span className="font-medium">{doc.uploaded_by_name}</span>
                                   </p>
                                   <div className="flex gap-2 flex-wrap">
+                                    {/* CAD Preview Button */}
+                                    {isCADFile(doc.original_filename) && doc.url && (
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() => openCADPreview(doc)}
+                                        className="text-xs bg-blue-600 hover:bg-blue-700"
+                                      >
+                                        <Eye className="w-3 h-3 mr-1" />
+                                        Preview CAD
+                                      </Button>
+                                    )}
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => handleDownloadDocument(doc.document_id, doc.original_filename)}
+                                      onClick={() => handleDownloadDocument(doc)}
                                       data-testid={`download-document-${doc.document_id}`}
                                       className="text-xs"
                                     >
                                       <Download className="w-3 h-3 mr-1" />
-                                      Descargar
+                                      {doc.url ? 'Ver' : 'Descargar'}
                                     </Button>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
@@ -4721,6 +4908,17 @@ const ProjectDetail = () => {
               projectId={projectId} 
               projectName={project?.name}
               projectNumber={project?.project_number}
+            />
+          </TabsContent>
+
+          {/* Quality Tab */}
+          <TabsContent value="quality" className="space-y-6">
+            <ProjectQuality 
+              projectId={projectId}
+              projectName={project?.name}
+              projectNumber={project?.project_number}
+              project={project}
+              users={users}
             />
           </TabsContent>
 

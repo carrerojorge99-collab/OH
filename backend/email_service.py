@@ -518,3 +518,164 @@ def get_task_status_changed_email(user_name: str, task_title: str, project_name:
     """
     
     return html, text
+
+
+def get_bitacora_assigned_email(user_name: str, log_title: str, log_description: str, pre_project_name: str, assigner_name: str, log_type: str, pre_project_id: str):
+    """Generate HTML email for bitácora entry assignment notification"""
+    config = get_smtp_config()
+    app_url = config['app_url']
+    
+    log_type_labels = {
+        "note": "Nota General",
+        "contact": "Contacto con Cliente",
+        "visit": "Visita al Sitio",
+        "meeting": "Reunión",
+        "update": "Actualización",
+        "problem": "Problema"
+    }
+    log_type_colors = {
+        "note": "#64748B",
+        "contact": "#10B981",
+        "visit": "#3B82F6",
+        "meeting": "#8B5CF6",
+        "update": "#F59E0B",
+        "problem": "#EF4444"
+    }
+    
+    color = log_type_colors.get(log_type, "#F97316")
+    type_label = log_type_labels.get(log_type, log_type)
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: {color}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .log-box {{ background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid {color}; }}
+            .type-badge {{ display: inline-block; padding: 6px 12px; background-color: {color}; color: white; border-radius: 20px; font-size: 12px; font-weight: bold; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: {color}; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📋 Nuevo Registro de Bitácora Asignado</h1>
+            </div>
+            <div class="content">
+                <p>Hola <strong>{user_name}</strong>,</p>
+                <p><strong>{assigner_name}</strong> te ha asignado un nuevo registro en la bitácora del pre-proyecto:</p>
+                
+                <div class="log-box">
+                    <p><span class="type-badge">{type_label}</span></p>
+                    <h2 style="color: #1e293b; margin-top: 10px;">{log_title}</h2>
+                    <p style="color: #64748B;">{log_description[:200]}{'...' if len(log_description) > 200 else ''}</p>
+                    <p><strong>📁 Pre-Proyecto:</strong> {pre_project_name}</p>
+                </div>
+                
+                <p>Inicia sesión en ProManage para ver los detalles y dar seguimiento.</p>
+                
+                <p style="text-align: center;">
+                    <a href="{app_url}/pre-projects/{pre_project_id}" class="button">📋 Ver Pre-Proyecto</a>
+                </p>
+            </div>
+            <div class="footer">
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
+                <p><a href="{app_url}" style="color: {color};">{app_url}</a></p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text = f"""
+    Nuevo Registro de Bitácora Asignado
+    
+    Hola {user_name},
+    
+    {assigner_name} te ha asignado un nuevo registro en la bitácora del pre-proyecto:
+    
+    Tipo: {type_label}
+    Título: {log_title}
+    Descripción: {log_description[:200]}{'...' if len(log_description) > 200 else ''}
+    Pre-Proyecto: {pre_project_name}
+    
+    Inicia sesión para ver los detalles: {app_url}/pre-projects/{pre_project_id}
+    """
+    
+    return html, text
+
+
+def get_preproject_available_email(pm_name: str, pre_project_title: str, client_name: str, designer_name: str, pre_project_id: str):
+    """Generate HTML email to notify PMs that a new pre-project is available to claim"""
+    config = get_smtp_config()
+    app_url = config['app_url']
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: #10B981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+            .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }}
+            .project-box {{ background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981; }}
+            .button {{ display: inline-block; padding: 14px 28px; background-color: #10B981; color: white !important; text-decoration: none; border-radius: 6px; margin-top: 20px; font-weight: bold; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+            .urgent {{ background-color: #FEF3C7; padding: 12px; border-radius: 6px; margin-top: 15px; color: #92400E; font-weight: 500; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎯 Nuevo Pre-Proyecto Disponible</h1>
+            </div>
+            <div class="content">
+                <p>Hola <strong>{pm_name}</strong>,</p>
+                <p>Hay un nuevo pre-proyecto disponible para tomar:</p>
+                
+                <div class="project-box">
+                    <h2 style="color: #1e293b; margin: 0 0 10px 0;">{pre_project_title}</h2>
+                    <p style="color: #64748B; margin: 5px 0;">👤 <strong>Cliente:</strong> {client_name}</p>
+                    <p style="color: #64748B; margin: 5px 0;">🎨 <strong>Completado por:</strong> {designer_name}</p>
+                </div>
+                
+                <div class="urgent">
+                    ⚡ <strong>El primer PM en reclamar este proyecto se lo queda.</strong>
+                </div>
+                
+                <p style="text-align: center;">
+                    <a href="{app_url}/pre-projects/{pre_project_id}" class="button">🚀 Ver y Reclamar Proyecto</a>
+                </p>
+            </div>
+            <div class="footer">
+                <p>Este es un correo automático de ProManage. Por favor no respondas a este mensaje.</p>
+                <p><a href="{app_url}" style="color: #10B981;">{app_url}</a></p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text = f"""
+    Nuevo Pre-Proyecto Disponible
+    
+    Hola {pm_name},
+    
+    Hay un nuevo pre-proyecto disponible para tomar:
+    
+    Título: {pre_project_title}
+    Cliente: {client_name}
+    Completado por: {designer_name}
+    
+    ⚡ El primer PM en reclamar este proyecto se lo queda.
+    
+    Ver y reclamar: {app_url}/pre-projects/{pre_project_id}
+    """
+    
+    return html, text
+

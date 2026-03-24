@@ -1,133 +1,176 @@
 <analysis>**original_problem_statement:**
-The user wants to add a new field named Factor General to the cost estimation section of the application. This field will be a percentage that modifies the cost calculation in each of the cost estimation tabs.
+The user's initial requests for this session were:
+1.  **PO Report by Sponsor:** Add the ability to filter the Purchase Order report by sponsor and have that sponsor reflected in the PDF/Excel exports.
+2.  **Consumed Hours Bug:** Fix an issue where the consumed hours on a project's detail page did not update when time entries were deleted from the timesheet.
+3.  **Cost Estimate Workflow Bugs (Critical):** The user reported a series of major issues with the Cost Estimates module:
+    *   An estimate assigned to a company without any sponsors would become lost and invisible in the UI.
+    *   When assigning an estimate to a sponsor, the estimate's detailed data (labor, materials, etc.) would be wiped, showing /bin/bash.00 in the detail view.
+    *   When trying to view a corrupted estimate, the URL would incorrectly show .
+4.  **Cost Estimate PDF Calculation Bug:** Percentage-based costs (like Overhead, CFSE, Liability) were being included in the PDF total even when their corresponding checkboxes in the UI were disabled.
 
-PRODUCT REQUIREMENTS:
-1.  Add a new Factor % input field to each line item in the following tabs: Mano de Obra, Subcontratistas, Materiales, Equipos, Transporte, and Cond. Generales.
-2.  This factor should be a percentage.
-3.  The calculation logic for applying the factor is as follows:
-    *   **Mano de Obra**: The total cost per item is calculated as .
-    *   **Subcontratistas**: The total cost per item is .
-    *   **Materiales**: The total cost per item is .
-    *   **Equipos**: The total cost per item is .
-    *   **Transporte**: The total cost per item is .
-    *   **Cond. Generales**: The total cost per item is .
-4.  The new Factor % column should be visible in the UI for each tab.
-5.  The overall total calculations in the Resumen tab must correctly reflect the adjusted costs from the other tabs.
-
-**User's preferred language**: Spanish
+**User's preferred language**: Spanish (es)
 
 **what currently exists?**
-The implementation for the Factor General feature is complete from a code-writing perspective.
--   **Backend**: The Pydantic models in  for each cost item (, , , , , ) have been updated to include an optional float field .
--   **Frontend**: The UI components for each tab (, , etc.) have been updated to display a Factor % column. The corresponding calculation logic in  has been modified to apply the factor as a multiplier  to the relevant values before calculating the total for each row. The main  function has also been updated.
+The application has been significantly debugged and enhanced. The Purchase Order report now correctly filters and exports by sponsor. The consumed hours display on the project detail page is fixed and updates in real-time.
+
+Most importantly, the critical bugs in the Cost Estimate workflow have been addressed in the preview environment:
+*   **Data Loss Prevention:** A data normalization helper () was created in the backend to handle inconsistencies between legacy (, ) and new (, ) field names in the database. This prevents Pydantic models from wiping data during serialization. This fix was applied to the GET, ASSIGN, and a new REPAIR endpoint.
+*   **Lost Estimate Recovery:** The UI in  now has a dedicated section to display and manage estimates that are assigned to a company but have no sponsor, preventing them from being lost.
+*   **'null' ID Fix:** The frontend code was standardized to consistently use  as the primary identifier for navigation, fixing the  URL bug.
+*   **Data Repair Tool:** A new admin-only API endpoint, , was created and debugged to fix existing corrupted estimates in the database.
+*   **PDF Calculation Fix:** The backend logic for generating the cost estimate PDF now correctly checks the  boolean flags, ensuring that disabled percentages are excluded from the totals.
 
 **Last working item**:
--   Last item agent was working: The agent was attempting to visually verify the implementation of the Factor % feature by taking a screenshot of the UI. However, this was blocked by a persistent login failure. The agent was in the middle of debugging this login issue when the user interrupted and asked to conclude the implementation phase.
--   Status: BLOCKED
--   Agent Testing Done: N
--   Which testing method agent to use? The agent must first resolve the login issue. Once resolved, use the screenshot tool to visually verify the UI changes in all relevant tabs.
--   User Testing Done: N
+- **Last item agent was working:** Fixing a bug where the Cost Estimate PDF included and calculated percentages (Overhead, CFSE, etc.) even if they were disabled in the UI. The agent corrected the PDF generation logic in  to respect the  boolean flags from the estimate data.
+- **Status:** USER VERIFICATION PENDING
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** Manual testing. The agent should log in, navigate to a cost estimate, disable a few percentage checkboxes, and generate a PDF. The agent must then verify that the disabled percentages and their corresponding amounts do not appear in the PDF's total calculation section.
+- **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Login is not working (P0)
-
-Issues Detail:
--   Issue 1:
-    -   **Description**: The agent is unable to log in to the application, receiving a 401 Unauthorized error. This prevents any form of testing or verification of the frontend changes.
-    -   **Attempted fixes**: The agent tried creating a test user directly in the database using synchronous Python scripts with both  and . These attempts failed.
-    -   **Root Cause Analysis**: The agent correctly diagnosed that the application uses an asynchronous database driver () while the user creation scripts were using a synchronous driver (). This mismatch causes the async login endpoint () to fail to find the user created by the sync script.
-    -   **Next debug checklist**:
-        1.  Do not use synchronous scripts () to create users.
-        2.  Create an asynchronous Python script that uses the  library to connect to the database and create a user with a properly hashed password.
-        3.  Alternatively, review the codebase for any existing user creation scripts or API endpoints designed for seeding the database.
-        4.  Once a user is created successfully via an async-compatible method, attempt to log in again.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker. Fixing it will unblock all frontend testing and allow for the verification of the Factor % feature that was just implemented.
-    -   Status: NOT STARTED (Debugging was interrupted)
-    -   Is recurring issue? N
-    -   Should Test frontend/backend/both after fix? Frontend
-    -   Blocked on other issue: None
+-   **Issue 1: Blank Page on Cost Estimate Assignment (P0)**
+    *   **Description:** The original bug from the handoff was a blank page when assigning a brand new, unassigned estimate. The work done in this session focused on fixing data corruption for *already existing* estimates. This original bug may still be present.
+    - **Status:** NOT STARTED
+-   **Issue 2:  fails to save for some modules (P1)**
+    *   **Description:** A recurring issue from the previous handoff that was not addressed. The  field reverts to its original value after saving in modules like Invoices and Estimates.
+    - **Status:** NOT STARTED
+-   **Issue 3: Estimate PDF Layout Bug (P1)**
+    *   **Description:** A recurring issue from the previous handoff. On the generic Estimates page, generating a PDF can cause the totals section to break onto a new page incorrectly.
+    *   **Status:** NOT STARTED
+    *   **Is recurring issue?** Y
+-   **Issue 4: Project list appears empty (P2)**
+    *   **Description:** A UX issue from the handoff where the year filter defaults to a year with no projects, confusing the user. Not addressed.
+    *   **Status:** NOT STARTED
 
 **In progress Task List**:
-There are no tasks in progress. The implementation is done but is blocked by the issue above.
+-   **Task 1: Guide User Through Production Deployment and Repair (P0)**
+    *   **Where to resume:** The user is experiencing critical bugs in production that are already fixed in the preview environment. The next agent's first and most important task is to guide the user to **DEPLOY** the application.
+    *   **What will be achieved with this?** This will push all the recent bug fixes to the user's live environment.
+    *   **Status:** BLOCKED (on user action)
+    *   **Next step:** After the user confirms deployment, instruct them to run the repair script from their browser's developer console: 
+-   **Task 2: Verify Convertir a Estimado Logic (P1)**
+    *   **Where to resume:** The user reported that the percentage bug also affects the Convert to Estimate feature. The agent fixed the PDF generation but not this conversion process. The agent needs to investigate the backend endpoint responsible for this conversion and ensure it also respects the  flags.
+    *   **What will be achieved with this?** This will ensure data integrity when a cost estimate is converted into a project estimate.
+    *   **Status:** NOT STARTED
+    *   **Should Test backend/both after fix?** Backend
 
 **Upcoming and Future Tasks**
--   **Task 1**: (P0) Verify the Factor % feature implementation.
-    -   **Description**: After resolving the login issue, navigate to the cost estimation page for a project. For each tab (Mano de Obra, Subcontratistas, etc.), add values to a row, enter a percentage in the Factor % field, and confirm that the Total column updates correctly according to the specified calculation logic.
-    -   **File/Method references**:
-        -    (All  files)
-        -   
-    -   **Status**: NOT STARTED
-    -   **Phase**: Testing
+- **Upcoming Tasks:**
+    - **(P0) CRITICAL Refactor :** This file has grown to over 17,200 lines and is a severe stability risk. It must be broken down into a proper project structure (e.g., , , ).
+    - **(P1) CRITICAL Refactor :** This file grew from ~900 to over 1,100 lines in this session and now contains very complex logic. It needs to be broken into smaller components.
+    - **(P1) CRITICAL Refactor :** Over 3,200 lines.
+    - **(P1) CRITICAL Refactor :** Almost 5,000 lines.
+- **Future Tasks:**
+    - **(P1) Finish Bulk Invoice Sending:** Implement the backend endpoint .
+    - **(P2) Complete Time Clock Self-Edit Restriction:** Update UI in  and .
+    - **(P2) Full Implementation of PM Estimator Role:** Requires comprehensive testing.
+    - **(P2) Feature: Calendar View**
+    - **(P2) Feature: User Activity Log**
+    - **(P2) Feature: KPI Dashboard**
 
 **Completed work in this session**
--   **Backend Model Updates**: Added a  field to , , , , , and  models in .
--   **Frontend Logic Updates**: Modified the  functions and the main  function in  to incorporate the factor calculation.
--   **Frontend UI Updates**: Added the Factor % input column to the tables in the following files:
-    -   
-    -   
-    -   
-    -   
-    -   
-    -   
+- **Feature:** Added sponsor filtering and updated PDF/Excel exports for the Purchase Order report.
+- **Bug Fix:** Fixed a PDF generation crash () in the PO report.
+- **Bug Fix:** Ensured Consumed Hours in  updates in real-time when time entries are deleted.
+- **Bug Fix (CRITICAL):** Resolved the lost cost estimates by creating a UI section for estimates without a sponsor.
+- **Feature:** Enhanced the cost estimate assignment dialog to allow moving estimates between companies.
+- **Bug Fix (CRITICAL):** Fixed the root cause of data corruption ( bug) by adding a backend normalization helper () to handle legacy data fields.
+- **Bug Fix (CRITICAL):** Corrected the  URL error by standardizing ID usage () across frontend components.
+- **Tooling:** Created and debugged a  endpoint to fix corrupted data in production.
+- **Bug Fix:** Corrected the cost estimate PDF calculation logic to exclude disabled percentages.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+-   All pending issues from the previous handoff ( bug, PDF layout bug) remain unfixed.
 
 **Known issue recurrence from previous fork**
-None.
+- ** Technical Debt:** The file grew from ~17k lines to over 17.2k lines. This is a critical stability and maintenance risk that is getting worse.
+- **Large Frontend Components:**  grew from ~900 to over 1100 lines and is now another component in critical need of refactoring, alongside  and .
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI (Python), asynchronous programming (/).
--   **Frontend**: Vue.js, TypeScript.
--   **Database**: MongoDB, accessed asynchronously via the  library.
--   **Architecture**: A decoupled frontend/backend architecture, containerized with Docker.
+- **Backend Data Normalization:** The most critical concept was creating a  helper function in . This function programmatically checks for legacy field names (e.g., , ) in data retrieved from MongoDB and maps them to the new field names (, ) that the Pydantic models expect. This prevents data loss during serialization and was key to fixing the  bug.
+- **One-Time Data Migration/Repair:** A new endpoint () was created to apply the normalization logic to all existing documents in the database, acting as a data migration script to fix corrupted production data.
+- **Frontend ID Standardization:** A persistent bug causing  URLs was traced to inconsistent use of  and  in React components. The fix involved systematically updating all navigation links and component keys to prefer  with a fallback to .
 
 **key DB schema**
--   : { : String, : String, ... } - Used for authentication.
--   : Contains project details, including cost estimation which is a nested structure containing arrays of items (labor, materials, etc.) corresponding to the Pydantic models.
+-   **cost_estimates:** No schema change was made, but the session's work was defined by a data inconsistency problem within this collection. Some documents used fields like , , , while others used , , . The backend now normalizes this on read. The , , etc. boolean flags are now correctly used in backend calculations.
 
 **All files of reference**
-*   : Updated to add the  field to all cost item sub-models.
-*   : Updated to implement the new calculation logic involving the factor.
-*   : Updated to add the Factor % UI column.
-*   : Updated to add the Factor % UI column.
-*   : Updated to add the Factor % UI column.
-*   : Updated to add the Factor % UI column.
-*   : Updated to add the Factor % UI column.
-*   : Updated to add the Factor % UI column.
-*   : Investigated for debugging the login issue.
-*   : Inspected to understand the async nature of the DB connection.
+-   **Critically Modified / High-Risk:**
+    -   
+    -   
+-   **Modified:**
+    -   
+    -   
+    -   
+    -   
+
+**Areas that need refactoring**:
+-   ** (URGENT / CRITICAL):** Top priority. The application's stability is at severe risk.
+-   ** (CRITICAL):** At ~5000 lines.
+-   ** (CRITICAL):** At ~3200 lines.
+-   ** (HIGH):** Now over 1100 lines with complex, multi-view logic.
+
+**key api endpoints**
+-   **New:**
+    -   : An admin-only endpoint to run a one-time data migration, normalizing field names for all cost estimates in the DB.
+-   **Modified:**
+    -   , : Now use the  helper to return consistent data to the frontend.
+    -   : Now uses the normalization helper to prevent data loss upon assignment.
+    -   : Logic was heavily modified to conditionally calculate and include percentages based on the  boolean flags.
 
 **Critical Info for New Agent**
-The most critical task is to resolve the login blocker. The previous agent correctly identified that using synchronous scripts (like ) to insert a user into the database will not work with the application's asynchronous -based user lookup. You must create a test user using an async-compatible method before you can proceed to test the newly implemented Factor % feature. The user interrupted the debugging process, but this issue MUST be solved to verify the work.
+-   **Production Deployment is the Blocker:** The user's most critical reported bugs (data loss,  URLs) are **already fixed in the preview environment**. Your first action must be to guide the user to **DEPLOY** these changes to their production environment. Do not attempt to re-debug these issues.
+-   **Post-Deployment Repair Script:** After the user confirms the deployment is complete, they **MUST** be instructed to run the repair script from their browser's developer console. This is a critical step to fix the already-corrupted data in their production database. Provide them with this command: 
+-   **Technical Debt is a Blocker:** The monolithic  and several huge frontend components are making development slow and risky. You must strongly advise the user to prioritize refactoring these files to ensure the application's future stability and maintainability.
 
 **documents and test reports created in this job**
-None.
+-    (updated multiple times)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.   (just implement): User instructed the agent to stop debugging and finalize the implementation.
-2.  : User provided detailed calculation logic for the new factor across all tabs. (Completed in code).
-3.  : User introduced the main feature request: add a new calculation field to all cost estimation tabs. (Completed in code).
-4.  : User's initial request to change cost estimates. (Completed in code).
+1.  **PENDING:** User provided a screenshot showing the percentage calculation bug on a Cost Estimate PDF.
+2.  **COMPLETED:** User provided a screenshot showing the  ID in the URL for cost estimates in production.
+3.  **COMPLETED:** User provided a screenshot showing the  endpoint failing with a 500 error in production.
+4.  **COMPLETED:** User reported that assigned estimates were still showing Error al cargar datos in production.
+5.  **PENDING:** User was asked if they had deployed the changes to production or tried a hard refresh.
+6.  **COMPLETED:** User reported that in production, when opening an estimate, everything shows as /bin/bash.00 except the total.
+7.  **COMPLETED:** User confirmed the lost estimate is now visible but reported a new Error al cargar datos message.
+8.  **COMPLETED:** User asked for the ability to move an estimate from one company to another.
+9.  **COMPLETED:** User described the lost estimate problem in detail.
+10. **COMPLETED:** User reported that consumed hours were not updating after deleting time entries.
 
 **Project Health Check:**
--   **Broken**: Login functionality. This blocks all UI testing.
--   **Mocked**: None.
+-   **Broken (In Production):** The cost estimate module is currently non-functional in the user's production environment due to the data corruption and  ID bugs. These issues are resolved in the preview code but not yet deployed.
+-   **High Tech Debt:**
+    -   **CRITICAL:**  (>17.2k lines)
+    -   **CRITICAL:**  (~5k lines)
+    -   **CRITICAL:**  (>3.2k lines)
+    -   **HIGH:**  (>1.1k lines)
 
 **3rd Party Integrations**
--   None identified beyond the core technology stack.
+-   
+-   
+-    / 
+-   
+-   
+-   
+-   
 
 **Testing status**
--   Testing agent used after significant changes: NO
--   Troubleshoot agent used after agent stuck in loop: N/A
--   Test files created: []
--   Known regressions: Login is broken, but it's unclear if this is a regression or a setup/environment issue.
+-   **Testing agent used after significant changes:** NO
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None.
+-   **Known regressions:** None identified in this session.
 
 **Credentials to test flow:**
-No working credentials exist. A new user must be created using an async-compatible method.
+-   **Super Admin:**  / 
+-   **Designer:**  / 
+-   **Supervisor:**  / 
 
 **What agent forgot to execute**
-The agent did not forget but was interrupted by the user while debugging a critical login issue. The task of **testing and verifying** the Factor % feature remains incomplete because of this unresolved blocker.</analysis>
+- The agent did not address the high-priority pending issues from the previous handoff:
+    - Fixing the  persistence bug across all modules.
+    - Fixing the recurring PDF layout bug for generic estimates.
+- After fixing the PDF percentage calculation, the agent did not check the related Convert to Estimate functionality, which the user also mentioned was affected.</analysis>

@@ -33,6 +33,7 @@ import {
 } from '../utils/pdfGenerator';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { createPDFDocument } from '../utils/pdfGenerator';
 import autoTable from 'jspdf-autotable';
 import NomenclatureSelector, { useNomenclature } from '../components/NomenclatureSelector';
 import RichTextEditor from '../components/ui/RichTextEditor';
@@ -307,7 +308,7 @@ const PurchaseOrders = () => {
       }
       
       // Generate PDF
-      const doc = new jsPDF();
+      const doc = await createPDFDocument();
       const company = await fetchCompanyInfo();
       
       // Header: Empresa arriba izquierda, Doc info derecha
@@ -370,7 +371,7 @@ const PurchaseOrders = () => {
   };
 
   const exportPDF = async (po) => {
-    const doc = new jsPDF();
+    const doc = await createPDFDocument();
     const company = await fetchCompanyInfo();
     
     // Header: Empresa arriba izquierda, Doc info derecha

@@ -534,7 +534,7 @@ const ClockHistory = () => {
                                 <div className="flex items-center gap-2 text-sm">
                                   <Clock className="w-4 h-4 text-green-600" />
                                   <span className="font-medium">Entrada:</span>
-                                  <span className="font-mono">{moment(entry.clock_in).format('HH:mm:ss')}</span>
+                                  <span className="font-mono">{moment(entry.clock_in).format('HH:mm')}</span>
                                 </div>
                                 {(entry.clock_in_address || (entry.clock_in_latitude !== 0 && entry.clock_in_latitude !== null && entry.clock_in_longitude !== 0 && entry.clock_in_longitude !== null)) && (
                                   <div className="flex items-center gap-2 text-xs text-slate-600 ml-6">
@@ -563,7 +563,7 @@ const ClockHistory = () => {
                                   <div className="flex items-center gap-2 text-sm">
                                     <Clock className="w-4 h-4 text-red-600" />
                                     <span className="font-medium">Salida:</span>
-                                    <span className="font-mono">{moment(entry.clock_out).format('HH:mm:ss')}</span>
+                                    <span className="font-mono">{moment(entry.clock_out).format('HH:mm')}</span>
                                   </div>
                                   {(entry.clock_out_address || (entry.clock_out_latitude !== 0 && entry.clock_out_latitude !== null && entry.clock_out_longitude !== 0 && entry.clock_out_longitude !== null)) && (
                                     <div className="flex items-center gap-2 text-xs text-slate-600 ml-6">

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import moment from 'moment';
 import 'moment/locale/es';
 import jsPDF from 'jspdf';
+import { createPDFDocument } from '../utils/pdfGenerator';
 import autoTable from 'jspdf-autotable';
 import { fetchCompanyInfo, addReportHeader, addReportTable, addFooter } from '../utils/pdfGenerator';
 
@@ -66,7 +67,7 @@ const AuditLog = () => {
   });
 
   const exportPDF = async () => {
-    const doc = new jsPDF();
+    const doc = await createPDFDocument();
     const company = await fetchCompanyInfo();
     
     // Build subtitle with filters

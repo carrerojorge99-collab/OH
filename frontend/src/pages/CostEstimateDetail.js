@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Checkbox } from '../components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ArrowLeft, Plus, Trash2, Save, Download, FileSpreadsheet, FileText, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
@@ -24,6 +25,8 @@ const CostEstimateDetail = () => {
   const [estimate, setEstimate] = useState(null);
   const [laborRates, setLaborRates] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [newSupplierName, setNewSupplierName] = useState('');
   
   // Get user role for permission checks
   const { user } = useAuth();
@@ -67,25 +70,28 @@ const CostEstimateDetail = () => {
   const loadData = async () => {
     const ts = Date.now(); // Prevent cache
     try {
-      const [estimateRes, ratesRes, projectsRes, companyRes] = await Promise.all([
+      const [estimateRes, ratesRes, projectsRes, companyRes, suppliersRes] = await Promise.all([
         estimateId !== 'new' 
           ? api.get(`/cost-estimates/${estimateId}?_t=${ts}`, { withCredentials: true })
           : Promise.resolve({ data: null }),
         api.get(`/labor-rates?_t=${ts}`, { withCredentials: true }),
         api.get(`/projects?_t=${ts}`, { withCredentials: true }),
-        api.get(`/company?_t=${ts}`, { withCredentials: true })
+        api.get(`/company?_t=${ts}`, { withCredentials: true }),
+        api.get(`/hardware-stores?_t=${ts}`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
 
       setLaborRates(ratesRes.data);
       setProjects(projectsRes.data);
+      setSuppliers(suppliersRes.data || []);
 
       if (estimateRes.data) {
         setEstimate(estimateRes.data);
-        setLaborCosts(estimateRes.data.labor_costs || []);
-        setSubcontractors(estimateRes.data.subcontractors || []);
-        setMaterials(estimateRes.data.materials || []);
-        setEquipment(estimateRes.data.equipment || []);
-        setTransportation(estimateRes.data.transportation || []);
+        // Support both old and new field names for backwards compatibility
+        setLaborCosts(estimateRes.data.labor_costs || estimateRes.data.labor || []);
+        setSubcontractors(estimateRes.data.subcontractors || estimateRes.data.subcontractor_costs || []);
+        setMaterials(estimateRes.data.materials || estimateRes.data.material_costs || []);
+        setEquipment(estimateRes.data.equipment || estimateRes.data.equipment_costs || []);
+        setTransportation(estimateRes.data.transportation || estimateRes.data.transportation_costs || []);
         setGeneralConditions(estimateRes.data.general_conditions || []);
         setProfitPercentage(estimateRes.data.profit_percentage || 0);
         setOverheadPercentage(estimateRes.data.overhead_percentage || 0);
@@ -131,6 +137,7 @@ const CostEstimateDetail = () => {
         estimate_name: estimate.estimate_name || 'Nueva Estimación',
         status: estimate?.status || 'en_proceso',
         prepared_by: estimate?.prepared_by || null,  // Incluir el preparador
+        document_date: estimate?.document_date || moment().format('YYYY-MM-DD'),  // Fecha del documento
         labor_costs: laborCosts,
         subcontractors,
         materials,
@@ -239,7 +246,8 @@ const CostEstimateDetail = () => {
       description: '',
       cost: 0,
       labor_cost: 0,
-      factor: 0
+      factor: 0,
+      income_retention_percentage: 0
     }]);
   };
 
@@ -265,6 +273,7 @@ const CostEstimateDetail = () => {
   // Material functions
   const addMaterialRow = () => {
     setMaterials([...materials, {
+      supplier: '',
       description: '',
       quantity: 0,
       unit_cost: 0,
@@ -291,6 +300,19 @@ const CostEstimateDetail = () => {
 
   const deleteMaterialRow = (index) => {
     setMaterials(materials.filter((_, i) => i !== index));
+  };
+
+  const handleAddSupplier = async () => {
+    if (!newSupplierName.trim()) return;
+    try {
+      await api.post('/hardware-stores', { name: newSupplierName.trim() }, { withCredentials: true });
+      toast.success('Suplidor agregado');
+      setNewSupplierName('');
+      const res = await api.get('/hardware-stores', { withCredentials: true });
+      setSuppliers(res.data || []);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al agregar suplidor');
+    }
   };
 
   // Equipment functions
@@ -428,26 +450,52 @@ const CostEstimateDetail = () => {
     const round2 = (num) => Math.round(num * 100) / 100;
     
     const totalLabor = round2(laborCosts.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0));
+    
     // Calculate subcontractors with factor applied to cost
-    const totalSubcontractors = round2(subcontractors.reduce((sum, item) => {
+    // Then distribute: 70% to Materials, 30% to Labor
+    const totalSubcontractorsRaw = round2(subcontractors.reduce((sum, item) => {
       const baseCost = Number(item.cost) || 0;
       const factor = Number(item.factor) || 0;
       return sum + (baseCost * (1 + factor / 100));
     }, 0));
-    const totalSubcontractorLabor = round2(subcontractors.reduce((sum, item) => sum + (Number(item.labor_cost) || 0), 0));
-    const totalMaterials = round2(materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
+    
+    // Calculate total income retention from subcontractors
+    const totalIncomeRetention = round2(subcontractors.reduce((sum, item) => {
+      const baseCost = Number(item.cost) || 0;
+      const factor = Number(item.factor) || 0;
+      const adjustedCost = baseCost * (1 + factor / 100);
+      const retentionPct = Number(item.income_retention_percentage) || 0;
+      return sum + (adjustedCost * retentionPct / 100);
+    }, 0));
+    
+    // Subcontractor distribution: 70% Materials, 30% Labor
+    const subcontractorToMaterials = round2(totalSubcontractorsRaw * 0.70);
+    const subcontractorToLabor = round2(totalSubcontractorsRaw * 0.30);
+    
+    // Keep totalSubcontractorLabor for B2B calculation (now uses 30% of subcontractor cost)
+    const totalSubcontractorLabor = subcontractorToLabor;
+    
+    // Materials = direct materials + 70% of subcontractors
+    const directMaterials = round2(materials.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
+    const totalMaterials = round2(directMaterials + subcontractorToMaterials);
+    
+    // Total Labor = direct labor + 30% of subcontractors
+    const totalLaborWithSubcontractors = round2(totalLabor + subcontractorToLabor);
+    
     const totalEquipment = round2(equipment.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
     const totalTransportation = round2(transportation.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
     const totalGC = round2(generalConditions.reduce((sum, item) => sum + (Number(item.total) || 0), 0));
     
-    // Calculate IVU (11.5%) on materials only
+    // Calculate IVU (11.5%) on materials only (including subcontractor portion)
     const ivuPercentage = 11.5;
     const ivuAmount = round2(totalMaterials * (ivuPercentage / 100));
     
-    const subtotal = round2(totalLabor + totalSubcontractors + totalMaterials + 
+    // Subtotal now uses totalLaborWithSubcontractors and totalMaterials (which includes subcontractor portions)
+    // No need to add totalSubcontractors separately since it's already distributed
+    const subtotal = round2(totalLaborWithSubcontractors + totalMaterials + 
                      totalEquipment + totalTransportation + totalGC);
     
-    // B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
+    // B2B Subcontractor - applies only to subcontractor's LABOR COST (30% of subcontractor cost)
     const b2bSubcontractorAmount = includeB2bSubcontractor 
       ? round2(totalSubcontractorLabor * (Number(b2bSubcontractorPercentage) / 100))
       : 0;
@@ -462,8 +510,8 @@ const CostEstimateDetail = () => {
     const afterOverhead = round2(afterProfit * overheadMultiplier); // w
     const overheadAmount = includeOverhead ? round2(afterOverhead - afterProfit) : 0;
     
-    // Step 3: Mano de Obra x CFSE% = cfseAmount (only the increment, not the total)
-    const cfseAmount = includeCfse ? round2(totalLabor * (Number(cfsePercentage) / 100)) : 0;
+    // Step 3: Mano de Obra x CFSE% = cfseAmount (uses total labor including 30% from subcontractors)
+    const cfseAmount = includeCfse ? round2(totalLaborWithSubcontractors * (Number(cfsePercentage) / 100)) : 0;
     
     // Step 4: w + cfseAmount = qq (add CFSE increment to overhead result)
     const combinedTotal = round2(afterOverhead + cfseAmount); // qq
@@ -488,8 +536,9 @@ const CostEstimateDetail = () => {
     const afterB2bOhsms = round2(afterContingency + b2bOhsmsAmount);
     
     // B2B OHSMS Labor - FORMULA: Labor (from orange area breakdown) x 4% (fixed)
-    const totalMaterialEquipment = round2(totalSubcontractors + totalMaterials + totalEquipment + totalTransportation + totalGC);
-    const laborRatio = subtotal > 0 ? totalLabor / subtotal : 0;
+    // totalMaterialEquipment now includes 70% of subcontractors in materials
+    const totalMaterialEquipment = round2(totalMaterials + totalEquipment + totalTransportation + totalGC);
+    const laborRatio = subtotal > 0 ? totalLaborWithSubcontractors / subtotal : 0;
     const matEquipRatio = subtotal > 0 ? totalMaterialEquipment / subtotal : 0;
     
     // Labor del Price Breakdown = proporción labor del cascaded total (CFSE ya está incluido en afterB2bOhsms)
@@ -500,8 +549,8 @@ const CostEstimateDetail = () => {
       ? round2(laborForPriceBreakdown * (Number(b2bOhsmsLaborPercentage) / 100))
       : 0;
     
-    // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
-    const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount);
+    // Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor) + Income Retention
+    const grandTotal = round2(afterB2bOhsms + b2bSubcontractorAmount + b2bOhsmsLaborAmount + totalIncomeRetention);
     
     // Labor with all percentages = Labor proporción del cascade + B2B OHSMS Labor
     const laborWithPercentages = round2(laborForPriceBreakdown + b2bOhsmsLaborAmount);
@@ -519,13 +568,19 @@ const CostEstimateDetail = () => {
       contingencyAmount + 
       b2bOhsmsAmount + 
       b2bOhsmsLaborAmount + 
-      b2bSubcontractorAmount
+      b2bSubcontractorAmount +
+      totalIncomeRetention
     );
 
     return {
       totalLabor,
-      totalSubcontractors,
+      totalLaborWithSubcontractors,
+      totalSubcontractorsRaw,
+      subcontractorToMaterials,
+      subcontractorToLabor,
       totalSubcontractorLabor,
+      totalIncomeRetention,
+      directMaterials,
       totalMaterials,
       totalEquipment,
       totalTransportation,
@@ -593,7 +648,7 @@ const CostEstimateDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            {estimateId !== 'new' && (
+            {estimateId !== 'new' && showMoney && (
               <>
                 <Button
                   variant="outline"
@@ -634,7 +689,7 @@ const CostEstimateDetail = () => {
         {/* Basic Info - Always show for editing status and name */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <Label>Nombre de la Estimación</Label>
                 <Input
@@ -655,6 +710,14 @@ const CostEstimateDetail = () => {
                   placeholder="Escribe el nombre del proyecto"
                 />
                 <p className="text-xs text-slate-500 mt-1">Campo de texto libre</p>
+              </div>
+              <div>
+                <Label>Fecha del Documento</Label>
+                <Input
+                  type="date"
+                  value={estimate?.document_date || moment().format('YYYY-MM-DD')}
+                  onChange={(e) => setEstimate({ ...estimate, document_date: e.target.value })}
+                />
               </div>
               <div>
                 <Label>
@@ -687,15 +750,15 @@ const CostEstimateDetail = () => {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue="summary" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 text-sm">
-            <TabsTrigger value="summary">Resumen</TabsTrigger>
-            <TabsTrigger value="labor">Mano de Obra</TabsTrigger>
-            <TabsTrigger value="subcontractors">Subcontratistas</TabsTrigger>
+        <Tabs defaultValue={showMoney ? "summary" : "materials"} className="space-y-6">
+          <TabsList className={`grid w-full ${showMoney ? 'grid-cols-7' : 'grid-cols-1 max-w-[200px]'} text-sm`}>
+            {showMoney && <TabsTrigger value="summary">Resumen</TabsTrigger>}
+            {showMoney && <TabsTrigger value="labor">Mano de Obra</TabsTrigger>}
+            {showMoney && <TabsTrigger value="subcontractors">Subcontratistas</TabsTrigger>}
             <TabsTrigger value="materials">Materiales</TabsTrigger>
-            <TabsTrigger value="equipment">Equipos</TabsTrigger>
-            <TabsTrigger value="transportation">Transporte</TabsTrigger>
-            <TabsTrigger value="general">Cond. Generales</TabsTrigger>
+            {showMoney && <TabsTrigger value="equipment">Equipos</TabsTrigger>}
+            {showMoney && <TabsTrigger value="transportation">Transporte</TabsTrigger>}
+            {showMoney && <TabsTrigger value="general">Cond. Generales</TabsTrigger>}
           </TabsList>
 
           {/* Summary Tab */}
@@ -730,16 +793,25 @@ const CostEstimateDetail = () => {
                       <p className="font-medium">Subcontratistas</p>
                     </div>
                     <div className="text-right text-blue-600 font-semibold">
-                      ${totals.totalSubcontractors.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      ${totals.totalSubcontractorsRaw.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 p-3 border-b">
                     <div>
-                      <p className="font-medium">Materiales (incluye IVU 11.5%)</p>
+                      <p className="font-medium">Total Materiales (incluye IVU 11.5%)</p>
                     </div>
                     <div className="text-right text-blue-600 font-semibold">
                       ${(totals.totalMaterials + totals.ivuAmount).toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 p-3 border-b">
+                    <div>
+                      <p className="font-medium">Total Labor</p>
+                    </div>
+                    <div className="text-right text-blue-600 font-semibold">
+                      ${totals.totalLaborWithSubcontractors.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
@@ -989,6 +1061,16 @@ const CostEstimateDetail = () => {
                     </div>
                   </div>
 
+                  {/* Income Retention */}
+                  {totals.totalIncomeRetention > 0 && (
+                    <div className="grid grid-cols-2 gap-4 p-3 bg-orange-50 rounded-lg mt-2 border border-orange-200">
+                      <div className="text-sm text-orange-800 font-medium">Retención de Ingresos (Subcontratistas)</div>
+                      <div className="text-right font-semibold text-orange-600">
+                        +${totals.totalIncomeRetention.toLocaleString('es-PR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Total of Percentage Amounts */}
                   <div className="grid grid-cols-2 gap-4 p-4 bg-purple-50 rounded-lg font-bold text-lg mt-4 border border-purple-200">
                     <div className="text-purple-800">TOTAL PORCENTAJES</div>
@@ -1178,7 +1260,10 @@ const CostEstimateDetail = () => {
                         <th className="p-2 text-right text-xs">Costo Base</th>
                         <th className="p-2 text-right text-xs bg-yellow-50">Factor %</th>
                         <th className="p-2 text-right text-xs">Total Ajustado</th>
-                        <th className="p-2 text-right text-xs bg-amber-50">Mano de Obra (B2B)</th>
+                        <th className="p-2 text-right text-xs bg-orange-50">Retención %</th>
+                        <th className="p-2 text-right text-xs bg-orange-50">Monto Retención</th>
+                        <th className="p-2 text-right text-xs bg-green-50">70% Materiales</th>
+                        <th className="p-2 text-right text-xs bg-blue-50">30% Labor</th>
                         <th className="p-2"></th>
                       </tr>
                     </thead>
@@ -1186,6 +1271,10 @@ const CostEstimateDetail = () => {
                       {subcontractors.map((item, idx) => {
                         const factor = Number(item.factor) || 0;
                         const adjustedCost = (Number(item.cost) || 0) * (1 + factor / 100);
+                        const retentionPct = Number(item.income_retention_percentage) || 0;
+                        const retentionAmount = adjustedCost * retentionPct / 100;
+                        const toMaterials = adjustedCost * 0.70;
+                        const toLabor = adjustedCost * 0.30;
                         return (
                         <tr key={idx} className="border-b">
                           <td className="p-2">
@@ -1225,18 +1314,28 @@ const CostEstimateDetail = () => {
                               placeholder="0"
                             />
                           </td>
-                          <td className="p-2 text-right text-sm text-blue-600 font-semibold">
+                          <td className="p-2 text-right text-sm text-amber-600 font-semibold">
                             ${adjustedCost.toFixed(2)}
                           </td>
-                          <td className="p-2 bg-amber-50">
+                          <td className="p-2 bg-orange-50">
                             <Input
                               type="number"
-                              step="0.01"
-                              className="text-right w-28 border-amber-300"
-                              value={item.labor_cost || 0}
-                              onChange={(e) => updateSubcontractorRow(idx, 'labor_cost', parseFloat(e.target.value) || 0)}
-                              placeholder="Mano de obra"
+                              step="0.1"
+                              className="text-right w-20 border-orange-300"
+                              value={item.income_retention_percentage || 0}
+                              onChange={(e) => updateSubcontractorRow(idx, 'income_retention_percentage', parseFloat(e.target.value) || 0)}
+                              placeholder="0"
+                              data-testid={`sub-retention-${idx}`}
                             />
+                          </td>
+                          <td className="p-2 text-right text-sm text-orange-600 font-medium bg-orange-50">
+                            ${retentionAmount.toFixed(2)}
+                          </td>
+                          <td className="p-2 text-right text-sm text-green-600 font-medium bg-green-50">
+                            ${toMaterials.toFixed(2)}
+                          </td>
+                          <td className="p-2 text-right text-sm text-blue-600 font-medium bg-blue-50">
+                            ${toLabor.toFixed(2)}
                           </td>
                           <td className="p-2">
                             <Button
@@ -1251,8 +1350,12 @@ const CostEstimateDetail = () => {
                       )})}
                     </tbody>
                   </table>
-                  <p className="text-xs text-amber-600 mt-2">* El B2B Subcontratista se calcula sobre la columna Mano de Obra</p>
-                  <p className="text-xs text-yellow-600">* El Factor % se aplica al Costo Base para obtener el Total Ajustado</p>
+                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-600 font-medium">Distribución Automática de Costos:</p>
+                    <p className="text-xs text-green-600">• 70% del costo del subcontratista se suma a Materiales</p>
+                    <p className="text-xs text-blue-600">• 30% del costo del subcontratista se suma a Labor/Mano de Obra</p>
+                    <p className="text-xs text-orange-600">• La retención de ingresos se suma al total general del proyecto</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1271,10 +1374,23 @@ const CostEstimateDetail = () => {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200 mb-4">
+                  <span className="text-sm text-amber-700">Agregar Suplidor:</span>
+                  <Input
+                    value={newSupplierName}
+                    onChange={(e) => setNewSupplierName(e.target.value)}
+                    placeholder="Nombre del suplidor"
+                    className="h-8 w-48"
+                  />
+                  <Button size="sm" variant="outline" onClick={handleAddSupplier} disabled={!newSupplierName.trim()}>
+                    <Plus className="w-4 h-4 mr-1" /> Agregar
+                  </Button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b bg-slate-50">
+                        <th className="p-2 text-left text-xs">Suplidor</th>
                         <th className="p-2 text-left text-xs">Descripción</th>
                         <th className="p-2 text-right text-xs">Cantidad</th>
                         <th className="p-2 text-right text-xs">Costo Unitario</th>
@@ -1286,6 +1402,24 @@ const CostEstimateDetail = () => {
                     <tbody>
                       {materials.map((item, idx) => (
                         <tr key={idx} className="border-b">
+                          <td className="p-2">
+                            <Select
+                              value={item.supplier || 'none'}
+                              onValueChange={(v) => updateMaterialRow(idx, 'supplier', v === 'none' ? '' : v)}
+                            >
+                              <SelectTrigger className="w-36">
+                                <SelectValue placeholder="Suplidor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Sin Suplidor</SelectItem>
+                                {suppliers.map(s => (
+                                  <SelectItem key={s.store_id || s.name} value={s.name}>
+                                    {s.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
                           <td className="p-2">
                             <Input
                               value={item.description}

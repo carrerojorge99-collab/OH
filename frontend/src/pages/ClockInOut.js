@@ -220,7 +220,7 @@ const ClockInOut = () => {
               </div>
               <div className="text-right">
                 <div className="text-4xl font-mono font-bold text-blue-600">
-                  {moment.tz('America/Puerto_Rico').format('h:mm:ss a')}
+                  {moment.tz('America/Puerto_Rico').format('h:mm a')}
                 </div>
                 <div className="text-sm text-slate-600">
                   {moment.tz('America/Puerto_Rico').format('dddd, D [de] MMMM [de] YYYY')}
@@ -362,8 +362,8 @@ const ClockInOut = () => {
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-sm font-mono">
-                          {moment(punch.clock_in).format('HH:mm:ss')}
-                          {punch.clock_out && ` → ${moment(punch.clock_out).format('HH:mm:ss')}`}
+                          {moment(punch.clock_in).format('HH:mm')}
+                          {punch.clock_out && ` → ${moment(punch.clock_out).format('HH:mm')}`}
                         </td>
                         <td className="px-4 py-3 text-sm">{punch.project_name}</td>
                         <td className="px-4 py-3 text-sm font-mono text-right">

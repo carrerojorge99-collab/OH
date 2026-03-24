@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { fetchCompanyInfo, addReportHeader, addReportTable, addFooter } from './pdfGenerator';
+import { fetchCompanyInfo, addReportHeader, addReportTable, addFooter, createPDFDocument } from './pdfGenerator';
 
 // Export Timesheet to Excel
 export const exportTimesheetToExcel = (timesheetData, projectName) => {
@@ -48,7 +48,7 @@ export const exportTimesheetToExcel = (timesheetData, projectName) => {
 
 // Export Timesheet to PDF
 export const exportTimesheetToPDF = async (timesheetData, projectName) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   // Header with company info
@@ -146,7 +146,7 @@ export const exportLaborToExcel = (laborData, projectName) => {
 
 // Export Labor/Salaries to PDF
 export const exportLaborToPDF = async (laborData, projectName) => {
-  const doc = new jsPDF('landscape');
+  const doc = await createPDFDocument('landscape');
   const company = await fetchCompanyInfo();
   
   // Header with company info

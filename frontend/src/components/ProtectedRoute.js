@@ -8,10 +8,22 @@ const ROLE_ROUTES = {
   admin: ['*'], // Backward compatibility
   project_manager: [
     '/dashboard', '/clock', '/projects', '/calendar', '/reports', '/approvals', '/my-requests', '/my-profile',
-    '/estimados', '/estimates-legacy', '/cost-estimates', '/purchase-orders', '/invoices'
+    '/estimados', '/estimates-legacy', '/cost-estimates', '/purchase-orders', '/invoices', '/pre-projects'
   ],
   rrhh: [
-    '/dashboard', '/clock', '/hr', '/payroll', '/users', '/approvals', '/my-requests', '/my-profile'
+    '/dashboard', '/clock', '/hr', '/payroll', '/users', '/approvals', '/my-requests', '/my-profile',
+    '/projects', '/vendors', '/pre-projects', '/calendar', '/reports', '/estimados', '/cost-estimates',
+    '/purchase-orders', '/invoices', '/clients', '/receipts'
+  ],
+  designer: [
+    '/clock', '/my-profile', '/my-requests', '/pre-projects', '/vendors', '/projects', '/cost-estimates', '/cost-estimates-company'
+  ],
+  supervisor: [
+    '/dashboard', '/clock', '/my-profile', '/my-requests', '/pre-projects', '/projects',
+    '/calendar', '/weekly-plan', '/cost-estimates', '/cost-estimates-company', '/vendors'
+  ],
+  accountant: [
+    '/dashboard', '/clock', '/my-profile', '/accounting', '/invoices', '/reports'
   ],
   empleado: [
     '/clock', '/projects', '/my-requests', '/my-profile'

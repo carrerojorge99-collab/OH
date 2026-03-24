@@ -27,6 +27,7 @@ import {
   CreditCard, Building, Banknote, ExternalLink, Loader2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { createPDFDocument } from '../utils/pdfGenerator';
 import autoTable from 'jspdf-autotable';
 import { fetchCompanyInfo, addDocumentHeader, addPartySection } from '../utils/pdfGenerator';
 import { LOGO_BASE64 } from '../utils/logoData';
@@ -289,7 +290,7 @@ const PaymentReceipts = () => {
 
   // Generate PDF - Professional OHSMS format matching Estimate style
   const generateReceiptPdf = async (receipt) => {
-    const doc = new jsPDF();
+    const doc = await createPDFDocument();
     const pageWidth = doc.internal.pageSize.width;
     
     // Fetch company info

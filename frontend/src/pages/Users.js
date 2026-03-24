@@ -95,6 +95,10 @@ const Users = () => {
         return 'bg-green-100 text-green-700 border-green-200';
       case 'accountant':
         return 'bg-teal-100 text-teal-700 border-teal-200';
+      case 'pm_estimator':
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'supervisor':
+        return 'bg-cyan-100 text-cyan-700 border-cyan-200';
       case 'empleado':
         return 'bg-gray-100 text-gray-700 border-gray-200';
       case 'client':
@@ -116,6 +120,10 @@ const Users = () => {
         return 'RRHH';
       case 'accountant':
         return 'Contador';
+      case 'pm_estimator':
+        return 'PM Estimator';
+      case 'supervisor':
+        return 'Supervisor';
       case 'empleado':
         return 'Empleado';
       case 'client':
@@ -327,13 +335,16 @@ const Users = () => {
                           <SelectItem value="super_admin">Super Admin</SelectItem>
                           <SelectItem value="project_manager">Project Manager</SelectItem>
                           <SelectItem value="rrhh">RRHH</SelectItem>
+                          <SelectItem value="designer">Designer</SelectItem>
+                          <SelectItem value="supervisor">Supervisor</SelectItem>
                           <SelectItem value="accountant">Contador</SelectItem>
+                          <SelectItem value="pm_estimator">PM Estimator</SelectItem>
                           <SelectItem value="empleado">Empleado</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <p className="text-xs text-slate-500">
-                      PM: proyectos y aprobaciones | RRHH: empleados y nómina | Contador: contabilidad | Empleado: ponchar
+                      PM: proyectos | RRHH: empleados | Designer: pre-proyectos | Supervisor: proyectos, quality, plan semanal (sin $) | PM Estimator: estimados (sin $) | Empleado: ponchar
                     </p>
                   </div>
                 </div>
@@ -433,7 +444,10 @@ const Users = () => {
                           )}
                           <SelectItem value="project_manager">Project Manager</SelectItem>
                           <SelectItem value="rrhh">RRHH</SelectItem>
+                          <SelectItem value="designer">Designer</SelectItem>
+                          <SelectItem value="supervisor">Supervisor</SelectItem>
                           <SelectItem value="accountant">Contador</SelectItem>
+                          <SelectItem value="pm_estimator">PM Estimator</SelectItem>
                           <SelectItem value="empleado">Empleado</SelectItem>
                         </SelectContent>
                       </Select>

@@ -1,0 +1,63 @@
+{
+  "summary": "Invoice Duplicate Feature Testing - All features working correctly. Backend API tested with pytest (4/4 passed). Frontend UI tested with Playwright - duplicate button, toast notification, and list refresh all working.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "GET /api/invoices - Returns list of invoices",
+    "POST /api/invoices/{invoice_id}/duplicate - Creates new invoice with new ID and number",
+    "Duplicated invoice has status='draft'",
+    "Duplicated invoice has amount_paid=0",
+    "Duplicated invoice has balance_due=original.total",
+    "Duplicated invoice has created_at with current date",
+    "Duplicated invoice preserves items, client_name, total from original",
+    "POST /api/invoices/{non_existent_id}/duplicate - Returns 404",
+    "Duplicated invoice appears in invoice list after creation",
+    "UI: Duplicate button (Copy icon, green) visible on each invoice card",
+    "UI: Button has data-testid='duplicate-invoice-{id}'",
+    "UI: Button positioned between Edit (blue) and Delete (red)",
+    "UI: Clicking duplicate shows toast 'Factura X duplicada como #Y'",
+    "UI: Invoice list refreshes and shows new duplicated invoice"
+  ],
+  "features_verified": {
+    "duplicate_button_visibility": "WORKING - Green Copy icon button appears on each invoice",
+    "duplicate_creates_new_invoice": "WORKING - New invoice_id and invoice_number generated",
+    "duplicate_sets_draft_status": "WORKING - status='draft'",
+    "duplicate_resets_payment": "WORKING - amount_paid=0, balance_due=total",
+    "duplicate_preserves_data": "WORKING - items, client, amounts preserved",
+    "duplicate_sets_current_date": "WORKING - created_at is current date",
+    "toast_shows_new_number": "WORKING - Toast: 'Factura 023 duplicada como #024'"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_duplicate_invoice.py",
+    "/app/test_reports/pytest/pytest_duplicate_invoice.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_duplicate_invoice.py"
+  ],
+  "success_rate": {
+    "backend": "100% - 4/4 tests passed",
+    "frontend": "100% - All UI features working"
+  },
+  "test_credentials": {
+    "super_admin_email": "carrerojorge99@gmail.com",
+    "super_admin_password": "12345678"
+  },
+  "seed_data_creation": "Created duplicated invoices during testing (#024, #025 from originals)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Invoice duplicate feature fully tested and working. Backend endpoint POST /api/invoices/{invoice_id}/duplicate creates new invoice with auto-generated number. Frontend button with data-testid='duplicate-invoice-{id}' triggers handleDuplicateInvoice(). Toast notification confirms new invoice number.",
+  "code_verification": {
+    "backend_endpoint": "server.py line 9261-9321: POST /api/invoices/{invoice_id}/duplicate",
+    "frontend_handler": "Invoices.js line 861-872: handleDuplicateInvoice()",
+    "frontend_button": "Invoices.js line 2152-2161: Button with Copy icon, green color, data-testid"
+  }
+}

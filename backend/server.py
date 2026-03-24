@@ -28,6 +28,409 @@ from accounting_routes import accounting_router
 # Import Cloudinary router
 from cloudinary_routes import cloudinary_router
 
+# Import Cloudinary for direct uploads
+import cloudinary
+import cloudinary.uploader
+import time
+
+# ==================== AUTO-SYNC ACCOUNTING HELPERS ====================
+
+async def auto_sync_invoice_to_accounting(db, invoice_doc: dict, user_id: str):
+    """Auto-sync invoice to accounting when created/approved"""
+    try:
+        invoice_id = invoice_doc.get("invoice_id") or invoice_doc.get("id")
+        if not invoice_id:
+            return {"success": False, "message": "No invoice_id"}
+        
+        # Check if already synced
+        existing = await db.journal_entries.find_one({"source_id": invoice_id}, {"_id": 0})
+        if existing:
+            return {"success": True, "message": "Already synced", "entry_id": existing.get("entry_id")}
+        
+        # Get account IDs
+        ar_account = await db.chart_of_accounts.find_one({"account_number": "1100"}, {"_id": 0})
+        revenue_account = await db.chart_of_accounts.find_one({"account_number": "4100"}, {"_id": 0})
+        ivu_account = await db.chart_of_accounts.find_one({"account_number": "2300"}, {"_id": 0})
+        
+        if not ar_account or not revenue_account:
+            return {"success": False, "message": "Cuentas contables no configuradas"}
+        
+        total = invoice_doc.get("total", 0) or invoice_doc.get("grand_total", 0) or 0
+        tax_amount = invoice_doc.get("tax_amount", 0) or invoice_doc.get("ivu", 0) or 0
+        subtotal = total - tax_amount
+        client_name = invoice_doc.get("client_name", "") or "Cliente"
+        
+        # Build journal entry
+        lines = [
+            {
+                "line_id": str(uuid4()),
+                "account_id": ar_account["account_id"],
+                "account_number": "1100",
+                "account_name": ar_account["account_name"],
+                "description": f"Factura - {client_name}",
+                "debit": round(total, 2),
+                "credit": 0
+            },
+            {
+                "line_id": str(uuid4()),
+                "account_id": revenue_account["account_id"],
+                "account_number": "4100",
+                "account_name": revenue_account["account_name"],
+                "description": f"Ingresos - {client_name}",
+                "debit": 0,
+                "credit": round(subtotal, 2)
+            }
+        ]
+        
+        if tax_amount > 0 and ivu_account:
+            lines.append({
+                "line_id": str(uuid4()),
+                "account_id": ivu_account["account_id"],
+                "account_number": "2300",
+                "account_name": ivu_account["account_name"],
+                "description": "IVU colectado",
+                "debit": 0,
+                "credit": round(tax_amount, 2)
+            })
+        
+        # Get next entry number
+        last_entry = await db.journal_entries.find_one(sort=[("entry_number", -1)], projection={"entry_number": 1, "_id": 0})
+        entry_number = (last_entry.get("entry_number", 0) if last_entry else 0) + 1
+        entry_id = str(uuid4())
+        
+        entry_doc = {
+            "entry_id": entry_id,
+            "entry_number": entry_number,
+            "entry_date": invoice_doc.get("created_at", datetime.now(timezone.utc).isoformat())[:10],
+            "reference": f"FAC-{invoice_id[:8]}",
+            "memo": f"Factura - {client_name}",
+            "lines": lines,
+            "status": "posted",
+            "transaction_type": "invoice",
+            "source_id": invoice_id,
+            "total_debit": total,
+            "total_credit": total,
+            "created_by": user_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "posted_at": datetime.now(timezone.utc).isoformat(),
+            "auto_generated": True
+        }
+        
+        await db.journal_entries.insert_one(entry_doc)
+        
+        # Create AR record
+        amount_paid = invoice_doc.get("amount_paid", 0) or 0
+        balance = total - amount_paid
+        
+        ar_doc = {
+            "ar_id": str(uuid4()),
+            "customer_name": client_name,
+            "invoice_id": invoice_id,
+            "invoice_number": invoice_doc.get("invoice_number", ""),
+            "amount": total,
+            "amount_paid": amount_paid,
+            "balance": balance,
+            "due_date": invoice_doc.get("due_date", "") or (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()[:10],
+            "description": f"Factura - {client_name}",
+            "status": "paid" if balance <= 0 else ("partial" if amount_paid > 0 else "open"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "auto_generated": True
+        }
+        await db.accounts_receivable.insert_one(ar_doc)
+        
+        # Update account balances
+        await db.chart_of_accounts.update_one({"account_id": ar_account["account_id"]}, {"$inc": {"balance": total}})
+        await db.chart_of_accounts.update_one({"account_id": revenue_account["account_id"]}, {"$inc": {"balance": subtotal}})
+        if tax_amount > 0 and ivu_account:
+            await db.chart_of_accounts.update_one({"account_id": ivu_account["account_id"]}, {"$inc": {"balance": tax_amount}})
+        
+        print(f"✅ Auto-synced invoice {invoice_id} to accounting")
+        return {"success": True, "entry_id": entry_id, "ar_id": ar_doc["ar_id"]}
+        
+    except Exception as e:
+        print(f"⚠️ Error auto-syncing invoice: {e}")
+        return {"success": False, "message": str(e)}
+
+async def auto_sync_payment_to_accounting(db, invoice_id: str, payment_amount: float, payment_method: str, user_id: str):
+    """Auto-sync payment receipt to accounting"""
+    try:
+        payment_id = str(uuid4())
+        
+        # Check if already synced
+        existing = await db.journal_entries.find_one({"source_id": payment_id}, {"_id": 0})
+        if existing:
+            return {"success": True, "message": "Already synced"}
+        
+        # Get account IDs
+        cash_account = await db.chart_of_accounts.find_one({"account_number": "1020"}, {"_id": 0})
+        ar_account = await db.chart_of_accounts.find_one({"account_number": "1100"}, {"_id": 0})
+        
+        if not cash_account or not ar_account:
+            return {"success": False, "message": "Cuentas contables no configuradas"}
+        
+        # Build journal entry
+        lines = [
+            {
+                "line_id": str(uuid4()),
+                "account_id": cash_account["account_id"],
+                "account_number": "1020",
+                "account_name": cash_account["account_name"],
+                "description": f"Pago recibido - {payment_method}",
+                "debit": round(payment_amount, 2),
+                "credit": 0
+            },
+            {
+                "line_id": str(uuid4()),
+                "account_id": ar_account["account_id"],
+                "account_number": "1100",
+                "account_name": ar_account["account_name"],
+                "description": "Cobro de factura",
+                "debit": 0,
+                "credit": round(payment_amount, 2)
+            }
+        ]
+        
+        # Get next entry number
+        last_entry = await db.journal_entries.find_one(sort=[("entry_number", -1)], projection={"entry_number": 1, "_id": 0})
+        entry_number = (last_entry.get("entry_number", 0) if last_entry else 0) + 1
+        entry_id = str(uuid4())
+        
+        entry_doc = {
+            "entry_id": entry_id,
+            "entry_number": entry_number,
+            "entry_date": datetime.now(timezone.utc).isoformat()[:10],
+            "reference": f"PAGO-{payment_id[:8]}",
+            "memo": f"Pago recibido - {payment_method}",
+            "lines": lines,
+            "status": "posted",
+            "transaction_type": "payment",
+            "source_id": payment_id,
+            "invoice_id": invoice_id,
+            "total_debit": payment_amount,
+            "total_credit": payment_amount,
+            "created_by": user_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "posted_at": datetime.now(timezone.utc).isoformat(),
+            "auto_generated": True
+        }
+        
+        await db.journal_entries.insert_one(entry_doc)
+        
+        # Update AR balance
+        ar_entry = await db.accounts_receivable.find_one({"invoice_id": invoice_id}, {"_id": 0})
+        if ar_entry:
+            new_paid = ar_entry.get("amount_paid", 0) + payment_amount
+            new_balance = ar_entry.get("amount", 0) - new_paid
+            new_status = "paid" if new_balance <= 0 else "partial"
+            
+            await db.accounts_receivable.update_one(
+                {"invoice_id": invoice_id},
+                {"$set": {"amount_paid": new_paid, "balance": max(0, new_balance), "status": new_status}}
+            )
+        
+        # Update account balances
+        await db.chart_of_accounts.update_one({"account_id": cash_account["account_id"]}, {"$inc": {"balance": payment_amount}})
+        await db.chart_of_accounts.update_one({"account_id": ar_account["account_id"]}, {"$inc": {"balance": -payment_amount}})
+        
+        print(f"✅ Auto-synced payment {payment_id} to accounting")
+        return {"success": True, "entry_id": entry_id}
+        
+    except Exception as e:
+        print(f"⚠️ Error auto-syncing payment: {e}")
+        return {"success": False, "message": str(e)}
+
+async def auto_sync_expense_to_accounting(db, expense_doc: dict, user_id: str):
+    """Auto-sync project expense to accounting"""
+    try:
+        expense_id = expense_doc.get("expense_id") or expense_doc.get("id")
+        if not expense_id:
+            return {"success": False, "message": "No expense_id"}
+        
+        # Check if already synced
+        existing = await db.journal_entries.find_one({"source_id": expense_id}, {"_id": 0})
+        if existing:
+            return {"success": True, "message": "Already synced"}
+        
+        # Determine expense account based on category
+        category = await db.budget_categories.find_one({"category_id": expense_doc.get("category_id")}, {"_id": 0})
+        category_name = (category.get("name", "") if category else "").lower()
+        
+        expense_account_number = "6900"  # Default: Miscellaneous
+        if "material" in category_name:
+            expense_account_number = "5200"
+        elif "labor" in category_name or "mano" in category_name:
+            expense_account_number = "5100"
+        elif "subcontract" in category_name:
+            expense_account_number = "5300"
+        
+        # Get account IDs
+        expense_account = await db.chart_of_accounts.find_one({"account_number": expense_account_number}, {"_id": 0})
+        cash_account = await db.chart_of_accounts.find_one({"account_number": "1020"}, {"_id": 0})
+        
+        if not expense_account or not cash_account:
+            return {"success": False, "message": "Cuentas contables no configuradas"}
+        
+        amount = expense_doc.get("amount", 0)
+        description = expense_doc.get("description", "") or "Gasto"
+        
+        # Build journal entry
+        lines = [
+            {
+                "line_id": str(uuid4()),
+                "account_id": expense_account["account_id"],
+                "account_number": expense_account_number,
+                "account_name": expense_account["account_name"],
+                "description": description,
+                "debit": round(amount, 2),
+                "credit": 0
+            },
+            {
+                "line_id": str(uuid4()),
+                "account_id": cash_account["account_id"],
+                "account_number": "1020",
+                "account_name": cash_account["account_name"],
+                "description": f"Pago - {description}",
+                "debit": 0,
+                "credit": round(amount, 2)
+            }
+        ]
+        
+        # Get next entry number
+        last_entry = await db.journal_entries.find_one(sort=[("entry_number", -1)], projection={"entry_number": 1, "_id": 0})
+        entry_number = (last_entry.get("entry_number", 0) if last_entry else 0) + 1
+        entry_id = str(uuid4())
+        
+        entry_doc = {
+            "entry_id": entry_id,
+            "entry_number": entry_number,
+            "entry_date": expense_doc.get("date", datetime.now(timezone.utc).isoformat()[:10]),
+            "reference": f"GASTO-{expense_id[:8]}",
+            "memo": f"Gasto - {description}",
+            "lines": lines,
+            "status": "posted",
+            "transaction_type": "expense",
+            "source_id": expense_id,
+            "project_id": expense_doc.get("project_id"),
+            "total_debit": amount,
+            "total_credit": amount,
+            "created_by": user_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "posted_at": datetime.now(timezone.utc).isoformat(),
+            "auto_generated": True
+        }
+        
+        await db.journal_entries.insert_one(entry_doc)
+        
+        # Update account balances
+        await db.chart_of_accounts.update_one({"account_id": expense_account["account_id"]}, {"$inc": {"balance": amount}})
+        await db.chart_of_accounts.update_one({"account_id": cash_account["account_id"]}, {"$inc": {"balance": -amount}})
+        
+        print(f"✅ Auto-synced expense {expense_id} to accounting")
+        return {"success": True, "entry_id": entry_id}
+        
+    except Exception as e:
+        print(f"⚠️ Error auto-syncing expense: {e}")
+        return {"success": False, "message": str(e)}
+
+async def auto_sync_po_to_accounting(db, po_doc: dict, user_id: str):
+    """Auto-sync approved purchase order to accounting"""
+    try:
+        po_id = po_doc.get("po_id") or po_doc.get("id")
+        if not po_id:
+            return {"success": False, "message": "No po_id"}
+        
+        # Check if already synced
+        existing = await db.journal_entries.find_one({"source_id": po_id}, {"_id": 0})
+        if existing:
+            return {"success": True, "message": "Already synced"}
+        
+        # Get account IDs
+        materials_account = await db.chart_of_accounts.find_one({"account_number": "5200"}, {"_id": 0})
+        ap_account = await db.chart_of_accounts.find_one({"account_number": "2000"}, {"_id": 0})
+        
+        if not materials_account or not ap_account:
+            return {"success": False, "message": "Cuentas contables no configuradas"}
+        
+        total = po_doc.get("total", 0)
+        vendor_name = po_doc.get("vendor_name", "") or "Proveedor"
+        
+        # Build journal entry
+        lines = [
+            {
+                "line_id": str(uuid4()),
+                "account_id": materials_account["account_id"],
+                "account_number": "5200",
+                "account_name": materials_account["account_name"],
+                "description": f"Compra - {vendor_name}",
+                "debit": round(total, 2),
+                "credit": 0
+            },
+            {
+                "line_id": str(uuid4()),
+                "account_id": ap_account["account_id"],
+                "account_number": "2000",
+                "account_name": ap_account["account_name"],
+                "description": f"Por pagar a {vendor_name}",
+                "debit": 0,
+                "credit": round(total, 2)
+            }
+        ]
+        
+        # Get next entry number
+        last_entry = await db.journal_entries.find_one(sort=[("entry_number", -1)], projection={"entry_number": 1, "_id": 0})
+        entry_number = (last_entry.get("entry_number", 0) if last_entry else 0) + 1
+        entry_id = str(uuid4())
+        
+        entry_doc = {
+            "entry_id": entry_id,
+            "entry_number": entry_number,
+            "entry_date": datetime.now(timezone.utc).isoformat()[:10],
+            "reference": f"PO-{po_id[:8]}",
+            "memo": f"Orden de compra - {vendor_name}",
+            "lines": lines,
+            "status": "posted",
+            "transaction_type": "expense",
+            "source_id": po_id,
+            "total_debit": total,
+            "total_credit": total,
+            "created_by": user_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "posted_at": datetime.now(timezone.utc).isoformat(),
+            "auto_generated": True
+        }
+        
+        await db.journal_entries.insert_one(entry_doc)
+        
+        # Create AP record
+        ap_doc = {
+            "ap_id": str(uuid4()),
+            "vendor_name": vendor_name,
+            "vendor_id": po_doc.get("vendor_id", ""),
+            "bill_number": po_doc.get("po_number", ""),
+            "amount": total,
+            "amount_paid": 0,
+            "balance": total,
+            "due_date": po_doc.get("delivery_date", "") or (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()[:10],
+            "description": f"Orden de compra - {vendor_name}",
+            "status": "open",
+            "source_id": po_id,
+            "source_type": "purchase_order",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "auto_generated": True
+        }
+        await db.accounts_payable.insert_one(ap_doc)
+        
+        # Update account balances
+        await db.chart_of_accounts.update_one({"account_id": materials_account["account_id"]}, {"$inc": {"balance": total}})
+        await db.chart_of_accounts.update_one({"account_id": ap_account["account_id"]}, {"$inc": {"balance": total}})
+        
+        print(f"✅ Auto-synced PO {po_id} to accounting")
+        return {"success": True, "entry_id": entry_id, "ap_id": ap_doc["ap_id"]}
+        
+    except Exception as e:
+        print(f"⚠️ Error auto-syncing PO: {e}")
+        return {"success": False, "message": str(e)}
+
 # Zona horaria de Puerto Rico (GMT-4)
 PUERTO_RICO_TZ = pytz.timezone('America/Puerto_Rico')
 
@@ -55,10 +458,18 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 import requests
 from enum import Enum
-from email_service import send_email, get_task_assigned_email, get_task_completed_email, get_comment_email, get_welcome_email, get_task_reminder_email, get_task_status_changed_email
+from email_service import send_email, get_task_assigned_email, get_task_completed_email, get_comment_email, get_welcome_email, get_task_reminder_email, get_task_status_changed_email, get_bitacora_assigned_email, get_preproject_available_email
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Initialize Cloudinary for file uploads
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 mongo_url = os.environ['MONGO_URL']
 
@@ -150,7 +561,31 @@ async def startup_event():
     # Fire and forget - don't await, let it run in background
     asyncio.create_task(create_default_admin_background())
     asyncio.create_task(sync_hours_on_startup())
-    print("🚀 Application started - admin creation and hours sync running in background")
+    asyncio.create_task(periodic_auto_close_punches())
+    print("🚀 Application started - admin creation, hours sync, and auto-close scheduler running in background")
+
+async def periodic_auto_close_punches():
+    """
+    Tarea en segundo plano que ejecuta el cierre automático de ponches
+    cada 15 minutos. Esto asegura que los ponches se cierren sin esperar
+    a que el servidor se reinicie.
+    """
+    import asyncio
+    # Esperar 60 segundos antes de iniciar para dar tiempo a otras tareas
+    await asyncio.sleep(60)
+    print("⏰ Scheduler de cierre automático de ponches iniciado (cada 15 minutos)")
+    
+    while True:
+        try:
+            # Ejecutar cierre automático
+            closed_count = await auto_close_expired_punches()
+            if closed_count > 0:
+                print(f"⏰ [Scheduler] Se cerraron {closed_count} ponches automáticamente")
+        except Exception as e:
+            print(f"⚠️ [Scheduler] Error en cierre automático: {e}")
+        
+        # Esperar 15 minutos antes de la siguiente verificación
+        await asyncio.sleep(15 * 60)  # 15 minutos en segundos
 
 async def create_default_admin_background():
     """Background task wrapper for admin creation with full error isolation"""
@@ -417,6 +852,8 @@ class UserRole(str, Enum):
     EMPLEADO = "empleado"
     CLIENT = "client"
     ACCOUNTANT = "accountant"
+    PM_ESTIMATOR = "pm_estimator"
+    SUPERVISOR = "supervisor"
 
 # Role permissions helper
 ROLE_PERMISSIONS = {
@@ -431,6 +868,14 @@ ROLE_PERMISSIONS = {
         "view_employee_docs", "apply_labor_rules", "block_users",
         "clock_in_out", "view_own_hours", "view_own_history", "upload_docs"
     ],
+    "designer": [
+        "clock_in_out", "view_own_hours", "view_own_history",
+        "view_assigned_projects", "view_projects", "upload_docs",
+        "view_vendors", "view_pre_projects", "manage_pre_projects",
+        "view_mrr", "manage_mrr",  # Designer can view and manage MRR
+        "view_cost_estimates",  # Designer can view cost estimates (materials only, no financial info)
+        "view_quality", "manage_quality"  # Designer can view and manage Quality
+    ],
     "empleado": [
         "clock_in_out", "view_own_hours", "view_own_history", 
         "view_assigned_projects", "upload_docs"
@@ -441,6 +886,22 @@ ROLE_PERMISSIONS = {
         "view_general_ledger", "view_financial_statements", "manage_ar_ap",
         "bank_reconciliation", "view_tax_reports", "generate_reports",
         "clock_in_out", "view_own_hours", "view_own_history"
+    ],
+    "pm_estimator": [
+        "view_estimates", "manage_estimates", "view_cost_estimates", "manage_cost_estimates",
+        "view_own_hours", "view_own_history"
+    ],
+    "supervisor": [
+        "clock_in_out", "view_own_hours", "view_own_history",
+        "view_assigned_projects", "view_projects", "upload_docs",
+        "view_vendors", "view_pre_projects", "manage_pre_projects",
+        "view_mrr", "manage_mrr",
+        "view_cost_estimates",
+        "view_quality", "manage_quality",
+        "view_weekly_plan", "manage_weekly_plan",
+        "view_rfi", "manage_rfi",
+        "view_safety", "manage_safety",
+        "view_inspections", "manage_inspections"
     ]
 }
 
@@ -540,6 +1001,10 @@ class ProjectCreate(BaseModel):
     initials: Optional[str] = None
     project_number: Optional[str] = None
     client: Optional[str] = None
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    client_tax_id: Optional[str] = None
     sponsor: Optional[str] = None
     po_number: Optional[str] = None
     po_quantity: Optional[float] = None
@@ -568,6 +1033,10 @@ class ProjectUpdate(BaseModel):
     initials: Optional[str] = None
     project_number: Optional[str] = None
     client: Optional[str] = None
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    client_tax_id: Optional[str] = None
     sponsor: Optional[str] = None
     po_number: Optional[str] = None
     po_quantity: Optional[float] = None
@@ -600,16 +1069,23 @@ class Project(BaseModel):
     initials: Optional[str] = None
     project_number: Optional[str] = None
     client: Optional[str] = None
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    client_tax_id: Optional[str] = None
     sponsor: Optional[str] = None
     po_number: Optional[str] = None
     po_quantity: Optional[float] = None
     proposal_number: Optional[str] = None
     cover_image: Optional[str] = None
     estimated_hours: float = 0
+    total_hours_worked: float = 0  # Horas totales de ponches sincronizadas
+    hours_last_synced: Optional[str] = None  # Última sincronización de horas
     created_by: str
     team_members: List[str]
     created_at: str
     updated_at: str
+    hide_financial: bool = False  # Flag to hide financial info for designers
 
 class TaskCreate(BaseModel):
     project_id: str
@@ -737,6 +1213,8 @@ class Document(BaseModel):
     original_filename: str
     file_size: int
     file_type: str
+    url: Optional[str] = None  # Cloudinary URL
+    public_id: Optional[str] = None  # Cloudinary public_id
     uploaded_by: str
     uploaded_by_name: str
     uploaded_at: str
@@ -929,6 +1407,136 @@ class RFI(BaseModel):
     created_by: str
     created_by_name: Optional[str] = None
 
+# ==================== MRR (Material Receiving Report) MODELS ====================
+# MRR Item model for the materials table
+class MRRItem(BaseModel):
+    po_item: Optional[int] = None  # PO Item number
+    qty_received: Optional[float] = 0
+    item_code: Optional[str] = None  # Item Code No.
+    size: Optional[str] = None
+    description: str
+    storage_location: Optional[str] = None
+
+class MRRCreate(BaseModel):
+    project_id: str
+    # Header Section
+    supplier: str  # SUPPLIER
+    shipper: Optional[str] = None  # SHIPPER
+    po_number: Optional[str] = None  # PURCHASE ORDER NO.
+    carrier: Optional[str] = None  # CARRIER
+    shipping_point: Optional[str] = None  # SHIPPING POINT
+    # FOB POINT
+    fob_point: Optional[str] = None  # 'job_site' or 'shipping_point'
+    # SHIPMENT
+    shipment_type: Optional[str] = None  # 'partial' or 'complete'
+    # CHARGES
+    charges: Optional[str] = None  # 'prepaid' or 'collect'
+    # Additional Header Fields
+    freight_bill_no: Optional[str] = None  # FREIGHT BILL PRODUCT NO.
+    date_received: Optional[str] = None  # DATE RECEIVED
+    packing_list_no: Optional[str] = None  # PACKING LIST NO.
+    car_no: Optional[str] = None  # CAR NO.
+    weight: Optional[str] = None  # WEIGHT
+    no_of_cartons: Optional[str] = None  # NO. OF CARTONS
+    mrr_date: Optional[str] = None  # MRR DATE
+    # RECEIVING INSPECTION Section
+    received_by: str  # Received by
+    received_date: Optional[str] = None  # Date
+    qc_inspection_required: Optional[str] = None  # 'yes', 'no', 'na'
+    qc_status: Optional[str] = None  # 'hold', 'accepted', 'na'
+    qc_documents_received: Optional[str] = None  # 'yes', 'no', 'not_required'
+    remarks: Optional[str] = None  # Remarks
+    # Items Table
+    items: Optional[List[MRRItem]] = []
+    # Footer
+    prepared_by: Optional[str] = None  # MRR PREPARED BY
+    prepared_date: Optional[str] = None  # AND DATE
+    # Attachments
+    attachments: Optional[List[dict]] = []
+
+class MRRUpdate(BaseModel):
+    # Header Section
+    supplier: Optional[str] = None
+    shipper: Optional[str] = None
+    po_number: Optional[str] = None
+    carrier: Optional[str] = None
+    shipping_point: Optional[str] = None
+    fob_point: Optional[str] = None
+    shipment_type: Optional[str] = None
+    charges: Optional[str] = None
+    freight_bill_no: Optional[str] = None
+    date_received: Optional[str] = None
+    packing_list_no: Optional[str] = None
+    car_no: Optional[str] = None
+    weight: Optional[str] = None
+    no_of_cartons: Optional[str] = None
+    mrr_date: Optional[str] = None
+    # RECEIVING INSPECTION Section
+    received_by: Optional[str] = None
+    received_date: Optional[str] = None
+    qc_inspection_required: Optional[str] = None
+    qc_status: Optional[str] = None
+    qc_documents_received: Optional[str] = None
+    remarks: Optional[str] = None
+    # Items Table
+    items: Optional[List[MRRItem]] = None
+    # Footer
+    prepared_by: Optional[str] = None
+    prepared_date: Optional[str] = None
+    # Status & Attachments
+    status: Optional[str] = None
+    attachments: Optional[List[dict]] = None
+
+class MRR(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    mrr_id: str
+    mrr_number: str  # Format: MRR-YYYY-PROJ-SEQ or sequential like 0133
+    project_id: str
+    project_name: Optional[str] = None
+    project_number: Optional[str] = None
+    # Header Section
+    supplier: str
+    shipper: Optional[str] = None
+    po_number: Optional[str] = None
+    carrier: Optional[str] = None
+    shipping_point: Optional[str] = None
+    fob_point: Optional[str] = None
+    shipment_type: Optional[str] = None
+    charges: Optional[str] = None
+    freight_bill_no: Optional[str] = None
+    date_received: Optional[str] = None
+    packing_list_no: Optional[str] = None
+    car_no: Optional[str] = None
+    weight: Optional[str] = None
+    no_of_cartons: Optional[str] = None
+    mrr_date: Optional[str] = None
+    # RECEIVING INSPECTION Section
+    received_by: str
+    received_date: Optional[str] = None
+    qc_inspection_required: Optional[str] = None
+    qc_status: Optional[str] = None
+    qc_documents_received: Optional[str] = None
+    remarks: Optional[str] = None
+    # Items Table
+    items: List[dict] = []
+    # Footer
+    prepared_by: Optional[str] = None
+    prepared_date: Optional[str] = None
+    # Status & Attachments
+    status: str = "draft"  # 'draft', 'pending', 'received', 'inspected', 'rejected'
+    attachments: List[dict] = []
+    created_at: str
+    updated_at: Optional[str] = None
+    created_by: str
+    created_by_name: Optional[str] = None
+    # Legacy fields for backward compatibility
+    supplier_name: Optional[str] = None
+    supplier_company: Optional[str] = None
+    delivery_date: Optional[str] = None
+    description: Optional[str] = None
+    materials: Optional[str] = None
+    notes: Optional[str] = None
+
 # ==================== VENDORS MODELS ====================
 class VendorContact(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1070,6 +1678,7 @@ class InvoiceCreate(BaseModel):
     sponsor_name: Optional[str] = None
     po_number: Optional[str] = None
     subtitle: Optional[str] = None
+    tax_id: Optional[str] = None
     tax_rate: float = 0.0
     tax_type_id: Optional[str] = None
     tax_type_name: Optional[str] = None
@@ -1091,6 +1700,7 @@ class Invoice(BaseModel):
     sponsor_name: Optional[str] = None
     po_number: Optional[str] = None
     subtitle: Optional[str] = None
+    tax_id: Optional[str] = None
     items: List[InvoiceItem]
     subtotal: float
     tax_rate: float
@@ -1122,6 +1732,69 @@ class Payment(BaseModel):
     amount: float
     payment_method: str
     reference: Optional[str] = None
+    notes: Optional[str] = None
+    created_by: str
+    created_at: str
+
+
+# ===================== STATEMENTS MODELS =====================
+
+class StatementCreate(BaseModel):
+    """Create a new statement/account state"""
+    project_id: Optional[str] = None  # Optional project association
+    client_name: str
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    invoice_ids: List[str]  # List of invoice IDs to include
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    notes: Optional[str] = None
+    custom_number: Optional[str] = None
+
+class StatementInvoice(BaseModel):
+    """Invoice summary for statement"""
+    invoice_id: str
+    invoice_number: str
+    invoice_date: str
+    due_date: Optional[str] = None
+    subtotal: float
+    tax_amount: float
+    total: float
+    amount_paid: float
+    balance_due: float
+    status: str
+    project_name: Optional[str] = None
+
+class StatementPayment(BaseModel):
+    """Payment summary for statement"""
+    payment_id: str
+    invoice_id: str
+    invoice_number: str
+    amount: float
+    payment_method: str
+    payment_date: str
+    reference: Optional[str] = None
+
+class Statement(BaseModel):
+    """Account statement model"""
+    model_config = ConfigDict(extra="ignore")
+    statement_id: str
+    statement_number: str
+    project_id: Optional[str] = None
+    project_name: Optional[str] = None
+    project_value: Optional[float] = 0
+    client_name: str
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    invoices: List[StatementInvoice]
+    payments: List[StatementPayment]
+    total_invoiced: float
+    total_paid: float
+    balance_due: float
     notes: Optional[str] = None
     created_by: str
     created_at: str
@@ -1306,6 +1979,7 @@ class EstimateCreate(BaseModel):
     custom_number: Optional[str] = None
     price_breakdown: Optional[dict] = None
     prepared_by: Optional[str] = None  # Nombre del empleado que realiza el estimado
+    document_date: Optional[str] = None  # Fecha del documento
 
 class Estimate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1335,6 +2009,7 @@ class Estimate(BaseModel):
     terms: Optional[str] = None
     valid_until: Optional[str] = None
     prepared_by: Optional[str] = None  # Nombre del empleado que realiza el estimado
+    document_date: Optional[str] = None  # Fecha del documento
     created_by: str
     created_by_name: str
     created_at: str
@@ -1343,6 +2018,7 @@ class Estimate(BaseModel):
     converted_invoice_id: Optional[str] = None
     # Price Breakdown (separate from items)
     price_breakdown: Optional[dict] = None  # {material_equipment: float, labor: float, total: float}
+    updated_at: Optional[str] = None
 
 # Purchase Order Models
 class PurchaseOrderItem(BaseModel):
@@ -1420,6 +2096,8 @@ async def sync_project_labor_hours(project_id: str):
     Sincroniza automáticamente las horas consumidas (consumed_hours) 
     en los registros de Labor basándose en los timesheets del proyecto.
     
+    También actualiza el total de horas del proyecto.
+    
     Asigna las horas COMPLETAS de cada usuario al registro de Labor correspondiente.
     NO distribuye proporcionalmente.
     """
@@ -1427,9 +2105,18 @@ async def sync_project_labor_hours(project_id: str):
         # Obtener todos los timesheets del proyecto
         timesheets = await db.timesheet.find({"project_id": project_id}, {"_id": 0}).to_list(10000)
         
+        # También obtener ponches completados
+        clock_entries = await db.clock_entries.find({
+            "project_id": project_id,
+            "status": "completed",
+            "hours_worked": {"$ne": None, "$gt": 0}
+        }, {"_id": 0}).to_list(10000)
+        
         # Calcular total de horas por usuario (user_id y user_name)
         hours_by_user = {}
         total_project_hours = 0
+        
+        # Sumar horas de timesheets
         for ts in timesheets:
             user_id = ts.get('user_id', '')
             user_name = ts.get('user_name', '').strip()
@@ -1440,6 +2127,29 @@ async def sync_project_labor_hours(project_id: str):
                 if user_id not in hours_by_user:
                     hours_by_user[user_id] = {'hours': 0, 'name': user_name, 'name_lower': user_name.lower()}
                 hours_by_user[user_id]['hours'] += hours
+        
+        # Sumar horas de ponches que no tienen timesheet asociado
+        timesheet_clock_ids = {ts.get('clock_id') for ts in timesheets if ts.get('clock_id')}
+        for clock in clock_entries:
+            if clock.get('clock_id') not in timesheet_clock_ids:
+                user_id = clock.get('user_id', '')
+                user_name = clock.get('user_name', '').strip()
+                hours = clock.get('hours_worked', 0) or 0
+                total_project_hours += hours
+                
+                if user_id:
+                    if user_id not in hours_by_user:
+                        hours_by_user[user_id] = {'hours': 0, 'name': user_name, 'name_lower': user_name.lower()}
+                    hours_by_user[user_id]['hours'] += hours
+        
+        # Actualizar el total de horas en el proyecto
+        await db.projects.update_one(
+            {"project_id": project_id},
+            {"$set": {
+                "total_hours_worked": round(total_project_hours, 2),
+                "hours_last_synced": datetime.now(timezone.utc).isoformat()
+            }}
+        )
         
         # Obtener registros de labor del proyecto
         labor_records = await db.labor.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
@@ -1755,7 +2465,7 @@ async def register(user_data: UserRegister, request: Request, session_token: Opt
         except Exception as e:
             print(f"Error sending welcome email: {e}")
     
-    user_doc_without_password = {k: v for k, v in user_doc.items() if k not in ['password', 'is_temp_password']}
+    user_doc_without_password = {k: v for k, v in user_doc.items() if k not in ['password', 'is_temp_password', '_id']}
     return user_doc_without_password
 
 @api_router.post("/auth/login")
@@ -2043,8 +2753,8 @@ def extract_project_number(project_number: str) -> tuple:
 async def get_projects(request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
     
-    # Super Admin y Project Manager pueden ver todos los proyectos
-    if user.role in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+    # Super Admin, Project Manager, Designer y Supervisor pueden ver todos los proyectos
+    if user.role in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, 'designer', 'supervisor']:
         projects = await db.projects.find({}, {"_id": 0}).to_list(1000)
     else:
         projects = await db.projects.find(
@@ -2054,15 +2764,102 @@ async def get_projects(request: Request, session_token: Optional[str] = Cookie(N
     
     # Calcular profit para cada proyecto y asegurar payment_status
     for p in projects:
-        p['project_value'] = p.get('project_value', 0)
-        p['budget_spent'] = p.get('budget_spent', 0)
-        p['profit'] = p['project_value'] - p['budget_spent']
-        p['payment_status'] = p.get('payment_status', 'pending')
+        # Si es designer o supervisor, ocultar información financiera con valores 0
+        if user.role in ['designer', 'supervisor']:
+            p['project_value'] = 0
+            p['budget_total'] = 0
+            p['budget_spent'] = 0
+            p['profit'] = 0
+            p['budget'] = 0
+            p['payment_status'] = 'pending'
+            p['hide_financial'] = True  # Flag para el frontend
+        else:
+            p['project_value'] = p.get('project_value', 0)
+            p['budget_spent'] = p.get('budget_spent', 0)
+            p['profit'] = p['project_value'] - p['budget_spent']
+            p['payment_status'] = p.get('payment_status', 'pending')
+            p['hide_financial'] = False
     
     # Ordenar por número de proyecto (año, número)
     projects.sort(key=lambda p: extract_project_number(p.get('project_number', '')))
     
     return [Project(**p) for p in projects]
+
+@api_router.get("/projects/summary-by-year")
+async def get_projects_summary_by_year(request: Request, session_token: Optional[str] = Cookie(None)):
+    """
+    Obtiene un resumen global de proyectos agrupados por año:
+    - Valor total de proyectos
+    - Total gastado (budget_spent)
+    - Ganancia total (profit)
+    """
+    user = await get_current_user(request, session_token)
+    
+    # Designer y Supervisor no pueden ver información financiera
+    if user.role in ['designer', 'supervisor']:
+        return []
+    
+    # Super Admin, Project Manager, RRHH pueden ver todos los proyectos
+    if user.role in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.RRHH.value, UserRole.ACCOUNTANT.value]:
+        projects = await db.projects.find({}, {"_id": 0, "project_number": 1, "project_value": 1, "budget_spent": 1, "start_date": 1, "created_at": 1}).to_list(1000)
+    else:
+        projects = await db.projects.find(
+            {"$or": [{"created_by": user.user_id}, {"team_members": user.user_id}]},
+            {"_id": 0, "project_number": 1, "project_value": 1, "budget_spent": 1, "start_date": 1, "created_at": 1}
+        ).to_list(1000)
+    
+    # Agrupar por año
+    summary_by_year = {}
+    
+    for p in projects:
+        # Extraer año del project_number (formato "2026-001")
+        year = None
+        if p.get('project_number'):
+            import re
+            match = re.match(r'^(\d{4})', p['project_number'])
+            if match:
+                year = int(match.group(1))
+        
+        # Fallback a start_date o created_at
+        if not year and p.get('start_date'):
+            try:
+                year = int(p['start_date'][:4])
+            except:
+                pass
+        if not year and p.get('created_at'):
+            try:
+                if isinstance(p['created_at'], str):
+                    year = int(p['created_at'][:4])
+                else:
+                    year = p['created_at'].year
+            except:
+                pass
+        
+        if not year:
+            year = datetime.now().year  # Default al año actual
+        
+        if year not in summary_by_year:
+            summary_by_year[year] = {
+                "year": year,
+                "total_value": 0,
+                "total_spent": 0,
+                "total_profit": 0,
+                "project_count": 0
+            }
+        
+        project_value = p.get('project_value', 0) or 0
+        budget_spent = p.get('budget_spent', 0) or 0
+        
+        summary_by_year[year]["total_value"] += project_value
+        summary_by_year[year]["total_spent"] += budget_spent
+        summary_by_year[year]["total_profit"] += (project_value - budget_spent)
+        summary_by_year[year]["project_count"] += 1
+    
+    # Convertir a lista y ordenar por año descendente
+    result = list(summary_by_year.values())
+    result.sort(key=lambda x: x["year"], reverse=True)
+    
+    return result
 
 @api_router.post("/projects/sync-hours")
 async def sync_all_labor_hours(request: Request, session_token: Optional[str] = Cookie(None)):
@@ -2099,6 +2896,23 @@ async def sync_project_hours(project_id: str, request: Request, session_token: O
     hours = await sync_project_labor_hours(project_id)
     return {"message": "Horas sincronizadas", "project_id": project_id, "total_hours": hours}
 
+@api_router.post("/punch/force-auto-close")
+async def force_auto_close_punches(request: Request, session_token: Optional[str] = Cookie(None)):
+    """
+    Fuerza el cierre automático de ponches que exceden el máximo de horas configurado.
+    Solo administradores pueden ejecutar esta acción.
+    """
+    user = await get_current_user(request, session_token)
+    
+    if user.role != UserRole.SUPER_ADMIN.value:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden forzar cierre de ponches")
+    
+    closed_count = await auto_close_expired_punches()
+    return {
+        "message": f"Se cerraron {closed_count} ponches automáticamente",
+        "closed_count": closed_count
+    }
+
 @api_router.get("/projects/{project_id}", response_model=Project)
 async def get_project(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
     user = await get_current_user(request, session_token)
@@ -2107,15 +2921,27 @@ async def get_project(project_id: str, request: Request, session_token: Optional
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    # PM, Admin, Designer y Supervisor tienen acceso, otros solo si son creadores o del equipo
+    allowed_roles = [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, 'designer', 'supervisor']
+    if user.role not in allowed_roles and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
-    # Asegurar que existan los campos y calcular profit
-    project_doc['project_value'] = project_doc.get('project_value', 0)
-    project_doc['budget_spent'] = project_doc.get('budget_spent', 0)
-    project_doc['profit'] = project_doc['project_value'] - project_doc['budget_spent']
-    project_doc['payment_status'] = project_doc.get('payment_status', 'pending')
+    # Si es designer o supervisor, ocultar información financiera con valores 0
+    if user.role in ['designer', 'supervisor']:
+        project_doc['project_value'] = 0
+        project_doc['budget_total'] = 0
+        project_doc['budget_spent'] = 0
+        project_doc['profit'] = 0
+        project_doc['budget'] = 0
+        project_doc['payment_status'] = 'pending'
+        project_doc['hide_financial'] = True
+    else:
+        # Asegurar que existan los campos y calcular profit
+        project_doc['project_value'] = project_doc.get('project_value', 0)
+        project_doc['budget_spent'] = project_doc.get('budget_spent', 0)
+        project_doc['profit'] = project_doc['project_value'] - project_doc['budget_spent']
+        project_doc['payment_status'] = project_doc.get('payment_status', 'pending')
+        project_doc['hide_financial'] = False
     
     return Project(**project_doc)
 
@@ -2579,6 +3405,12 @@ async def create_expense(expense_data: ExpenseCreate, request: Request, session_
         {"project_id": expense_data.project_id},
         {"$set": {"budget_spent": new_spent, "profit": new_profit}}
     )
+    
+    # Auto-sync expense to accounting (non-blocking)
+    try:
+        await auto_sync_expense_to_accounting(db, expense_doc, user.user_id)
+    except Exception as e:
+        print(f"⚠️ Auto-sync expense failed: {e}")
     
     return Expense(**expense_doc)
 
@@ -3204,12 +4036,16 @@ async def create_manual_clock_entry(
     request: Request,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Create a manual clock entry (admin/RRHH/PM only)"""
+    """Create a manual clock entry (admin/RRHH/PM only, but NOT for themselves)"""
     current_user = await get_current_user(request, session_token)
     
     # Only admins, RRHH and PM can create manual entries
     if current_user.role not in [UserRole.SUPER_ADMIN.value, UserRole.RRHH.value, UserRole.PROJECT_MANAGER.value]:
         raise HTTPException(status_code=403, detail="Solo administradores, RRHH o PM pueden crear ponches manuales")
+    
+    # RESTRICTION: No one can create manual punches for themselves
+    if data.user_id == current_user.user_id:
+        raise HTTPException(status_code=403, detail="No puedes crear ponches manuales para ti mismo")
     
     # Validate user exists
     target_user = await db.users.find_one({"user_id": data.user_id}, {"_id": 0})
@@ -3305,7 +4141,7 @@ async def update_clock_entry(
     request: Request,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Edit a clock entry (admin/RRHH/PM only)"""
+    """Edit a clock entry (admin/RRHH/PM only, but NOT their own)"""
     user = await get_current_user(request, session_token)
     
     # Only admins, RRHH and PM can edit clock entries
@@ -3316,6 +4152,10 @@ async def update_clock_entry(
     clock_entry = await db.clock_entries.find_one({"clock_id": clock_id}, {"_id": 0})
     if not clock_entry:
         raise HTTPException(status_code=404, detail="Ponche no encontrado")
+    
+    # RESTRICTION: No one can edit their own punches
+    if clock_entry.get('user_id') == user.user_id:
+        raise HTTPException(status_code=403, detail="No puedes editar tus propios ponches")
     
     old_project_id = clock_entry.get('project_id')
     
@@ -3397,7 +4237,7 @@ async def delete_clock_entry(
     request: Request,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Delete a clock entry (admin and RRHH only)"""
+    """Delete a clock entry (admin and RRHH only, but NOT their own)"""
     user = await get_current_user(request, session_token)
     
     # Admin and RRHH can delete clock entries
@@ -3408,6 +4248,10 @@ async def delete_clock_entry(
     clock_entry = await db.clock_entries.find_one({"clock_id": clock_id}, {"_id": 0})
     if not clock_entry:
         raise HTTPException(status_code=404, detail="Ponche no encontrado")
+    
+    # RESTRICTION: No one can delete their own punches
+    if clock_entry.get('user_id') == user.user_id:
+        raise HTTPException(status_code=403, detail="No puedes eliminar tus propios ponches")
     
     project_id = clock_entry.get('project_id')
     
@@ -4928,6 +5772,35 @@ async def create_toolbox_talk(data: dict, request: Request, session_token: Optio
     await db.toolbox_talks.insert_one(talk)
     del talk["_id"]
     
+    # Save to library automatically if it has content (title, description, key_points)
+    if data.get("title") and (data.get("description") or data.get("key_points")):
+        save_to_library = data.get("save_to_library", True)  # Default to True
+        if save_to_library:
+            # Check if topic already exists in library
+            existing_in_library = await db.toolbox_library.find_one({
+                "title": data.get("title"),
+                "category": data.get("category", "general")
+            })
+            
+            if not existing_in_library:
+                library_id = f"lib_{uuid4().hex[:12]}"
+                library_entry = {
+                    "library_id": library_id,
+                    "title": data.get("title", ""),
+                    "description": data.get("description", ""),
+                    "key_points": data.get("key_points", []),
+                    "quiz_questions": data.get("quiz_questions", []),
+                    "category": data.get("category", "general"),
+                    "duration_minutes": data.get("duration_minutes", 15),
+                    "materials": data.get("materials", []),
+                    "created_by": user.user_id,
+                    "created_by_name": user.name,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "usage_count": 1,
+                    "source": "user_created"
+                }
+                await db.toolbox_library.insert_one(library_entry)
+    
     await log_audit(user.user_id, user.name, "create", "toolbox_talk", talk_id, data.get("title"), {})
     return talk
 
@@ -5271,15 +6144,130 @@ async def get_toolbox_talk_topics(
     session_token: Optional[str] = Cookie(None),
     category: Optional[str] = None
 ):
-    """Get predefined toolbox talk topics library"""
+    """Get toolbox talk topics from library (predefined + user created)"""
     user = await get_current_user(request, session_token)
     
+    # Start with predefined topics
     topics = TOOLBOX_TALK_TOPICS.copy()
     
+    # Add user-created topics from database
+    query = {}
     if category:
-        topics = [t for t in topics if t.get("category") == category]
+        query["category"] = category
     
+    db_topics = await db.toolbox_library.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    
+    # Add source indicator to predefined topics
+    for t in topics:
+        t["source"] = "predefined"
+    
+    # Combine: user-created first, then predefined
+    all_topics = db_topics + topics
+    
+    if category:
+        all_topics = [t for t in all_topics if t.get("category") == category]
+    
+    return all_topics
+
+@api_router.get("/safety/toolbox-library")
+async def get_toolbox_library(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    category: Optional[str] = None
+):
+    """Get only user-created toolbox talk topics from library"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if category:
+        query["category"] = category
+    
+    topics = await db.toolbox_library.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return topics
+
+@api_router.post("/safety/toolbox-library")
+async def add_to_toolbox_library(
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Add a new topic to the toolbox library"""
+    user = await get_current_user(request, session_token)
+    
+    # Check if topic with same title already exists
+    existing = await db.toolbox_library.find_one({
+        "title": data.get("title"),
+        "category": data.get("category", "general")
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya existe un tema con este título en esta categoría")
+    
+    library_id = f"lib_{uuid4().hex[:12]}"
+    library_entry = {
+        "library_id": library_id,
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "key_points": data.get("key_points", []),
+        "quiz_questions": data.get("quiz_questions", []),
+        "category": data.get("category", "general"),
+        "duration_minutes": data.get("duration_minutes", 15),
+        "materials": data.get("materials", []),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "usage_count": 0,
+        "source": "user_created"
+    }
+    
+    await db.toolbox_library.insert_one(library_entry)
+    library_entry.pop("_id", None)
+    
+    return library_entry
+
+@api_router.put("/safety/toolbox-library/{library_id}")
+async def update_library_topic(
+    library_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Update a topic in the toolbox library"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.toolbox_library.find_one({"library_id": library_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tema no encontrado en la biblioteca")
+    
+    update_data = {
+        "title": data.get("title", existing.get("title")),
+        "description": data.get("description", existing.get("description")),
+        "key_points": data.get("key_points", existing.get("key_points", [])),
+        "quiz_questions": data.get("quiz_questions", existing.get("quiz_questions", [])),
+        "category": data.get("category", existing.get("category")),
+        "duration_minutes": data.get("duration_minutes", existing.get("duration_minutes")),
+        "materials": data.get("materials", existing.get("materials", [])),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.toolbox_library.update_one({"library_id": library_id}, {"$set": update_data})
+    updated = await db.toolbox_library.find_one({"library_id": library_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/safety/toolbox-library/{library_id}")
+async def delete_library_topic(
+    library_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a topic from the toolbox library"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.toolbox_library.delete_one({"library_id": library_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tema no encontrado en la biblioteca")
+    
+    return {"message": "Tema eliminado de la biblioteca"}
 
 @api_router.get("/safety/toolbox-topics/{topic_id}")
 async def get_toolbox_talk_topic(
@@ -5475,9 +6463,8 @@ async def delete_incident(incident_id: str, request: Request, session_token: Opt
     await log_audit(user.user_id, user.name, "delete", "safety_incident", incident_id, "", {})
     return {"message": "Incidente eliminado"}
 
-# ==================== SAFETY MEDIA UPLOAD ====================
-SAFETY_UPLOAD_DIR = Path("/app/backend/uploads/safety")
-SAFETY_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# ==================== SAFETY MEDIA UPLOAD (CLOUDINARY) ====================
+# Files are now uploaded to Cloudinary instead of local storage
 
 @api_router.post("/safety/upload")
 async def upload_safety_media(
@@ -5487,7 +6474,7 @@ async def upload_safety_media(
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Upload photos/videos for safety module entities"""
+    """Upload photos/videos for safety module entities to Cloudinary"""
     user = await get_current_user(request, session_token)
     
     # Validate file type
@@ -5504,87 +6491,97 @@ async def upload_safety_media(
     if len(content) > MAX_SIZE:
         raise HTTPException(status_code=400, detail="El archivo excede el límite de 50MB")
     
-    # Generate unique filename
-    ext = Path(file.filename).suffix or ".jpg"
-    filename = f"{entity_type}_{entity_id}_{uuid4().hex[:8]}{ext}"
-    file_path = SAFETY_UPLOAD_DIR / filename
-    
-    # Save file
-    with open(file_path, "wb") as f:
-        f.write(content)
-    
-    # Create media record
-    media_record = {
-        "media_id": f"media_{uuid4().hex[:12]}",
-        "filename": filename,
-        "original_filename": file.filename,
-        "file_size": len(content),
-        "file_type": file.content_type,
-        "media_type": "photo" if file.content_type.startswith("image/") else "video",
-        "url": f"/api/safety/media/{filename}",
-        "uploaded_by": user.user_id,
-        "uploaded_by_name": user.name,
-        "uploaded_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    # Update the corresponding entity
-    collection_map = {
-        "observation": "safety_observations",
-        "toolbox_talk": "toolbox_talks",
-        "incident": "safety_incidents"
-    }
-    id_field_map = {
-        "observation": "observation_id",
-        "toolbox_talk": "talk_id",
-        "incident": "incident_id"
-    }
-    
-    collection_name = collection_map.get(entity_type)
-    id_field = id_field_map.get(entity_type)
-    
-    if not collection_name or not id_field:
-        raise HTTPException(status_code=400, detail="Tipo de entidad no válido")
-    
-    collection = db[collection_name]
-    entity = await collection.find_one({id_field: entity_id})
-    
-    if not entity:
-        # Remove uploaded file if entity not found
-        file_path.unlink(missing_ok=True)
-        raise HTTPException(status_code=404, detail=f"Entidad {entity_type} no encontrada")
-    
-    # Add media to entity's media list
-    await collection.update_one(
-        {id_field: entity_id},
-        {"$push": {"media": media_record}}
-    )
-    
-    return media_record
+    try:
+        # Determine resource type
+        resource_type = "video" if file.content_type.startswith("video/") else "image"
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            content,
+            folder=f"uploads/safety/{entity_type}",
+            resource_type=resource_type,
+            public_id=f"{entity_id}_{uuid4().hex[:8]}",
+            use_filename=True,
+            unique_filename=True
+        )
+        
+        # Create media record
+        media_record = {
+            "media_id": f"media_{uuid4().hex[:12]}",
+            "filename": result.get("public_id"),
+            "original_filename": file.filename,
+            "file_size": len(content),
+            "file_type": file.content_type,
+            "media_type": "photo" if file.content_type.startswith("image/") else "video",
+            "url": result.get("secure_url"),
+            "public_id": result.get("public_id"),
+            "uploaded_by": user.user_id,
+            "uploaded_by_name": user.name,
+            "uploaded_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Update the corresponding entity
+        collection_map = {
+            "observation": "safety_observations",
+            "toolbox_talk": "toolbox_talks",
+            "incident": "safety_incidents"
+        }
+        id_field_map = {
+            "observation": "observation_id",
+            "toolbox_talk": "talk_id",
+            "incident": "incident_id"
+        }
+        
+        collection_name = collection_map.get(entity_type)
+        id_field = id_field_map.get(entity_type)
+        
+        if not collection_name or not id_field:
+            raise HTTPException(status_code=400, detail="Tipo de entidad no válido")
+        
+        collection = db[collection_name]
+        entity = await collection.find_one({id_field: entity_id})
+        
+        if not entity:
+            # Delete from Cloudinary if entity not found
+            cloudinary.uploader.destroy(result.get("public_id"), resource_type=resource_type)
+            raise HTTPException(status_code=404, detail=f"Entidad {entity_type} no encontrada")
+        
+        # Add media to entity's media list
+        await collection.update_one(
+            {id_field: entity_id},
+            {"$push": {"media": media_record}}
+        )
+        
+        return media_record
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
 
 @api_router.get("/safety/media/{filename}")
 async def get_safety_media(filename: str):
-    """Serve safety media files"""
-    file_path = SAFETY_UPLOAD_DIR / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
-    
-    media_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-    return FileResponse(file_path, media_type=media_type)
+    """Legacy endpoint - media is now served directly from Cloudinary URLs"""
+    # This endpoint is kept for backward compatibility with old local files
+    # New uploads use Cloudinary URLs directly
+    raise HTTPException(status_code=301, detail="Los archivos ahora se sirven desde Cloudinary. Use la URL directa del archivo.")
 
 @api_router.delete("/safety/media/{filename}")
 async def delete_safety_media(
     filename: str,
     entity_type: str = Query(...),
     entity_id: str = Query(...),
+    public_id: Optional[str] = Query(None),
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Delete a safety media file"""
+    """Delete a safety media file from Cloudinary"""
     user = await get_current_user(request, session_token)
     
-    file_path = SAFETY_UPLOAD_DIR / filename
-    if file_path.exists():
-        file_path.unlink()
+    # Delete from Cloudinary if public_id is provided
+    if public_id:
+        try:
+            cloudinary.uploader.destroy(public_id)
+        except Exception as e:
+            print(f"Error deleting from Cloudinary: {e}")
     
     # Remove from entity
     collection_map = {
@@ -5855,10 +6852,7 @@ async def delete_work_log(log_id: str, request: Request, session_token: Optional
     await log_audit(user.user_id, user.name, "delete", "daily_work_log", log_id, "", {})
     return {"message": "Work log eliminado"}
 
-# Upload for daily logs
-DAILY_LOGS_UPLOAD_DIR = Path("/app/backend/uploads/daily_logs")
-DAILY_LOGS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
+# Upload for daily logs (CLOUDINARY)
 @api_router.post("/daily-logs/upload")
 async def upload_daily_log_file(
     file: UploadFile = File(...),
@@ -5867,7 +6861,7 @@ async def upload_daily_log_file(
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Upload files for daily logs entities"""
+    """Upload files for daily logs entities to Cloudinary"""
     user = await get_current_user(request, session_token)
     
     # Validate file type
@@ -5878,68 +6872,79 @@ async def upload_daily_log_file(
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Tipo de archivo no permitido")
     
-    # Generate unique filename
-    ext = Path(file.filename).suffix
-    filename = f"{entity_type}_{entity_id}_{uuid4().hex[:8]}{ext}"
-    filepath = DAILY_LOGS_UPLOAD_DIR / filename
-    
-    # Save file
     content = await file.read()
-    with open(filepath, "wb") as f:
-        f.write(content)
     
-    # Determine media type
-    media_type = "photo" if file.content_type.startswith("image/") else "document"
-    
-    file_info = {
-        "filename": filename,
-        "original_filename": file.filename,
-        "media_type": media_type,
-        "content_type": file.content_type,
-        "url": f"/api/daily-logs/media/{filename}",
-        "uploaded_at": datetime.now(timezone.utc).isoformat(),
-        "uploaded_by": user.user_id
-    }
-    
-    # Add to entity's attachments
-    collection_map = {
-        "work_log": "daily_work_logs",
-        "daily_note": "daily_notes",
-        "daily_attachment": "daily_attachments"
-    }
-    
-    if entity_type in collection_map:
-        collection = db[collection_map[entity_type]]
-        id_field = "log_id" if entity_type == "work_log" else f"{entity_type.replace('daily_', '')}_id"
-        await collection.update_one(
-            {id_field: entity_id},
-            {"$push": {"attachments": file_info}}
+    try:
+        # Determine resource type
+        resource_type = "image" if file.content_type.startswith("image/") else "raw"
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            content,
+            folder=f"uploads/daily_logs/{entity_type}",
+            resource_type=resource_type,
+            public_id=f"{entity_id}_{uuid4().hex[:8]}",
+            use_filename=True,
+            unique_filename=True
         )
-    
-    return file_info
+        
+        # Determine media type
+        media_type = "photo" if file.content_type.startswith("image/") else "document"
+        
+        file_info = {
+            "filename": result.get("public_id"),
+            "original_filename": file.filename,
+            "media_type": media_type,
+            "content_type": file.content_type,
+            "url": result.get("secure_url"),
+            "public_id": result.get("public_id"),
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
+            "uploaded_by": user.user_id
+        }
+        
+        # Add to entity's attachments
+        collection_map = {
+            "work_log": "daily_work_logs",
+            "daily_note": "daily_notes",
+            "daily_attachment": "daily_attachments"
+        }
+        
+        if entity_type in collection_map:
+            collection = db[collection_map[entity_type]]
+            id_field = "log_id" if entity_type == "work_log" else f"{entity_type.replace('daily_', '')}_id"
+            await collection.update_one(
+                {id_field: entity_id},
+                {"$push": {"attachments": file_info}}
+            )
+        
+        return file_info
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
 
 @api_router.get("/daily-logs/media/{filename}")
 async def get_daily_log_media(filename: str):
-    """Serve daily logs media files"""
-    filepath = DAILY_LOGS_UPLOAD_DIR / filename
-    if not filepath.exists():
-        raise HTTPException(status_code=404, detail="Archivo no encontrado")
-    return FileResponse(filepath)
+    """Legacy endpoint - media is now served from Cloudinary"""
+    raise HTTPException(status_code=301, detail="Los archivos ahora se sirven desde Cloudinary. Use la URL directa del archivo.")
 
 @api_router.delete("/daily-logs/media/{filename}")
 async def delete_daily_log_media(
     filename: str,
     entity_type: str = Query(...),
     entity_id: str = Query(...),
+    public_id: Optional[str] = Query(None),
     request: Request = None,
     session_token: Optional[str] = Cookie(None)
 ):
-    """Delete a daily logs media file"""
+    """Delete a daily logs media file from Cloudinary"""
     user = await get_current_user(request, session_token)
     
-    filepath = DAILY_LOGS_UPLOAD_DIR / filename
-    if filepath.exists():
-        filepath.unlink()
+    # Delete from Cloudinary if public_id provided
+    if public_id:
+        try:
+            cloudinary.uploader.destroy(public_id)
+        except Exception as e:
+            print(f"Error deleting from Cloudinary: {e}")
     
     # Remove from entity's attachments
     collection_map = {
@@ -7231,29 +8236,37 @@ async def upload_company_logo(
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Use JPG, PNG, GIF, WebP o SVG")
     
-    # Crear directorio si no existe
-    upload_dir = Path("/app/uploads/logos")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Generar nombre único
-    ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
-    filename = f"company_logo_{uuid4().hex[:8]}.{ext}"
-    file_path = upload_dir / filename
-    
-    # Guardar archivo
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    logo_url = f"/uploads/logos/{filename}"
-    
-    # Actualizar en base de datos
-    await db.company_settings.update_one(
-        {},
-        {"$set": {"company_logo": logo_url, "updated_at": datetime.now(timezone.utc).isoformat()}},
-        upsert=True
-    )
-    
-    return {"logo_url": logo_url, "message": "Logo subido exitosamente"}
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            content,
+            folder="company",
+            resource_type="image",
+            public_id=f"logo_{uuid4().hex[:8]}",
+            use_filename=True,
+            unique_filename=True
+        )
+        
+        logo_url = result.get("secure_url")
+        
+        # Actualizar en base de datos
+        await db.company_settings.update_one(
+            {},
+            {"$set": {
+                "company_logo": logo_url, 
+                "logo_public_id": result.get("public_id"),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
+        
+        return {"logo_url": logo_url, "message": "Logo subido exitosamente"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir logo: {str(e)}")
 
 UPLOAD_DIR = Path("/app/backend/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -7272,8 +8285,8 @@ async def upload_document(
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    # PM, Admin, Designer y Supervisor tienen acceso, otros solo si son creadores o del equipo
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, 'designer', 'supervisor'] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     # Validate folder if provided
@@ -7291,30 +8304,47 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="El archivo es demasiado grande (máximo 10MB)")
     
     document_id = f"doc_{uuid.uuid4().hex[:12]}"
-    file_extension = Path(file.filename).suffix
-    filename = f"{document_id}{file_extension}"
-    file_path = UPLOAD_DIR / filename
-    
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-    
     mime_type = mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
     
-    document_doc = {
-        "document_id": document_id,
-        "project_id": project_id,
-        "folder_id": folder_id,
-        "filename": filename,
-        "original_filename": file.filename,
-        "file_size": len(file_content),
-        "file_type": mime_type,
-        "uploaded_by": user.user_id,
-        "uploaded_by_name": user.name,
-        "uploaded_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await db.documents.insert_one(document_doc)
-    return Document(**document_doc)
+    try:
+        # Determine resource type for Cloudinary
+        if mime_type.startswith("image/"):
+            resource_type = "image"
+        elif mime_type.startswith("video/"):
+            resource_type = "video"
+        else:
+            resource_type = "raw"  # For PDFs, docs, etc.
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            file_content,
+            folder=f"documents/{project_id}",
+            resource_type=resource_type,
+            public_id=document_id,
+            use_filename=True,
+            unique_filename=True
+        )
+        
+        document_doc = {
+            "document_id": document_id,
+            "project_id": project_id,
+            "folder_id": folder_id,
+            "filename": result.get("public_id"),
+            "original_filename": file.filename,
+            "file_size": len(file_content),
+            "file_type": mime_type,
+            "url": result.get("secure_url"),
+            "public_id": result.get("public_id"),
+            "uploaded_by": user.user_id,
+            "uploaded_by_name": user.name,
+            "uploaded_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.documents.insert_one(document_doc)
+        return Document(**document_doc)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir documento: {str(e)}")
 
 @api_router.get("/documents", response_model=List[Document])
 async def get_documents(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
@@ -7324,8 +8354,8 @@ async def get_documents(project_id: str, request: Request, session_token: Option
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    # PM y Admin tienen acceso completo, otros solo si son creadores o del equipo
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    # PM, Admin, Designer y Supervisor tienen acceso, otros solo si son creadores o del equipo
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, 'designer', 'supervisor'] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     documents = await db.documents.find({"project_id": project_id}, {"_id": 0}).sort("uploaded_at", -1).to_list(1000)
@@ -7343,10 +8373,16 @@ async def download_document(document_id: str, request: Request, session_token: O
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, 'designer', 'supervisor'] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este documento")
     
-    file_path = UPLOAD_DIR / document_doc['filename']
+    # If document has Cloudinary URL, redirect to it
+    if document_doc.get('url'):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=document_doc['url'])
+    
+    # Legacy: try local file (for backward compatibility)
+    file_path = Path("/app/backend/uploads") / document_doc['filename']
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Archivo no encontrado en el servidor")
     
@@ -7368,12 +8404,15 @@ async def delete_document(document_id: str, request: Request, session_token: Opt
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and document_doc['uploaded_by'] != user.user_id:
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, 'designer', 'supervisor'] and project_doc['created_by'] != user.user_id and document_doc['uploaded_by'] != user.user_id:
         raise HTTPException(status_code=403, detail="No tienes permisos para eliminar este documento")
     
-    file_path = UPLOAD_DIR / document_doc['filename']
-    if file_path.exists():
-        file_path.unlink()
+    # Delete from Cloudinary if public_id exists
+    if document_doc.get('public_id'):
+        try:
+            cloudinary.uploader.destroy(document_doc['public_id'])
+        except Exception as e:
+            print(f"Error deleting from Cloudinary: {e}")
     
     await db.documents.delete_one({"document_id": document_id})
     return {"message": "Documento eliminado exitosamente"}
@@ -7443,7 +8482,8 @@ async def get_document_folders(
     if not project_doc:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     
-    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
+    # PM, Admin, Designer y Supervisor tienen acceso
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value, 'designer', 'supervisor'] and project_doc['created_by'] != user.user_id and user.user_id not in project_doc.get('team_members', []):
         raise HTTPException(status_code=403, detail="No tienes acceso a este proyecto")
     
     folders = await db.document_folders.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
@@ -7799,6 +8839,7 @@ async def generate_invoice_from_timesheet(
         "client_address": invoice_data.client_address,
         "sponsor_name": sponsor_name,
         "po_number": invoice_data.po_number,
+        "tax_id": invoice_data.tax_id or "",
         "items": [item.model_dump() for item in items],
         "subtotal": subtotal,
         "tax_rate": invoice_data.tax_rate,
@@ -7846,6 +8887,12 @@ async def generate_invoice_from_timesheet(
         {"project": project.get('name'), "total": total}
     )
     
+    # Auto-sync to accounting (non-blocking)
+    try:
+        await auto_sync_invoice_to_accounting(db, invoice_doc, user.user_id)
+    except Exception as e:
+        print(f"⚠️ Auto-sync invoice failed: {e}")
+    
     return Invoice(**invoice_doc)
 
 # Modelo para crear factura manual con items personalizados
@@ -7864,6 +8911,7 @@ class ManualInvoiceCreate(BaseModel):
     sponsor_name: Optional[str] = None
     po_number: Optional[str] = None
     subtitle: Optional[str] = None
+    tax_id: Optional[str] = None
     items: List[ManualInvoiceItem]
     tax_rate: float = 0.0
     selected_taxes: Optional[List[dict]] = []
@@ -7938,6 +8986,7 @@ async def create_manual_invoice(
         "sponsor_name": sponsor_name,
         "po_number": invoice_data.po_number,
         "subtitle": invoice_data.subtitle,
+        "tax_id": invoice_data.tax_id or "",
         "items": invoice_items,
         "subtotal": subtotal,
         "discount_percent": invoice_data.discount_percent,
@@ -7982,6 +9031,12 @@ async def create_manual_invoice(
     invoice_doc.pop('_id', None)
     
     await log_audit(user.user_id, user.name, "create", "invoice", invoice_id, invoice_number, {"client": invoice_data.client_name, "total": total})
+    
+    # Auto-sync to accounting (non-blocking)
+    try:
+        await auto_sync_invoice_to_accounting(db, invoice_doc, user.user_id)
+    except Exception as e:
+        print(f"⚠️ Auto-sync manual invoice failed: {e}")
     
     return invoice_doc
 
@@ -8054,7 +9109,8 @@ async def update_invoice(
         "notes": invoice_data.get('notes', invoice.get('notes')),
         "terms": invoice_data.get('terms', invoice.get('terms')),
         "selected_taxes": invoice_data.get('selected_taxes', invoice.get('selected_taxes', [])),
-        "price_breakdown": invoice_data.get('price_breakdown', invoice.get('price_breakdown'))
+        "price_breakdown": invoice_data.get('price_breakdown', invoice.get('price_breakdown')),
+        "tax_id": invoice_data.get('tax_id', invoice.get('tax_id', ''))
     }
     
     # Update invoice_number if custom_number provided
@@ -8274,6 +9330,69 @@ async def get_project_financial_summary(
         "status_counts": status_counts
     }
 
+@api_router.post("/invoices/{invoice_id}/duplicate")
+async def duplicate_invoice(
+    invoice_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Duplicar una factura existente con nuevo número y fecha actual"""
+    user = await get_current_user(request, session_token)
+    
+    # Get original invoice
+    original = await db.invoices.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    if not original:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    
+    # Generate new invoice number
+    company_settings = await db.company_settings.find_one({}, {"_id": 0})
+    next_num = company_settings.get("next_invoice_number", 1) if company_settings else 1
+    new_invoice_number = str(next_num).zfill(3)
+    await db.company_settings.update_one({}, {"$inc": {"next_invoice_number": 1}}, upsert=True)
+    
+    # Create new invoice ID
+    new_invoice_id = f"inv_{uuid4().hex[:16]}"
+    
+    # Calculate new due date (30 days from now)
+    due_date = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    
+    # Create duplicated invoice
+    new_invoice = {
+        **original,
+        "invoice_id": new_invoice_id,
+        "invoice_number": new_invoice_number,
+        "status": "draft",
+        "amount_paid": 0.0,
+        "balance_due": original.get("total", 0),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user.user_id,
+        "due_date": due_date,
+        "sent_date": None,
+        "paid_date": None
+    }
+    
+    # Remove MongoDB _id if present
+    new_invoice.pop('_id', None)
+    
+    await db.invoices.insert_one(new_invoice)
+    
+    # Remove _id added by MongoDB
+    new_invoice.pop('_id', None)
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "create",
+        "invoice",
+        new_invoice_id,
+        new_invoice_number,
+        {"duplicated_from": invoice_id, "original_number": original.get('invoice_number', '')}
+    )
+    
+    return new_invoice
+
+
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(
     invoice_id: str,
@@ -8378,6 +9497,12 @@ async def add_payment_to_invoice(
         "amount": payment_data.amount
     })
     
+    # Auto-sync payment to accounting (non-blocking)
+    try:
+        await auto_sync_payment_to_accounting(db, invoice_id, payment_data.amount, payment_data.payment_method, user.user_id)
+    except Exception as e:
+        print(f"⚠️ Auto-sync payment failed: {e}")
+    
     return Payment(**payment_doc)
 
 @api_router.get("/invoices/{invoice_id}/payments", response_model=List[Payment])
@@ -8430,6 +9555,320 @@ async def send_invoice_email(
     )
     
     return {"message": f"Factura enviada a {invoice.get('client_email')}", "status": "sent"}
+
+# ============== STATEMENTS ENDPOINTS ==============
+
+@api_router.post("/statements", response_model=Statement)
+async def create_statement(
+    statement_data: StatementCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Create a new account statement from selected invoices"""
+    user = await get_current_user(request, session_token)
+    
+    if not statement_data.invoice_ids:
+        raise HTTPException(status_code=400, detail="Debe seleccionar al menos una factura")
+    
+    # Fetch all selected invoices
+    invoices = await db.invoices.find(
+        {"invoice_id": {"$in": statement_data.invoice_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    if not invoices:
+        raise HTTPException(status_code=404, detail="No se encontraron las facturas seleccionadas")
+    
+    # Fetch all payments for these invoices
+    all_payments = await db.payments.find(
+        {"invoice_id": {"$in": statement_data.invoice_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Build invoice summaries
+    statement_invoices = []
+    total_invoiced = 0
+    total_paid = 0
+    
+    for inv in invoices:
+        invoice_payments = [p for p in all_payments if p.get('invoice_id') == inv.get('invoice_id')]
+        amount_paid = sum(p.get('amount', 0) for p in invoice_payments)
+        
+        statement_invoices.append(StatementInvoice(
+            invoice_id=inv.get('invoice_id'),
+            invoice_number=inv.get('invoice_number'),
+            invoice_date=inv.get('created_at', inv.get('invoice_date', '')),
+            due_date=inv.get('due_date'),
+            subtotal=inv.get('subtotal', 0),
+            tax_amount=inv.get('tax_amount', 0),
+            total=inv.get('total', 0),
+            amount_paid=amount_paid,
+            balance_due=inv.get('balance_due', inv.get('total', 0) - amount_paid),
+            status=inv.get('status', 'draft'),
+            project_name=inv.get('project_name')
+        ))
+        total_invoiced += inv.get('total', 0)
+        total_paid += amount_paid
+    
+    # Build payment summaries
+    statement_payments = []
+    for p in all_payments:
+        inv = next((i for i in invoices if i.get('invoice_id') == p.get('invoice_id')), {})
+        statement_payments.append(StatementPayment(
+            payment_id=p.get('payment_id'),
+            invoice_id=p.get('invoice_id'),
+            invoice_number=inv.get('invoice_number', ''),
+            amount=p.get('amount', 0),
+            payment_method=p.get('payment_method', ''),
+            payment_date=p.get('created_at', ''),
+            reference=p.get('reference')
+        ))
+    
+    # Generate statement number
+    if statement_data.custom_number and statement_data.custom_number.strip():
+        statement_number = statement_data.custom_number.strip()
+    else:
+        company_settings = await db.company_settings.find_one({}, {"_id": 0})
+        next_num = company_settings.get("next_statement_number", 1) if company_settings else 1
+        statement_number = f"STMT-{datetime.now().year}-{str(next_num).zfill(4)}"
+        await db.company_settings.update_one({}, {"$inc": {"next_statement_number": 1}}, upsert=True)
+    
+    statement_id = f"stmt_{uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get project name and value if project_id is provided
+    project_name = None
+    project_value = 0
+    if statement_data.project_id:
+        project = await db.projects.find_one({"project_id": statement_data.project_id}, {"_id": 0, "name": 1, "project_value": 1})
+        if project:
+            project_name = project.get("name")
+            project_value = project.get("project_value", 0) or 0
+    
+    statement_doc = {
+        "statement_id": statement_id,
+        "statement_number": statement_number,
+        "project_id": statement_data.project_id,
+        "project_name": project_name,
+        "project_value": project_value,
+        "client_name": statement_data.client_name,
+        "client_email": statement_data.client_email,
+        "client_phone": statement_data.client_phone,
+        "client_address": statement_data.client_address,
+        "date_from": statement_data.date_from,
+        "date_to": statement_data.date_to,
+        "invoice_ids": statement_data.invoice_ids,
+        "invoices": [inv.model_dump() for inv in statement_invoices],
+        "payments": [p.model_dump() for p in statement_payments],
+        "total_invoiced": total_invoiced,
+        "total_paid": total_paid,
+        "balance_due": total_invoiced - total_paid,
+        "notes": statement_data.notes,
+        "created_by": user.user_id,
+        "created_at": now
+    }
+    
+    await db.statements.insert_one(statement_doc)
+    
+    # Log audit
+    await log_audit(
+        user.user_id,
+        user.name,
+        "create",
+        "statement",
+        statement_id,
+        statement_number,
+        {"client": statement_data.client_name, "project": project_name, "invoices_count": len(statement_invoices)}
+    )
+    
+    return Statement(**statement_doc)
+
+
+@api_router.get("/statements", response_model=List[Statement])
+async def get_statements(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    client_name: Optional[str] = None,
+    project_id: Optional[str] = None,
+    year: Optional[int] = None
+):
+    """Get all statements with optional filters"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if client_name:
+        query["client_name"] = {"$regex": client_name, "$options": "i"}
+    if project_id:
+        query["project_id"] = project_id
+    if year:
+        query["created_at"] = {"$regex": f"^{year}"}
+    
+    statements = await db.statements.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [Statement(**s) for s in statements]
+
+
+@api_router.get("/statements/{statement_id}", response_model=Statement)
+async def get_statement(
+    statement_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get a single statement by ID"""
+    user = await get_current_user(request, session_token)
+    
+    statement = await db.statements.find_one({"statement_id": statement_id}, {"_id": 0})
+    if not statement:
+        raise HTTPException(status_code=404, detail="Statement no encontrado")
+    
+    return Statement(**statement)
+
+
+@api_router.delete("/statements/{statement_id}")
+async def delete_statement(
+    statement_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a statement"""
+    user = await get_current_user(request, session_token)
+    
+    statement = await db.statements.find_one({"statement_id": statement_id}, {"_id": 0})
+    if not statement:
+        raise HTTPException(status_code=404, detail="Statement no encontrado")
+    
+    await db.statements.delete_one({"statement_id": statement_id})
+    
+    await log_audit(
+        user.user_id,
+        user.name,
+        "delete",
+        "statement",
+        statement_id,
+        statement.get('statement_number', ''),
+        {}
+    )
+    
+    return {"message": "Statement eliminado exitosamente"}
+
+
+@api_router.post("/statements/preview")
+async def preview_statement(
+    statement_data: StatementCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Preview statement data without saving"""
+    user = await get_current_user(request, session_token)
+    
+    if not statement_data.invoice_ids:
+        raise HTTPException(status_code=400, detail="Debe seleccionar al menos una factura")
+    
+    # Fetch all selected invoices
+    invoices = await db.invoices.find(
+        {"invoice_id": {"$in": statement_data.invoice_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    if not invoices:
+        raise HTTPException(status_code=404, detail="No se encontraron las facturas seleccionadas")
+    
+    # Fetch all payments for these invoices
+    all_payments = await db.payments.find(
+        {"invoice_id": {"$in": statement_data.invoice_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Build invoice summaries
+    statement_invoices = []
+    total_invoiced = 0
+    total_paid = 0
+    
+    for inv in invoices:
+        invoice_payments = [p for p in all_payments if p.get('invoice_id') == inv.get('invoice_id')]
+        amount_paid = sum(p.get('amount', 0) for p in invoice_payments)
+        
+        statement_invoices.append({
+            "invoice_id": inv.get('invoice_id'),
+            "invoice_number": inv.get('invoice_number'),
+            "invoice_date": inv.get('created_at', inv.get('invoice_date', '')),
+            "due_date": inv.get('due_date'),
+            "subtotal": inv.get('subtotal', 0),
+            "tax_amount": inv.get('tax_amount', 0),
+            "total": inv.get('total', 0),
+            "amount_paid": amount_paid,
+            "balance_due": inv.get('balance_due', inv.get('total', 0) - amount_paid),
+            "status": inv.get('status', 'draft'),
+            "project_name": inv.get('project_name')
+        })
+        total_invoiced += inv.get('total', 0)
+        total_paid += amount_paid
+    
+    # Build payment summaries
+    statement_payments = []
+    for p in all_payments:
+        inv = next((i for i in invoices if i.get('invoice_id') == p.get('invoice_id')), {})
+        statement_payments.append({
+            "payment_id": p.get('payment_id'),
+            "invoice_id": p.get('invoice_id'),
+            "invoice_number": inv.get('invoice_number', ''),
+            "amount": p.get('amount', 0),
+            "payment_method": p.get('payment_method', ''),
+            "payment_date": p.get('created_at', ''),
+            "reference": p.get('reference')
+        })
+    
+    return {
+        "client_name": statement_data.client_name,
+        "client_email": statement_data.client_email,
+        "client_phone": statement_data.client_phone,
+        "client_address": statement_data.client_address,
+        "date_from": statement_data.date_from,
+        "date_to": statement_data.date_to,
+        "invoices": statement_invoices,
+        "payments": statement_payments,
+        "total_invoiced": total_invoiced,
+        "total_paid": total_paid,
+        "balance_due": total_invoiced - total_paid
+    }
+
+
+@api_router.get("/statements/clients/summary")
+async def get_clients_for_statements(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get unique clients from invoices for statement generation"""
+    user = await get_current_user(request, session_token)
+    
+    # Aggregate unique clients with their invoice count and totals
+    pipeline = [
+        {"$group": {
+            "_id": "$client_name",
+            "client_email": {"$first": "$client_email"},
+            "client_phone": {"$first": "$client_phone"},
+            "client_address": {"$first": "$client_address"},
+            "invoice_count": {"$sum": 1},
+            "total_amount": {"$sum": "$total"},
+            "total_balance": {"$sum": "$balance_due"},
+            "invoice_ids": {"$push": "$invoice_id"}
+        }},
+        {"$match": {"_id": {"$ne": None}}},
+        {"$sort": {"_id": 1}}
+    ]
+    
+    clients = await db.invoices.aggregate(pipeline).to_list(1000)
+    
+    return [{
+        "client_name": c["_id"],
+        "client_email": c.get("client_email"),
+        "client_phone": c.get("client_phone"),
+        "client_address": c.get("client_address"),
+        "invoice_count": c["invoice_count"],
+        "total_amount": c["total_amount"],
+        "total_balance": c["total_balance"],
+        "invoice_ids": c["invoice_ids"]
+    } for c in clients]
+
 
 # ============== ESTIMATES ENDPOINTS ==============
 
@@ -8494,6 +9933,7 @@ async def create_estimate(
         "terms": estimate_data.terms,
         "valid_until": estimate_data.valid_until,
         "prepared_by": estimate_data.prepared_by,
+        "document_date": estimate_data.document_date or now[:10],  # Fecha del documento
         "price_breakdown": estimate_data.price_breakdown,  # Price breakdown (material/labor/total)
         "created_by": user.user_id,
         "created_by_name": user.name,
@@ -8637,6 +10077,7 @@ async def update_estimate(
         "notes": estimate_data.notes,
         "terms": estimate_data.terms,
         "valid_until": estimate_data.valid_until,
+        "document_date": estimate_data.document_date,  # Fecha del documento
         "price_breakdown": estimate_data.price_breakdown
     }
     
@@ -9089,6 +10530,14 @@ async def update_purchase_order_status(
     
     await db.purchase_orders.update_one({"po_id": po_id}, {"$set": update_data})
     await log_audit(user.user_id, user.name, "update", "purchase_order", po_id, po.get('po_number'), {"status": status})
+    
+    # Auto-sync to accounting when approved (non-blocking)
+    if status == 'approved':
+        try:
+            updated_po = await db.purchase_orders.find_one({"po_id": po_id}, {"_id": 0})
+            await auto_sync_po_to_accounting(db, updated_po, user.user_id)
+        except Exception as e:
+            print(f"⚠️ Auto-sync PO failed: {e}")
     
     return {"message": f"Estado actualizado a {status}"}
 
@@ -9683,19 +11132,29 @@ class SubcontractorItem(BaseModel):
     cost: float = 0
     labor_cost: float = 0  # Mano de obra del subcontratista para cálculo B2B
     factor: float = 0  # Factor General % - applies to total cost
+    income_retention_percentage: float = 0  # Retención de ingresos %
 
 class MaterialItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: Optional[str] = None
     description: str
     quantity: float = 0
+    unit: Optional[str] = "unidad"
     unit_cost: float = 0
     factor: float = 0  # Factor General % - applies to cost
     total: float = 0
+    supplier: Optional[str] = ""
+    store: Optional[str] = ""
 
 class EquipmentItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: Optional[str] = None
     description: str
     quantity: int = 0
+    unit: Optional[str] = "día"
     days: int = 0
     rate: float = 0
+    unit_cost: float = 0
     factor: float = 0  # Factor General % - applies to days
     total: float = 0
 
@@ -9716,18 +11175,36 @@ class GeneralConditionItem(BaseModel):
     total: float = 0
 
 class CostEstimate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    cost_estimate_id: Optional[str] = None  # New ID field
     estimate_id: str
     project_id: Optional[str] = None
     project_name: Optional[str] = ""
-    estimate_name: str
-    status: str = "en_proceso"  # en_proceso, final
+    company_id: Optional[str] = None  # Company reference
+    company_name: Optional[str] = None  # Company name for display
+    sponsor_id: Optional[str] = None  # Sponsor reference
+    sponsor_name: Optional[str] = None  # Sponsor name for display
+    estimate_name: Optional[str] = ""  # Made optional to support legacy data
+    title: Optional[str] = None  # Added for pre-project conversions
+    description: Optional[str] = ""
+    client: Optional[str] = ""
+    status: str = "en_proceso"  # en_proceso, final, draft
     prepared_by: Optional[str] = None  # Nombre del preparador
+    document_date: Optional[str] = None  # Document date
+    from_pre_project: Optional[str] = None  # Pre-project ID if converted
+    # Support both naming conventions
     labor_costs: List[LaborCostItem] = []
-    subcontractors: List[SubcontractorItem] = []
+    subcontractor_costs: List[SubcontractorItem] = []
+    material_costs: List[MaterialItem] = []
+    equipment_costs: List[EquipmentItem] = []
+    transportation_costs: List[TransportationItem] = []
+    general_conditions: List[GeneralConditionItem] = []
+    # Legacy field names (aliases)
     materials: List[MaterialItem] = []
     equipment: List[EquipmentItem] = []
-    general_conditions: List[GeneralConditionItem] = []
+    subcontractors: List[SubcontractorItem] = []
     transportation: List[TransportationItem] = []
+    markup_percentage: float = 0
     overhead_percentage: float = 0
     profit_percentage: float = 0
     contingency_percentage: float = 0
@@ -9756,18 +11233,23 @@ class CostEstimate(BaseModel):
     total_equipment: float = 0
     total_transportation: float = 0
     total_general_conditions: float = 0
+    total_amount: float = 0
     subtotal: float = 0
     grand_total: float = 0
+    estimate_number: Optional[str] = None
     created_by: str
     created_at: str
-    updated_at: str
+    updated_at: Optional[str] = None  # Made optional for legacy data
 
 class CostEstimateCreate(BaseModel):
     project_id: Optional[str] = None
     project_name: Optional[str] = None  # Campo de texto libre para proyecto
+    company_id: Optional[str] = None  # Company reference
+    sponsor_id: Optional[str] = None  # Sponsor reference
     estimate_name: str
     status: str = "en_proceso"  # en_proceso, final
     prepared_by: Optional[str] = None  # Nombre del preparador (requerido en creación)
+    document_date: Optional[str] = None  # Document date
     labor_costs: List[LaborCostItem] = []
     subcontractors: List[SubcontractorItem] = []
     materials: List[MaterialItem] = []
@@ -9881,6 +11363,24 @@ async def delete_labor_rate(
     return {"message": "Tarifa eliminada exitosamente"}
 
 # ==================== COST ESTIMATES ENDPOINTS ====================
+
+def normalize_estimate_fields(estimate: dict) -> dict:
+    """Normalize field names for backwards compatibility in cost estimates"""
+    if not estimate:
+        return estimate
+    # Support both old (labor, materials, etc.) and new (labor_costs, material_costs, etc.) naming
+    if 'labor' in estimate and not estimate.get('labor_costs'):
+        estimate['labor_costs'] = estimate.get('labor', [])
+    if 'subcontractor_costs' in estimate and not estimate.get('subcontractors'):
+        estimate['subcontractors'] = estimate.get('subcontractor_costs', [])
+    if 'material_costs' in estimate and not estimate.get('materials'):
+        estimate['materials'] = estimate.get('material_costs', [])
+    if 'equipment_costs' in estimate and not estimate.get('equipment'):
+        estimate['equipment'] = estimate.get('equipment_costs', [])
+    if 'transportation_costs' in estimate and not estimate.get('transportation'):
+        estimate['transportation'] = estimate.get('transportation_costs', [])
+    return estimate
+
 @api_router.get("/cost-estimates", response_model=List[CostEstimate])
 async def get_cost_estimates(
     project_id: Optional[str] = None,
@@ -9894,7 +11394,9 @@ async def get_cost_estimates(
         query["project_id"] = project_id
     
     estimates = await db.cost_estimates.find(query, {"_id": 0}).to_list(1000)
-    return estimates
+    # Normalize field names for each estimate
+    normalized_estimates = [normalize_estimate_fields(est) for est in estimates]
+    return normalized_estimates
 
 @api_router.get("/cost-estimates/{estimate_id}", response_model=CostEstimate)
 async def get_cost_estimate(
@@ -9907,6 +11409,9 @@ async def get_cost_estimate(
     estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
     if not estimate:
         raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    # Normalize field names for backwards compatibility
+    estimate = normalize_estimate_fields(estimate)
     
     return CostEstimate(**estimate)
 
@@ -9968,11 +11473,15 @@ async def create_cost_estimate(
     
     estimate_doc = {
         "estimate_id": estimate_id,
+        "cost_estimate_id": estimate_id,  # Alias for frontend
         "project_id": estimate_data.project_id or "",
         "project_name": project_name,
+        "company_id": estimate_data.company_id,
+        "sponsor_id": estimate_data.sponsor_id,
         "estimate_name": estimate_data.estimate_name,
         "status": estimate_data.status or "en_proceso",
         "prepared_by": estimate_data.prepared_by,  # Nombre del preparador
+        "document_date": estimate_data.document_date or now[:10],
         "labor_costs": [item.dict() for item in estimate_data.labor_costs],
         "subcontractors": [item.dict() for item in estimate_data.subcontractors],
         "materials": [item.dict() for item in estimate_data.materials],
@@ -10136,6 +11645,184 @@ async def delete_cost_estimate(
     
     return {"message": "Estimación eliminada exitosamente"}
 
+# Assign Cost Estimate to Company/Sponsor
+class AssignEstimateRequest(BaseModel):
+    company_id: str
+    sponsor_id: Optional[str] = None
+
+@api_router.put("/cost-estimates/{estimate_id}/assign")
+async def assign_cost_estimate(
+    estimate_id: str,
+    assign_data: AssignEstimateRequest,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Assign a cost estimate to a company and optionally a sponsor"""
+    user = await get_current_user(request, session_token)
+    
+    # Find the estimate
+    estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not estimate:
+        raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    # Verify company exists
+    company = await db.companies.find_one({"company_id": assign_data.company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Compañía no encontrada")
+    
+    # Verify sponsor exists if provided
+    sponsor_name = None
+    if assign_data.sponsor_id:
+        sponsor = next((s for s in company.get("sponsors", []) if s.get("sponsor_id") == assign_data.sponsor_id), None)
+        if not sponsor:
+            raise HTTPException(status_code=404, detail="Sponsor no encontrado")
+        sponsor_name = sponsor.get("name")
+    
+    # Update the estimate
+    update_doc = {
+        "company_id": assign_data.company_id,
+        "company_name": company.get("name"),
+        "sponsor_id": assign_data.sponsor_id,
+        "sponsor_name": sponsor_name,
+        "updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()
+    }
+    
+    await db.cost_estimates.update_one({"estimate_id": estimate_id}, {"$set": update_doc})
+    
+    updated_estimate = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    # Normalize field names for backwards compatibility
+    updated_estimate = normalize_estimate_fields(updated_estimate)
+    return CostEstimate(**updated_estimate)
+
+# Repair/Migrate Cost Estimate Field Names (one-time fix for legacy data)
+@api_router.post("/cost-estimates/repair-all")
+async def repair_all_cost_estimates(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """One-time migration to normalize field names in all cost estimates"""
+    try:
+        user = await get_current_user(request, session_token)
+        
+        # Only super admin can run this
+        if user.role != "super_admin":
+            raise HTTPException(status_code=403, detail="Solo super admin puede ejecutar esta reparación")
+        
+        repaired = 0
+        errors = []
+        
+        # Get all estimates
+        estimates_cursor = db.cost_estimates.find({})
+        estimates = await estimates_cursor.to_list(length=10000)
+        
+        for est in estimates:
+            try:
+                update_doc = {}
+                est_id = est.get('estimate_id')
+                
+                if not est_id:
+                    continue
+                
+                # If labor exists but labor_costs doesn't, copy it
+                if est.get('labor') and not est.get('labor_costs'):
+                    update_doc['labor_costs'] = est['labor']
+                
+                # If subcontractor_costs exists but subcontractors doesn't, copy it  
+                if est.get('subcontractor_costs') and not est.get('subcontractors'):
+                    update_doc['subcontractors'] = est['subcontractor_costs']
+                    
+                # If material_costs exists but materials doesn't, copy it
+                if est.get('material_costs') and not est.get('materials'):
+                    update_doc['materials'] = est['material_costs']
+                    
+                # If equipment_costs exists but equipment doesn't, copy it
+                if est.get('equipment_costs') and not est.get('equipment'):
+                    update_doc['equipment'] = est['equipment_costs']
+                    
+                # If transportation_costs exists but transportation doesn't, copy it
+                if est.get('transportation_costs') and not est.get('transportation'):
+                    update_doc['transportation'] = est['transportation_costs']
+                
+                if update_doc:
+                    await db.cost_estimates.update_one(
+                        {"estimate_id": est_id},
+                        {"$set": update_doc}
+                    )
+                    repaired += 1
+            except Exception as e:
+                errors.append(f"{est.get('estimate_id', 'unknown')}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": f"Reparadas {repaired} estimaciones de {len(estimates)} total",
+            "errors": errors[:10] if errors else []
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# Clone Cost Estimate
+@api_router.post("/cost-estimates/{estimate_id}/clone")
+async def clone_cost_estimate(
+    estimate_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Clone an existing cost estimate"""
+    user = await get_current_user(request, session_token)
+    
+    # Get the original estimate
+    original = await db.cost_estimates.find_one({"estimate_id": estimate_id}, {"_id": 0})
+    if not original:
+        raise HTTPException(status_code=404, detail="Estimación no encontrada")
+    
+    # Generate new estimate number
+    current_year = datetime.now().year
+    last_estimate = await db.cost_estimates.find_one(
+        {"estimate_number": {"$regex": f"^EST-{current_year}-"}},
+        sort=[("estimate_number", -1)]
+    )
+    
+    if last_estimate and last_estimate.get("estimate_number"):
+        try:
+            last_num = int(last_estimate["estimate_number"].split("-")[2])
+            next_num = last_num + 1
+        except:
+            next_num = 1
+    else:
+        next_num = 1
+    
+    new_estimate_number = f"EST-{current_year}-{str(next_num).zfill(4)}"
+    new_estimate_id = f"ce_{uuid4().hex[:12]}"
+    
+    # Create cloned estimate
+    cloned = {
+        **original,
+        "estimate_id": new_estimate_id,
+        "estimate_number": new_estimate_number,
+        "estimate_name": f"Copia de {original.get('estimate_name', 'Estimación')}",
+        "status": "en_proceso",
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "cloned_from": estimate_id
+    }
+    
+    # Remove fields that shouldn't be cloned
+    cloned.pop("_id", None)
+    cloned.pop("from_pre_project", None)
+    
+    await db.cost_estimates.insert_one(cloned)
+    cloned.pop("_id", None)
+    
+    return {
+        "message": "Estimación clonada exitosamente",
+        "estimate_id": new_estimate_id,
+        "estimate_number": new_estimate_number,
+        "estimate_name": cloned["estimate_name"]
+    }
+
 # Convert Cost Estimate to Formal Estimate
 @api_router.post("/cost-estimates/{estimate_id}/convert-to-estimate", response_model=Estimate)
 async def convert_cost_estimate_to_estimate(
@@ -10184,14 +11871,32 @@ async def convert_cost_estimate_to_estimate(
     
     # Calculate subtotals
     total_labor = round2(sum(float(item.get("subtotal", 0)) for item in labor_costs))
-    total_subcontractors = round2(sum(float(item.get("cost", 0)) for item in subcontractors))
-    total_subcontractor_labor = round2(sum(float(item.get("labor_cost", 0)) for item in subcontractors))
-    total_materials = round2(sum(float(item.get("total", 0)) for item in materials))
+    
+    # Calculate subcontractor total with factor applied
+    total_subcontractors_raw = round2(sum(
+        float(item.get("cost", 0)) * (1 + float(item.get("factor", 0)) / 100) 
+        for item in subcontractors
+    ))
+    
+    # Subcontractor distribution: 70% to Materials, 30% to Labor
+    subcontractor_to_materials = round2(total_subcontractors_raw * 0.70)
+    subcontractor_to_labor = round2(total_subcontractors_raw * 0.30)
+    
+    # Labor from subcontractors (30% of subcontractor cost) for B2B calculation
+    total_subcontractor_labor = subcontractor_to_labor
+    
+    direct_materials = round2(sum(float(item.get("total", 0)) for item in materials))
+    total_materials = round2(direct_materials + subcontractor_to_materials)
+    
+    # Total labor including 30% from subcontractors
+    total_labor_with_subcontractors = round2(total_labor + subcontractor_to_labor)
+    
     total_equipment = round2(sum(float(item.get("total", 0)) for item in equipment))
     total_transportation = round2(sum(float(item.get("total", 0)) for item in transportation))
     total_gc = round2(sum(float(item.get("total", 0)) for item in general_conditions))
     
-    subtotal = round2(total_labor + total_subcontractors + total_materials + 
+    # Subtotal now uses distributed values (no separate subcontractor line)
+    subtotal = round2(total_labor_with_subcontractors + total_materials + 
                       total_equipment + total_transportation + total_gc)
     
     # Calculate cascading percentages
@@ -10203,8 +11908,8 @@ async def convert_cost_estimate_to_estimate(
     after_overhead = round2(after_profit * (1 + overhead_pct / 100))
     overhead_amount = round2(after_overhead - after_profit)
     
-    # Step 3: CFSE on labor only
-    cfse_amount = round2(total_labor * (cfse_pct / 100))
+    # Step 3: CFSE on labor only (including 30% from subcontractors)
+    cfse_amount = round2(total_labor_with_subcontractors * (cfse_pct / 100))
     
     # Step 4: w + cfseAmount = combined
     combined_total = round2(after_overhead + cfse_amount)
@@ -10229,10 +11934,11 @@ async def convert_cost_estimate_to_estimate(
     b2b_subcontractor_amount = round2(total_subcontractor_labor * (b2b_subcontractor_pct / 100))
     
     # Calculate Price Breakdown (Material/Equipment vs Labor)
-    total_material_equipment = round2(total_subcontractors + total_materials + total_equipment + total_transportation + total_gc)
+    # Materials now includes 70% of subcontractors
+    total_material_equipment = round2(total_materials + total_equipment + total_transportation + total_gc)
     
-    # Calculate Labor ratio and Labor for Price Breakdown
-    labor_ratio = total_labor / subtotal if subtotal > 0 else 0
+    # Calculate Labor ratio and Labor for Price Breakdown (labor includes 30% from subcontractors)
+    labor_ratio = total_labor_with_subcontractors / subtotal if subtotal > 0 else 0
     mat_equip_ratio = total_material_equipment / subtotal if subtotal > 0 else 0
     
     # Labor del Price Breakdown = after_b2b_ohsms * labor_ratio (CFSE ya está incluido en cascade)
@@ -10407,10 +12113,10 @@ async def export_cost_estimate_pdf(
     
     # Right side: Document title and info
     right_elements = []
-    right_elements.append(Paragraph("ESTIMACIÓN DE COSTOS", title_style))
-    right_elements.append(Paragraph(f"#{estimate.get('estimate_name', 'Sin nombre')}", subtitle_right))
-    right_elements.append(Paragraph(f"Proyecto: {estimate.get('project_name', 'N/A')}", subtitle_right))
-    right_elements.append(Paragraph(f"Fecha: {datetime.now(PUERTO_RICO_TZ).strftime('%d/%m/%Y')}", subtitle_right))
+    right_elements.append(Paragraph("COST ESTIMATE", title_style))
+    right_elements.append(Paragraph(f"#{estimate.get('estimate_name', 'Untitled')}", subtitle_right))
+    right_elements.append(Paragraph(f"Project: {estimate.get('project_name', 'N/A')}", subtitle_right))
+    right_elements.append(Paragraph(f"Date: {datetime.now(PUERTO_RICO_TZ).strftime('%m/%d/%Y')}", subtitle_right))
     
     # Create header table with two columns
     from reportlab.platypus import KeepTogether
@@ -10432,179 +12138,21 @@ async def export_cost_estimate_pdf(
     elements.append(line_table)
     elements.append(Spacer(1, 15))
     
-    # Table style matching invoice CSS
-    table_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
-        ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('TOPPADDING', (0, 0), (-1, 0), 8),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), TEXT_COLOR),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
-        ('LINEBELOW', (0, 0), (-1, 0), 0.5, PRIMARY_COLOR),
-        ('ALIGN', (-1, 1), (-1, -1), 'RIGHT'),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fcfcfd')]),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
-        ('TOPPADDING', (0, 1), (-1, -1), 5),
-    ])
-    
-    footer_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
-        ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('TOPPADDING', (0, 0), (-1, 0), 8),
-    ])
-    
-    # Labor Costs Section
-    labor_costs = estimate.get('labor_costs', [])
-    if labor_costs:
-        elements.append(Paragraph("Mano de Obra", heading_style))
-        labor_data = [['Rol', 'Cant.', 'Hrs Reg.', 'Hrs OT', 'Tarifa', 'Tarifa OT', 'Subtotal']]
-        for item in labor_costs:
-            qty = item.get('qty_personnel', 1)
-            reg_hrs = item.get('regular_hours', 0)
-            ot_hrs = item.get('overtime_hours', 0)
-            rate = item.get('rate', 0)
-            ot_rate = item.get('overtime_rate', 0)
-            subtotal = item.get('subtotal', 0)
-            labor_data.append([
-                item.get('role_name', ''),
-                str(qty),
-                str(reg_hrs),
-                str(ot_hrs),
-                f"${float(rate):,.2f}",
-                f"${float(ot_rate):,.2f}",
-                f"${float(subtotal):,.2f}"
-            ])
-        t = Table(labor_data, colWidths=[1.5*inch, 0.5*inch, 0.7*inch, 0.7*inch, 0.9*inch, 0.9*inch, 1.3*inch])
-        t.setStyle(table_style)
-        elements.append(t)
-        # Footer row
-        total_labor_sum = sum(float(item.get('subtotal', 0)) for item in labor_costs)
-        footer_data = [['', '', '', '', '', 'Total:', f"${total_labor_sum:,.2f}"]]
-        tf = Table(footer_data, colWidths=[1.5*inch, 0.5*inch, 0.7*inch, 0.7*inch, 0.9*inch, 0.9*inch, 1.3*inch])
-        tf.setStyle(footer_style)
-        elements.append(tf)
-    
-    # Subcontractors Section
-    subcontractors = estimate.get('subcontractors', [])
-    if subcontractors:
-        elements.append(Paragraph("Subcontratistas", heading_style))
-        sub_data = [['Tipo', 'Descripción', 'Costo Total', 'Mano de Obra']]
-        for item in subcontractors:
-            sub_data.append([
-                item.get('trade', ''),
-                item.get('description', '')[:35],
-                f"${float(item.get('cost', 0)):,.2f}",
-                f"${float(item.get('labor_cost', 0)):,.2f}"
-            ])
-        t = Table(sub_data, colWidths=[1.3*inch, 2.7*inch, 1.25*inch, 1.25*inch])
-        t.setStyle(table_style)
-        elements.append(t)
-        total_sub_sum = sum(float(item.get('cost', 0)) for item in subcontractors)
-        total_sub_labor = sum(float(item.get('labor_cost', 0)) for item in subcontractors)
-        footer_data = [['', 'Total:', f"${total_sub_sum:,.2f}", f"${total_sub_labor:,.2f}"]]
-        tf = Table(footer_data, colWidths=[1.3*inch, 2.7*inch, 1.25*inch, 1.25*inch])
-        tf.setStyle(footer_style)
-        elements.append(tf)
-    
-    # Materials Section
-    materials = estimate.get('materials', [])
-    if materials:
-        elements.append(Paragraph("Materiales", heading_style))
-        mat_data = [['Descripción', 'Cantidad', 'Precio Unitario', 'Total']]
-        for item in materials:
-            mat_data.append([
-                item.get('description', '')[:30],
-                str(item.get('quantity', 0)),
-                f"${float(item.get('unit_cost', 0)):,.2f}",
-                f"${float(item.get('total', 0)):,.2f}"
-            ])
-        t = Table(mat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
-        t.setStyle(table_style)
-        elements.append(t)
-        total_mat_sum = sum(float(item.get('total', 0)) for item in materials)
-        footer_data = [['', '', 'Total:', f"${total_mat_sum:,.2f}"]]
-        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
-        tf.setStyle(footer_style)
-        elements.append(tf)
-    
-    # Equipment Section
-    equipment = estimate.get('equipment', [])
-    if equipment:
-        elements.append(Paragraph("Equipos", heading_style))
-        eq_data = [['Descripción', 'Cantidad', 'Días', 'Tarifa/Día', 'Total']]
-        for item in equipment:
-            eq_data.append([
-                item.get('description', '')[:25],
-                str(item.get('quantity', 0)),
-                str(item.get('days', 0)),
-                f"${float(item.get('rate', 0)):,.2f}",
-                f"${float(item.get('total', 0)):,.2f}"
-            ])
-        t = Table(eq_data, colWidths=[2*inch, 1*inch, 0.8*inch, 1.2*inch, 1.5*inch])
-        t.setStyle(table_style)
-        elements.append(t)
-        total_eq_sum = sum(float(item.get('total', 0)) for item in equipment)
-        footer_data = [['', '', '', 'Total:', f"${total_eq_sum:,.2f}"]]
-        tf = Table(footer_data, colWidths=[2*inch, 1*inch, 0.8*inch, 1.2*inch, 1.5*inch])
-        tf.setStyle(footer_style)
-        elements.append(tf)
-    
-    # Transportation Section
-    transportation = estimate.get('transportation', [])
-    if transportation:
-        elements.append(Paragraph("Transporte", heading_style))
-        trans_data = [['Descripción', 'Ciudad', 'Millas', 'Costo/Milla', 'Días', 'Total']]
-        for item in transportation:
-            trans_data.append([
-                item.get('description', '')[:20],
-                item.get('city_town', '')[:15],
-                str(item.get('roundtrip_miles', 0)),
-                f"${float(item.get('cost_per_mile', 0)):,.2f}",
-                str(item.get('days', 0)),
-                f"${float(item.get('total', 0)):,.2f}"
-            ])
-        t = Table(trans_data, colWidths=[1.5*inch, 1.2*inch, 0.8*inch, 1*inch, 0.7*inch, 1.3*inch])
-        t.setStyle(table_style)
-        elements.append(t)
-        total_trans_sum = sum(float(item.get('total', 0)) for item in transportation)
-        footer_data = [['', '', '', '', 'Total:', f"${total_trans_sum:,.2f}"]]
-        tf = Table(footer_data, colWidths=[1.5*inch, 1.2*inch, 0.8*inch, 1*inch, 0.7*inch, 1.3*inch])
-        tf.setStyle(footer_style)
-        elements.append(tf)
-    
-    # General Conditions Section
-    general_conditions = estimate.get('general_conditions', [])
-    if general_conditions:
-        elements.append(Paragraph("Condiciones Generales", heading_style))
-        gc_data = [['Descripción', 'Cantidad', 'Costo Unitario', 'Total']]
-        for item in general_conditions:
-            gc_data.append([
-                item.get('description', '')[:30],
-                str(item.get('quantity', 0)),
-                f"${float(item.get('unit_cost', 0)):,.2f}",
-                f"${float(item.get('total', 0)):,.2f}"
-            ])
-        t = Table(gc_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
-        t.setStyle(table_style)
-        elements.append(t)
-        total_gc_sum = sum(float(item.get('total', 0)) for item in general_conditions)
-        footer_data = [['', '', 'Total:', f"${total_gc_sum:,.2f}"]]
-        tf = Table(footer_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
-        tf.setStyle(footer_style)
-        elements.append(tf)
-    
     # Summary Section with orange accent - CASCADING CALCULATION
     elements.append(Spacer(1, 20))
-    elements.append(Paragraph("Resumen", heading_style))
+    
+    # Section title with border
+    summary_title_style = ParagraphStyle(
+        'SummaryTitle', 
+        parent=styles['Heading2'], 
+        fontSize=12, 
+        textColor=colors.white, 
+        fontName='Helvetica-Bold',
+        backColor=PRIMARY_COLOR,
+        borderPadding=(8, 8, 8, 8),
+        spaceBefore=0,
+        spaceAfter=0
+    )
     
     # Helper function to round to 2 decimals
     def round2(num):
@@ -10620,14 +12168,32 @@ async def export_cost_estimate_pdf(
     
     # Calculate totals from line items
     total_labor = round2(sum(float(item.get('subtotal', 0)) for item in labor_costs))
-    total_subcontractors = round2(sum(float(item.get('cost', 0)) for item in subcontractors))
-    total_subcontractor_labor = round2(sum(float(item.get('labor_cost', 0)) for item in subcontractors))
-    total_materials = round2(sum(float(item.get('total', 0)) for item in materials))
+    
+    # Calculate subcontractor total with factor applied
+    total_subcontractors_raw = round2(sum(
+        float(item.get("cost", 0)) * (1 + float(item.get("factor", 0)) / 100) 
+        for item in subcontractors
+    ))
+    
+    # Subcontractor distribution: 70% to Materials, 30% to Labor
+    subcontractor_to_materials = round2(total_subcontractors_raw * 0.70)
+    subcontractor_to_labor = round2(total_subcontractors_raw * 0.30)
+    
+    # Labor from subcontractors (30%) for B2B calculation
+    total_subcontractor_labor = subcontractor_to_labor
+    
+    direct_materials = round2(sum(float(item.get('total', 0)) for item in materials))
+    total_materials = round2(direct_materials + subcontractor_to_materials)
+    
+    # Total labor including 30% from subcontractors
+    total_labor_with_subcontractors = round2(total_labor + subcontractor_to_labor)
+    
     total_equipment = round2(sum(float(item.get('total', 0)) for item in equipment))
     total_transportation = round2(sum(float(item.get('total', 0)) for item in transportation))
     total_gc = round2(sum(float(item.get('total', 0)) for item in general_conditions))
     
-    subtotal = round2(total_labor + total_subcontractors + total_materials + 
+    # Subtotal now uses distributed values
+    subtotal = round2(total_labor_with_subcontractors + total_materials + 
                       total_equipment + total_transportation + total_gc)
     
     # Get percentages
@@ -10641,58 +12207,80 @@ async def export_cost_estimate_pdf(
     b2b_ohsms_labor_pct = float(estimate.get('b2b_ohsms_labor_percentage', 0))
     b2b_subcontractor_pct = float(estimate.get('b2b_subcontractor_percentage', 0))
     
+    # Get include flags - if checkbox is unchecked, treat percentage as 0 for calculations
+    include_profit = estimate.get('include_profit', True)
+    include_overhead = estimate.get('include_overhead', True)
+    include_cfse = estimate.get('include_cfse', True)
+    include_liability = estimate.get('include_liability', True)
+    include_municipal_patent = estimate.get('include_municipal_patent', True)
+    include_contingency = estimate.get('include_contingency', True)
+    include_b2b_ohsms = estimate.get('include_b2b_ohsms', True)
+    include_b2b_ohsms_labor = estimate.get('include_b2b_ohsms_labor', True)
+    include_b2b_subcontractor = estimate.get('include_b2b_subcontractor', True)
+    
+    # Apply include flags - if not included, treat as 0% for calculations
+    effective_profit_pct = profit_pct if include_profit else 0
+    effective_overhead_pct = overhead_pct if include_overhead else 0
+    effective_cfse_pct = cfse_pct if include_cfse else 0
+    effective_liability_pct = liability_pct if include_liability else 0
+    effective_municipal_patent_pct = municipal_patent_pct if include_municipal_patent else 0
+    effective_contingency_pct = contingency_pct if include_contingency else 0
+    effective_b2b_ohsms_pct = b2b_ohsms_pct if include_b2b_ohsms else 0
+    effective_b2b_ohsms_labor_pct = b2b_ohsms_labor_pct if include_b2b_ohsms_labor else 0
+    effective_b2b_subcontractor_pct = b2b_subcontractor_pct if include_b2b_subcontractor else 0
+    
     # CASCADING CALCULATION matching frontend exactly:
-    # B2B Subcontractor - applies only to subcontractor's LABOR COST (added at the end)
-    b2b_subcontractor_amount = round2(total_subcontractor_labor * (b2b_subcontractor_pct / 100))
+    # B2B Subcontractor - applies only to subcontractor's LABOR COST (30% of subcontractor cost)
+    b2b_subcontractor_amount = round2(total_subcontractor_labor * (effective_b2b_subcontractor_pct / 100))
     
     # Step 1: Subtotal x (1 + Profit%) = s
-    profit_multiplier = 1 + (profit_pct / 100)
+    profit_multiplier = 1 + (effective_profit_pct / 100)
     after_profit = round2(subtotal * profit_multiplier)
     profit_amount = round2(after_profit - subtotal)
     
     # Step 2: s x (1 + Overhead%) = w
-    overhead_multiplier = 1 + (overhead_pct / 100)
+    overhead_multiplier = 1 + (effective_overhead_pct / 100)
     after_overhead = round2(after_profit * overhead_multiplier)
     overhead_amount = round2(after_overhead - after_profit)
     
-    # Step 3: Mano de Obra x CFSE% = cfseAmount (only the increment)
-    cfse_amount = round2(total_labor * (cfse_pct / 100))
+    # Step 3: Mano de Obra x CFSE% = cfseAmount (uses total labor including 30% from subcontractors)
+    cfse_amount = round2(total_labor_with_subcontractors * (effective_cfse_pct / 100))
     
     # Step 4: w + cfseAmount = qq
     combined_total = round2(after_overhead + cfse_amount)
     
     # Step 5: qq x (1 + Liability%) = M
-    liability_multiplier = 1 + (liability_pct / 100)
+    liability_multiplier = 1 + (effective_liability_pct / 100)
     after_liability = round2(combined_total * liability_multiplier)
     liability_amount = round2(after_liability - combined_total)
     
     # Step 6: M x (1 + Municipal Patent%) = C
-    municipal_patent_multiplier = 1 + (municipal_patent_pct / 100)
+    municipal_patent_multiplier = 1 + (effective_municipal_patent_pct / 100)
     after_municipal_patent = round2(after_liability * municipal_patent_multiplier)
     municipal_patent_amount = round2(after_municipal_patent - after_liability)
     
     # Step 7: C x (1 + Contingency%) = U
-    contingency_multiplier = 1 + (contingency_pct / 100)
+    contingency_multiplier = 1 + (effective_contingency_pct / 100)
     after_contingency = round2(after_municipal_patent * contingency_multiplier)
     contingency_amount = round2(after_contingency - after_municipal_patent)
     
     # Step 8: U x 0.35 x B2B OHSMS% = B2B OHSMS Amount
     b2b_ohsms_base = round2(after_contingency * 0.35)
-    b2b_ohsms_amount = round2(b2b_ohsms_base * (b2b_ohsms_pct / 100))
+    b2b_ohsms_amount = round2(b2b_ohsms_base * (effective_b2b_ohsms_pct / 100))
     after_b2b_ohsms = round2(after_contingency + b2b_ohsms_amount)
     
-    # Calculate Material/Equipment breakdown
-    total_material_equipment = round2(total_subcontractors + total_materials + total_equipment + total_transportation + total_gc)
+    # Calculate Material/Equipment breakdown (materials now includes 70% of subcontractors)
+    total_material_equipment = round2(total_materials + total_equipment + total_transportation + total_gc)
     
-    # Calculate Labor ratio and Labor for Price Breakdown
-    labor_ratio = total_labor / subtotal if subtotal > 0 else 0
+    # Calculate Labor ratio and Labor for Price Breakdown (labor includes 30% from subcontractors)
+    labor_ratio = total_labor_with_subcontractors / subtotal if subtotal > 0 else 0
     mat_equip_ratio = total_material_equipment / subtotal if subtotal > 0 else 0
     
     # Labor del Price Breakdown = after_b2b_ohsms * labor_ratio (CFSE ya está en cascade)
     labor_for_price_breakdown = round2(after_b2b_ohsms * labor_ratio)
     
-    # B2B OHSMS Labor = Labor (del Price Breakdown) × 4%
-    b2b_ohsms_labor_amount = round2(labor_for_price_breakdown * (b2b_ohsms_labor_pct / 100))
+    # B2B OHSMS Labor = Labor (del Price Breakdown) × 4% (only if included)
+    b2b_ohsms_labor_amount = round2(labor_for_price_breakdown * (effective_b2b_ohsms_labor_pct / 100))
     
     # Final total = cascaded total + B2B subcontractor (labor) + B2B OHSMS (labor)
     grand_total = round2(after_b2b_ohsms + b2b_subcontractor_amount + b2b_ohsms_labor_amount)
@@ -10702,69 +12290,236 @@ async def export_cost_estimate_pdf(
     # Material/Equipment with percentages = proporción mat/equip del cascade + B2B Subcontractor
     mat_equip_with_percentages = round2((after_b2b_ohsms * mat_equip_ratio) + b2b_subcontractor_amount)
     
-    # Build summary table
-    summary_data = [
-        ['Concepto', 'Base', 'Monto'],
-        ['Mano de Obra', '', f"${total_labor:,.2f}"],
-        ['Subcontratistas', '', f"${total_subcontractors:,.2f}"],
-        ['Materiales', '', f"${total_materials:,.2f}"],
-        ['Equipos', '', f"${total_equipment:,.2f}"],
-        ['Transporte', '', f"${total_transportation:,.2f}"],
-        ['Condiciones Generales', '', f"${total_gc:,.2f}"],
-        ['SUBTOTAL', '', f"${subtotal:,.2f}"],
+    # Calculate total company margins/charges
+    total_company_charges = round2(
+        profit_amount + overhead_amount + cfse_amount + liability_amount + 
+        municipal_patent_amount + contingency_amount + b2b_ohsms_amount + 
+        b2b_ohsms_labor_amount + b2b_subcontractor_amount
+    )
+    
+    # ==================== SECTION 1: DIRECT PROJECT COSTS ====================
+    # Header for direct costs section
+    direct_costs_header = Table([['DIRECT PROJECT COSTS']], colWidths=[6.5*inch])
+    direct_costs_header.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), SECONDARY_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('TOPPADDING', (0, 0), (-1, 0), 10),
+    ]))
+    elements.append(direct_costs_header)
+    elements.append(Spacer(1, 5))
+    
+    # Direct costs table
+    direct_costs_data = [
+        ['Category', 'Amount'],
+        ['Direct Labor', f"${total_labor:,.2f}"],
+        ['Subcontractors', f"${total_subcontractors_raw:,.2f}"],
+        ['Materials', f"${direct_materials:,.2f}"],
+        ['Equipment', f"${total_equipment:,.2f}"],
+        ['Transportation', f"${total_transportation:,.2f}"],
+        ['General Conditions', f"${total_gc:,.2f}"],
     ]
     
-    if profit_pct > 0:
-        summary_data.append([f"Profit ({profit_pct}%)", f"${subtotal:,.2f}", f"${profit_amount:,.2f}"])
-    
-    if overhead_pct > 0:
-        summary_data.append([f"Overhead ({overhead_pct}%)", f"${after_profit:,.2f}", f"${overhead_amount:,.2f}"])
-    
-    if cfse_pct > 0:
-        summary_data.append([f"CFSE ({cfse_pct}%) - Solo M.O.", f"${total_labor:,.2f}", f"${cfse_amount:,.2f}"])
-    
-    if liability_pct > 0:
-        summary_data.append([f"Liability ({liability_pct}%)", f"${combined_total:,.2f}", f"${liability_amount:,.2f}"])
-    
-    if municipal_patent_pct > 0:
-        summary_data.append([f"Municipal Patent ({municipal_patent_pct}%)", f"${after_liability:,.2f}", f"${municipal_patent_amount:,.2f}"])
-    
-    if contingency_pct > 0:
-        summary_data.append([f"Contingency ({contingency_pct}%)", f"${after_municipal_patent:,.2f}", f"${contingency_amount:,.2f}"])
-    
-    if b2b_ohsms_pct > 0:
-        summary_data.append([f"B2B OHSMS Global ({b2b_ohsms_pct}%)", f"${b2b_ohsms_base:,.2f} (35%)", f"${b2b_ohsms_amount:,.2f}"])
-    
-    if b2b_ohsms_labor_pct > 0:
-        summary_data.append([f"B2B OHSMS M.O. ({b2b_ohsms_labor_pct}%)", f"${total_labor:,.2f}", f"${b2b_ohsms_labor_amount:,.2f}"])
-    
-    if b2b_subcontractor_pct > 0 and total_subcontractor_labor > 0:
-        summary_data.append([f"B2B Subcontratista ({b2b_subcontractor_pct}%)", f"${total_subcontractor_labor:,.2f}", f"${b2b_subcontractor_amount:,.2f}"])
-    
-    summary_style = TableStyle([
+    direct_costs_style = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
         ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
         ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('LINEBELOW', (0, 0), (-1, 0), 0.5, PRIMARY_COLOR),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, PRIMARY_COLOR),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ('TOPPADDING', (0, 0), (-1, -1), 6),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fcfcfd')]),
     ])
     
-    t = Table(summary_data, colWidths=[3*inch, 1.75*inch, 1.75*inch])
-    t.setStyle(summary_style)
-    elements.append(t)
+    t_direct = Table(direct_costs_data, colWidths=[4.5*inch, 2*inch])
+    t_direct.setStyle(direct_costs_style)
+    elements.append(t_direct)
+    
+    # Subtotal row
+    subtotal_data = [['DIRECT COSTS SUBTOTAL', f"${subtotal:,.2f}"]]
+    subtotal_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e2e8f0')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+    ])
+    t_subtotal = Table(subtotal_data, colWidths=[4.5*inch, 2*inch])
+    t_subtotal.setStyle(subtotal_style)
+    elements.append(t_subtotal)
+    
+    # ==================== SECTION 2: MANDATORY CHARGES ====================
+    elements.append(Spacer(1, 15))
+    
+    # Header for mandatory charges section
+    mandatory_charges_header = Table([['MANDATORY CHARGES & EXPENSES']], colWidths=[6.5*inch])
+    mandatory_charges_header.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), SECONDARY_COLOR),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('TOPPADDING', (0, 0), (-1, 0), 10),
+    ]))
+    elements.append(mandatory_charges_header)
+    elements.append(Spacer(1, 5))
+    
+    # Mandatory charges table (Overhead, CFSE, Liability, etc. - NOT Profit)
+    mandatory_charges_data = [['Item', 'Rate', 'Amount']]
+    total_mandatory_charges = 0
+    
+    # Check include flags for each percentage
+    include_overhead = estimate.get('include_overhead', True)
+    include_cfse = estimate.get('include_cfse', True)
+    include_liability = estimate.get('include_liability', True)
+    include_municipal_patent = estimate.get('include_municipal_patent', True)
+    include_contingency = estimate.get('include_contingency', True)
+    include_b2b_ohsms = estimate.get('include_b2b_ohsms', True)
+    include_b2b_ohsms_labor = estimate.get('include_b2b_ohsms_labor', True)
+    include_b2b_subcontractor = estimate.get('include_b2b_subcontractor', True)
+    
+    if overhead_pct > 0 and include_overhead:
+        mandatory_charges_data.append(['Overhead', f"{overhead_pct}%", f"${overhead_amount:,.2f}"])
+        total_mandatory_charges += overhead_amount
+    
+    if cfse_pct > 0 and include_cfse:
+        mandatory_charges_data.append(['CFSE (Labor Only)', f"{cfse_pct}%", f"${cfse_amount:,.2f}"])
+        total_mandatory_charges += cfse_amount
+    
+    if liability_pct > 0 and include_liability:
+        mandatory_charges_data.append(['Liability Insurance', f"{liability_pct}%", f"${liability_amount:,.2f}"])
+        total_mandatory_charges += liability_amount
+    
+    if municipal_patent_pct > 0 and include_municipal_patent:
+        mandatory_charges_data.append(['Municipal Patent', f"{municipal_patent_pct}%", f"${municipal_patent_amount:,.2f}"])
+        total_mandatory_charges += municipal_patent_amount
+    
+    if contingency_pct > 0 and include_contingency:
+        mandatory_charges_data.append(['Contingency', f"{contingency_pct}%", f"${contingency_amount:,.2f}"])
+        total_mandatory_charges += contingency_amount
+    
+    if b2b_ohsms_pct > 0 and include_b2b_ohsms:
+        mandatory_charges_data.append(['B2B OHSMS Global', f"{b2b_ohsms_pct}%", f"${b2b_ohsms_amount:,.2f}"])
+        total_mandatory_charges += b2b_ohsms_amount
+    
+    if b2b_ohsms_labor_pct > 0 and include_b2b_ohsms_labor:
+        mandatory_charges_data.append(['B2B OHSMS Labor', f"{b2b_ohsms_labor_pct}%", f"${b2b_ohsms_labor_amount:,.2f}"])
+        total_mandatory_charges += b2b_ohsms_labor_amount
+    
+    if b2b_subcontractor_pct > 0 and total_subcontractor_labor > 0 and include_b2b_subcontractor:
+        mandatory_charges_data.append(['B2B Subcontractor', f"{b2b_subcontractor_pct}%", f"${b2b_subcontractor_amount:,.2f}"])
+        total_mandatory_charges += b2b_subcontractor_amount
+    
+    # Only show section if there are mandatory charges
+    if len(mandatory_charges_data) > 1:
+        mandatory_charges_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), LIGHT_BG),
+            ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('LINEBELOW', (0, 0), (-1, 0), 0.5, SECONDARY_COLOR),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fcfcfd')]),
+        ])
+        
+        t_mandatory = Table(mandatory_charges_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
+        t_mandatory.setStyle(mandatory_charges_style)
+        elements.append(t_mandatory)
+        
+        # Total mandatory charges row
+        total_mandatory_data = [['TOTAL MANDATORY CHARGES', '', f"${total_mandatory_charges:,.2f}"]]
+        total_mandatory_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e2e8f0')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), TEXT_COLOR),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+        ])
+        t_total_mandatory = Table(total_mandatory_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
+        t_total_mandatory.setStyle(total_mandatory_style)
+        elements.append(t_total_mandatory)
+    
+    # ==================== SECTION 3: COMPANY PROFIT ====================
+    if profit_pct > 0 and include_profit:
+        elements.append(Spacer(1, 15))
+        
+        # Header for profit section
+        profit_header = Table([['COMPANY PROFIT']], colWidths=[6.5*inch])
+        profit_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#059669')),  # Green
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+        ]))
+        elements.append(profit_header)
+        elements.append(Spacer(1, 5))
+        
+        # Profit table
+        profit_data = [
+            ['Item', 'Rate', 'Amount'],
+            ['Profit', f"{profit_pct}%", f"${profit_amount:,.2f}"]
+        ]
+        
+        profit_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#d1fae5')),  # Light green
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#065f46')),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.HexColor('#059669')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#f0fdf4')),
+        ])
+        
+        t_profit = Table(profit_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
+        t_profit.setStyle(profit_style)
+        elements.append(t_profit)
+        
+        # Total profit row
+        total_profit_data = [['TOTAL PROFIT', '', f"${profit_amount:,.2f}"]]
+        total_profit_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#059669')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+        ])
+        t_total_profit = Table(total_profit_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
+        t_total_profit.setStyle(total_profit_style)
+        elements.append(t_total_profit)
+    
+    # ==================== SECTION 4: FINAL SUMMARY ====================
+    elements.append(Spacer(1, 20))
     
     # Material/Equipment | Labor | Total breakdown
-    elements.append(Spacer(1, 15))
     breakdown_header = [['Material/Equipment', 'Labor', 'Total']]
     breakdown_data = [[f"${mat_equip_with_percentages:,.2f}", f"${labor_with_percentages:,.2f}", f"${grand_total:,.2f}"]]
     
     breakdown_header_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_COLOR),
+        ('BACKGROUND', (0, 0), (-1, 0), SECONDARY_COLOR),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -10785,10 +12540,11 @@ async def export_cost_estimate_pdf(
     
     th = Table(breakdown_header, colWidths=[2.17*inch, 2.17*inch, 2.17*inch])
     th.setStyle(breakdown_header_style)
-    elements.append(th)
     
     td = Table(breakdown_data, colWidths=[2.17*inch, 2.17*inch, 2.17*inch])
     td.setStyle(breakdown_data_style)
+    
+    elements.append(th)
     elements.append(td)
     
     # Grand total with orange background
@@ -10799,14 +12555,15 @@ async def export_cost_estimate_pdf(
         ('ALIGN', (0, 0), (0, 0), 'LEFT'),
         ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-        ('TOPPADDING', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
     ])
     
-    total_data = [['GRAN TOTAL', f"${grand_total:,.2f}"]]
+    total_data = [['GRAND TOTAL', f"${grand_total:,.2f}"]]
     tt = Table(total_data, colWidths=[4*inch, 2.5*inch])
     tt.setStyle(total_style)
+    
     elements.append(tt)
     
     doc.build(elements)
@@ -11342,7 +13099,8 @@ async def process_payroll(data: dict, request: Request, session_token: Optional[
         "processed_at": datetime.now(timezone.utc).isoformat(),
         "status": "completed",
         "employees": employees,
-        "totals": data.get("totals", {})
+        "totals": data.get("totals", {}),
+        "accounting_synced": False  # Track if synced to accounting
     }
     
     await db.payroll_runs.insert_one(payroll_run)
@@ -11373,8 +13131,30 @@ async def process_payroll(data: dict, request: Request, session_token: Optional[
         }
         await db.pay_stubs.insert_one(pay_stub)
     
+    # Try to auto-sync to accounting (non-blocking)
+    accounting_result = None
+    try:
+        from accounting_routes import create_payroll_journal_entry
+        accounting_result = await create_payroll_journal_entry(db, payroll_run, user.user_id)
+        if accounting_result.get("success"):
+            await db.payroll_runs.update_one(
+                {"id": payroll_id},
+                {"$set": {"accounting_synced": True, "journal_entry_id": accounting_result.get("entry_id")}}
+            )
+    except Exception as e:
+        print(f"⚠️ Error syncing payroll to accounting: {e}")
+        accounting_result = {"success": False, "message": str(e)}
+    
     await log_audit(user.user_id, user.name, "create", "payroll", payroll_id, f"Nómina {period_start} - {period_end}", {"total": data.get("totals", {}).get("net", 0), "employees": len(employees)})
-    return {"message": "Nómina procesada y talonarios generados", "id": payroll_id, "stubs_generated": len(employees)}
+    
+    return {
+        "message": "Nómina procesada y talonarios generados", 
+        "id": payroll_id, 
+        "stubs_generated": len(employees),
+        "accounting_synced": accounting_result.get("success", False) if accounting_result else False,
+        "accounting_message": accounting_result.get("message", "") if accounting_result else "",
+        "journal_entry_id": accounting_result.get("entry_id") if accounting_result else None
+    }
 
 @api_router.get("/pay-stubs/my")
 async def get_my_pay_stubs(request: Request, session_token: Optional[str] = Cookie(None)):
@@ -12276,6 +14056,650 @@ async def get_project_rfi_stats(project_id: str, request: Request, session_token
         "pending": sent + in_review
     }
 
+# ==================== MRR (Material Receiving Report) ENDPOINTS ====================
+
+@api_router.get("/mrrs")
+async def get_mrrs(
+    request: Request, 
+    project_id: Optional[str] = None,
+    status: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get all MRRs, optionally filtered by project"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if status:
+        query["status"] = status
+    
+    mrrs = await db.mrrs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return mrrs
+
+@api_router.get("/mrrs/{mrr_id}")
+async def get_mrr(mrr_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get a single MRR by ID"""
+    user = await get_current_user(request, session_token)
+    mrr = await db.mrrs.find_one({"mrr_id": mrr_id}, {"_id": 0})
+    if not mrr:
+        raise HTTPException(status_code=404, detail="MRR no encontrado")
+    return mrr
+
+@api_router.post("/mrrs")
+async def create_mrr(mrr: MRRCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new MRR"""
+    user = await get_current_user(request, session_token)
+    
+    # Get project info
+    project = await db.projects.find_one({"project_id": mrr.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    # Generate MRR number: Sequential format like 0133
+    existing_count = await db.mrrs.count_documents({})
+    mrr_number = str(existing_count + 1).zfill(4)
+    mrr_id = f"mrr_{uuid4().hex[:12]}"
+    
+    # Convert items to dicts if they are MRRItem objects
+    items_list = []
+    if mrr.items:
+        for item in mrr.items:
+            if hasattr(item, 'model_dump'):
+                items_list.append(item.model_dump())
+            else:
+                items_list.append(item)
+    
+    mrr_doc = {
+        "mrr_id": mrr_id,
+        "mrr_number": mrr_number,
+        "project_id": mrr.project_id,
+        "project_name": project.get("name"),
+        "project_number": project.get("project_number"),
+        # Header Section
+        "supplier": mrr.supplier,
+        "shipper": mrr.shipper,
+        "po_number": mrr.po_number,
+        "carrier": mrr.carrier,
+        "shipping_point": mrr.shipping_point,
+        "fob_point": mrr.fob_point,
+        "shipment_type": mrr.shipment_type,
+        "charges": mrr.charges,
+        "freight_bill_no": mrr.freight_bill_no,
+        "date_received": mrr.date_received,
+        "packing_list_no": mrr.packing_list_no,
+        "car_no": mrr.car_no,
+        "weight": mrr.weight,
+        "no_of_cartons": mrr.no_of_cartons,
+        "mrr_date": mrr.mrr_date or datetime.now(timezone.utc).strftime("%m/%d/%Y"),
+        # RECEIVING INSPECTION Section
+        "received_by": mrr.received_by,
+        "received_date": mrr.received_date,
+        "qc_inspection_required": mrr.qc_inspection_required,
+        "qc_status": mrr.qc_status,
+        "qc_documents_received": mrr.qc_documents_received,
+        "remarks": mrr.remarks,
+        # Items Table
+        "items": items_list,
+        # Footer
+        "prepared_by": mrr.prepared_by or user.name,
+        "prepared_date": mrr.prepared_date or datetime.now(timezone.utc).strftime("%m/%d/%Y"),
+        # Status & Meta
+        "status": "draft",
+        "attachments": mrr.attachments or [],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": None,
+        "created_by": user.user_id,
+        "created_by_name": user.name
+    }
+    
+    await db.mrrs.insert_one(mrr_doc)
+    
+    # Remove _id before returning
+    mrr_doc.pop("_id", None)
+    return mrr_doc
+
+@api_router.put("/mrrs/{mrr_id}")
+async def update_mrr(mrr_id: str, mrr_update: MRRUpdate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update an MRR"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.mrrs.find_one({"mrr_id": mrr_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="MRR no encontrado")
+    
+    update_dict = mrr_update.model_dump(exclude_unset=True)
+    
+    # Convert items if present
+    if 'items' in update_dict and update_dict['items'] is not None:
+        items_list = []
+        for item in update_dict['items']:
+            if hasattr(item, 'model_dump'):
+                items_list.append(item.model_dump())
+            else:
+                items_list.append(item)
+        update_dict['items'] = items_list
+    
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.mrrs.update_one({"mrr_id": mrr_id}, {"$set": update_dict})
+    
+    updated = await db.mrrs.find_one({"mrr_id": mrr_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/mrrs/{mrr_id}")
+async def delete_mrr(mrr_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete an MRR"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.mrrs.delete_one({"mrr_id": mrr_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="MRR no encontrado")
+    
+    return {"message": "MRR eliminado exitosamente"}
+
+@api_router.put("/mrrs/{mrr_id}/status")
+async def update_mrr_status(mrr_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update MRR status"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    new_status = body.get("status")
+    
+    if new_status not in ["draft", "pending", "received", "inspected", "rejected"]:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    
+    existing = await db.mrrs.find_one({"mrr_id": mrr_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="MRR no encontrado")
+    
+    update_data = {
+        "status": new_status,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Add timestamp for specific status changes
+    if new_status == "received":
+        update_data["received_at"] = datetime.now(timezone.utc).isoformat()
+    elif new_status == "inspected":
+        update_data["inspected_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.mrrs.update_one({"mrr_id": mrr_id}, {"$set": update_data})
+    
+    return {"message": f"MRR actualizado a {new_status}"}
+
+@api_router.get("/projects/{project_id}/mrr-stats")
+async def get_project_mrr_stats(project_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get MRR statistics for a project"""
+    user = await get_current_user(request, session_token)
+    
+    total = await db.mrrs.count_documents({"project_id": project_id})
+    draft = await db.mrrs.count_documents({"project_id": project_id, "status": "draft"})
+    pending = await db.mrrs.count_documents({"project_id": project_id, "status": "pending"})
+    received = await db.mrrs.count_documents({"project_id": project_id, "status": "received"})
+    inspected = await db.mrrs.count_documents({"project_id": project_id, "status": "inspected"})
+    rejected = await db.mrrs.count_documents({"project_id": project_id, "status": "rejected"})
+    
+    return {
+        "total": total,
+        "draft": draft,
+        "pending": pending,
+        "received": received,
+        "inspected": inspected,
+        "rejected": rejected
+    }
+
+# ==================== SCHEDULE / SHIFT MANAGEMENT ====================
+
+class ShiftAssignment(BaseModel):
+    user_id: str
+    user_name: str
+    status: str = "pending"  # pending, confirmed, rejected
+    assigned_at: str
+    confirmed_at: Optional[str] = None
+
+class ShiftCreate(BaseModel):
+    project_id: str
+    date: str  # YYYY-MM-DD
+    start_time: str  # HH:MM
+    end_time: str  # HH:MM
+    max_slots: int = 5
+    description: Optional[str] = None
+    requires_approval: bool = False
+
+class ShiftUpdate(BaseModel):
+    date: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    max_slots: Optional[int] = None
+    description: Optional[str] = None
+    requires_approval: Optional[bool] = None
+
+class Shift(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    shift_id: str
+    project_id: str
+    project_name: Optional[str] = None
+    date: str
+    start_time: str
+    end_time: str
+    max_slots: int
+    description: Optional[str] = None
+    requires_approval: bool = False
+    assignments: List[dict] = []
+    created_by: str
+    created_by_name: str
+    created_at: str
+    updated_at: Optional[str] = None
+
+@api_router.get("/schedules")
+async def get_schedules(
+    request: Request, 
+    project_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get shifts/schedules for a project"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    if date_from:
+        query["date"] = {"$gte": date_from}
+    if date_to:
+        if "date" in query:
+            query["date"]["$lte"] = date_to
+        else:
+            query["date"] = {"$lte": date_to}
+    
+    shifts = await db.schedules.find(query, {"_id": 0}).sort("date", 1).to_list(1000)
+    return shifts
+
+@api_router.post("/schedules")
+async def create_schedule(
+    shift_data: ShiftCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Create a new shift - Admin/PM only"""
+    user = await get_current_user(request, session_token)
+    
+    # Check permissions
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Solo administradores y PMs pueden crear turnos")
+    
+    # Get project info
+    project = await db.projects.find_one({"project_id": shift_data.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    
+    shift_id = f"shift_{uuid4().hex[:12]}"
+    shift_doc = {
+        "shift_id": shift_id,
+        "project_id": shift_data.project_id,
+        "project_name": project.get("name", ""),
+        "date": shift_data.date,
+        "start_time": shift_data.start_time,
+        "end_time": shift_data.end_time,
+        "max_slots": shift_data.max_slots,
+        "description": shift_data.description,
+        "requires_approval": shift_data.requires_approval,
+        "assignments": [],
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.schedules.insert_one(shift_doc)
+    
+    # Log audit
+    await log_audit(user.user_id, user.name, "create", "schedule", shift_id, f"Turno {shift_data.date}")
+    
+    return {"shift_id": shift_id, "message": "Turno creado exitosamente"}
+
+@api_router.put("/schedules/{shift_id}")
+async def update_schedule(
+    shift_id: str,
+    shift_data: ShiftUpdate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Update a shift - Admin/PM only"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Sin permisos para editar turnos")
+    
+    shift = await db.schedules.find_one({"shift_id": shift_id}, {"_id": 0})
+    if not shift:
+        raise HTTPException(status_code=404, detail="Turno no encontrado")
+    
+    update_data = {k: v for k, v in shift_data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.schedules.update_one({"shift_id": shift_id}, {"$set": update_data})
+    
+    return {"message": "Turno actualizado exitosamente"}
+
+@api_router.delete("/schedules/{shift_id}")
+async def delete_schedule(
+    shift_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a shift - Admin/PM only"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Sin permisos para eliminar turnos")
+    
+    shift = await db.schedules.find_one({"shift_id": shift_id}, {"_id": 0})
+    if not shift:
+        raise HTTPException(status_code=404, detail="Turno no encontrado")
+    
+    await db.schedules.delete_one({"shift_id": shift_id})
+    
+    await log_audit(user.user_id, user.name, "delete", "schedule", shift_id, f"Turno {shift.get('date')}")
+    
+    return {"message": "Turno eliminado exitosamente"}
+
+@api_router.post("/schedules/{shift_id}/claim")
+async def claim_shift(
+    shift_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Employee claims/registers for a shift"""
+    user = await get_current_user(request, session_token)
+    
+    shift = await db.schedules.find_one({"shift_id": shift_id}, {"_id": 0})
+    if not shift:
+        raise HTTPException(status_code=404, detail="Turno no encontrado")
+    
+    # Check if already claimed by this user
+    existing = next((a for a in shift.get("assignments", []) if a["user_id"] == user.user_id), None)
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya estás registrado en este turno")
+    
+    # Check if shift is full
+    confirmed_count = len([a for a in shift.get("assignments", []) if a["status"] == "confirmed"])
+    if confirmed_count >= shift.get("max_slots", 0):
+        raise HTTPException(status_code=400, detail="Este turno está lleno")
+    
+    # Determine status based on shift settings
+    status = "pending" if shift.get("requires_approval", False) else "confirmed"
+    
+    assignment = {
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "status": status,
+        "assigned_at": datetime.now(timezone.utc).isoformat(),
+        "confirmed_at": datetime.now(timezone.utc).isoformat() if status == "confirmed" else None
+    }
+    
+    await db.schedules.update_one(
+        {"shift_id": shift_id},
+        {"$push": {"assignments": assignment}}
+    )
+    
+    message = "Te has registrado exitosamente" if status == "confirmed" else "Solicitud enviada, pendiente de aprobación"
+    return {"message": message, "status": status}
+
+@api_router.post("/schedules/{shift_id}/unclaim")
+async def unclaim_shift(
+    shift_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Employee cancels their shift registration"""
+    user = await get_current_user(request, session_token)
+    
+    shift = await db.schedules.find_one({"shift_id": shift_id}, {"_id": 0})
+    if not shift:
+        raise HTTPException(status_code=404, detail="Turno no encontrado")
+    
+    # Check if user is assigned
+    existing = next((a for a in shift.get("assignments", []) if a["user_id"] == user.user_id), None)
+    if not existing:
+        raise HTTPException(status_code=400, detail="No estás registrado en este turno")
+    
+    # Remove assignment
+    await db.schedules.update_one(
+        {"shift_id": shift_id},
+        {"$pull": {"assignments": {"user_id": user.user_id}}}
+    )
+    
+    return {"message": "Has cancelado tu registro en este turno"}
+
+@api_router.post("/schedules/{shift_id}/approve")
+async def approve_shift_assignment(
+    shift_id: str,
+    data: dict,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Admin/PM approves or rejects a shift assignment"""
+    user = await get_current_user(request, session_token)
+    
+    if user.role not in [UserRole.SUPER_ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Sin permisos para aprobar turnos")
+    
+    shift = await db.schedules.find_one({"shift_id": shift_id}, {"_id": 0})
+    if not shift:
+        raise HTTPException(status_code=404, detail="Turno no encontrado")
+    
+    target_user_id = data.get("user_id")
+    approved = data.get("approved", True)
+    
+    # Find and update the assignment
+    assignments = shift.get("assignments", [])
+    for i, a in enumerate(assignments):
+        if a["user_id"] == target_user_id:
+            if approved:
+                assignments[i]["status"] = "confirmed"
+                assignments[i]["confirmed_at"] = datetime.now(timezone.utc).isoformat()
+            else:
+                assignments[i]["status"] = "rejected"
+            break
+    
+    await db.schedules.update_one(
+        {"shift_id": shift_id},
+        {"$set": {"assignments": assignments}}
+    )
+    
+    return {"message": "Aprobado" if approved else "Rechazado"}
+
+@api_router.get("/schedules/export/excel")
+async def export_schedules_excel(
+    request: Request,
+    project_id: str,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Export schedules to Excel"""
+    user = await get_current_user(request, session_token)
+    
+    query = {"project_id": project_id}
+    if date_from:
+        query["date"] = {"$gte": date_from}
+    if date_to:
+        if "date" in query:
+            query["date"]["$lte"] = date_to
+        else:
+            query["date"] = {"$lte": date_to}
+    
+    shifts = await db.schedules.find(query, {"_id": 0}).sort("date", 1).to_list(1000)
+    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    
+    # Create Excel workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Programación de Turnos"
+    
+    # Header styling
+    header_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    
+    # Title row
+    ws.merge_cells('A1:F1')
+    ws['A1'] = f"Programación de Turnos - {project.get('name', 'Proyecto')}"
+    ws['A1'].font = Font(bold=True, size=14)
+    
+    # Headers
+    headers = ["Fecha", "Hora Inicio", "Hora Fin", "Descripción", "Capacidad", "Asignados"]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+    
+    # Data rows
+    row = 4
+    for shift in shifts:
+        confirmed = [a for a in shift.get("assignments", []) if a.get("status") == "confirmed"]
+        ws.cell(row=row, column=1, value=shift.get("date"))
+        ws.cell(row=row, column=2, value=shift.get("start_time"))
+        ws.cell(row=row, column=3, value=shift.get("end_time"))
+        ws.cell(row=row, column=4, value=shift.get("description", ""))
+        ws.cell(row=row, column=5, value=shift.get("max_slots"))
+        ws.cell(row=row, column=6, value=", ".join([a.get("user_name", "") for a in confirmed]))
+        row += 1
+    
+    # Adjust column widths
+    ws.column_dimensions['A'].width = 12
+    ws.column_dimensions['B'].width = 12
+    ws.column_dimensions['C'].width = 12
+    ws.column_dimensions['D'].width = 30
+    ws.column_dimensions['E'].width = 10
+    ws.column_dimensions['F'].width = 40
+    
+    # Save to buffer
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=schedule_{project_id}.xlsx"}
+    )
+
+@api_router.get("/schedules/export/pdf")
+async def export_schedules_pdf(
+    request: Request,
+    project_id: str,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Export schedules to PDF"""
+    user = await get_current_user(request, session_token)
+    
+    query = {"project_id": project_id}
+    if date_from:
+        query["date"] = {"$gte": date_from}
+    if date_to:
+        if "date" in query:
+            query["date"]["$lte"] = date_to
+        else:
+            query["date"] = {"$lte": date_to}
+    
+    shifts = await db.schedules.find(query, {"_id": 0}).sort("date", 1).to_list(1000)
+    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    
+    # Get company settings for branding
+    company_settings = await db.company_settings.find_one({}, {"_id": 0})
+    
+    # Create PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=20,
+        textColor=colors.HexColor('#1e40af')
+    )
+    
+    elements = []
+    
+    # Title
+    company_name = company_settings.get("company_name", "Empresa") if company_settings else "Empresa"
+    elements.append(Paragraph(f"{company_name}", title_style))
+    elements.append(Paragraph(f"Programacion de Turnos - {project.get('name', 'Proyecto')}", styles['Heading2']))
+    elements.append(Spacer(1, 20))
+    
+    # Table data
+    data = [["Fecha", "Horario", "Descripcion", "Capacidad", "Asignados"]]
+    
+    for shift in shifts:
+        confirmed = [a for a in shift.get("assignments", []) if a.get("status") == "confirmed"]
+        time_range = f"{shift.get('start_time')} - {shift.get('end_time')}"
+        assigned_names = ", ".join([a.get("user_name", "") for a in confirmed]) or "Sin asignar"
+        
+        data.append([
+            shift.get("date"),
+            time_range,
+            shift.get("description", "")[:30] or "-",
+            str(shift.get("max_slots")),
+            assigned_names[:40]
+        ])
+    
+    # Create table
+    table = Table(data, colWidths=[80, 100, 150, 60, 150])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    elements.append(table)
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=schedule_{project_id}.pdf"}
+    )
+
+@api_router.get("/schedules/my-shifts")
+async def get_my_shifts(
+    request: Request,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get all shifts assigned to the current user"""
+    user = await get_current_user(request, session_token)
+    
+    query = {"assignments.user_id": user.user_id}
+    if date_from:
+        query["date"] = {"$gte": date_from}
+    if date_to:
+        if "date" in query:
+            query["date"]["$lte"] = date_to
+        else:
+            query["date"] = {"$lte": date_to}
+    
+    shifts = await db.schedules.find(query, {"_id": 0}).sort("date", 1).to_list(1000)
+    return shifts
+
 # ==================== VENDORS ENDPOINTS ====================
 
 @api_router.get("/vendors")
@@ -12829,8 +15253,8 @@ async def create_pressure_test_form(
     form_dict["form_id"] = form_id
     form_dict["form_number"] = form_number
     form_dict["status"] = "draft"
-    form_dict["created_by"] = user["user_id"]
-    form_dict["created_by_name"] = user.get("name", "Unknown")
+    form_dict["created_by"] = user.user_id
+    form_dict["created_by_name"] = user.name
     form_dict["created_at"] = datetime.now(timezone.utc).isoformat()
     
     if not form_dict.get("project_name"):
@@ -12950,8 +15374,8 @@ async def create_aboveground_inspection(
     form_dict["page_number"] = 1
     form_dict["total_pages"] = 1
     form_dict["status"] = "draft"
-    form_dict["created_by"] = user["user_id"]
-    form_dict["created_by_name"] = user.get("name", "Unknown")
+    form_dict["created_by"] = user.user_id
+    form_dict["created_by_name"] = user.name
     form_dict["created_at"] = datetime.now(timezone.utc).isoformat()
     
     if not form_dict.get("project_name"):
@@ -13045,6 +15469,1712 @@ async def delete_aboveground_inspection(
     
     return {"message": "Formulario eliminado"}
 
+
+# =============================================================
+# QUALITY MODULE - Checklists & Non-Conformities
+# =============================================================
+
+class QualityChecklistItemCreate(BaseModel):
+    description: str
+    status: str = "pending"  # pending, pass, fail, na
+    comments: Optional[str] = None
+
+class QualityChecklistCreate(BaseModel):
+    project_id: str
+    title: str
+    category: str = "general"  # general, electrical, plumbing, structural, fire_protection, hvac, other
+    items: List[QualityChecklistItemCreate] = []
+    inspector: Optional[str] = None
+    inspection_date: Optional[str] = None
+    notes: Optional[str] = None
+
+class QualityChecklistUpdate(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    items: Optional[List[dict]] = None
+    inspector: Optional[str] = None
+    inspection_date: Optional[str] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+
+class NonConformityCreate(BaseModel):
+    project_id: str
+    title: str
+    description: str
+    category: str = "general"  # general, materials, workmanship, design, safety, other
+    severity: str = "minor"  # critical, major, minor
+    location: Optional[str] = None
+    assigned_to: Optional[str] = None
+    corrective_action: Optional[str] = None
+    due_date: Optional[str] = None
+    photos: Optional[List[str]] = []
+
+class NonConformityUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    severity: Optional[str] = None
+    status: Optional[str] = None
+    location: Optional[str] = None
+    assigned_to: Optional[str] = None
+    corrective_action: Optional[str] = None
+    due_date: Optional[str] = None
+    resolution_notes: Optional[str] = None
+    resolution_date: Optional[str] = None
+    photos: Optional[List[str]] = None
+
+# ---- Quality Checklists Endpoints ----
+
+@api_router.get("/quality/checklists")
+async def get_quality_checklists(
+    request: Request,
+    project_id: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    checklists = await db.quality_checklists.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return checklists
+
+@api_router.get("/quality/checklists/{checklist_id}")
+async def get_quality_checklist(checklist_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    checklist = await db.quality_checklists.find_one({"checklist_id": checklist_id}, {"_id": 0})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist no encontrado")
+    return checklist
+
+@api_router.post("/quality/checklists")
+async def create_quality_checklist(
+    data: QualityChecklistCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    now = datetime.now(PUERTO_RICO_TZ).isoformat()
+    
+    count = await db.quality_checklists.count_documents({"project_id": data.project_id})
+    checklist_number = f"QC-{count + 1:04d}"
+    
+    checklist_id = str(uuid.uuid4())
+    items = [item.model_dump() for item in data.items]
+    
+    doc = {
+        "checklist_id": checklist_id,
+        "checklist_number": checklist_number,
+        "project_id": data.project_id,
+        "title": data.title,
+        "category": data.category,
+        "items": items,
+        "inspector": data.inspector or user.name,
+        "inspection_date": data.inspection_date or now[:10],
+        "notes": data.notes,
+        "status": "open",
+        "created_at": now,
+        "updated_at": now,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+    }
+    await db.quality_checklists.insert_one(doc)
+    created = await db.quality_checklists.find_one({"checklist_id": checklist_id}, {"_id": 0})
+    return created
+
+@api_router.put("/quality/checklists/{checklist_id}")
+async def update_quality_checklist(
+    checklist_id: str,
+    data: QualityChecklistUpdate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.quality_checklists.find_one({"checklist_id": checklist_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Checklist no encontrado")
+    
+    update_doc = {"updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()}
+    update_data = data.model_dump(exclude_unset=True)
+    update_doc.update(update_data)
+    
+    await db.quality_checklists.update_one({"checklist_id": checklist_id}, {"$set": update_doc})
+    updated = await db.quality_checklists.find_one({"checklist_id": checklist_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/quality/checklists/{checklist_id}")
+async def delete_quality_checklist(
+    checklist_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    result = await db.quality_checklists.delete_one({"checklist_id": checklist_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Checklist no encontrado")
+    return {"message": "Checklist eliminado"}
+
+# ---- Non-Conformities Endpoints ----
+
+@api_router.get("/quality/nonconformities")
+async def get_nonconformities(
+    request: Request,
+    project_id: Optional[str] = None,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    query = {}
+    if project_id:
+        query["project_id"] = project_id
+    ncs = await db.quality_nonconformities.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return ncs
+
+@api_router.get("/quality/nonconformities/{nc_id}")
+async def get_nonconformity(nc_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    user = await get_current_user(request, session_token)
+    nc = await db.quality_nonconformities.find_one({"nc_id": nc_id}, {"_id": 0})
+    if not nc:
+        raise HTTPException(status_code=404, detail="No-conformidad no encontrada")
+    return nc
+
+@api_router.post("/quality/nonconformities")
+async def create_nonconformity(
+    data: NonConformityCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    now = datetime.now(PUERTO_RICO_TZ).isoformat()
+    
+    count = await db.quality_nonconformities.count_documents({"project_id": data.project_id})
+    nc_number = f"NC-{count + 1:04d}"
+    
+    nc_id = str(uuid.uuid4())
+    doc = {
+        "nc_id": nc_id,
+        "nc_number": nc_number,
+        "project_id": data.project_id,
+        "title": data.title,
+        "description": data.description,
+        "category": data.category,
+        "severity": data.severity,
+        "status": "open",
+        "location": data.location,
+        "assigned_to": data.assigned_to,
+        "corrective_action": data.corrective_action,
+        "due_date": data.due_date,
+        "resolution_notes": None,
+        "resolution_date": None,
+        "photos": data.photos or [],
+        "created_at": now,
+        "updated_at": now,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+    }
+    await db.quality_nonconformities.insert_one(doc)
+    created = await db.quality_nonconformities.find_one({"nc_id": nc_id}, {"_id": 0})
+    return created
+
+@api_router.put("/quality/nonconformities/{nc_id}")
+async def update_nonconformity(
+    nc_id: str,
+    data: NonConformityUpdate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.quality_nonconformities.find_one({"nc_id": nc_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="No-conformidad no encontrada")
+    
+    update_doc = {"updated_at": datetime.now(PUERTO_RICO_TZ).isoformat()}
+    update_data = data.model_dump(exclude_unset=True)
+    update_doc.update(update_data)
+    
+    await db.quality_nonconformities.update_one({"nc_id": nc_id}, {"$set": update_doc})
+    updated = await db.quality_nonconformities.find_one({"nc_id": nc_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/quality/nonconformities/{nc_id}")
+async def delete_nonconformity(
+    nc_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    result = await db.quality_nonconformities.delete_one({"nc_id": nc_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="No-conformidad no encontrada")
+    return {"message": "No-conformidad eliminada"}
+
+# ---- Quality Summary (for PDF) ----
+
+@api_router.get("/quality/summary/{project_id}")
+async def get_quality_summary(
+    project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    user = await get_current_user(request, session_token)
+    
+    checklists = await db.quality_checklists.find({"project_id": project_id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    nonconformities = await db.quality_nonconformities.find({"project_id": project_id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    mrrs = await db.mrrs.find({"project_id": project_id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    pressure_tests = await db.pressure_test_forms.find({"project_id": project_id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0, "name": 1, "project_number": 1})
+    
+    return {
+        "project": project,
+        "checklists": checklists,
+        "nonconformities": nonconformities,
+        "mrrs": mrrs,
+        "pressure_tests": pressure_tests,
+        "stats": {
+            "total_checklists": len(checklists),
+            "open_checklists": len([c for c in checklists if c.get("status") == "open"]),
+            "completed_checklists": len([c for c in checklists if c.get("status") == "completed"]),
+            "total_nc": len(nonconformities),
+            "open_nc": len([n for n in nonconformities if n.get("status") == "open"]),
+            "resolved_nc": len([n for n in nonconformities if n.get("status") in ("resolved", "closed")]),
+            "critical_nc": len([n for n in nonconformities if n.get("severity") == "critical" and n.get("status") == "open"]),
+            "total_mrrs": len(mrrs),
+            "total_pressure_tests": len(pressure_tests),
+        }
+    }
+
+
+
+# =============================================================
+# PRE-PROJECTS (Pipeline de Oportunidades)
+# =============================================================
+
+class PreProjectStage(str, Enum):
+    NEW = "new"  # Nuevo
+    CONTACTED = "contacted"  # Contactado
+    NEGOTIATION = "negotiation"  # En Negociación
+    QUOTED = "quoted"  # Cotizado
+    WON = "won"  # Ganado
+    LOST = "lost"  # Perdido
+
+class PreProjectCreate(BaseModel):
+    # Client Info
+    client_name: str
+    client_company: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_email: Optional[str] = None
+    # Project Info
+    title: str
+    description: Optional[str] = None
+    location: Optional[str] = None
+    work_type: Optional[str] = None  # Tipo de trabajo
+    # Financial
+    estimated_budget: Optional[float] = 0
+    close_probability: Optional[int] = 50  # 0-100%
+    # Follow-up
+    contact_date: Optional[str] = None
+    next_action: Optional[str] = None
+    next_action_date: Optional[str] = None
+    assigned_to: Optional[str] = None  # user_id
+    # Status
+    stage: PreProjectStage = PreProjectStage.NEW
+    notes: Optional[str] = None
+    # Attachments
+    attachments: Optional[List[dict]] = []
+    # Ready for estimate flag
+    ready_for_estimate: Optional[bool] = False
+    # Materials/Equipment estimates
+    materials_estimate: Optional[List[dict]] = []
+    equipment_estimate: Optional[List[dict]] = []
+    # Designer completion & PM claim fields
+    completed_by_designer: Optional[bool] = False
+    completed_by_designer_at: Optional[str] = None
+    completed_by_designer_id: Optional[str] = None
+    completed_by_designer_name: Optional[str] = None
+    claimed_by_pm: Optional[str] = None  # PM user_id who claimed
+    claimed_by_pm_name: Optional[str] = None
+    claimed_at: Optional[str] = None
+
+class PreProjectUpdate(BaseModel):
+    client_name: Optional[str] = None
+    client_company: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_email: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    work_type: Optional[str] = None
+    estimated_budget: Optional[float] = None
+    close_probability: Optional[int] = None
+    contact_date: Optional[str] = None
+    next_action: Optional[str] = None
+    next_action_date: Optional[str] = None
+    assigned_to: Optional[str] = None
+    stage: Optional[PreProjectStage] = None
+    notes: Optional[str] = None
+    attachments: Optional[List[dict]] = None
+    ready_for_estimate: Optional[bool] = None
+    materials_estimate: Optional[List[dict]] = None
+    equipment_estimate: Optional[List[dict]] = None
+    # Designer completion & PM claim fields
+    completed_by_designer: Optional[bool] = None
+    completed_by_designer_at: Optional[str] = None
+    completed_by_designer_id: Optional[str] = None
+    completed_by_designer_name: Optional[str] = None
+    claimed_by_pm: Optional[str] = None
+    claimed_by_pm_name: Optional[str] = None
+    claimed_at: Optional[str] = None
+
+class PreProjectStageUpdate(BaseModel):
+    stage: PreProjectStage
+
+@api_router.get("/pre-projects")
+async def get_pre_projects(
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    stage: Optional[str] = None,
+    assigned_to: Optional[str] = None
+):
+    """Get all pre-projects with optional filters"""
+    user = await get_current_user(request, session_token)
+    
+    query = {}
+    if stage:
+        query["stage"] = stage
+    if assigned_to:
+        query["assigned_to"] = assigned_to
+    
+    pre_projects = await db.pre_projects.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return pre_projects
+
+@api_router.get("/pre-projects/stats")
+async def get_pre_projects_stats(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get pre-projects statistics by stage"""
+    user = await get_current_user(request, session_token)
+    
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$stage",
+                "count": {"$sum": 1},
+                "total_budget": {"$sum": {"$ifNull": ["$estimated_budget", 0]}}
+            }
+        }
+    ]
+    
+    stats_cursor = db.pre_projects.aggregate(pipeline)
+    stats_list = await stats_cursor.to_list(100)
+    
+    # Convert to dict with stage as key
+    stats = {}
+    total_count = 0
+    total_budget = 0
+    for s in stats_list:
+        stage = s["_id"] or "unknown"
+        stats[stage] = {
+            "count": s["count"],
+            "total_budget": s["total_budget"]
+        }
+        total_count += s["count"]
+        total_budget += s["total_budget"]
+    
+    return {
+        "by_stage": stats,
+        "total_count": total_count,
+        "total_budget": total_budget
+    }
+
+@api_router.get("/pre-projects/{pre_project_id}")
+async def get_pre_project(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get a single pre-project by ID"""
+    user = await get_current_user(request, session_token)
+    
+    pre_project = await db.pre_projects.find_one({"pre_project_id": pre_project_id}, {"_id": 0})
+    if not pre_project:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    return pre_project
+
+@api_router.post("/pre-projects")
+async def create_pre_project(
+    data: PreProjectCreate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Create a new pre-project"""
+    user = await get_current_user(request, session_token)
+    
+    pre_project_id = f"pp_{uuid4().hex[:12]}"
+    
+    pre_project_doc = {
+        "pre_project_id": pre_project_id,
+        **data.model_dump(),
+        "created_by": user.user_id,
+        "created_by_name": getattr(user, 'name', ''),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "converted_to_project": None,
+        "converted_to_estimate": None
+    }
+    
+    await db.pre_projects.insert_one(pre_project_doc)
+    
+    # Remove MongoDB _id before returning
+    pre_project_doc.pop("_id", None)
+    
+    return pre_project_doc
+
+@api_router.put("/pre-projects/{pre_project_id}")
+async def update_pre_project(
+    pre_project_id: str,
+    data: PreProjectUpdate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Update a pre-project"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    # Permission check: If claimed by a PM, only that PM or super_admin can edit
+    claimed_by = existing.get('claimed_by_pm')
+    if claimed_by and claimed_by != user.user_id and user.role != 'super_admin':
+        raise HTTPException(
+            status_code=403, 
+            detail="Este pre-proyecto ya fue reclamado por otro PM. Solo el PM asignado o un administrador puede editarlo."
+        )
+    
+    # Use exclude_unset to only update fields that were explicitly provided
+    update_data = data.model_dump(exclude_unset=True)
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {"$set": update_data}
+    )
+    
+    updated = await db.pre_projects.find_one({"pre_project_id": pre_project_id}, {"_id": 0})
+    return updated
+
+@api_router.put("/pre-projects/{pre_project_id}/stage")
+async def update_pre_project_stage(
+    pre_project_id: str,
+    data: PreProjectStageUpdate,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Update pre-project stage (for Kanban drag-drop)"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {"$set": {
+            "stage": data.stage.value,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Etapa actualizada", "stage": data.stage.value}
+
+@api_router.delete("/pre-projects/{pre_project_id}")
+async def delete_pre_project(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a pre-project"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.pre_projects.delete_one({"pre_project_id": pre_project_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    return {"message": "Pre-proyecto eliminado"}
+
+@api_router.post("/pre-projects/{pre_project_id}/mark-completed")
+async def mark_preproject_completed_by_designer(
+    pre_project_id: str,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Mark a pre-project as completed by designer and notify all PMs"""
+    user = await get_current_user(request, session_token)
+    
+    # Verify user is a designer or super_admin
+    if user.role not in ['designer', 'super_admin']:
+        raise HTTPException(status_code=403, detail="Solo diseñadores pueden marcar como completado")
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    if existing.get('completed_by_designer'):
+        raise HTTPException(status_code=400, detail="Este pre-proyecto ya fue marcado como completado")
+    
+    if existing.get('claimed_by_pm'):
+        raise HTTPException(status_code=400, detail="Este pre-proyecto ya fue reclamado por un PM")
+    
+    # Update pre-project
+    now = datetime.now(timezone.utc).isoformat()
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {"$set": {
+            "completed_by_designer": True,
+            "completed_by_designer_at": now,
+            "completed_by_designer_id": user.user_id,
+            "completed_by_designer_name": user.name,
+            "updated_at": now
+        }}
+    )
+    
+    # Get all PMs to notify
+    pms = await db.users.find(
+        {"role": {"$in": ["project_manager", "pm_estimator", "super_admin"]}},
+        {"_id": 0, "user_id": 1, "name": 1, "email": 1}
+    ).to_list(100)
+    
+    # Send email notifications to all PMs
+    for pm in pms:
+        if pm.get('email'):
+            try:
+                html, text = get_preproject_available_email(
+                    pm_name=pm.get('name', 'PM'),
+                    pre_project_title=existing.get('title', ''),
+                    client_name=existing.get('client_name', ''),
+                    designer_name=user.name,
+                    pre_project_id=pre_project_id
+                )
+                background_tasks.add_task(
+                    send_email,
+                    to_email=pm['email'],
+                    subject=f"🎯 Nuevo Pre-Proyecto Disponible: {existing.get('title', '')}",
+                    html_content=html,
+                    text_content=text
+                )
+            except Exception as e:
+                print(f"Error sending notification to PM {pm.get('email')}: {e}")
+    
+    updated = await db.pre_projects.find_one({"pre_project_id": pre_project_id}, {"_id": 0})
+    return {
+        "message": f"Pre-proyecto marcado como completado. Se notificó a {len([p for p in pms if p.get('email')])} PMs.",
+        "pre_project": updated
+    }
+
+@api_router.post("/pre-projects/{pre_project_id}/claim")
+async def claim_preproject(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Claim a pre-project as a PM (first-come-first-served)"""
+    user = await get_current_user(request, session_token)
+    
+    # Verify user is a PM, PM Estimator or super_admin
+    if user.role not in ['project_manager', 'pm_estimator', 'super_admin']:
+        raise HTTPException(status_code=403, detail="Solo Project Managers pueden reclamar pre-proyectos")
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    # Check if already claimed
+    if existing.get('claimed_by_pm'):
+        claimed_name = existing.get('claimed_by_pm_name', 'otro PM')
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Este pre-proyecto ya fue reclamado por {claimed_name}"
+        )
+    
+    # Check if it's marked as completed by designer
+    if not existing.get('completed_by_designer'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Este pre-proyecto aún no ha sido completado por el diseñador"
+        )
+    
+    # Claim the pre-project (atomic operation to prevent race conditions)
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db.pre_projects.update_one(
+        {
+            "pre_project_id": pre_project_id,
+            "claimed_by_pm": {"$exists": False}  # Double-check not claimed
+        },
+        {"$set": {
+            "claimed_by_pm": user.user_id,
+            "claimed_by_pm_name": user.name,
+            "claimed_at": now,
+            "updated_at": now
+        }}
+    )
+    
+    # Also try with null value
+    if result.modified_count == 0:
+        result = await db.pre_projects.update_one(
+            {
+                "pre_project_id": pre_project_id,
+                "claimed_by_pm": None
+            },
+            {"$set": {
+                "claimed_by_pm": user.user_id,
+                "claimed_by_pm_name": user.name,
+                "claimed_at": now,
+                "updated_at": now
+            }}
+        )
+    
+    if result.modified_count == 0:
+        # Someone else claimed it first
+        raise HTTPException(
+            status_code=400, 
+            detail="Este pre-proyecto ya fue reclamado por otro PM"
+        )
+    
+    updated = await db.pre_projects.find_one({"pre_project_id": pre_project_id}, {"_id": 0})
+    return {
+        "message": f"¡Felicidades! Has reclamado el pre-proyecto '{existing.get('title')}'",
+        "pre_project": updated
+    }
+
+@api_router.post("/pre-projects/{pre_project_id}/reassign")
+async def reassign_preproject(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None),
+    new_pm_id: Optional[str] = None
+):
+    """Reassign or release a pre-project (super_admin only)"""
+    user = await get_current_user(request, session_token)
+    
+    # Only super_admin can reassign
+    if user.role != 'super_admin':
+        raise HTTPException(status_code=403, detail="Solo administradores pueden reasignar pre-proyectos")
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    if new_pm_id:
+        # Reassign to another PM
+        new_pm = await db.users.find_one({"user_id": new_pm_id}, {"_id": 0})
+        if not new_pm:
+            raise HTTPException(status_code=404, detail="PM no encontrado")
+        
+        await db.pre_projects.update_one(
+            {"pre_project_id": pre_project_id},
+            {"$set": {
+                "claimed_by_pm": new_pm_id,
+                "claimed_by_pm_name": new_pm.get('name', ''),
+                "claimed_at": now,
+                "updated_at": now
+            }}
+        )
+        message = f"Pre-proyecto reasignado a {new_pm.get('name')}"
+    else:
+        # Release (remove claim)
+        await db.pre_projects.update_one(
+            {"pre_project_id": pre_project_id},
+            {"$set": {
+                "claimed_by_pm": None,
+                "claimed_by_pm_name": None,
+                "claimed_at": None,
+                "updated_at": now
+            }}
+        )
+        message = "Pre-proyecto liberado. Ahora está disponible para que un PM lo reclame."
+    
+    updated = await db.pre_projects.find_one({"pre_project_id": pre_project_id}, {"_id": 0})
+    return {"message": message, "pre_project": updated}
+
+@api_router.post("/pre-projects/{pre_project_id}/convert-to-project")
+async def convert_to_project(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Convert a won pre-project to a full project"""
+    user = await get_current_user(request, session_token)
+    
+    pre_project = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not pre_project:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    # Generate project number based on year
+    current_year = datetime.now().year
+    last_project = await db.projects.find_one(
+        {"project_number": {"$regex": f"^{current_year}-"}},
+        sort=[("project_number", -1)]
+    )
+    
+    if last_project and last_project.get("project_number"):
+        try:
+            last_num = int(last_project["project_number"].split("-")[1])
+            next_num = last_num + 1
+        except:
+            next_num = 1
+    else:
+        next_num = 1
+    
+    project_number = f"{current_year}-{str(next_num).zfill(3)}"
+    project_id = f"proj_{uuid4().hex[:12]}"
+    
+    # Create project from pre-project data
+    project_doc = {
+        "project_id": project_id,
+        "project_number": project_number,
+        "name": pre_project.get("title", "Nuevo Proyecto"),
+        "description": pre_project.get("description", ""),
+        "client": pre_project.get("client_name", ""),
+        "sponsor": pre_project.get("client_company", ""),
+        "status": "planning",
+        "priority": "medium",
+        "budget_total": pre_project.get("estimated_budget", 0),
+        "project_value": pre_project.get("estimated_budget", 0),
+        "payment_status": "pending",
+        "start_date": datetime.now().strftime("%Y-%m-%d"),
+        "end_date": "",
+        "team_members": [pre_project.get("assigned_to")] if pre_project.get("assigned_to") else [],
+        "location_latitude": None,
+        "location_longitude": None,
+        "geofence_radius": 100,
+        "geofence_enabled": False,
+        "estimated_hours": 0,
+        "hours_consumed": 0,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "from_pre_project": pre_project_id
+    }
+    
+    await db.projects.insert_one(project_doc)
+    
+    # Update pre-project with conversion info
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {"$set": {
+            "converted_to_project": project_id,
+            "stage": "won",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    project_doc.pop("_id", None)
+    
+    return {
+        "message": "Pre-proyecto convertido a proyecto",
+        "project": project_doc
+    }
+
+@api_router.post("/pre-projects/{pre_project_id}/convert-to-estimate")
+async def convert_to_estimate(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Convert a pre-project to a cost estimate"""
+    user = await get_current_user(request, session_token)
+    
+    pre_project = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not pre_project:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    # Generate estimate number
+    current_year = datetime.now().year
+    last_estimate = await db.cost_estimates.find_one(
+        {"estimate_number": {"$regex": f"^EST-{current_year}-"}},
+        sort=[("estimate_number", -1)]
+    )
+    
+    if last_estimate and last_estimate.get("estimate_number"):
+        try:
+            last_num = int(last_estimate["estimate_number"].split("-")[2])
+            next_num = last_num + 1
+        except:
+            next_num = 1
+    else:
+        next_num = 1
+    
+    estimate_number = f"EST-{current_year}-{str(next_num).zfill(4)}"
+    estimate_id = f"ce_{uuid4().hex[:12]}"
+    
+    # Transfer materials from pre-project
+    materials_estimate = pre_project.get("materials_estimate", [])
+    equipment_estimate = pre_project.get("equipment_estimate", [])
+    
+    # Convert pre-project materials to cost estimate format
+    material_items = []
+    for m in materials_estimate:
+        material_items.append({
+            "id": f"mat_{uuid4().hex[:8]}",
+            "description": m.get("description", ""),
+            "quantity": m.get("quantity", 0),
+            "unit": m.get("unit", "unidad"),
+            "unit_cost": m.get("unit_cost", 0),
+            "total": m.get("total", 0),
+            "supplier": m.get("store", ""),
+            "store": m.get("store", "")
+        })
+    
+    # Convert equipment to equipment costs
+    equipment_items = []
+    for e in equipment_estimate:
+        equipment_items.append({
+            "id": f"equip_{uuid4().hex[:8]}",
+            "description": e.get("description", ""),
+            "quantity": e.get("quantity", 0),
+            "unit": e.get("unit", "día"),
+            "unit_cost": e.get("rate", 0) or e.get("unit_cost", 0),
+            "total": e.get("total", 0)
+        })
+    
+    # Calculate totals
+    materials_total = sum(m.get("total", 0) for m in material_items)
+    equipment_total = sum(e.get("total", 0) for e in equipment_items)
+    
+    # Create estimate from pre-project data
+    # Use 'materials' and 'equipment' field names to match frontend expectations
+    estimate_doc = {
+        "estimate_id": estimate_id,
+        "estimate_number": estimate_number,
+        "estimate_name": pre_project.get("title", "Nueva Estimación"),
+        "title": pre_project.get("title", "Nueva Estimación"),
+        "description": pre_project.get("description", ""),
+        "project_name": pre_project.get("client_name", ""),
+        "status": "en_proceso",
+        "total_amount": pre_project.get("estimated_budget", 0) or (materials_total + equipment_total),
+        # Use the field names that frontend expects
+        "labor_costs": [],
+        "subcontractors": [],
+        "materials": material_items,
+        "equipment": equipment_items,
+        "transportation": [],
+        "general_conditions": [],
+        # Also save with _costs suffix for API compatibility
+        "material_costs": material_items,
+        "equipment_costs": equipment_items,
+        "subcontractor_costs": [],
+        "transportation_costs": [],
+        # Percentages
+        "profit_percentage": 0,
+        "overhead_percentage": 0,
+        "cfse_percentage": 7,
+        "liability_percentage": 7,
+        "municipal_patent_percentage": 1,
+        "contingency_percentage": 6,
+        "b2b_ohsms_percentage": 0,
+        "b2b_ohsms_labor_percentage": 4,
+        "b2b_subcontractor_percentage": 0,
+        # Totals
+        "total_labor": 0,
+        "total_subcontractors": 0,
+        "total_materials": materials_total,
+        "total_equipment": equipment_total,
+        "total_transportation": 0,
+        "total_general_conditions": 0,
+        "subtotal": materials_total + equipment_total,
+        "grand_total": materials_total + equipment_total,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "from_pre_project": pre_project_id
+    }
+    
+    await db.cost_estimates.insert_one(estimate_doc)
+    
+    # Update pre-project with conversion info
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {"$set": {
+            "converted_to_estimate": estimate_id,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    estimate_doc.pop("_id", None)
+    
+    return {
+        "message": "Pre-proyecto convertido a estimación",
+        "estimate": estimate_doc,
+        "materials_transferred": len(material_items),
+        "equipment_transferred": len(equipment_items)
+    }
+
+@api_router.post("/pre-projects/{pre_project_id}/comments")
+async def add_pre_project_comment(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Add a comment/note to a pre-project"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    comment = {
+        "comment_id": f"cmt_{uuid4().hex[:8]}",
+        "text": body.get("text", ""),
+        "created_by": user.user_id,
+        "created_by_name": getattr(user, 'name', ''),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {
+            "$push": {"comments": comment},
+            "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+        }
+    )
+    
+    return comment
+
+
+# Pre-Project Logs (Bitácora)
+@api_router.get("/pre-projects/{pre_project_id}/logs")
+async def get_pre_project_logs(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get logs for a pre-project"""
+    user = await get_current_user(request, session_token)
+    
+    logs = await db.pre_project_logs.find(
+        {"pre_project_id": pre_project_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    return logs
+
+
+@api_router.post("/pre-projects/{pre_project_id}/logs")
+async def create_pre_project_log(
+    pre_project_id: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Create a log entry for a pre-project with optional person assignment"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    # Get assigned user info if provided
+    assigned_to = body.get("assigned_to")
+    assigned_to_name = None
+    assigned_user_email = None
+    
+    if assigned_to:
+        assigned_user = await db.users.find_one({"user_id": assigned_to}, {"_id": 0})
+        if assigned_user:
+            assigned_to_name = assigned_user.get("name", "")
+            assigned_user_email = assigned_user.get("email", "")
+    
+    log_doc = {
+        "log_id": f"ppl_{uuid4().hex[:12]}",
+        "pre_project_id": pre_project_id,
+        "log_type": body.get("log_type", "note"),
+        "title": body.get("title", ""),
+        "description": body.get("description", ""),
+        "hours_worked": body.get("hours_worked"),
+        "assigned_to": assigned_to,
+        "assigned_to_name": assigned_to_name,
+        "user_id": user.user_id,
+        "user_name": getattr(user, 'name', ''),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.pre_project_logs.insert_one(log_doc)
+    log_doc.pop("_id", None)
+    
+    # Send email notification to assigned user
+    if assigned_user_email and assigned_to != user.user_id:
+        try:
+            html, text = get_bitacora_assigned_email(
+                user_name=assigned_to_name,
+                log_title=body.get("title", ""),
+                log_description=body.get("description", ""),
+                pre_project_name=existing.get("title", "Pre-Proyecto"),
+                assigner_name=getattr(user, 'name', 'Usuario'),
+                log_type=body.get("log_type", "note"),
+                pre_project_id=pre_project_id
+            )
+            background_tasks.add_task(
+                send_email,
+                assigned_user_email,
+                f"📋 Nuevo Registro Asignado: {body.get('title', 'Sin título')}",
+                html,
+                text
+            )
+        except Exception as e:
+            print(f"Error sending bitacora assignment email: {e}")
+    
+    return log_doc
+
+
+@api_router.put("/pre-projects/{pre_project_id}/logs/{log_id}")
+async def update_pre_project_log(
+    pre_project_id: str,
+    log_id: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Update a pre-project log entry"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    existing = await db.pre_project_logs.find_one({"log_id": log_id, "pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    
+    # Get pre-project info for email
+    pre_project = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    
+    # Handle assigned_to changes
+    new_assigned_to = body.get("assigned_to")
+    assigned_to_name = None
+    assigned_user_email = None
+    
+    if new_assigned_to:
+        assigned_user = await db.users.find_one({"user_id": new_assigned_to}, {"_id": 0})
+        if assigned_user:
+            assigned_to_name = assigned_user.get("name", "")
+            assigned_user_email = assigned_user.get("email", "")
+    
+    update_data = {
+        "log_type": body.get("log_type", existing.get("log_type")),
+        "title": body.get("title", existing.get("title")),
+        "description": body.get("description", existing.get("description")),
+        "hours_worked": body.get("hours_worked"),
+        "assigned_to": new_assigned_to,
+        "assigned_to_name": assigned_to_name,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.pre_project_logs.update_one(
+        {"log_id": log_id},
+        {"$set": update_data}
+    )
+    
+    # Send email if assigned_to changed to a new user
+    old_assigned_to = existing.get("assigned_to")
+    if new_assigned_to and new_assigned_to != old_assigned_to and assigned_user_email and new_assigned_to != user.user_id:
+        try:
+            html, text = get_bitacora_assigned_email(
+                user_name=assigned_to_name,
+                log_title=body.get("title", existing.get("title", "")),
+                log_description=body.get("description", existing.get("description", "")),
+                pre_project_name=pre_project.get("title", "Pre-Proyecto") if pre_project else "Pre-Proyecto",
+                assigner_name=getattr(user, 'name', 'Usuario'),
+                log_type=body.get("log_type", existing.get("log_type", "note")),
+                pre_project_id=pre_project_id
+            )
+            background_tasks.add_task(
+                send_email,
+                assigned_user_email,
+                f"📋 Registro de Bitácora Asignado: {body.get('title', existing.get('title', 'Sin título'))}",
+                html,
+                text
+            )
+        except Exception as e:
+            print(f"Error sending bitacora assignment email: {e}")
+    
+    updated = await db.pre_project_logs.find_one({"log_id": log_id}, {"_id": 0})
+    return updated
+
+
+@api_router.delete("/pre-projects/{pre_project_id}/logs/{log_id}")
+async def delete_pre_project_log(
+    pre_project_id: str,
+    log_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a pre-project log entry"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.pre_project_logs.delete_one({"log_id": log_id, "pre_project_id": pre_project_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    
+    return {"message": "Registro eliminado"}
+
+
+# Pre-Project Documents
+@api_router.get("/pre-projects/{pre_project_id}/documents")
+async def get_pre_project_documents(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get documents for a pre-project"""
+    user = await get_current_user(request, session_token)
+    
+    docs = await db.pre_project_documents.find(
+        {"pre_project_id": pre_project_id},
+        {"_id": 0}
+    ).sort("uploaded_at", -1).to_list(1000)
+    
+    return docs
+
+
+@api_router.post("/pre-projects/{pre_project_id}/documents")
+async def upload_pre_project_document(
+    pre_project_id: str,
+    request: Request,
+    file: UploadFile = File(...),
+    session_token: Optional[str] = Cookie(None)
+):
+    """Upload a document to a pre-project (Cloudinary)"""
+    user = await get_current_user(request, session_token)
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    contents = await file.read()
+    
+    try:
+        # Determine resource type for Cloudinary
+        mime_type = file.content_type or "application/octet-stream"
+        if mime_type.startswith("image/"):
+            resource_type = "image"
+        elif mime_type.startswith("video/"):
+            resource_type = "video"
+        else:
+            resource_type = "raw"  # For PDFs, docs, etc.
+        
+        # Upload to Cloudinary
+        result = cloudinary.uploader.upload(
+            contents,
+            folder=f"uploads/pre_projects/{pre_project_id}",
+            resource_type=resource_type,
+            public_id=f"ppd_{uuid4().hex[:12]}",
+            use_filename=True,
+            unique_filename=True
+        )
+        
+        doc = {
+            "document_id": f"ppd_{uuid4().hex[:12]}",
+            "pre_project_id": pre_project_id,
+            "original_filename": file.filename,
+            "stored_filename": result.get("public_id"),
+            "url": result.get("secure_url"),
+            "public_id": result.get("public_id"),
+            "file_type": file.content_type,
+            "file_size": len(contents),
+            "note": "",
+            "uploaded_by": user.user_id,
+            "uploaded_by_name": getattr(user, 'name', ''),
+            "uploaded_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.pre_project_documents.insert_one(doc)
+        doc.pop("_id", None)
+        
+        return doc
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al subir documento: {str(e)}")
+
+
+@api_router.get("/pre-projects/{pre_project_id}/documents/{document_id}/download")
+async def download_pre_project_document(
+    pre_project_id: str,
+    document_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Download a pre-project document"""
+    user = await get_current_user(request, session_token)
+    
+    doc = await db.pre_project_documents.find_one({
+        "document_id": document_id,
+        "pre_project_id": pre_project_id
+    })
+    
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    # If document has Cloudinary URL, redirect to it
+    if doc.get('url'):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=doc['url'])
+    
+    # Legacy: try local file (for backward compatibility)
+    file_path = Path(doc.get("file_path", ""))
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado en el servidor")
+    
+    return FileResponse(
+        path=str(file_path),
+        filename=doc["original_filename"],
+        media_type=doc.get("file_type", "application/octet-stream")
+    )
+
+
+@api_router.put("/pre-projects/{pre_project_id}/documents/{document_id}/note")
+async def update_pre_project_document_note(
+    pre_project_id: str,
+    document_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Update the note on a pre-project document"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    result = await db.pre_project_documents.update_one(
+        {"document_id": document_id, "pre_project_id": pre_project_id},
+        {"$set": {"note": body.get("note", "")}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    return {"message": "Nota actualizada"}
+
+
+@api_router.delete("/pre-projects/{pre_project_id}/documents/{document_id}")
+async def delete_pre_project_document(
+    pre_project_id: str,
+    document_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a pre-project document"""
+    user = await get_current_user(request, session_token)
+    
+    doc = await db.pre_project_documents.find_one({
+        "document_id": document_id,
+        "pre_project_id": pre_project_id
+    })
+    
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    
+    # Delete from Cloudinary if public_id exists
+    if doc.get('public_id'):
+        try:
+            cloudinary.uploader.destroy(doc['public_id'])
+        except Exception as e:
+            print(f"Error deleting from Cloudinary: {e}")
+    
+    await db.pre_project_documents.delete_one({"document_id": document_id})
+    
+    return {"message": "Documento eliminado"}
+
+
+# Pre-Project Materials Estimate
+@api_router.put("/pre-projects/{pre_project_id}/materials-estimate")
+async def update_pre_project_materials_estimate(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Update the materials estimate for a pre-project with store (ferretería) grouping"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    existing = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    materials = body.get("materials", [])
+    equipment = body.get("equipment", [])
+    
+    # Calculate totals
+    materials_total = sum(m.get("total", 0) for m in materials)
+    equipment_total = sum(e.get("total", 0) for e in equipment)
+    
+    # Calculate totals by store
+    store_totals = {}
+    for m in materials:
+        store = m.get("store", "Sin Ferretería")
+        if store not in store_totals:
+            store_totals[store] = 0
+        store_totals[store] += m.get("total", 0)
+    
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {
+            "$set": {
+                "materials_estimate": materials,
+                "equipment_estimate": equipment,
+                "materials_total": materials_total,
+                "equipment_total": equipment_total,
+                "estimate_grand_total": materials_total + equipment_total,
+                "store_totals": store_totals,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    return {
+        "message": "Estimado de materiales actualizado",
+        "materials_total": materials_total,
+        "equipment_total": equipment_total,
+        "grand_total": materials_total + equipment_total,
+        "store_totals": store_totals
+    }
+
+
+# Hardware Stores (Ferreterías) Management
+DEFAULT_HARDWARE_STORES = [
+    {"store_id": "home_depot", "name": "Home Depot", "is_default": True},
+    {"store_id": "national", "name": "National Lumber", "is_default": True},
+    {"store_id": "lowes", "name": "Lowe's", "is_default": True},
+    {"store_id": "ferreteria_nacional", "name": "Ferretería Nacional", "is_default": True},
+    {"store_id": "ace_hardware", "name": "Ace Hardware", "is_default": True},
+    {"store_id": "costco", "name": "Costco", "is_default": True},
+    {"store_id": "sams_club", "name": "Sam's Club", "is_default": True},
+]
+
+@api_router.get("/hardware-stores")
+async def get_hardware_stores(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Get list of hardware stores (ferreterías) - default + custom"""
+    user = await get_current_user(request, session_token)
+    
+    # Get custom stores from DB
+    custom_stores = await db.hardware_stores.find({}, {"_id": 0}).to_list(100)
+    
+    # Combine default + custom
+    all_stores = DEFAULT_HARDWARE_STORES + [s for s in custom_stores if not s.get("is_default")]
+    
+    return all_stores
+
+
+@api_router.post("/hardware-stores")
+async def create_hardware_store(
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Create a custom hardware store"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    name = body.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nombre requerido")
+    
+    # Check if exists
+    existing = await db.hardware_stores.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Esta ferretería ya existe")
+    
+    store_doc = {
+        "store_id": f"store_{uuid4().hex[:8]}",
+        "name": name,
+        "is_default": False,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.hardware_stores.insert_one(store_doc)
+    store_doc.pop("_id", None)
+    
+    return store_doc
+
+
+@api_router.delete("/hardware-stores/{store_id}")
+async def delete_hardware_store(
+    store_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Delete a custom hardware store"""
+    user = await get_current_user(request, session_token)
+    
+    # Check if it's a default store
+    for default in DEFAULT_HARDWARE_STORES:
+        if default["store_id"] == store_id:
+            raise HTTPException(status_code=400, detail="No se puede eliminar una ferretería predeterminada")
+    
+    result = await db.hardware_stores.delete_one({"store_id": store_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Ferretería no encontrada")
+    
+    return {"message": "Ferretería eliminada"}
+
+
+# Transfer Pre-Project Materials to Cost Estimate
+@api_router.post("/pre-projects/{pre_project_id}/transfer-to-estimate")
+async def transfer_materials_to_estimate(
+    pre_project_id: str,
+    request: Request,
+    session_token: Optional[str] = Cookie(None)
+):
+    """Transfer materials from a pre-project to a new cost estimate"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    pre_project = await db.pre_projects.find_one({"pre_project_id": pre_project_id})
+    if not pre_project:
+        raise HTTPException(status_code=404, detail="Pre-proyecto no encontrado")
+    
+    materials_list = pre_project.get("materials_estimate", [])
+    equipment_list = pre_project.get("equipment_estimate", [])
+    
+    if not materials_list and not equipment_list:
+        raise HTTPException(status_code=400, detail="No hay materiales ni equipos para transferir")
+    
+    # Get the next estimate number
+    current_year = datetime.now().year
+    last_estimate = await db.cost_estimates.find_one(
+        {"estimate_number": {"$regex": f"^EST-{current_year}-"}},
+        sort=[("estimate_number", -1)]
+    )
+    
+    if last_estimate and last_estimate.get("estimate_number"):
+        try:
+            last_num = int(last_estimate["estimate_number"].split("-")[2])
+            next_num = last_num + 1
+        except:
+            next_num = 1
+    else:
+        next_num = 1
+    
+    estimate_number = f"EST-{current_year}-{str(next_num).zfill(4)}"
+    estimate_id = f"ce_{uuid4().hex[:12]}"
+    
+    # Convert materials to the format CostEstimateDetail.js expects
+    materials = []
+    for m in materials_list:
+        materials.append({
+            "id": f"mat_{uuid4().hex[:8]}",
+            "description": m.get("description", ""),
+            "quantity": m.get("quantity", 0),
+            "unit": m.get("unit", "unidad"),
+            "unit_cost": m.get("unit_cost", 0),
+            "factor": 0,
+            "total": m.get("total", 0),
+            "supplier": m.get("store", ""),
+            "store": m.get("store", "")
+        })
+    
+    # Convert equipment to the format CostEstimateDetail.js expects
+    equipment = []
+    for e in equipment_list:
+        equipment.append({
+            "id": f"equip_{uuid4().hex[:8]}",
+            "description": e.get("description", ""),
+            "quantity": e.get("quantity", 0) or 1,
+            "unit": e.get("unit", "día"),
+            "days": e.get("days", 0) or e.get("quantity", 0) or 1,
+            "rate": e.get("rate", 0) or e.get("unit_cost", 0),
+            "unit_cost": e.get("rate", 0) or e.get("unit_cost", 0),
+            "factor": 0,
+            "total": e.get("total", 0)
+        })
+    
+    # Calculate totals
+    total_materials = sum(m.get("total", 0) for m in materials)
+    total_equipment = sum(e.get("total", 0) for e in equipment)
+    subtotal = total_materials + total_equipment
+    
+    # Create cost estimate document with the structure CostEstimateDetail.js expects
+    estimate_doc = {
+        "estimate_id": estimate_id,
+        "estimate_number": estimate_number,
+        "estimate_name": body.get("estimate_name", f"Estimado - {pre_project.get('title', 'Pre-Proyecto')}"),
+        "project_name": pre_project.get("client_name", ""),
+        "title": pre_project.get("title", ""),
+        "description": pre_project.get("description", ""),
+        "status": "en_proceso",
+        "prepared_by": getattr(user, 'name', ''),
+        "from_pre_project": pre_project_id,
+        # Main arrays that frontend expects
+        "labor_costs": [],
+        "subcontractors": [],
+        "materials": materials,
+        "equipment": equipment,
+        "transportation": [],
+        "general_conditions": [],
+        # Also save with _costs suffix for API model compatibility
+        "material_costs": materials,
+        "equipment_costs": equipment,
+        "subcontractor_costs": [],
+        "transportation_costs": [],
+        # Percentages - defaults
+        "profit_percentage": 0,
+        "overhead_percentage": 0,
+        "cfse_percentage": 7,
+        "liability_percentage": 7,
+        "municipal_patent_percentage": 1,
+        "contingency_percentage": 6,
+        "b2b_ohsms_percentage": 0,
+        "b2b_ohsms_labor_percentage": 4,
+        "b2b_subcontractor_percentage": 0,
+        # Include flags
+        "include_profit": True,
+        "include_overhead": True,
+        "include_cfse": True,
+        "include_liability": True,
+        "include_municipal_patent": True,
+        "include_contingency": True,
+        "include_b2b_ohsms": True,
+        "include_b2b_ohsms_labor": True,
+        "include_b2b_subcontractor": True,
+        # Totals
+        "total_labor": 0,
+        "total_subcontractors": 0,
+        "total_subcontractor_labor": 0,
+        "total_materials": total_materials,
+        "total_equipment": total_equipment,
+        "total_transportation": 0,
+        "total_general_conditions": 0,
+        "subtotal": subtotal,
+        "grand_total": subtotal,
+        "created_by": user.user_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.cost_estimates.insert_one(estimate_doc)
+    estimate_doc.pop("_id", None)
+    
+    # Update pre-project to mark as transferred
+    await db.pre_projects.update_one(
+        {"pre_project_id": pre_project_id},
+        {"$set": {
+            "transferred_to_estimate": estimate_id,
+            "transferred_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Materiales transferidos a estimación de costos",
+        "estimate_id": estimate_id,
+        "estimate_number": estimate_number,
+        "materials_count": len(materials),
+        "equipment_count": len(equipment)
+    }
+
+
+# =============================================================
+# WEEKLY PLANS ENDPOINTS
+# =============================================================
+
+class WeeklyPlanRow(BaseModel):
+    employee_name: str = ""
+    position: str = ""
+    crew: str = ""
+    project: str = ""
+    monday: str = ""
+    tuesday: str = ""
+    wednesday: str = ""
+    thursday: str = ""
+    friday: str = ""
+    saturday: str = ""
+    sunday: str = ""
+    look_ahead: str = ""
+
+class WeeklyPlanCreate(BaseModel):
+    title: str
+    date_range: Optional[str] = ""
+    week_start: str
+    project_id: Optional[str] = None
+    rows: List[dict] = []
+
+@api_router.get("/weekly-plans")
+async def get_weekly_plans(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get all weekly plans"""
+    user = await get_current_user(request, session_token)
+    plans = await db.weekly_plans.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return plans
+
+@api_router.get("/weekly-plans/{plan_id}")
+async def get_weekly_plan(plan_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Get a specific weekly plan"""
+    user = await get_current_user(request, session_token)
+    plan = await db.weekly_plans.find_one({"plan_id": plan_id}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+    return plan
+
+@api_router.post("/weekly-plans")
+async def create_weekly_plan(plan: WeeklyPlanCreate, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Create a new weekly plan"""
+    user = await get_current_user(request, session_token)
+    
+    plan_doc = {
+        "plan_id": f"wp_{uuid4().hex[:12]}",
+        "title": plan.title,
+        "date_range": plan.date_range,
+        "week_start": plan.week_start,
+        "project_id": plan.project_id,
+        "rows": plan.rows,
+        "created_by": user.user_id,
+        "created_by_name": getattr(user, 'name', ''),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.weekly_plans.insert_one(plan_doc)
+    plan_doc.pop("_id", None)
+    return plan_doc
+
+@api_router.put("/weekly-plans/{plan_id}")
+async def update_weekly_plan(plan_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Update a weekly plan"""
+    user = await get_current_user(request, session_token)
+    body = await request.json()
+    
+    plan = await db.weekly_plans.find_one({"plan_id": plan_id})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+    
+    update_data = {
+        "title": body.get("title", plan.get("title")),
+        "date_range": body.get("date_range", plan.get("date_range")),
+        "week_start": body.get("week_start", plan.get("week_start")),
+        "project_id": body.get("project_id", plan.get("project_id")),
+        "rows": body.get("rows", plan.get("rows", [])),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.weekly_plans.update_one({"plan_id": plan_id}, {"$set": update_data})
+    
+    updated_plan = await db.weekly_plans.find_one({"plan_id": plan_id}, {"_id": 0})
+    return updated_plan
+
+@api_router.delete("/weekly-plans/{plan_id}")
+async def delete_weekly_plan(plan_id: str, request: Request, session_token: Optional[str] = Cookie(None)):
+    """Delete a weekly plan"""
+    user = await get_current_user(request, session_token)
+    
+    result = await db.weekly_plans.delete_one({"plan_id": plan_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+    
+    return {"message": "Plan eliminado correctamente"}
 
 # =============================================================
 

@@ -18,7 +18,7 @@ import {
 } from '../components/ui/dialog';
 import { Card, CardContent, CardFooter } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Plus, Search, Calendar, DollarSign, Users, FolderKanban, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Search, Calendar, DollarSign, Users, FolderKanban, Trash2, RefreshCw, TrendingUp, Wallet, PiggyBank } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,6 +27,7 @@ const Projects = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
+  const [summaryByYear, setSummaryByYear] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -41,6 +42,9 @@ const Projects = () => {
   
   // Roles que pueden crear proyectos
   const canCreateProject = user?.role && ['super_admin', 'admin', 'project_manager'].includes(user.role);
+  
+  // Check if user is designer (hide financial info)
+  const isDesigner = user?.role === 'designer';
 
   // Extract year from project_number (format: "2026-001" or "YYYY-XXX")
   const getProjectYear = (project) => {
@@ -106,10 +110,12 @@ const Projects = () => {
   useEffect(() => {
     loadProjects();
     loadUsers();
+    loadSummaryByYear();
     
     // Auto-refresh cada 30 segundos
     const interval = setInterval(() => {
       loadProjects();
+      loadSummaryByYear();
     }, 30000);
     
     return () => clearInterval(interval);
@@ -157,6 +163,15 @@ const Projects = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
+    }
+  };
+
+  const loadSummaryByYear = async () => {
+    try {
+      const response = await api.get(`/projects/summary-by-year`, { withCredentials: true });
+      setSummaryByYear(response.data);
+    } catch (error) {
+      console.error('Error al cargar resumen por año:', error);
     }
   };
 
@@ -633,6 +648,8 @@ const Projects = () => {
               </SelectContent>
             </Select>
 
+            {/* Payment filter - hidden for designers */}
+            {!isDesigner && (
             <Select value={paymentFilter} onValueChange={setPaymentFilter}>
               <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-[160px] md:w-[180px]">
                 <SelectValue placeholder="Estado de Pago" />
@@ -644,6 +661,7 @@ const Projects = () => {
                 <SelectItem value="paid">Pagado</SelectItem>
               </SelectContent>
             </Select>
+            )}
 
             <Select value={yearFilter} onValueChange={setYearFilter}>
               <SelectTrigger className="w-[calc(50%-0.25rem)] sm:w-[160px] md:w-[180px]">
@@ -675,6 +693,93 @@ const Projects = () => {
             )}
           </div>
         </div>
+
+        {/* Summary Cards - Hidden for designers */}
+        {!isDesigner && summaryByYear.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="projects-summary-cards">
+            {(() => {
+              // Calcular resumen basado en el filtro de año
+              const summary = yearFilter === 'all' 
+                ? summaryByYear.reduce((acc, s) => ({
+                    total_value: acc.total_value + s.total_value,
+                    total_spent: acc.total_spent + s.total_spent,
+                    total_profit: acc.total_profit + s.total_profit,
+                    project_count: acc.project_count + s.project_count
+                  }), { total_value: 0, total_spent: 0, total_profit: 0, project_count: 0 })
+                : summaryByYear.find(s => s.year === parseInt(yearFilter)) || { total_value: 0, total_spent: 0, total_profit: 0, project_count: 0 };
+              
+              return (
+                <>
+                  {/* Valor de Proyectos */}
+                  <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs sm:text-sm font-medium text-slate-500 uppercase tracking-wide">
+                            Valor de Proyectos
+                          </p>
+                          <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mt-1 font-mono" data-testid="summary-total-value">
+                            ${summary.total_value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {yearFilter === 'all' ? 'Todos los años' : `Año ${yearFilter}`} • {summary.project_count} proyecto{summary.project_count !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-100 flex items-center justify-center">
+                          <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Gastado */}
+                  <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs sm:text-sm font-medium text-slate-500 uppercase tracking-wide">
+                            Gastado
+                          </p>
+                          <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mt-1 font-mono" data-testid="summary-total-spent">
+                            ${summary.total_spent.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {summary.total_value > 0 ? `${((summary.total_spent / summary.total_value) * 100).toFixed(1)}% del valor` : '0% del valor'}
+                          </p>
+                        </div>
+                        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-orange-100 flex items-center justify-center">
+                          <Wallet className="h-6 w-6 sm:h-7 sm:w-7 text-orange-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Ganancia */}
+                  <Card className={`border-l-4 ${summary.total_profit >= 0 ? 'border-l-green-500' : 'border-l-red-500'} shadow-sm hover:shadow-md transition-shadow`}>
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs sm:text-sm font-medium text-slate-500 uppercase tracking-wide">
+                            Ganancia
+                          </p>
+                          <p className={`text-xl sm:text-2xl lg:text-3xl font-bold mt-1 font-mono ${summary.total_profit >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="summary-total-profit">
+                            ${summary.total_profit.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {summary.total_value > 0 ? `${((summary.total_profit / summary.total_value) * 100).toFixed(1)}% de margen` : '0% de margen'}
+                          </p>
+                        </div>
+                        <div className={`h-12 w-12 sm:h-14 sm:w-14 rounded-full ${summary.total_profit >= 0 ? 'bg-green-100' : 'bg-red-100'} flex items-center justify-center`}>
+                          <PiggyBank className={`h-6 w-6 sm:h-7 sm:w-7 ${summary.total_profit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Projects Grid */}
         {filteredProjects.length > 0 ? (
@@ -718,6 +823,8 @@ const Projects = () => {
                       <span className="truncate">{project.start_date} - {project.end_date}</span>
                     </div>
                     
+                    {/* Financial info - hidden for designers */}
+                    {!project.hide_financial && (
                     <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm">
                       <div className="flex items-center">
                         <DollarSign className="w-4 h-4 mr-2 text-slate-400 flex-shrink-0" />
@@ -729,6 +836,7 @@ const Projects = () => {
                         / ${project.budget_spent.toLocaleString('es-MX', { minimumFractionDigits: 2 })} gastado
                       </span>
                     </div>
+                    )}
                   </div>
                   
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-3 sm:pt-4 border-t border-slate-200">
@@ -736,6 +844,8 @@ const Projects = () => {
                       <Badge className={`${getStatusColor(project.status)} border text-xs`}>
                         {project.status}
                       </Badge>
+                      {/* Payment status - hidden for designers */}
+                      {!project.hide_financial && (
                       <Badge className={`border text-xs ${
                         project.payment_status === 'paid' ? 'bg-green-100 text-green-700 border-green-300' :
                         project.payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
@@ -746,6 +856,7 @@ const Projects = () => {
                         {project.payment_status === 'pending' && '⊗ Pendiente'}
                         {!project.payment_status && '⊗ Pendiente'}
                       </Badge>
+                      )}
                     </div>
                     <span className={`text-xs font-medium uppercase ${getPriorityColor(project.priority)}`}>
                       {project.priority}

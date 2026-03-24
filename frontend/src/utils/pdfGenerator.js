@@ -3,14 +3,22 @@ import autoTable from 'jspdf-autotable';
 import moment from 'moment';
 import api, { getBackendUrl } from './api';
 import { LOGO_BASE64 } from './logoData';
+import { registerRobotoFont, setFontWithFallback } from './fontLoader';
 
 // Colores corporativos
 const COLORS = {
-  primary: [249, 115, 22],    // Orange
-  secondary: [71, 85, 105],   // Slate
-  text: [30, 41, 59],         // Dark
-  lightBg: [248, 250, 252],   // Light gray
+  primary: [0, 0, 0],           // Black (was Orange)
+  secondary: [0, 0, 0],         // Black (was Slate)
+  text: [0, 0, 0],              // Black
+  lightBg: [248, 250, 252],     // Light gray
   white: [255, 255, 255]
+};
+
+// Helper function - now just returns text as-is since we use Unicode-compatible fonts
+// Keeping function for backwards compatibility but it no longer removes accents
+export const normalizeForPDF = (text) => {
+  if (!text) return '';
+  return String(text);
 };
 
 // Helper function to strip HTML tags and convert to plain text with proper formatting
@@ -128,6 +136,13 @@ export const formatCurrency = (amount) => {
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+// Helper function to create a new jsPDF document with Unicode font support
+export const createPDFDocument = async (options = {}) => {
+  const doc = new jsPDF(options);
+  await registerRobotoFont(doc);
+  return doc;
+};
+
 // Helper function to load image as base64 with compression
 const loadImageAsBase64 = (url, maxWidth = 200, maxHeight = 150, quality = 0.7) => {
   return new Promise((resolve) => {
@@ -212,9 +227,9 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   
   // Always show company name below logo (split into 2 lines after "SAFETY")
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.primary);
-  const companyName = company.company_name || 'OHSMS PR';
+  const companyName = normalizeForPDF(company.company_name || 'OHSMS PR');
   if (companyName.includes('SAFETY')) {
     const parts = companyName.split('SAFETY');
     doc.text(parts[0].trim() + ' SAFETY', 15, leftY);
@@ -228,29 +243,29 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   
   // Company details
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
-  if (company.address) { doc.text(company.address, 15, leftY); leftY += 4; }
+  if (company.address) { doc.text(normalizeForPDF(company.address), 15, leftY); leftY += 4; }
   if (company.city || company.state) { 
-    doc.text(`${company.city || ''}, ${company.state || ''} ${company.zip_code || ''}`, 15, leftY); 
+    doc.text(normalizeForPDF(`${company.city || ''}, ${company.state || ''} ${company.zip_code || ''}`), 15, leftY); 
     leftY += 4; 
   }
-  if (company.phone) { doc.text(`Tel: ${company.phone}`, 15, leftY); leftY += 4; }
-  if (company.email) { doc.text(company.email, 15, leftY); leftY += 4; }
-  if (company.website) { doc.text(company.website, 15, leftY); leftY += 4; }
+  if (company.phone) { doc.text(normalizeForPDF(`Tel: ${company.phone}`), 15, leftY); leftY += 4; }
+  if (company.email) { doc.text(normalizeForPDF(company.email), 15, leftY); leftY += 4; }
+  if (company.website) { doc.text(normalizeForPDF(company.website), 15, leftY); leftY += 4; }
   
   // === RIGHT SIDE: Document Info ===
   const rightX = pageWidth - 15;
   
   // Document type title
   doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.text);
   doc.text(docType.toUpperCase(), rightX, 20, { align: 'right' });
   
   // Document number and date - PO# now appears below invoice number
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
   doc.text(`#: ${docNumber}`, rightX, 28, { align: 'right' });
   
@@ -276,7 +291,7 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
   doc.roundedRect(pageWidth - 55, totalBoxY, 40, 12, 2, 2, 'F');
   doc.setTextColor(...COLORS.white);
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, pageWidth - 35, totalBoxY + 8, { align: 'center' });
   
   // Separator line - position based on content height
@@ -291,24 +306,24 @@ export const addDocumentHeader = async (doc, company, docType, docNumber, docDat
 // Add client/vendor section BELOW company info
 export const addPartySection = (doc, title, name, address, email, phone, startY) => {
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.primary);
   doc.text(title, 15, startY);
   
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(11);
   let y = startY + 6;
   
   // Handle multi-line names (e.g., company + contact)
   if (name) {
-    const nameLines = name.split('\n');
+    const nameLines = normalizeForPDF(name).split('\n');
     nameLines.forEach((line, idx) => {
       if (idx === 0) {
-        doc.setFont('helvetica', 'bold');
+        setFontWithFallback(doc, 'bold');
         doc.text(line, 15, y);
       } else {
-        doc.setFont('helvetica', 'normal');
+        setFontWithFallback(doc, 'normal');
         doc.setFontSize(9);
         doc.text(line, 15, y);
       }
@@ -322,20 +337,22 @@ export const addPartySection = (doc, title, name, address, email, phone, startY)
   // Split address into multiple lines (by comma, newline, or pipe separator)
   if (address) {
     // Split by common separators: newline, comma, pipe
-    const addressParts = address.split(/[\n|,]/).map(part => part.trim()).filter(part => part);
+    const addressParts = normalizeForPDF(address).split(/[\n|,]/).map(part => part.trim()).filter(part => part);
     addressParts.forEach(part => {
       doc.text(part, 15, y);
       y += 4;
     });
   }
-  if (email) { doc.text(email, 15, y); y += 4; }
-  if (phone) { doc.text(phone, 15, y); y += 4; }
+  if (email) { doc.text(normalizeForPDF(email), 15, y); y += 4; }
+  if (phone) { doc.text(normalizeForPDF(phone), 15, y); y += 4; }
   
   return y + 6;
 };
 
-// Task-based table for PO (large description area)
-export const addTasksTable = (doc, tasks, startY) => {
+// Task-based table for PO (large description area) - Returns finalY and pageNumber
+export const addTasksTable = (doc, tasks, startY, options = {}) => {
+  const { includeTotals = false, subtotal = 0, discount = 0, tax = 0, total = 0, taxDetails = null } = options;
+  
   const tableData = tasks.map((task, idx) => {
     // Build description with scope and details - strip HTML
     let desc = `${idx + 1}. ${stripHtml(task.description || task.name || '')}`;
@@ -360,13 +377,13 @@ export const addTasksTable = (doc, tasks, startY) => {
       textColor: COLORS.text,
       fontStyle: 'bold',
       fontSize: 9,
-      cellPadding: 4,
+      cellPadding: 3,
       lineWidth: { bottom: 0.3 },
       lineColor: COLORS.primary
     },
     bodyStyles: {
       fontSize: 8,
-      cellPadding: 5,
+      cellPadding: 4,
       textColor: COLORS.text,
       lineWidth: 0,
       overflow: 'linebreak',
@@ -381,7 +398,115 @@ export const addTasksTable = (doc, tasks, startY) => {
     alternateRowStyles: {
       fillColor: [252, 252, 253]
     },
-    showHead: 'firstPage'
+    showHead: 'firstPage',
+    // Reserve space at bottom for totals section to avoid orphaned totals
+    pageBreak: 'auto',
+    rowPageBreak: 'auto'
+  });
+  
+  return doc.lastAutoTable.finalY;
+};
+
+// Combined Tasks table WITH totals in same table (prevents page break between them)
+export const addTasksTableWithTotals = (doc, tasks, startY, totalsConfig) => {
+  const { subtotal, discount = 0, tax = 0, total, taxDetails = null } = totalsConfig;
+  
+  const tableData = tasks.map((task, idx) => {
+    // Build description with scope and details - strip HTML
+    let desc = `${idx + 1}. ${stripHtml(task.description || task.name || '')}`;
+    if (task.scope) desc += `\n\nScope of Work:\n${stripHtml(task.scope)}`;
+    if (task.details) desc += `\n\nConsidered Tasks:\n${stripHtml(task.details)}`;
+    
+    return [
+      desc,
+      (task.quantity || 1).toString(),
+      `$${formatCurrency(task.unit_price || task.rate || 0)}`,
+      `$${formatCurrency(task.amount || task.total || 0)}`
+    ];
+  });
+  
+  // Build footer rows for totals
+  const footerRows = [];
+  
+  // Empty row for spacing
+  footerRows.push(['', '', '', '']);
+  
+  // Subtotal
+  footerRows.push(['', '', 'Subtotal:', `$${formatCurrency(subtotal)}`]);
+  
+  // Discount
+  if (discount > 0) {
+    footerRows.push(['', '', 'Discount:', `-$${formatCurrency(discount)}`]);
+  }
+  
+  // Tax breakdown
+  if (taxDetails && taxDetails.length > 0) {
+    taxDetails.forEach(taxItem => {
+      footerRows.push(['', '', `${taxItem.name} (${taxItem.percentage}%):`, `$${formatCurrency(taxItem.amount)}`]);
+    });
+  } else if (tax > 0) {
+    footerRows.push(['', '', 'Tax:', `$${formatCurrency(tax)}`]);
+  }
+  
+  // Total
+  footerRows.push(['', '', 'TOTAL:', `$${formatCurrency(total)}`]);
+  
+  autoTable(doc, {
+    startY: startY,
+    head: [['# Tasks', 'Qty', 'Rate', 'Amount']],
+    body: tableData,
+    foot: footerRows,
+    theme: 'plain',
+    headStyles: {
+      fillColor: COLORS.lightBg,
+      textColor: COLORS.text,
+      fontStyle: 'bold',
+      fontSize: 9,
+      cellPadding: 3,
+      lineWidth: { bottom: 0.3 },
+      lineColor: COLORS.primary
+    },
+    bodyStyles: {
+      fontSize: 8,
+      cellPadding: 4,
+      textColor: COLORS.text,
+      lineWidth: 0,
+      overflow: 'linebreak',
+      cellWidth: 'wrap'
+    },
+    footStyles: {
+      fillColor: [255, 255, 255],
+      textColor: COLORS.text,
+      fontSize: 9,
+      cellPadding: 2,
+      lineWidth: 0
+    },
+    columnStyles: {
+      0: { cellWidth: 120, overflow: 'linebreak' },
+      1: { cellWidth: 18, halign: 'center' },
+      2: { cellWidth: 25, halign: 'right' },
+      3: { cellWidth: 25, halign: 'right' }
+    },
+    alternateRowStyles: {
+      fillColor: [252, 252, 253]
+    },
+    showHead: 'firstPage',
+    showFoot: 'lastPage',
+    didParseCell: function(data) {
+      // Style the TOTAL row (last footer row)
+      if (data.section === 'foot' && data.row.index === footerRows.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fontSize = 11;
+      }
+    },
+    didDrawCell: function(data) {
+      // Draw line above TOTAL in footer
+      if (data.section === 'foot' && data.row.index === footerRows.length - 1 && data.column.index === 2) {
+        doc.setDrawColor(100, 100, 100);
+        doc.setLineWidth(0.3);
+        doc.line(data.cell.x, data.cell.y, data.cell.x + data.cell.width + 25, data.cell.y);
+      }
+    }
   });
   
   return doc.lastAutoTable.finalY;
@@ -436,19 +561,35 @@ export const addItemsTable = (doc, items, startY, columns = ['Descripción', 'Ca
 // Totals section - with tax breakdown support
 export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, startY, taxDetails = null) => {
   const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
   const rightX = pageWidth - 15;
-  let y = startY + 10;
+  
+  // Calculate required height for totals section (approximately)
+  let requiredHeight = 40; // Base height for subtotal + total line
+  if (discount > 0) requiredHeight += 6;
+  if (taxDetails && taxDetails.length > 0) {
+    requiredHeight += taxDetails.length * 6;
+  } else if (tax > 0) {
+    requiredHeight += 6;
+  }
+  
+  // Check if we need a new page - use minimal bottom margin (15mm)
+  let y = startY + 5;
+  if (y + requiredHeight > pageHeight - 15) {
+    doc.addPage();
+    y = 25; // Start near top of new page
+  }
   
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
   
-  doc.text('Sub Total:', rightX - 45, y);
+  doc.text('Subtotal:', rightX - 45, y);
   doc.text(`$${formatCurrency(subtotal)}`, rightX, y, { align: 'right' });
   y += 6;
   
   if (discount > 0) {
-    doc.text('Descuento:', rightX - 45, y);
+    doc.text('Discount:', rightX - 45, y);
     doc.text(`-$${formatCurrency(discount)}`, rightX, y, { align: 'right' });
     y += 6;
   }
@@ -461,7 +602,7 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
       y += 6;
     });
   } else if (tax > 0) {
-    doc.text('Impuesto:', rightX - 45, y);
+    doc.text('Tax:', rightX - 45, y);
     doc.text(`$${formatCurrency(tax)}`, rightX, y, { align: 'right' });
     y += 6;
   }
@@ -469,15 +610,15 @@ export const addTotalsSection = (doc, subtotal, discount = 0, tax = 0, total, st
   // Total line
   doc.setDrawColor(...COLORS.secondary);
   doc.line(rightX - 55, y, rightX, y);
-  y += 8;
+  y += 6;
   
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.text);
   doc.text('Total:', rightX - 45, y);
   doc.text(`$${formatCurrency(total)}`, rightX, y, { align: 'right' });
   
-  return y + 12;
+  return y + 10;
 };
 
 // Notes section - Terms & Conditions on LEFT, Notes on RIGHT (side by side)
@@ -542,7 +683,7 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   // Draw headers
   let currentY = y;
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.secondary);
   
   if (termsText) {
@@ -555,7 +696,7 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
   currentY += 8;
   
   // Set font for content
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...COLORS.text);
   
@@ -576,7 +717,7 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
         
         // Add continuation headers on new page
         doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
+        setFontWithFallback(doc, 'bold');
         doc.setTextColor(...COLORS.secondary);
         
         if (termsText && termsIdx < wrappedTerms.length) {
@@ -586,7 +727,7 @@ export const addNotesSection = (doc, notes, terms, startY, options = {}) => {
           doc.text('Notes (cont.)', rightColStart, 23);
         }
         
-        doc.setFont('helvetica', 'normal');
+        setFontWithFallback(doc, 'normal');
         doc.setFontSize(7);
         doc.setTextColor(...COLORS.text);
       }
@@ -654,7 +795,7 @@ export const addReportHeader = async (doc, company, reportTitle, subtitle = '', 
   
   // Company name
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.primary);
   const companyName = company.company_name || 'OHSMS PR';
   if (companyName.includes('SAFETY')) {
@@ -670,7 +811,7 @@ export const addReportHeader = async (doc, company, reportTitle, subtitle = '', 
   
   // Company details
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
   if (company.address) { doc.text(company.address, 15, leftY); leftY += 4; }
   if (company.city || company.state) { 
@@ -683,14 +824,14 @@ export const addReportHeader = async (doc, company, reportTitle, subtitle = '', 
   const rightX = landscape ? pageWidth - 15 : pageWidth - 15;
   
   doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.text);
   doc.text(reportTitle.toUpperCase(), rightX, 20, { align: 'right' });
   
   // Subtitle (e.g., date range, filters)
   if (subtitle) {
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setTextColor(...COLORS.secondary);
     doc.text(subtitle, rightX, 28, { align: 'right' });
   }
@@ -778,7 +919,7 @@ export const addPayStubHeader = async (doc, company, period) => {
   
   // Company name
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.primary);
   const companyName = company.company_name || 'OHSMS PR';
   if (companyName.includes('SAFETY')) {
@@ -794,7 +935,7 @@ export const addPayStubHeader = async (doc, company, period) => {
   
   // Company details
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
   if (company.address) { doc.text(company.address, 15, leftY); leftY += 4; }
   if (company.city || company.state) { 
@@ -807,13 +948,13 @@ export const addPayStubHeader = async (doc, company, period) => {
   const rightX = pageWidth - 15;
   
   doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.text);
   doc.text('TALONARIO DE PAGO', rightX, 20, { align: 'right' });
   
   // Period
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
   doc.text(`Período: ${period}`, rightX, 28, { align: 'right' });
   
@@ -836,7 +977,7 @@ export const addPaySection = (doc, title, items, startY, isTotal = false) => {
   doc.rect(15, y, pageWidth - 30, 8, 'F');
   
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...(isTotal ? COLORS.white : COLORS.text));
   doc.text(title, 20, y + 5.5);
   
@@ -849,7 +990,7 @@ export const addPaySection = (doc, title, items, startY, isTotal = false) => {
   y += 12;
   
   // Section items
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.text);
   
@@ -866,7 +1007,7 @@ export const addPaySection = (doc, title, items, startY, isTotal = false) => {
 
 // Generate Safety Dashboard Report
 export const generateSafetyDashboardReport = async (dashboardData, projectName = null) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   const subtitle = projectName ? `Proyecto: ${projectName}` : 'Todos los Proyectos';
@@ -874,7 +1015,7 @@ export const generateSafetyDashboardReport = async (dashboardData, projectName =
   
   // Summary Stats
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.text);
   doc.text('Resumen General', 15, y);
   y += 8;
@@ -884,7 +1025,7 @@ export const generateSafetyDashboardReport = async (dashboardData, projectName =
   doc.roundedRect(15, y, 50, 20, 3, 3, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text(`${dashboardData.incidents?.days_without_incident || 0}`, 40, y + 10, { align: 'center' });
   doc.setFontSize(8);
   doc.text('Días sin Incidentes', 40, y + 16, { align: 'center' });
@@ -904,7 +1045,7 @@ export const generateSafetyDashboardReport = async (dashboardData, projectName =
     doc.roundedRect(boxX, y, 28, 20, 3, 3, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text(stat.value, boxX + 14, y + 10, { align: 'center' });
     doc.setFontSize(7);
     doc.text(stat.label, boxX + 14, y + 16, { align: 'center' });
@@ -915,7 +1056,7 @@ export const generateSafetyDashboardReport = async (dashboardData, projectName =
   // Checklists section
   doc.setTextColor(...COLORS.text);
   doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text('Estado de Checklists', 15, y);
   y += 6;
   
@@ -937,7 +1078,7 @@ export const generateSafetyDashboardReport = async (dashboardData, projectName =
   
   // Observations breakdown
   doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text('Desglose de Observaciones', 15, y);
   y += 6;
   
@@ -959,7 +1100,7 @@ export const generateSafetyDashboardReport = async (dashboardData, projectName =
   
   // Incidents summary
   doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text('Resumen de Incidentes', 15, y);
   y += 6;
   
@@ -984,7 +1125,7 @@ export const generateSafetyDashboardReport = async (dashboardData, projectName =
 
 // Generate Incidents Report
 export const generateIncidentsReport = async (incidents, projectName = null, dateRange = null) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   let subtitle = projectName ? `Proyecto: ${projectName}` : 'Todos los Proyectos';
@@ -1050,7 +1191,7 @@ export const generateIncidentsReport = async (incidents, projectName = null, dat
 
 // Generate detailed Incident Report (single incident)
 export const generateIncidentDetailReport = async (incident, projectName = null) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   let y = await addReportHeader(doc, company, 'REPORTE DE INCIDENTE', `#${incident.incident_id?.substring(0, 12) || ''}`);
@@ -1060,7 +1201,7 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   doc.roundedRect(15, y, 180, 12, 2, 2, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text(incident.title || 'Sin título', 20, y + 8);
   y += 18;
   
@@ -1088,11 +1229,11 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   // Description
   if (incident.description) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.text);
     doc.text('Descripción', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     const descLines = doc.splitTextToSize(incident.description, 175);
     doc.text(descLines, 15, y);
@@ -1102,10 +1243,10 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   // Injuries
   if (incident.injuries_description) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Descripción de Lesiones', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     const injLines = doc.splitTextToSize(incident.injuries_description, 175);
     doc.text(injLines, 15, y);
@@ -1115,10 +1256,10 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   // Property Damage
   if (incident.property_damage) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Daños a la Propiedad', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     const dmgLines = doc.splitTextToSize(incident.property_damage, 175);
     doc.text(dmgLines, 15, y);
@@ -1128,10 +1269,10 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   // Immediate Actions
   if (incident.immediate_actions) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Acciones Inmediatas', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     const actLines = doc.splitTextToSize(incident.immediate_actions, 175);
     doc.text(actLines, 15, y);
@@ -1141,10 +1282,10 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   // Root Cause
   if (incident.root_cause) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Causa Raíz', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     const rootLines = doc.splitTextToSize(incident.root_cause, 175);
     doc.text(rootLines, 15, y);
@@ -1154,10 +1295,10 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   // Corrective Actions
   if (incident.corrective_actions?.length > 0) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Acciones Correctivas', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     incident.corrective_actions.forEach((action, idx) => {
       const actionText = typeof action === 'string' ? action : action.description || '';
@@ -1170,10 +1311,10 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
   // Preventive Actions
   if (incident.preventive_actions?.length > 0) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Acciones Preventivas', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     incident.preventive_actions.forEach((action, idx) => {
       const actionText = typeof action === 'string' ? action : action.description || '';
@@ -1188,7 +1329,7 @@ export const generateIncidentDetailReport = async (incident, projectName = null)
 
 // Generate Toolbox Talks Report
 export const generateToolboxTalksReport = async (talks, projectName = null) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   const subtitle = projectName ? `Proyecto: ${projectName}` : 'Todos los Proyectos';
@@ -1243,7 +1384,7 @@ export const generateToolboxTalksReport = async (talks, projectName = null) => {
 
 // Generate detailed Toolbox Talk Report (single talk with attendance)
 export const generateToolboxTalkDetailReport = async (talk, projectName = null, users = []) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   let y = await addReportHeader(doc, company, 'TOOLBOX TALK', talk.title || 'Charla de Seguridad');
@@ -1272,11 +1413,11 @@ export const generateToolboxTalkDetailReport = async (talk, projectName = null, 
   // Description
   if (talk.description) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.text);
     doc.text('Descripción', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     const descLines = doc.splitTextToSize(talk.description, 175);
     doc.text(descLines, 15, y);
@@ -1286,10 +1427,10 @@ export const generateToolboxTalkDetailReport = async (talk, projectName = null, 
   // Key Points
   if (talk.key_points?.length > 0) {
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Puntos Clave', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     talk.key_points.forEach((point, idx) => {
       const pointText = typeof point === 'string' ? point : point.text || '';
@@ -1302,7 +1443,7 @@ export const generateToolboxTalkDetailReport = async (talk, projectName = null, 
   
   // Attendance Section
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text('Registro de Asistencia', 15, y);
   y += 6;
   
@@ -1313,7 +1454,7 @@ export const generateToolboxTalkDetailReport = async (talk, projectName = null, 
   // Employee attendees
   if (employeeAttendees.length > 0) {
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text('Empleados:', 15, y);
     y += 5;
     
@@ -1338,7 +1479,7 @@ export const generateToolboxTalkDetailReport = async (talk, projectName = null, 
   // External attendees
   if (externalAttendees.length > 0 || talk.external_attendee_count > 0) {
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.text(`Externos: ${externalAttendees.length || talk.external_attendee_count || 0}`, 15, y);
     y += 5;
     
@@ -1368,18 +1509,18 @@ export const generateToolboxTalkDetailReport = async (talk, projectName = null, 
   doc.rect(15, y, 180, 10, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text(`Total Asistentes: ${totalAttendance}`, 20, y + 7);
   
   // Notes
   if (talk.notes) {
     y += 18;
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.text);
     doc.text('Notas', 15, y);
     y += 5;
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setFontSize(9);
     const noteLines = doc.splitTextToSize(talk.notes, 175);
     doc.text(noteLines, 15, y);
@@ -1391,7 +1532,7 @@ export const generateToolboxTalkDetailReport = async (talk, projectName = null, 
 
 // Generate Checklists Report
 export const generateChecklistsReport = async (checklists, projectName = null) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   const subtitle = projectName ? `Proyecto: ${projectName}` : 'Todos los Proyectos';
@@ -1446,7 +1587,7 @@ export const generateChecklistsReport = async (checklists, projectName = null) =
 
 // Generate Observations Report
 export const generateObservationsReport = async (observations, projectName = null) => {
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   const company = await fetchCompanyInfo();
   
   const subtitle = projectName ? `Proyecto: ${projectName}` : 'Todos los Proyectos';
@@ -1555,7 +1696,7 @@ export const generateDailyLogReport = async (data) => {
     attachments 
   } = data;
   
-  const doc = new jsPDF();
+  const doc = await createPDFDocument();
   let yPos = 15;
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -1598,12 +1739,12 @@ export const generateDailyLogReport = async (data) => {
   const textStartX = margin + logoSize + 8;
   
   doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.primary);
   doc.text(company?.nombre || 'OHSMS', textStartX, yPos + 18);
   
   doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
   doc.text(projectInfo?.location || 'Puerto Rico', textStartX, yPos + 28);
   
@@ -1622,21 +1763,21 @@ export const generateDailyLogReport = async (data) => {
   doc.setTextColor(...COLORS.text);
   
   // Date
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text('Fecha:', margin + 5, yPos + 8);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.text(moment(date).format('ddd MM/DD/YYYY'), margin + 20, yPos + 8);
   
   // Project/Job number
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text('Trabajo #:', margin + 70, yPos + 8);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.text(projectInfo?.projectNumber || projectInfo?.project_id || '-', margin + 90, yPos + 8);
   
   // Prepared by
-  doc.setFont('helvetica', 'bold');
+  setFontWithFallback(doc, 'bold');
   doc.text('Preparado por:', margin + 130, yPos + 8);
-  doc.setFont('helvetica', 'normal');
+  setFontWithFallback(doc, 'normal');
   doc.text(company?.nombre || 'OHSMS LLC', margin + 158, yPos + 8);
   
   yPos += 18;
@@ -1644,7 +1785,7 @@ export const generateDailyLogReport = async (data) => {
   // ===== WEATHER SECTION =====
   if (weather && weather.length > 0) {
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.primary);
     doc.text('Clima', margin, yPos);
     yPos += 7;
@@ -1665,7 +1806,7 @@ export const generateDailyLogReport = async (data) => {
       doc.rect(boxX, yPos, boxWidth, 8, 'F');
       doc.setFontSize(8);
       doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
+      setFontWithFallback(doc, 'bold');
       doc.text(w.time || `${idx === 0 ? '6:00 AM' : idx === 1 ? '12:00 PM' : '4:00 PM'}`, boxX + boxWidth/2, yPos + 5.5, { align: 'center' });
       
       // Temperature
@@ -1675,7 +1816,7 @@ export const generateDailyLogReport = async (data) => {
       
       // Weather description
       doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
+      setFontWithFallback(doc, 'normal');
       doc.text(w.description || 'N/A', boxX + 25, yPos + 16);
       
       // Details
@@ -1694,7 +1835,7 @@ export const generateDailyLogReport = async (data) => {
     checkPageBreak(40);
     
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.primary);
     doc.text('Registros', margin, yPos);
     yPos += 5;
@@ -1758,7 +1899,7 @@ export const generateDailyLogReport = async (data) => {
       checkPageBreak(20);
       
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
+      setFontWithFallback(doc, 'bold');
       doc.setTextColor(...COLORS.primary);
       doc.text(title, margin, yPos);
       yPos += 6;
@@ -1767,11 +1908,11 @@ export const generateDailyLogReport = async (data) => {
         checkPageBreak(15);
         
         doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
+        setFontWithFallback(doc, 'bold');
         doc.setTextColor(...COLORS.text);
         doc.text(`${idx + 1}.`, margin, yPos);
         
-        doc.setFont('helvetica', 'normal');
+        setFontWithFallback(doc, 'normal');
         const noteText = note.description || '';
         const lines = doc.splitTextToSize(noteText, contentWidth - 10);
         doc.text(lines, margin + 8, yPos);
@@ -1791,7 +1932,7 @@ export const generateDailyLogReport = async (data) => {
     checkPageBreak(50);
     
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.primary);
     doc.text('Encuesta', margin, yPos);
     yPos += 5;
@@ -1842,13 +1983,13 @@ export const generateDailyLogReport = async (data) => {
     checkPageBreak(20);
     
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.primary);
     doc.text('Fotos y Adjuntos', margin, yPos);
     yPos += 6;
     
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setTextColor(...COLORS.text);
     
     if (surveyPhotos && surveyPhotos.length > 0) {
@@ -1871,7 +2012,7 @@ export const generateDailyLogReport = async (data) => {
     
     // Signature header
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.primary);
     doc.text('Firma del Reporte', margin, yPos);
     yPos += 8;
@@ -1891,12 +2032,12 @@ export const generateDailyLogReport = async (data) => {
     
     // Signature info
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.text);
     doc.text(signature.signer_name || '', margin + 80, yPos + 15);
     
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
+    setFontWithFallback(doc, 'normal');
     doc.setTextColor(...COLORS.secondary);
     doc.text(`Firmado: ${moment(signature.signed_at).format('DD/MM/YYYY hh:mm A')}`, margin + 80, yPos + 22);
     
@@ -1913,7 +2054,7 @@ export const generateDailyLogReport = async (data) => {
     yPos += 10;
     
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
+    setFontWithFallback(doc, 'bold');
     doc.setTextColor(...COLORS.primary);
     doc.text('Firma del Reporte', margin, yPos);
     yPos += 8;
@@ -1924,7 +2065,7 @@ export const generateDailyLogReport = async (data) => {
     doc.rect(margin, yPos, contentWidth, 30, 'S');
     
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'italic');
+    setFontWithFallback(doc, 'normal');
     doc.setTextColor(150);
     doc.text('Este reporte no ha sido firmado', margin + (contentWidth / 2), yPos + 15, { align: 'center' });
     
@@ -1939,7 +2080,7 @@ export const generateDailyLogReport = async (data) => {
   doc.rect(margin, yPos, contentWidth, 15, 'F');
   
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'italic');
+  setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
   doc.text(`Reporte preparado por ${company?.nombre || 'OHSMS LLC'}`, margin + 5, yPos + 6);
   doc.text(`${company?.nombre || 'OHSMS LLC'} | ${moment().format('MM/DD/YY')} | ${moment().format('hh:mm A')}`, margin + 5, yPos + 11);
@@ -1958,6 +2099,657 @@ export const generateDailyLogReport = async (data) => {
   return fileName;
 };
 
+// ==================== INSPECTION FORM PDFs ====================
+
+/**
+ * Generate PDF for Pressure Test Form
+ */
+export const generatePressureTestPDF = async (form, company) => {
+  const doc = await createPDFDocument();
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 15;
+  const contentWidth = pageWidth - (margin * 2);
+  let yPos = 15;
+
+  // Helper to add signature image if exists
+  const addSignatureImage = (signature, x, y, maxWidth = 40, maxHeight = 15) => {
+    if (signature?.signature_data) {
+      try {
+        doc.addImage(signature.signature_data, 'PNG', x, y, maxWidth, maxHeight);
+        doc.setFontSize(7);
+        doc.setTextColor(100);
+        doc.text(`${signature.name} - ${signature.date || ''}`, x, y + maxHeight + 3);
+        return maxHeight + 8;
+      } catch (e) {
+        console.error('Error adding signature:', e);
+      }
+    }
+    return 0;
+  };
+
+  // Check page break
+  const checkPageBreak = (neededHeight) => {
+    if (yPos + neededHeight > doc.internal.pageSize.height - 20) {
+      doc.addPage();
+      yPos = 15;
+      return true;
+    }
+    return false;
+  };
+
+  // ===== HEADER =====
+  const logoToUse = company?.logoBase64 || LOGO_BASE64;
+  try {
+    doc.addImage(logoToUse, 'PNG', margin, yPos, 35, 17);
+  } catch (e) {
+    console.error('Logo error:', e);
+  }
+
+  // Title
+  doc.setFontSize(16);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('PRESSURE TEST FORM', pageWidth / 2, yPos + 8, { align: 'center' });
+  
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'normal');
+  doc.text(form.form_number || '', pageWidth - margin, yPos + 8, { align: 'right' });
+
+  yPos += 25;
+
+  // ===== PROJECT INFORMATION =====
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('PROJECT INFORMATION', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  // Project info grid
+  const projectFields = [
+    ['Project No.', form.project_no || '-'],
+    ['Project Name', form.project_name || '-'],
+    ['Contractor', form.contractor || '-'],
+    ['Building', form.building || '-'],
+    ['Area', form.area || '-'],
+    ['System No.', form.system_no || '-'],
+    ['Test Package No.', form.test_package_no || '-'],
+    ['System Description', form.system_description || '-']
+  ];
+
+  doc.setFontSize(8);
+  let colX = margin;
+  let rowCount = 0;
+  
+  projectFields.forEach((field, idx) => {
+    const colWidth = idx === 7 ? contentWidth : contentWidth / 4;
+    const xPos = idx === 7 ? margin : margin + (idx % 4) * (contentWidth / 4);
+    
+    if (idx > 0 && idx % 4 === 0 && idx < 7) {
+      yPos += 10;
+    }
+    if (idx === 7) yPos += 10;
+    
+    setFontWithFallback(doc, 'bold');
+    doc.setTextColor(100);
+    doc.text(field[0] + ':', xPos, yPos);
+    setFontWithFallback(doc, 'normal');
+    doc.setTextColor(...COLORS.text);
+    doc.text(field[1], xPos, yPos + 4);
+  });
+
+  yPos += 15;
+
+  // ===== TEST TYPE =====
+  checkPageBreak(25);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('TEST TYPE', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  const testTypes = ['hydrostatic', 'pneumatic', 'static', 'head', 'in_service'];
+  const testTypeLabels = ['Hydrostatic', 'Pneumatic', 'Static', 'Head', 'In Service'];
+  
+  doc.setFontSize(8);
+  testTypes.forEach((type, idx) => {
+    const xPos = margin + (idx * 35);
+    const isChecked = form.test_type?.includes(type);
+    
+    // Checkbox
+    doc.setDrawColor(100);
+    doc.rect(xPos, yPos - 3, 4, 4);
+    if (isChecked) {
+      doc.setFillColor(0, 0, 0);
+      doc.rect(xPos + 0.5, yPos - 2.5, 3, 3, 'F');
+    }
+    doc.setTextColor(...COLORS.text);
+    doc.text(testTypeLabels[idx], xPos + 6, yPos);
+  });
+
+  yPos += 12;
+
+  // ===== TEST BOUNDARIES =====
+  checkPageBreak(40);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('TEST BOUNDARIES', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  // P&ID Table
+  if (form.pid_entries && form.pid_entries.length > 0) {
+    autoTable(doc, {
+      startY: yPos,
+      margin: { left: margin, right: margin },
+      head: [['P&ID No.', 'Rev.', 'N/A']],
+      body: form.pid_entries.map(entry => [
+        entry.pid_no || '-',
+        entry.rev || '-',
+        entry.na ? 'Yes' : 'No'
+      ]),
+      styles: { fontSize: 8, cellPadding: 2, textColor: COLORS.text },
+      headStyles: { fillColor: [230, 230, 230], textColor: COLORS.text, fontStyle: 'bold' },
+      theme: 'grid'
+    });
+    yPos = doc.lastAutoTable.finalY + 5;
+  }
+
+  // Lines included
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'bold');
+  doc.text('Lines Included in Test:', margin, yPos);
+  setFontWithFallback(doc, 'normal');
+  const linesText = form.lines_included_in_test || '-';
+  const wrappedLines = doc.splitTextToSize(linesText, contentWidth);
+  doc.text(wrappedLines, margin, yPos + 4);
+  yPos += 4 + (wrappedLines.length * 3.5) + 5;
+
+  // ===== TEST CONDITIONS =====
+  checkPageBreak(30);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('TEST CONDITIONS', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  const conditionFields = [
+    ['Test Media', form.test_media || '-'],
+    ['Actual Temp', form.actual_test_media_temp || '-'],
+    ['Min/Max Temp', form.test_media_min_temp_limit || '-'],
+    ['Ambient Min Req', form.ambient_temp_min_req || '-']
+  ];
+
+  doc.setFontSize(8);
+  conditionFields.forEach((field, idx) => {
+    const xPos = margin + (idx * (contentWidth / 4));
+    setFontWithFallback(doc, 'bold');
+    doc.setTextColor(100);
+    doc.text(field[0] + ':', xPos, yPos);
+    setFontWithFallback(doc, 'normal');
+    doc.setTextColor(...COLORS.text);
+    doc.text(field[1], xPos, yPos + 4);
+  });
+  yPos += 15;
+
+  // ===== TEST INSPECTION RELEASE =====
+  checkPageBreak(50);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('TEST INSPECTION RELEASE', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  // Two columns for signatures
+  const halfWidth = (contentWidth - 10) / 2;
+  
+  // Contractor Release
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.text('Contractor Release', margin, yPos);
+  yPos += 4;
+  doc.setFontSize(7);
+  setFontWithFallback(doc, 'normal');
+  doc.setTextColor(100);
+  doc.text('Test Package is completed as boundary is defined.', margin, yPos);
+  yPos += 5;
+  doc.setTextColor(...COLORS.text);
+  doc.setFontSize(8);
+  doc.text('Name: ' + (form.contractor_release_name || '-'), margin, yPos);
+  yPos += 4;
+  addSignatureImage(form.contractor_release_signature, margin, yPos);
+  
+  // CST Release on right
+  let cstY = yPos - 13;
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('CST Release', margin + halfWidth + 10, cstY);
+  cstY += 4;
+  doc.setFontSize(7);
+  setFontWithFallback(doc, 'normal');
+  doc.setTextColor(100);
+  doc.text('Package verified for completion.', margin + halfWidth + 10, cstY);
+  cstY += 5;
+  doc.setTextColor(...COLORS.text);
+  doc.setFontSize(8);
+  doc.text('Name: ' + (form.cst_release_name || '-'), margin + halfWidth + 10, cstY);
+  cstY += 4;
+  addSignatureImage(form.cst_release_signature, margin + halfWidth + 10, cstY);
+
+  yPos += 25;
+
+  // ===== GAUGE INFORMATION =====
+  checkPageBreak(25);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('GAUGE INFORMATION', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  const gaugeFields = [
+    ['Gauge Number', form.gauge_number || '-'],
+    ['Calibration Due', form.gauge_calibration_due_date ? moment(form.gauge_calibration_due_date).format('MM/DD/YYYY') : '-'],
+    ['Range Low', form.gauge_range_low || '-'],
+    ['Range High', form.gauge_range_high || '-']
+  ];
+
+  doc.setFontSize(8);
+  gaugeFields.forEach((field, idx) => {
+    const xPos = margin + (idx * (contentWidth / 4));
+    setFontWithFallback(doc, 'bold');
+    doc.setTextColor(100);
+    doc.text(field[0] + ':', xPos, yPos);
+    setFontWithFallback(doc, 'normal');
+    doc.setTextColor(...COLORS.text);
+    doc.text(field[1], xPos, yPos + 4);
+  });
+  yPos += 15;
+
+  // ===== TEST EXECUTION =====
+  checkPageBreak(35);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('TEST EXECUTION', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  const execFields = [
+    ['Test Pressure Req.', form.test_pressure_requirements || '-'],
+    ['Initial Pressure', form.initial_pressure || '-'],
+    ['Final Pressure', form.final_pressure || '-'],
+    ['Min Hold Time', form.min_req_holding_time || '-'],
+    ['Actual Hold Time', form.actual_holding_time || '-'],
+    ['Start Date', form.test_start_date ? moment(form.test_start_date).format('MM/DD/YYYY') : '-'],
+    ['Start Time', form.test_start_time || '-'],
+    ['Finish Date', form.test_finish_date ? moment(form.test_finish_date).format('MM/DD/YYYY') : '-'],
+    ['Finish Time', form.test_finish_time || '-']
+  ];
+
+  doc.setFontSize(8);
+  execFields.forEach((field, idx) => {
+    const row = Math.floor(idx / 4);
+    const col = idx % 4;
+    const xPos = margin + (col * (contentWidth / 4));
+    const localY = yPos + (row * 10);
+    
+    setFontWithFallback(doc, 'bold');
+    doc.setTextColor(100);
+    doc.text(field[0] + ':', xPos, localY);
+    setFontWithFallback(doc, 'normal');
+    doc.setTextColor(...COLORS.text);
+    doc.text(field[1], xPos, localY + 4);
+  });
+  yPos += 35;
+
+  // ===== TEST RESULTS =====
+  checkPageBreak(60);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('TEST RESULTS', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  // Three signature columns
+  const thirdWidth = (contentWidth - 20) / 3;
+  
+  // Test Performer
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.text('Test Performer', margin, yPos);
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.text('Name: ' + (form.test_performer_name || '-'), margin, yPos + 5);
+  addSignatureImage(form.test_performer_signature, margin, yPos + 9);
+
+  // Verifier Contractor
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.text('Verifier (Contractor)', margin + thirdWidth + 10, yPos);
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.text('Name: ' + (form.verifier_contractor_name || '-'), margin + thirdWidth + 10, yPos + 5);
+  addSignatureImage(form.verifier_contractor_signature, margin + thirdWidth + 10, yPos + 9);
+
+  // Verifier CST
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.text('CST Verifier', margin + (thirdWidth * 2) + 20, yPos);
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.text('Name: ' + (form.verifier_cst_name || '-'), margin + (thirdWidth * 2) + 20, yPos + 5);
+  addSignatureImage(form.verifier_cst_signature, margin + (thirdWidth * 2) + 20, yPos + 9);
+
+  yPos += 35;
+
+  // Remarks
+  if (form.remarks) {
+    checkPageBreak(20);
+    doc.setFontSize(8);
+    setFontWithFallback(doc, 'bold');
+    doc.text('Remarks:', margin, yPos);
+    setFontWithFallback(doc, 'normal');
+    const wrappedRemarks = doc.splitTextToSize(form.remarks, contentWidth);
+    doc.text(wrappedRemarks, margin, yPos + 4);
+    yPos += 4 + (wrappedRemarks.length * 3.5) + 5;
+  }
+
+  // ===== LINE RESTORATION =====
+  checkPageBreak(45);
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('LINE RESTORATION VERIFICATION', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  doc.setFontSize(7);
+  setFontWithFallback(doc, 'normal');
+  doc.setTextColor(100);
+  doc.text('Gaskets, bolts, caps, instruments, traps, valves are in place, correctly oriented and tight.', margin, yPos);
+  yPos += 6;
+
+  // Two columns
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('Contractor', margin, yPos);
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.text('Name: ' + (form.restoration_contractor_name || '-'), margin, yPos + 5);
+  addSignatureImage(form.restoration_contractor_signature, margin, yPos + 9);
+
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.text('CST', margin + halfWidth + 10, yPos);
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.text('Name: ' + (form.restoration_cst_name || '-'), margin + halfWidth + 10, yPos + 5);
+  addSignatureImage(form.restoration_cst_signature, margin + halfWidth + 10, yPos + 9);
+
+  // Add page numbers
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, doc.internal.pageSize.height - 10, { align: 'right' });
+    doc.text(company?.company_name || 'OHSMS PR', margin, doc.internal.pageSize.height - 10);
+  }
+
+  // Save
+  const fileName = `PressureTest_${form.form_number || form.form_id}_${moment().format('YYYYMMDD')}.pdf`;
+  doc.save(fileName);
+  return fileName;
+};
+
+/**
+ * Generate PDF for Aboveground Pipe Inspection Form
+ */
+export const generateAbovegroundInspectionPDF = async (form, company) => {
+  const doc = await createPDFDocument('landscape');
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 15;
+  const contentWidth = pageWidth - (margin * 2);
+  let yPos = 15;
+
+  // Helper to add signature
+  const addSignatureImage = (signature, x, y, maxWidth = 40, maxHeight = 15) => {
+    if (signature?.signature_data) {
+      try {
+        doc.addImage(signature.signature_data, 'PNG', x, y, maxWidth, maxHeight);
+        doc.setFontSize(7);
+        doc.setTextColor(100);
+        doc.text(`${signature.name} - ${signature.date || ''}`, x, y + maxHeight + 3);
+        return maxHeight + 8;
+      } catch (e) {
+        console.error('Error adding signature:', e);
+      }
+    }
+    return 0;
+  };
+
+  // ===== HEADER =====
+  const logoToUse = company?.logoBase64 || LOGO_BASE64;
+  try {
+    doc.addImage(logoToUse, 'PNG', margin, yPos, 35, 17);
+  } catch (e) {
+    console.error('Logo error:', e);
+  }
+
+  // Title
+  doc.setFontSize(16);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('ABOVEGROUND PIPE INSPECTION CHECKLIST', pageWidth / 2, yPos + 8, { align: 'center' });
+  
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'normal');
+  doc.text(form.form_number || '', pageWidth - margin, yPos + 8, { align: 'right' });
+
+  yPos += 25;
+
+  // ===== PROJECT INFORMATION =====
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('PROJECT INFORMATION', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  // Project info - two rows
+  const projectRow1 = [
+    ['Project No.', form.project_no || '-'],
+    ['Project Name', form.project_name || '-'],
+    ['Contractor', form.contractor || '-'],
+    ['Building', form.building || '-']
+  ];
+  const projectRow2 = [
+    ['Area', form.area || '-'],
+    ['System No.', form.system_no || '-'],
+    ['P&ID/Isometric Rev.', form.pid_isometric_rev || '-'],
+    ['System Description', form.system_description || '-']
+  ];
+
+  doc.setFontSize(8);
+  
+  projectRow1.forEach((field, idx) => {
+    const xPos = margin + (idx * (contentWidth / 4));
+    setFontWithFallback(doc, 'bold');
+    doc.setTextColor(100);
+    doc.text(field[0] + ':', xPos, yPos);
+    setFontWithFallback(doc, 'normal');
+    doc.setTextColor(...COLORS.text);
+    doc.text(field[1], xPos, yPos + 4);
+  });
+  yPos += 12;
+
+  projectRow2.forEach((field, idx) => {
+    const xPos = margin + (idx * (contentWidth / 4));
+    setFontWithFallback(doc, 'bold');
+    doc.setTextColor(100);
+    doc.text(field[0] + ':', xPos, yPos);
+    setFontWithFallback(doc, 'normal');
+    doc.setTextColor(...COLORS.text);
+    const value = field[1];
+    const maxWidth = idx === 3 ? contentWidth / 4 - 5 : contentWidth / 4 - 10;
+    const wrapped = doc.splitTextToSize(value, maxWidth);
+    doc.text(wrapped[0], xPos, yPos + 4);
+  });
+  yPos += 15;
+
+  // ===== INSPECTION CHECKLIST TABLE =====
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('INSPECTION CHECKLIST', margin + 3, yPos + 5.5);
+  doc.setFontSize(7);
+  setFontWithFallback(doc, 'normal');
+  doc.setTextColor(100);
+  doc.text('A = Acceptable | N/AC = Not Acceptable | N/A = Not Applicable', pageWidth - margin, yPos + 5.5, { align: 'right' });
+  yPos += 12;
+
+  // Table headers and data
+  const tableHeaders = [
+    'Line #', 'Material', 'Size', 'Joints', 'Clear.', 'Supports', 
+    'Valves', 'Slope', 'Dead Legs', 'Align.', 'Vents', 'Init.', 'Date', 'Remarks'
+  ];
+
+  const tableBody = (form.inspection_lines || []).map(line => [
+    line.line_number || '-',
+    line.material || '-',
+    line.size || '-',
+    line.joints_gaskets_washers || '-',
+    line.clearance || '-',
+    line.supports_guides_anchors || '-',
+    line.valves_accessible || '-',
+    line.slope || '-',
+    line.dead_legs || '-',
+    line.alignment_orientation || '-',
+    line.vents_drains || '-',
+    line.initials || '-',
+    line.date ? moment(line.date).format('MM/DD/YY') : '-',
+    line.remarks || '-'
+  ]);
+
+  autoTable(doc, {
+    startY: yPos,
+    margin: { left: margin, right: margin },
+    head: [tableHeaders],
+    body: tableBody,
+    styles: { 
+      fontSize: 7, 
+      cellPadding: 1.5, 
+      textColor: COLORS.text,
+      lineWidth: 0.1
+    },
+    headStyles: { 
+      fillColor: [230, 230, 230], 
+      textColor: COLORS.text, 
+      fontStyle: 'bold',
+      fontSize: 6
+    },
+    columnStyles: {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 20 },
+      2: { cellWidth: 12 },
+      3: { cellWidth: 15 },
+      4: { cellWidth: 14 },
+      5: { cellWidth: 18 },
+      6: { cellWidth: 15 },
+      7: { cellWidth: 14 },
+      8: { cellWidth: 18 },
+      9: { cellWidth: 14 },
+      10: { cellWidth: 14 },
+      11: { cellWidth: 12 },
+      12: { cellWidth: 20 },
+      13: { cellWidth: 'auto' }
+    },
+    theme: 'grid'
+  });
+  yPos = doc.lastAutoTable.finalY + 8;
+
+  // ===== INSPECTION STATEMENT =====
+  if (yPos > pageHeight - 60) {
+    doc.addPage();
+    yPos = 15;
+  }
+
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 20, 'F');
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.setTextColor(...COLORS.text);
+  const statement = 'These inspections testify that the materials, sizes, supports location and types, joints, drainability and air purging requirements, slopes and overall installation meet the design intent as per drawings and specifications and that the system is ready to be released for pressure test.';
+  const wrappedStatement = doc.splitTextToSize(statement, contentWidth - 10);
+  doc.text(wrappedStatement, margin + 5, yPos + 6);
+  yPos += 25;
+
+  // ===== SIGNATURES =====
+  doc.setFillColor(248, 250, 252);
+  doc.rect(margin, yPos, contentWidth, 8, 'F');
+  doc.setFontSize(10);
+  setFontWithFallback(doc, 'bold');
+  doc.setTextColor(...COLORS.text);
+  doc.text('SIGNATURES', margin + 3, yPos + 5.5);
+  yPos += 12;
+
+  const halfWidth = (contentWidth - 20) / 2;
+
+  // Contractor
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.text('Contractor', margin, yPos);
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.text('Name: ' + (form.contractor_name || '-'), margin, yPos + 5);
+  addSignatureImage(form.contractor_signature, margin, yPos + 9);
+
+  // CST Representative
+  doc.setFontSize(9);
+  setFontWithFallback(doc, 'bold');
+  doc.text('CST Representative', margin + halfWidth + 20, yPos);
+  doc.setFontSize(8);
+  setFontWithFallback(doc, 'normal');
+  doc.text('Name: ' + (form.cst_representative_name || '-'), margin + halfWidth + 20, yPos + 5);
+  addSignatureImage(form.cst_representative_signature, margin + halfWidth + 20, yPos + 9);
+
+  // Add page numbers
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+    doc.text(company?.company_name || 'OHSMS PR', margin, pageHeight - 10);
+  }
+
+  // Save
+  const fileName = `AbovegroundInspection_${form.form_number || form.form_id}_${moment().format('YYYYMMDD')}.pdf`;
+  doc.save(fileName);
+  return fileName;
+};
+
 export default { 
   fetchCompanyInfo, addDocumentHeader, addPartySection, addTasksTable, addItemsTable, 
   addTotalsSection, addNotesSection, addFooter, addReportHeader, addReportTable, 
@@ -1967,5 +2759,7 @@ export default {
   generateToolboxTalksReport, generateToolboxTalkDetailReport, generateChecklistsReport,
   generateObservationsReport,
   // Daily Log Report
-  generateDailyLogReport
+  generateDailyLogReport,
+  // Inspection Forms PDFs
+  generatePressureTestPDF, generateAbovegroundInspectionPDF
 };
