@@ -176,6 +176,16 @@ const Layout = ({ children }) => {
       { name: 'Mi Perfil', href: `/clients/${user?.user_id}`, icon: Building2 },
     ];
 
+    // EHS role - only projects, documents, and safety (no financial access)
+    const ehsNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Mi Perfil', href: '/my-profile', icon: User },
+      { name: 'Ponchar', href: '/clock', icon: Clock },
+      { name: 'Mi Historial', href: '/clock/history', icon: Clock },
+      { name: 'Proyectos', href: '/projects', icon: FolderKanban },
+      { name: 'Mis Solicitudes', href: '/my-requests', icon: Send },
+    ];
+
     switch (role) {
       case 'super_admin':
       case 'admin':
@@ -190,6 +200,8 @@ const Layout = ({ children }) => {
         return designerNav;
       case 'supervisor':
         return supervisorNav;
+      case 'ehs':
+        return ehsNav;
       case 'pm_estimator':
         return pmEstimatorNav;
       case 'empleado':
@@ -233,7 +245,8 @@ const Layout = ({ children }) => {
     'supervisor': 'Supervisor',
     'empleado': 'Empleado',
     'client': 'Cliente',
-    'accountant': 'Contador'
+    'accountant': 'Contador',
+    'ehs': 'EHS'
   };
 
   const handleLogout = async () => {

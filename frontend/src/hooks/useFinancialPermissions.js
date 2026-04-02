@@ -53,6 +53,11 @@ export const useFinancialPermissions = () => {
     if (user.role === 'supervisor') {
       return false;
     }
+
+    // EHS nunca puede ver información financiera
+    if (user.role === 'ehs') {
+      return false;
+    }
     
     // Si la configuración está activada y el usuario es PM, no puede ver
     if (hideFinancialForPM && user.role === 'project_manager') {

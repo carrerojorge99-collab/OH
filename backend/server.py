@@ -854,6 +854,7 @@ class UserRole(str, Enum):
     ACCOUNTANT = "accountant"
     PM_ESTIMATOR = "pm_estimator"
     SUPERVISOR = "supervisor"
+    EHS = "ehs"  # Environment, Health & Safety - access to projects, documents, safety only
 
 # Role permissions helper
 ROLE_PERMISSIONS = {
@@ -901,6 +902,13 @@ ROLE_PERMISSIONS = {
         "view_weekly_plan", "manage_weekly_plan",
         "view_rfi", "manage_rfi",
         "view_safety", "manage_safety",
+        "view_inspections", "manage_inspections"
+    ],
+    "ehs": [
+        "clock_in_out", "view_own_hours", "view_own_history",
+        "view_assigned_projects", "view_projects", "upload_docs",
+        "view_safety", "manage_safety",
+        "view_quality", "manage_quality",
         "view_inspections", "manage_inspections"
     ]
 }

@@ -25,6 +25,9 @@ const ROLE_ROUTES = {
   accountant: [
     '/dashboard', '/clock', '/my-profile', '/accounting', '/invoices', '/reports'
   ],
+  ehs: [
+    '/dashboard', '/clock', '/my-profile', '/my-requests', '/projects'
+  ],
   empleado: [
     '/clock', '/projects', '/my-requests', '/my-profile'
   ],

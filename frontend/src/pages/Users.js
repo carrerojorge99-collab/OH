@@ -99,6 +99,8 @@ const Users = () => {
         return 'bg-amber-100 text-amber-700 border-amber-200';
       case 'supervisor':
         return 'bg-cyan-100 text-cyan-700 border-cyan-200';
+      case 'ehs':
+        return 'bg-lime-100 text-lime-700 border-lime-200';
       case 'empleado':
         return 'bg-gray-100 text-gray-700 border-gray-200';
       case 'client':
@@ -124,6 +126,8 @@ const Users = () => {
         return 'PM Estimator';
       case 'supervisor':
         return 'Supervisor';
+      case 'ehs':
+        return 'EHS';
       case 'empleado':
         return 'Empleado';
       case 'client':
@@ -337,6 +341,7 @@ const Users = () => {
                           <SelectItem value="rrhh">RRHH</SelectItem>
                           <SelectItem value="designer">Designer</SelectItem>
                           <SelectItem value="supervisor">Supervisor</SelectItem>
+                          <SelectItem value="ehs">EHS</SelectItem>
                           <SelectItem value="accountant">Contador</SelectItem>
                           <SelectItem value="pm_estimator">PM Estimator</SelectItem>
                           <SelectItem value="empleado">Empleado</SelectItem>
@@ -446,6 +451,7 @@ const Users = () => {
                           <SelectItem value="rrhh">RRHH</SelectItem>
                           <SelectItem value="designer">Designer</SelectItem>
                           <SelectItem value="supervisor">Supervisor</SelectItem>
+                          <SelectItem value="ehs">EHS</SelectItem>
                           <SelectItem value="accountant">Contador</SelectItem>
                           <SelectItem value="pm_estimator">PM Estimator</SelectItem>
                           <SelectItem value="empleado">Empleado</SelectItem>
