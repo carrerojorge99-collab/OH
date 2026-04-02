@@ -1720,16 +1720,18 @@ export const generateDailyLogReport = async (data) => {
   const addPageFooter = (pageNum, totalPages) => {
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text(`${pageNum} de ${totalPages} | ${company?.nombre || 'OHSMS'}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+    doc.text(`${pageNum} de ${totalPages} | ${company?.company_name || 'OHSMS'}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
     doc.text('Powered by ProManage', margin, pageHeight - 10);
   };
   
   // ===== HEADER =====
   // Company name/logo - LARGER LOGO
-  const logoSize = 45; // Increased from 25
-  if (LOGO_BASE64) {
+  const logoSize = 45;
+  const logoToUse = company?.logoBase64 || LOGO_BASE64;
+  if (logoToUse) {
     try {
-      doc.addImage(LOGO_BASE64, 'PNG', margin, yPos, logoSize, logoSize);
+      const imageFormat = logoToUse.includes('image/jpeg') ? 'JPEG' : 'PNG';
+      doc.addImage(logoToUse, imageFormat, margin, yPos, logoSize, logoSize);
     } catch (e) {
       console.log('Error adding logo:', e);
     }
@@ -1741,7 +1743,7 @@ export const generateDailyLogReport = async (data) => {
   doc.setFontSize(22);
   setFontWithFallback(doc, 'bold');
   doc.setTextColor(...COLORS.primary);
-  doc.text(company?.nombre || 'OHSMS', textStartX, yPos + 18);
+  doc.text(company?.company_name || 'OHSMS', textStartX, yPos + 18);
   
   doc.setFontSize(11);
   setFontWithFallback(doc, 'normal');
@@ -1778,7 +1780,7 @@ export const generateDailyLogReport = async (data) => {
   setFontWithFallback(doc, 'bold');
   doc.text('Preparado por:', margin + 130, yPos + 8);
   setFontWithFallback(doc, 'normal');
-  doc.text(company?.nombre || 'OHSMS LLC', margin + 158, yPos + 8);
+  doc.text(company?.company_name || 'OHSMS LLC', margin + 158, yPos + 8);
   
   yPos += 18;
   
@@ -2082,8 +2084,8 @@ export const generateDailyLogReport = async (data) => {
   doc.setFontSize(8);
   setFontWithFallback(doc, 'normal');
   doc.setTextColor(...COLORS.secondary);
-  doc.text(`Reporte preparado por ${company?.nombre || 'OHSMS LLC'}`, margin + 5, yPos + 6);
-  doc.text(`${company?.nombre || 'OHSMS LLC'} | ${moment().format('MM/DD/YY')} | ${moment().format('hh:mm A')}`, margin + 5, yPos + 11);
+  doc.text(`Reporte preparado por ${company?.company_name || 'OHSMS LLC'}`, margin + 5, yPos + 6);
+  doc.text(`${company?.company_name || 'OHSMS LLC'} | ${moment().format('MM/DD/YY')} | ${moment().format('hh:mm A')}`, margin + 5, yPos + 11);
   
   // Add page numbers
   const totalPages = doc.internal.getNumberOfPages();
